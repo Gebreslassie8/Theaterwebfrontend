@@ -51,7 +51,7 @@ const Footer = () => {
     { to: '/contact', label: 'Contact Us', icon: Mail },
     { to: '/faq', label: 'FAQ', icon: HelpCircle },
     { to: '/shipping', label: 'Shipping Info', icon: Truck },
-    { to: '/returns', label: 'Returns', icon: ChevronRight }
+
   ];
 
   const legalLinks = [
