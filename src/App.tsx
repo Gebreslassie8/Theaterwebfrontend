@@ -234,6 +234,7 @@ import Login from "./components/auth/Login";
 import ForgotPassword from "./components/auth/Forgotpassword";
 import DashboardLayout from "./components/DashboardLayout/DashboardLayout";
 import HomePage from './pages/Home';
+import Blogs from "./pages/Blog"
 import About from "./pages/About";
 import Help from "./pages/Help";
 import Contact from "./pages/Contact";
@@ -323,6 +324,7 @@ function App() {
       {/* Public routes - accessible to everyone */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
+        <Route path="blogs" element={<Blogs />} />
         <Route path="about" element={<About />} />
         <Route path="help" element={<Help />} />
         <Route path="contact" element={<Contact />} />

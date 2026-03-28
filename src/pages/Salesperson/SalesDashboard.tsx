@@ -406,7 +406,6 @@ const SalesDashboard: React.FC = () => {
                     <p className="text-2xl font-bold text-green-600">{stats.completedBookings}</p>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow border border-gray-200">
-                    <p className="text-sm text-gray-500 mb-1">Refunded</p>
                     <p className="text-2xl font-bold text-red-600">${stats.refundedAmount}</p>
                 </div>
                 <div className="bg-white rounded-xl p-4 shadow border border-gray-200">
@@ -670,7 +669,6 @@ const SalesDashboard: React.FC = () => {
             <motion.div variants={itemVariants} className="grid grid-cols-4 md:grid-cols-8 gap-2">
                 <FooterActionButton icon={Printer} text="Print" />
                 <FooterActionButton icon={Receipt} text="Receipt" />
-                <FooterActionButton icon={RotateCcw} text="Refund" />
                 <FooterActionButton icon={Search} text="Find" />
                 <FooterActionButton icon={UserCheck} text="Check In" />
                 <FooterActionButton icon={Headphones} text="Support" />
