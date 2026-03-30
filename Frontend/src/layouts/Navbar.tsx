@@ -68,7 +68,6 @@ const Navbar: React.FC = () => {
     const navLinks: NavLink[] = [
         { to: '/', label: 'Home', icon: Home },
         { to: '/blogs', label: 'Blogs', icon: BookOpen },
-        { to: '/theaters', label: 'Theaters', icon: MapPin },
         { to: '/about', label: 'About', icon: Info },
         { to: '/help', label: 'Help', icon: HelpCircle },
         { to: '/contact', label: 'Contact', icon: MessageCircle }

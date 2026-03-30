@@ -1,35 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Facebook,
-  Twitter,
-  Instagram,
-  Youtube,
-  Linkedin,
-  Mail,
-  Phone,
-  MapPin,
-  Clock,
-  ChevronRight,
-  Shield,
-  HelpCircle,
-  FileText,
-  CreditCard,
-  Truck,
-  Star,
-  Globe,
-  Lock,
-  Award,
-  Film,
-  Gift,
-  CheckCircle,
-  XCircle,
-  Sparkles,
-  PartyPopper,
-  Smile,
-  ThumbsUp
-} from 'lucide-react';
-
+import { Facebook, Twitter, Instagram, Youtube, Linkedin, Mail, Phone, MapPin, Clock, ChevronRight, Shield, HelpCircle, FileText, CreditCard, Truck, Star, Globe, Lock, Award, Film, Gift, CheckCircle, XCircle, Sparkles, PartyPopper, Smile, ThumbsUp } from 'lucide-react';
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState('');
@@ -85,7 +56,7 @@ const Footer = () => {
     setTimeout(() => setShowPopup(false), 5000);
   };
 
-  const showErrorPopup = (errorMessage) => {
+  const showErrorPopup = (errorMessage: string) => {
     setPopupMessage({
       type: 'error',
       title: '❌ Oops! Something went wrong',

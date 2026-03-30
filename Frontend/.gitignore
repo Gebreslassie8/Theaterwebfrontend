@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+Backend/
+│
+├── Config/
+│   └── database.js
+│
+├── Models/
+│   ├── User.js
+│   ├── Blog.js
+│   ├── Category.js
+│   ├── Tag.js
+│   ├── Comment.js
+│   ├── Like.js
+│   └── index.js
+│
+├── Controllers/
+│   ├── authController.js
+│   ├── userController.js
+│   ├── blogController.js
+│   ├── commentController.js
+│   ├── categoryController.js
+│   └── passwordController.js
+│
+├── Routes/
+│   ├── auth.js
+│   ├── users.js
+│   ├── blogs.js
+│   ├── comments.js
+│   ├── categories.js
+│   └── password.js
+│
+├── Middleware/
+│   ├── auth.js
+│   └── validation.js
+│
+├── Utils/
+│   └── helpers.js
+│
+├── .env
+├── .gitignore
+├── package.json
+├── server.js
+└── seed.js

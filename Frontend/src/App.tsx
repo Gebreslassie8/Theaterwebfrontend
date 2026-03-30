@@ -239,7 +239,9 @@ import About from "./pages/About";
 import Help from "./pages/Help";
 import Contact from "./pages/Contact";
 import TheaterRegistration from './pages/TheaterRegistration';
-
+import TermsOfService from './pages/Legal/TermsOfService';
+import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
+import CookiePolicy from './pages/Legal/CookiePolicy';
 // Dashboard pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import OwnerDashboard from "./pages/Owner/OwnerDashboard";
@@ -330,6 +332,12 @@ function App() {
         <Route path="help" element={<Help />} />
         <Route path="contact" element={<Contact />} />
         <Route path="account" element={<TheaterRegistration />} />
+        <Route path="terms" element={<TermsOfService />} />
+        <Route path="privacy" element={<PrivacyPolicy />} />
+        <Route path="cookies" element={<CookiePolicy />} />
+
+
+
 
 
       </Route>

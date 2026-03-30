@@ -3,11 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import * as yup from 'yup';
-import {
-  Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle,
-  ArrowRight, Shield, HelpCircle, UserPlus, LogIn,
-  Smartphone
-} from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle, AlertCircle, ArrowRight, Shield, HelpCircle, UserPlus, LogIn, Smartphone } from 'lucide-react';
 
 // Validation schemas using Yup
 const loginSchemas = {
