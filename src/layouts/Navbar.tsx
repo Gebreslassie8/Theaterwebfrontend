@@ -70,7 +70,6 @@ const Navbar: React.FC = () => {
         { to: '/about', label: 'About', icon: Info },
         { to: '/blogs', label: 'blogs', icon: BookOpen },
         { to: '/gallery', label: 'Gallery', icon: Star },
-        { to: '/pricing', label: 'Pricing', icon: Ticket },
         { to: '/contact', label: 'Contact', icon: MessageCircle },
         { to: '/help', label: 'Help', icon: HelpCircle }
 
@@ -98,7 +97,7 @@ const Navbar: React.FC = () => {
                             />
                         </div>
                         <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">
-                            Ethiopian TheaterHUB
+                            TheaterHUB
                         </span>
                     </Link>
 
