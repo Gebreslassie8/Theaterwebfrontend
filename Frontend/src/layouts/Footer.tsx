@@ -20,7 +20,7 @@ const Footer = () => {
     { to: '/help', label: 'Help Center', icon: HelpCircle },
     { to: '/contact', label: 'Contact Us', icon: Mail },
     { to: '/faq', label: 'FAQ', icon: HelpCircle },
-    { to: '/shipping', label: 'Shipping Info', icon: Truck },
+    { to: '/booking', label: 'booking Info', icon: Truck },
 
   ];
 

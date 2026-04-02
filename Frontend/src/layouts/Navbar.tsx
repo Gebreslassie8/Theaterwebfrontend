@@ -67,10 +67,13 @@ const Navbar: React.FC = () => {
 
     const navLinks: NavLink[] = [
         { to: '/', label: 'Home', icon: Home },
-        { to: '/blogs', label: 'Blogs', icon: BookOpen },
         { to: '/about', label: 'About', icon: Info },
-        { to: '/help', label: 'Help', icon: HelpCircle },
-        { to: '/contact', label: 'Contact', icon: MessageCircle }
+        { to: '/blogs', label: 'blogs', icon: BookOpen },
+        { to: '/gallery', label: 'Gallery', icon: Star },
+        { to: '/pricing', label: 'Pricing', icon: Ticket },
+        { to: '/contact', label: 'Contact', icon: MessageCircle },
+        { to: '/help', label: 'Help', icon: HelpCircle }
+
     ];
 
     const isActive = (path: string): boolean => location.pathname === path;
@@ -95,7 +98,7 @@ const Navbar: React.FC = () => {
                             />
                         </div>
                         <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">
-                            TheaterHUB
+                            Ethiopian TheaterHUB
                         </span>
                     </Link>
 
@@ -164,22 +167,20 @@ const Navbar: React.FC = () => {
                         {/* Sign In Button - Desktop */}
                         <Link
                             to="/login"
-                            className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-4 py-2 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all duration-300 font-medium text-sm shadow-md hover:shadow-lg"
+                            className="hidden md:flex items-center space-x-1.5 border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all duration-300 font-medium text-sm"
                         >
                             <LogIn className="h-4 w-4" />
                             <span>Sign In</span>
                         </Link>
 
-                        {/* Sign Up Button - Desktop */}
+                        {/* Join Now Button - Desktop (Prominent like image) */}
                         <Link
                             to="/account"
-                            className="hidden md:flex items-center space-x-1.5 border-2 border-teal-600 text-teal-600 px-4 py-2 rounded-lg hover:bg-teal-50 transition-all duration-300 font-medium text-sm"
+                            className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-6 py-2 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg"
                         >
                             <UserPlus className="h-4 w-4" />
-                            <span>Sign Up</span>
+                            <span>Join Now</span>
                         </Link>
-
-
 
                         {/* Mobile Menu Button */}
                         <button
@@ -231,21 +232,21 @@ const Navbar: React.FC = () => {
                                 {/* Sign In - Mobile */}
                                 <Link
                                     to="/login"
-                                    className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-500 text-white"
+                                    className="flex items-center space-x-3 px-4 py-3 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     <LogIn className="h-5 w-5" />
                                     <span className="font-medium">Sign In</span>
                                 </Link>
 
-                                {/* Sign Up - Mobile */}
+                                {/* Join Now - Mobile (Prominent) */}
                                 <Link
                                     to="/account"
-                                    className="flex items-center space-x-3 px-4 py-3 rounded-xl border-2 border-teal-600 text-teal-600"
+                                    className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-md hover:shadow-lg transition"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
                                     <UserPlus className="h-5 w-5" />
-                                    <span className="font-medium">Sign Up</span>
+                                    <span className="font-medium font-semibold">Join Now</span>
                                 </Link>
                             </div>
                         </motion.div>

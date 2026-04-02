@@ -654,25 +654,6 @@ const Login = () => {
                     )}
                   </button>
                 </motion.div>
-
-                {/* Register Link */}
-                <motion.div
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 1.1 }}
-                  className="text-center pt-2"
-                >
-                  <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                    Don't have an account?{' '}
-                    <Link
-                      to="/account"
-                      className="text-deepTeal hover:text-deepTeal font-semibold inline-flex items-center gap-1 group"
-                    >
-                      Create Account
-                      <UserPlus className="h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
-                    </Link>
-                  </p>
-                </motion.div>
               </form>
 
               {/* Footer */}

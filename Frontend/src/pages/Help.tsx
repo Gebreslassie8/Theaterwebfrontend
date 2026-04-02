@@ -8,7 +8,8 @@ import {
     Headphones, FileText, Video, Download, Printer,
     QrCode, Wallet, Users, Building, Globe,
     ThumbsUp, ThumbsDown, AlertCircle, CheckCircle,
-    ExternalLink, ArrowRight, Play, Pause, XCircle
+    ExternalLink, ArrowRight, Play, Pause, XCircle,
+    AlertTriangle, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -19,6 +20,7 @@ interface FAQItem {
     answer: string;
     category: string;
     icon: React.ElementType;
+    isWarning?: boolean;
 }
 
 interface SupportTopic {
@@ -47,13 +49,13 @@ const Help: React.FC = () => {
     const [searchResults, setSearchResults] = useState<FAQItem[]>([]);
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
-    // FAQ Data
+    // FAQ Data - Removed refund and loyalty questions
     const faqs: FAQItem[] = [
         {
             id: 1,
             category: 'tickets',
             question: 'How do I book tickets online?',
-            answer: 'Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using credit card, mobile money, or your TheaterHUB wallet.',
+            answer: 'Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using Chapa, TeleBirr, CBE Birr, or HelloCash.',
             icon: Ticket
         },
         {
@@ -65,41 +67,51 @@ const Help: React.FC = () => {
         },
         {
             id: 3,
-            category: 'payments',
-            question: 'What payment methods do you accept?',
-            answer: 'We accept multiple payment methods including: Credit/Debit Cards (Visa, Mastercard), Mobile Money (Tele Birr, CBE Birr, HelloCash), and TheaterHUB Wallet balance.',
-            icon: CreditCard
+            category: 'tickets',
+            question: 'What is the maximum number of tickets per booking?',
+            answer: 'You can reserve up to 10 tickets per booking. For larger groups (10+ people), please contact our group sales team at groups@theaterhub.com for special arrangements.',
+            icon: Users,
+            isWarning: true
         },
         {
             id: 4,
-            category: 'refunds',
-            question: 'What is your refund policy?',
-            answer: 'Tickets can be refunded up to 24 hours before the show. Refunds are processed within 3-5 business days to your original payment method. Please contact support for assistance.',
-            icon: AlertCircle
+            category: 'payments',
+            question: 'What payment methods do you accept?',
+            answer: 'We accept multiple payment methods including: Chapa (Card/Bank Transfer), TeleBirr, CBE Birr, and HelloCash. All payments are processed securely.',
+            icon: CreditCard
         },
         {
             id: 5,
+            category: 'tickets',
+            question: 'Are there any discounts available?',
+            answer: 'No discounts are offered at this time. All tickets are sold at standard prices. Ticket prices are final and non-negotiable.',
+            icon: AlertTriangle,
+            isWarning: true
+        },
+        {
+            id: 6,
+            category: 'tickets',
+            question: 'What is your refund policy?',
+            answer: '⚠️ IMPORTANT: All ticket sales are FINAL. No refunds or exchanges are permitted under any circumstances. Please verify all details before confirming your purchase. In case of show cancellation, you will be contacted with alternative options.',
+            icon: AlertCircle,
+            isWarning: true
+        },
+        {
+            id: 7,
             category: 'account',
             question: 'How do I create an account?',
             answer: 'Click "Sign Up" on the homepage, fill in your details, verify your email, and you\'re ready to start booking! You can also sign up using Google or Facebook.',
             icon: User
         },
         {
-            id: 6,
+            id: 8,
             category: 'wallet',
             question: 'What is TheaterHUB Wallet?',
-            answer: 'TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods and earn loyalty points.',
+            answer: 'TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods.',
             icon: Wallet
         },
         {
-            id: 7,
-            category: 'loyalty',
-            question: 'How do I earn loyalty points?',
-            answer: 'Earn 10 points for every $1 spent on tickets. Points can be redeemed for discounts, free tickets, and exclusive merchandise. VIP members earn double points!',
-            icon: Award
-        },
-        {
-            id: 8,
+            id: 9,
             category: 'technical',
             question: 'Having trouble with the website?',
             answer: 'Clear your browser cache, try a different browser, or contact our support team at support@theaterhub.com. We\'re here to help!',
@@ -107,7 +119,7 @@ const Help: React.FC = () => {
         }
     ];
 
-    // Support Topics
+    // Support Topics - Removed loyalty program
     const supportTopics: SupportTopic[] = [
         {
             id: 1,
@@ -119,8 +131,8 @@ const Help: React.FC = () => {
         },
         {
             id: 2,
-            title: 'Payments & Refunds',
-            description: 'Payment methods, refunds, and billing inquiries',
+            title: 'Payments',
+            description: 'Payment methods, billing inquiries',
             icon: CreditCard,
             link: '/help/payments',
             color: 'from-deepBlue to-blue-600'
@@ -143,14 +155,6 @@ const Help: React.FC = () => {
         },
         {
             id: 5,
-            title: 'Loyalty Program',
-            description: 'Earn and redeem points, membership benefits',
-            icon: Award,
-            link: '/help/loyalty',
-            color: 'from-deepTeal to-emerald-600'
-        },
-        {
-            id: 6,
             title: 'Technical Support',
             description: 'Website issues, app problems, error messages',
             icon: Headphones,
@@ -159,7 +163,7 @@ const Help: React.FC = () => {
         }
     ];
 
-    // Help Articles
+    // Help Articles - Removed loyalty article
     const articles: Article[] = [
         {
             id: 1,
@@ -187,14 +191,6 @@ const Help: React.FC = () => {
         },
         {
             id: 4,
-            title: 'Earning and Redeeming Points',
-            description: 'Maximize your rewards with our loyalty program',
-            category: 'Loyalty',
-            readTime: '4 min read',
-            icon: Star
-        },
-        {
-            id: 5,
             title: 'Venue Information',
             description: 'Find parking, accessibility, and venue policies',
             category: 'Venue',
@@ -202,7 +198,7 @@ const Help: React.FC = () => {
             icon: Building
         },
         {
-            id: 6,
+            id: 5,
             title: 'Gift Cards Guide',
             description: 'Purchase, send, and redeem gift cards',
             category: 'Gifts',
@@ -238,7 +234,7 @@ const Help: React.FC = () => {
         ? searchResults
         : faqs.filter(faq => activeCategory === 'all' || faq.category === activeCategory);
 
-    const categories = ['all', 'tickets', 'payments', 'refunds', 'account', 'wallet', 'loyalty', 'technical'];
+    const categories = ['all', 'tickets', 'payments', 'account', 'wallet', 'technical'];
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -313,6 +309,21 @@ const Help: React.FC = () => {
 
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Important Notice Banner */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800"
+                >
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-semibold text-red-800 dark:text-red-300">⚠️ Important Policy</p>
+                            <p className="text-sm text-red-700 dark:text-red-400">All ticket sales are final. No refunds, exchanges, or discounts are available. Maximum 10 tickets per booking.</p>
+                        </div>
+                    </div>
+                </motion.div>
+
                 {/* Tabs */}
                 <div className="flex flex-wrap justify-center gap-4 mb-12">
                     {[
@@ -365,17 +376,22 @@ const Help: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                    className={`rounded-2xl border overflow-hidden shadow-sm hover:shadow-md transition-shadow ${faq.isWarning
+                                            ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'
+                                            : 'bg-white border-gray-200'
+                                        }`}
                                 >
                                     <button
                                         onClick={() => setOpenFAQ(openFAQ === faq.id ? null : faq.id)}
-                                        className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+                                        className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-opacity-50 transition-colors"
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className="p-2 rounded-lg bg-deepTeal/10">
-                                                <faq.icon className="h-5 w-5 text-deepTeal" />
+                                            <div className={`p-2 rounded-lg ${faq.isWarning ? 'bg-red-100 dark:bg-red-900/30' : 'bg-deepTeal/10'}`}>
+                                                <faq.icon className={`h-5 w-5 ${faq.isWarning ? 'text-red-600' : 'text-deepTeal'}`} />
                                             </div>
-                                            <span className="font-semibold text-gray-900">{faq.question}</span>
+                                            <span className={`font-semibold ${faq.isWarning ? 'text-red-800 dark:text-red-300' : 'text-gray-900'}`}>
+                                                {faq.question}
+                                            </span>
                                         </div>
                                         {openFAQ === faq.id ? (
                                             <ChevronUp className="h-5 w-5 text-gray-400" />
@@ -392,11 +408,15 @@ const Help: React.FC = () => {
                                                 transition={{ duration: 0.3 }}
                                                 className="px-6 pb-5"
                                             >
-                                                <div className="pl-12 border-l-2 border-deepTeal/30">
-                                                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
-                                                    <button className="mt-3 text-sm text-deepTeal hover:underline flex items-center gap-1">
-                                                        Read more <ArrowRight className="h-4 w-4" />
-                                                    </button>
+                                                <div className={`pl-12 border-l-2 ${faq.isWarning ? 'border-red-300 dark:border-red-700' : 'border-deepTeal/30'}`}>
+                                                    <p className={`leading-relaxed ${faq.isWarning ? 'text-red-700 dark:text-red-400' : 'text-gray-600'}`}>
+                                                        {faq.answer}
+                                                    </p>
+                                                    {faq.isWarning && (
+                                                        <button className="mt-3 text-sm text-red-600 hover:underline flex items-center gap-1">
+                                                            Learn more <ArrowRight className="h-4 w-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         )}

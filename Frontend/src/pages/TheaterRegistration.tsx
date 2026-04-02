@@ -1,3 +1,4 @@
+// Frontend/src/components/theater/TheaterRegistration.tsx
 import React, { useState, useRef, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -45,25 +46,18 @@ import {
     Sparkles,
     CreditCard,
     Lock,
-    X
+    X,
+    MapPin,
+    Mail,
+    Phone,
+    Theater,
+    Map,
+    Compass
 } from "lucide-react";
 
 // ============================================
 // TYPES & INTERFACES
 // ============================================
-
-interface Show {
-    id: number;
-    title: string;
-    genre: string;
-    duration: string;
-    frequency: string;
-    days: string[];
-    startDate: string;
-    endDate: string;
-    ticketPrice: string;
-    expectedAudience: string;
-}
 
 interface FormData {
     // Business Information
@@ -90,26 +84,28 @@ interface FormData {
 
     // Theater Details
     theaterName: string;
+    theaterLogo: File | null;
+    theaterDescription: string;
+    theaterEmail: string;
+    theaterPhone: string;
+    totalHalls: string;
+    totalSeats: string;
+    services: string[];
+    latitude: string;
+    longitude: string;
     city: string;
     region: string;
     address: string;
-    totalScreens: string;
-    seatingCapacity: string;
     screenTypes: string[];
-    facilities: string[];
-    hours: Record<string, string>;
-
-    // Show Information
-    shows: Show[];
 
     // Documents
     documents: Record<string, File | null>;
 
     // Pricing Plan
-    pricingModel: string;
+    pricingModel: string; // 'per_ticket' or 'contract'
+    contractType: string; // 'monthly', 'quarterly', 'yearly'
     payoutFrequency: string;
     expeditedEnabled: boolean;
-    rentPlan: string;
 
     // Agreements
     acceptMarketing: boolean;
@@ -134,57 +130,12 @@ interface PaymentModalProps {
 // ============================================
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess, amount, formData }) => {
-    const [cardNumber, setCardNumber] = useState("");
-    const [cardName, setCardName] = useState("");
-    const [expiryDate, setExpiryDate] = useState("");
-    const [cvv, setCvv] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [error, setError] = useState("");
 
-    const handleCardNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value.replace(/\D/g, "");
-        if (value.length > 16) value = value.slice(0, 16);
-        const formatted = value.replace(/(\d{4})/g, "$1 ").trim();
-        setCardNumber(formatted);
-    };
-
-    const handleExpiryChange = (e: ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value.replace(/\D/g, "");
-        if (value.length > 4) value = value.slice(0, 4);
-        if (value.length >= 2) {
-            value = value.slice(0, 2) + "/" + value.slice(2);
-        }
-        setExpiryDate(value);
-    };
-
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-
-        if (!cardNumber || cardNumber.replace(/\s/g, "").length !== 16) {
-            setError("Please enter a valid 16-digit card number");
-            return;
-        }
-        if (!cardName.trim()) {
-            setError("Please enter the name on card");
-            return;
-        }
-        if (!expiryDate || expiryDate.length !== 5) {
-            setError("Please enter a valid expiry date (MM/YY)");
-            return;
-        }
-        if (!cvv || cvv.length < 3) {
-            setError("Please enter a valid CVV");
-            return;
-        }
-
+    const initializePayment = async () => {
         setIsProcessing(true);
-        setError("");
-
+        // Simulate Chapa initialization callback
         await new Promise(resolve => setTimeout(resolve, 2000));
-
-        console.log("Payment processed for:", formData.businessName);
-        console.log("Amount:", amount);
-
         setIsProcessing(false);
         onSuccess();
     };
@@ -217,101 +168,51 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, onSuccess,
                         <p className="text-sm text-gray-500 dark:text-gray-400">Amount to Pay</p>
                         <p className="text-3xl font-bold text-teal-600">${amount.toLocaleString()}</p>
                         <p className="text-xs text-gray-400 mt-1">
-                            One-time registration fee <span className="text-red-500 font-semibold">(NON-REFUNDABLE)</span>
+                            One-time registration fee <span className="text-gray-500 font-semibold">(NON-REFUNDABLE)</span>
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                Card Number
-                            </label>
-                            <input
-                                type="text"
-                                value={cardNumber}
-                                onChange={handleCardNumberChange}
-                                placeholder="1234 5678 9012 3456"
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                maxLength={19}
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                Name on Card
-                            </label>
-                            <input
-                                type="text"
-                                value={cardName}
-                                onChange={(e) => setCardName(e.target.value)}
-                                placeholder="John Doe"
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                    Expiry Date
-                                </label>
-                                <input
-                                    type="text"
-                                    value={expiryDate}
-                                    onChange={handleExpiryChange}
-                                    placeholder="MM/YY"
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                    maxLength={5}
-                                />
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-4 p-4 border-2 border-teal-600 bg-teal-50 dark:bg-teal-900/20 rounded-xl shadow-md cursor-pointer">
+                            <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                                <CreditCard className="w-6 h-6 text-teal-600" />
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                    CVV
-                                </label>
-                                <input
-                                    type="text"
-                                    value={cvv}
-                                    onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                                    placeholder="123"
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                                    maxLength={4}
-                                />
+                                <span className="font-bold text-teal-700 dark:text-teal-300 block">Pay with Chapa</span>
+                                <span className="text-xs text-teal-600 dark:text-teal-400">Ethiopian Payment Gateway</span>
                             </div>
                         </div>
 
-                        {error && (
-                            <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                                <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-2">
-                                    <AlertCircle className="h-4 w-4" />
-                                    {error}
-                                </p>
-                            </div>
-                        )}
-
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
-                            <p className="text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
+                        <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-2">
                                 <Lock className="h-3 w-3" />
                                 <span className="font-semibold">IMPORTANT:</span> This payment is <span className="font-bold underline">NON-REFUNDABLE</span>. No refunds will be issued under any circumstances.
                             </p>
                         </div>
 
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={initializePayment}
                             disabled={isProcessing}
                             className="w-full py-3 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl font-semibold transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {isProcessing ? (
                                 <>
                                     <Loader2 className="h-5 w-5 animate-spin" />
-                                    Processing...
+                                    Processing with Chapa...
                                 </>
                             ) : (
                                 <>
                                     <Lock className="h-4 w-4" />
-                                    Pay ${amount.toLocaleString()} (Non-Refundable)
+                                    Pay ${amount.toLocaleString()} via Chapa
                                 </>
                             )}
                         </button>
-                    </form>
+
+                        <p className="text-xs text-center text-gray-500 mt-3">
+                            🔒 Secure payment powered by Chapa. Your payment information is encrypted and secure.
+                        </p>
+                    </div>
                 </div>
             </motion.div>
         </div>
@@ -691,14 +592,24 @@ const ContactInfoStep: React.FC<StepProps> = ({ formData, errors, handleInputCha
 };
 
 // ============================================
-// STEP 3: THEATER DETAILS & FACILITIES
+// STEP 3: THEATER DETAILS & SERVICES
 // ============================================
 
 interface TheaterDetailsStepProps extends StepProps {
     handleCheckboxChange: (e: ChangeEvent<HTMLInputElement>) => void;
+    handleLogoUpload: (e: ChangeEvent<HTMLInputElement>) => void;
+    logoInputRef: React.RefObject<HTMLInputElement>;
 }
 
-const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFormData, errors, handleInputChange, handleCheckboxChange }) => {
+const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({
+    formData,
+    setFormData,
+    errors,
+    handleInputChange,
+    handleCheckboxChange,
+    handleLogoUpload,
+    logoInputRef
+}) => {
     const cities = [
         "Addis Ababa", "Bahir Dar", "Dire Dawa", "Hawassa", "Mekelle",
         "Gondar", "Jimma", "Harar", "Adama", "Dessie", "Arba Minch", "Jijiga"
@@ -709,21 +620,17 @@ const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFo
         "Somali", "Benishangul-Gumuz", "Afar", "Harari", "Gambela", "Sidama"
     ];
 
-    const facilitiesList = [
-        { icon: Car, name: "Free Parking", category: "Parking" },
-        { icon: Accessibility, name: "Wheelchair Accessible", category: "Accessibility" },
-        { icon: Coffee, name: "Concession Stand", category: "Food & Drink" },
-        { icon: Wine, name: "Bar/Lounge", category: "Food & Drink" },
-        { icon: Utensils, name: "Restaurant", category: "Food & Drink" },
-        { icon: Wifi, name: "Free WiFi", category: "Technology" },
-        { icon: Tv, name: "Digital Screens", category: "Technology" },
-        { icon: Volume2, name: "Dolby Atmos Sound", category: "Audio/Visual" },
-        { icon: Sofa, name: "VIP Lounge", category: "Seating" },
-        { icon: Star, name: "Premium Seating", category: "Seating" },
-        { icon: Baby, name: "Family Friendly", category: "Family" },
-        { icon: Cake, name: "Birthday Packages", category: "Events" },
-        { icon: Gift, name: "Gift Cards", category: "Services" },
-        { icon: Sparkles, name: "Private Events", category: "Services" }
+    const servicesList = [
+        { icon: Ticket, name: "Ticket Booking", description: "Online ticket reservation" },
+        { icon: Coffee, name: "Refreshments", description: "Snacks and beverages" },
+        { icon: Wine, name: "Premium Bar", description: "Full bar service" },
+        { icon: Utensils, name: "Dining", description: "Pre-show dining" },
+        { icon: Wifi, name: "Free WiFi", description: "Complimentary internet" },
+        { icon: Car, name: "Valet Parking", description: "Professional parking service" },
+        { icon: Accessibility, name: "Wheelchair Access", description: "ADA compliant" },
+        { icon: Gift, name: "Gift Cards", description: "Digital gift certificates" },
+        { icon: Users, name: "Group Bookings", description: "Special group rates" },
+        { icon: Sparkles, name: "Private Events", description: "Venue rental" }
     ];
 
     const screenTypes = [
@@ -734,7 +641,7 @@ const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFo
         <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
                 <div className="p-2.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
-                    <Home className="h-5 w-5 text-white" />
+                    <Theater className="h-5 w-5 text-white" />
                 </div>
                 <div>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">Theater Details</h2>
@@ -759,6 +666,191 @@ const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFo
                     {errors.theaterName && <p className="text-xs text-red-500 mt-1 ml-1">{errors.theaterName}</p>}
                 </div>
 
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Theater Logo
+                    </label>
+                    <div className="flex items-center gap-4">
+                        <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                            {formData.theaterLogo ? (
+                                <img
+                                    src={URL.createObjectURL(formData.theaterLogo)}
+                                    alt="Theater Logo"
+                                    className="w-full h-full object-cover rounded-xl"
+                                />
+                            ) : (
+                                <Image className="h-8 w-8 text-gray-400" />
+                            )}
+                        </div>
+                        <div>
+                            <input
+                                ref={logoInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleLogoUpload}
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => logoInputRef.current?.click()}
+                                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition"
+                            >
+                                {formData.theaterLogo ? 'Change Logo' : 'Upload Logo'}
+                            </button>
+                            <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Theater Description <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                        name="theaterDescription"
+                        rows={3}
+                        value={formData.theaterDescription}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all resize-none ${errors.theaterDescription ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                            } dark:text-white`}
+                        placeholder="Describe your theater, its history, unique features, and what makes it special..."
+                    />
+                    {errors.theaterDescription && <p className="text-xs text-red-500 mt-1 ml-1">{errors.theaterDescription}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Theater Email <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="email"
+                            name="theaterEmail"
+                            value={formData.theaterEmail}
+                            onChange={handleInputChange}
+                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.theaterEmail ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                                } dark:text-white`}
+                            placeholder="info@grandtheater.com"
+                        />
+                    </div>
+                    {errors.theaterEmail && <p className="text-xs text-red-500 mt-1 ml-1">{errors.theaterEmail}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Theater Phone <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="tel"
+                            name="theaterPhone"
+                            value={formData.theaterPhone}
+                            onChange={handleInputChange}
+                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.theaterPhone ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                                } dark:text-white`}
+                            placeholder="+251 911 234 567"
+                        />
+                    </div>
+                    {errors.theaterPhone && <p className="text-xs text-red-500 mt-1 ml-1">{errors.theaterPhone}</p>}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Number of Halls <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="number"
+                        name="totalHalls"
+                        value={formData.totalHalls}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.totalHalls ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                            } dark:text-white`}
+                        placeholder="3"
+                        min="1"
+                    />
+                    {errors.totalHalls && <p className="text-xs text-red-500 mt-1 ml-1">{errors.totalHalls}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Total Seats <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                        type="number"
+                        name="totalSeats"
+                        value={formData.totalSeats}
+                        onChange={handleInputChange}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.totalSeats ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                            } dark:text-white`}
+                        placeholder="500"
+                        min="1"
+                    />
+                    {errors.totalSeats && <p className="text-xs text-red-500 mt-1 ml-1">{errors.totalSeats}</p>}
+                </div>
+
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                        Screen Types Available
+                    </label>
+                    <select
+                        multiple
+                        value={formData.screenTypes || []}
+                        onChange={(e) => {
+                            const options = Array.from(e.target.selectedOptions, option => option.value);
+                            setFormData(prev => ({ ...prev, screenTypes: options }));
+                        }}
+                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
+                        size={3}
+                    >
+                        {screenTypes.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1.5 ml-1">Hold Ctrl/Cmd to select multiple</p>
+                </div>
+            </div>
+
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                    Services Offered
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {servicesList.map((service, idx) => {
+                        const Icon = service.icon;
+                        const isChecked = formData.services?.includes(service.name);
+                        return (
+                            <label
+                                key={idx}
+                                className={`flex items-start gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${isChecked
+                                    ? 'border-teal-500 bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/10'
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                                    }`}
+                            >
+                                <input
+                                    type="checkbox"
+                                    value={service.name}
+                                    checked={isChecked}
+                                    onChange={handleCheckboxChange}
+                                    className="hidden"
+                                />
+                                <Icon className={`h-5 w-5 flex-shrink-0 ${isChecked ? 'text-teal-600' : 'text-gray-400'}`} />
+                                <div>
+                                    <p className={`text-sm font-medium ${isChecked ? 'text-teal-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                                        {service.name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">{service.description}</p>
+                                </div>
+                            </label>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                         City <span className="text-red-500">*</span>
@@ -810,121 +902,43 @@ const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFo
                     />
                     {errors.address && <p className="text-xs text-red-500 mt-1 ml-1">{errors.address}</p>}
                 </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div>
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Number of Screens <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                        type="number"
-                        name="totalScreens"
-                        value={formData.totalScreens}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.totalScreens ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
-                            } dark:text-white`}
-                        placeholder="3"
-                        min="1"
-                    />
-                    {errors.totalScreens && <p className="text-xs text-red-500 mt-1 ml-1">{errors.totalScreens}</p>}
-                </div>
 
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Total Seating Capacity <span className="text-red-500">*</span>
+                        Latitude <span className="text-red-500">*</span>
                     </label>
-                    <input
-                        type="number"
-                        name="seatingCapacity"
-                        value={formData.seatingCapacity}
-                        onChange={handleInputChange}
-                        className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.seatingCapacity ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
-                            } dark:text-white`}
-                        placeholder="500"
-                        min="1"
-                    />
-                    {errors.seatingCapacity && <p className="text-xs text-red-500 mt-1 ml-1">{errors.seatingCapacity}</p>}
+                    <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            name="latitude"
+                            value={formData.latitude}
+                            onChange={handleInputChange}
+                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.latitude ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                                } dark:text-white`}
+                            placeholder="9.0192"
+                        />
+                    </div>
+                    {errors.latitude && <p className="text-xs text-red-500 mt-1 ml-1">{errors.latitude}</p>}
                 </div>
 
                 <div>
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Screen Types Available
+                        Longitude <span className="text-red-500">*</span>
                     </label>
-                    <select
-                        multiple
-                        value={formData.screenTypes || []}
-                        onChange={(e) => {
-                            const options = Array.from(e.target.selectedOptions, option => option.value);
-                            setFormData(prev => ({ ...prev, screenTypes: options }));
-                        }}
-                        className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                        size={3}
-                    >
-                        {screenTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                        ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1.5 ml-1">Hold Ctrl/Cmd to select multiple</p>
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Facilities & Amenities
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {facilitiesList.map((facility, idx) => {
-                        const Icon = facility.icon;
-                        const isChecked = formData.facilities?.includes(facility.name);
-                        return (
-                            <label
-                                key={idx}
-                                className={`flex items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${isChecked
-                                    ? 'border-teal-500 bg-gradient-to-r from-teal-50 to-teal-100 dark:from-teal-900/20 dark:to-teal-900/10'
-                                    : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                                    }`}
-                            >
-                                <input
-                                    type="checkbox"
-                                    value={facility.name}
-                                    checked={isChecked}
-                                    onChange={handleCheckboxChange}
-                                    className="hidden"
-                                />
-                                <Icon className={`h-4 w-4 ${isChecked ? 'text-teal-600' : 'text-gray-400'}`} />
-                                <span className="text-sm text-gray-700 dark:text-gray-300">{facility.name}</span>
-                            </label>
-                        );
-                    })}
-                </div>
-            </div>
-
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                    Operating Hours
-                </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
-                        <div key={day} className="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-800/30 rounded-xl">
-                            <span className="w-24 text-sm font-medium text-gray-600 dark:text-gray-400">{day}</span>
-                            <input
-                                type="time"
-                                name={`hours_${day}_open`}
-                                value={formData.hours?.[`${day}_open`] || ""}
-                                onChange={handleInputChange}
-                                className="px-3 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white"
-                            />
-                            <span className="text-gray-500">to</span>
-                            <input
-                                type="time"
-                                name={`hours_${day}_close`}
-                                value={formData.hours?.[`${day}_close`] || ""}
-                                onChange={handleInputChange}
-                                className="px-3 py-2 border-2 border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white"
-                            />
-                        </div>
-                    ))}
+                    <div className="relative">
+                        <Compass className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            name="longitude"
+                            value={formData.longitude}
+                            onChange={handleInputChange}
+                            className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all ${errors.longitude ? 'border-red-500 bg-red-50 dark:bg-red-900/10' : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 dark:bg-gray-800/50'
+                                } dark:text-white`}
+                            placeholder="38.7535"
+                        />
+                    </div>
+                    {errors.longitude && <p className="text-xs text-red-500 mt-1 ml-1">{errors.longitude}</p>}
                 </div>
             </div>
         </div>
@@ -932,236 +946,7 @@ const TheaterDetailsStep: React.FC<TheaterDetailsStepProps> = ({ formData, setFo
 };
 
 // ============================================
-// STEP 4: SHOW & PERFORMANCE INFORMATION
-// ============================================
-
-const ShowInfoStep: React.FC<StepProps> = ({ formData, setFormData }) => {
-    const addShow = () => {
-        const newShow: Show = {
-            id: Date.now(),
-            title: "",
-            genre: "",
-            duration: "",
-            frequency: "Weekly",
-            days: [],
-            startDate: "",
-            endDate: "",
-            ticketPrice: "",
-            expectedAudience: ""
-        };
-        setFormData(prev => ({
-            ...prev,
-            shows: [...(prev.shows || []), newShow]
-        }));
-    };
-
-    const removeShow = (id: number) => {
-        const updatedShows = formData.shows.filter(show => show.id !== id);
-        setFormData(prev => ({ ...prev, shows: updatedShows }));
-    };
-
-    const updateShow = (id: number, field: keyof Show, value: string | string[]) => {
-        const updatedShows = formData.shows.map(show =>
-            show.id === id ? { ...show, [field]: value } : show
-        );
-        setFormData(prev => ({ ...prev, shows: updatedShows }));
-    };
-
-    const performanceGenres = [
-        "Musical", "Play", "Drama", "Comedy", "Tragedy", "Ballet", "Opera",
-        "Concert", "Stand-up Comedy", "Improv", "Children's Theatre", "Experimental"
-    ];
-
-    const frequencies = ["Daily", "Weekly", "Bi-Weekly", "Monthly", "Seasonal", "Special Event"];
-    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
-                        <Ticket className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Show & Performance Information</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Tell us about your upcoming shows</p>
-                    </div>
-                </div>
-                <button
-                    type="button"
-                    onClick={addShow}
-                    className="px-5 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl text-sm font-medium hover:from-teal-700 hover:to-teal-800 transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                >
-                    + Add Show
-                </button>
-            </div>
-
-            {(!formData.shows || formData.shows.length === 0) && (
-                <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700">
-                    <Ticket className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                    <p className="text-gray-500 font-medium">No shows added yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Click "Add Show" to list your upcoming performances</p>
-                </div>
-            )}
-
-            {formData.shows?.map((show, index) => (
-                <div key={show.id} className="border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-6 relative bg-white dark:bg-gray-800/30 hover:shadow-lg transition-all">
-                    <button
-                        type="button"
-                        onClick={() => removeShow(show.id)}
-                        className="absolute top-4 right-4 p-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                    >
-                        <XCircle className="h-5 w-5 text-red-500" />
-                    </button>
-
-                    <div className="flex items-center gap-2 mb-5">
-                        <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                            <span className="text-teal-600 font-bold text-sm">{index + 1}</span>
-                        </div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">Show #{index + 1}</h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                                Show Title <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={show.title}
-                                onChange={(e) => updateShow(show.id, "title", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                                placeholder="Hamilton, The Lion King, etc."
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Genre / Type
-                            </label>
-                            <select
-                                value={show.genre}
-                                onChange={(e) => updateShow(show.id, "genre", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                            >
-                                <option value="">Select genre</option>
-                                {performanceGenres.map(genre => (
-                                    <option key={genre} value={genre}>{genre}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Duration (minutes)
-                            </label>
-                            <input
-                                type="number"
-                                value={show.duration}
-                                onChange={(e) => updateShow(show.id, "duration", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                                placeholder="120"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Performance Frequency
-                            </label>
-                            <select
-                                value={show.frequency}
-                                onChange={(e) => updateShow(show.id, "frequency", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                            >
-                                {frequencies.map(freq => (
-                                    <option key={freq} value={freq}>{freq}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Performance Days
-                            </label>
-                            <div className="flex flex-wrap gap-2 mt-1">
-                                {daysOfWeek.map(day => (
-                                    <label key={day} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-teal-300 cursor-pointer transition-all">
-                                        <input
-                                            type="checkbox"
-                                            checked={show.days?.includes(day)}
-                                            onChange={(e) => {
-                                                const currentDays = show.days || [];
-                                                const newDays = e.target.checked
-                                                    ? [...currentDays, day]
-                                                    : currentDays.filter(d => d !== day);
-                                                updateShow(show.id, "days", newDays);
-                                            }}
-                                            className="h-4 w-4 text-teal-600 rounded"
-                                        />
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">{day.slice(0, 3)}</span>
-                                    </label>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Start Date
-                            </label>
-                            <input
-                                type="date"
-                                value={show.startDate}
-                                onChange={(e) => updateShow(show.id, "startDate", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                End Date
-                            </label>
-                            <input
-                                type="date"
-                                value={show.endDate}
-                                onChange={(e) => updateShow(show.id, "endDate", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Ticket Price Range
-                            </label>
-                            <input
-                                type="text"
-                                value={show.ticketPrice}
-                                onChange={(e) => updateShow(show.id, "ticketPrice", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                                placeholder="$25 - $75"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                                Expected Audience Size
-                            </label>
-                            <input
-                                type="text"
-                                value={show.expectedAudience}
-                                onChange={(e) => updateShow(show.id, "expectedAudience", e.target.value)}
-                                className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all hover:border-teal-300 dark:bg-gray-800/50 dark:text-white"
-                                placeholder="200-300 per show"
-                            />
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-};
-
-// ============================================
-// STEP 5: DOCUMENT UPLOAD
+// STEP 4: DOCUMENT UPLOAD (Removed Show Info)
 // ============================================
 
 interface DocumentUploadStepProps {
@@ -1268,49 +1053,39 @@ const DocumentUploadStep: React.FC<DocumentUploadStepProps> = ({ formData, setFo
 };
 
 // ============================================
-// STEP 6: PRICING PLAN SELECTION
+// STEP 5: PRICING PLAN SELECTION (Moved from Step 6 to Step 5)
 // ============================================
 
 const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors }) => {
     const [selectedModel, setSelectedModel] = useState(formData.pricingModel || null);
-    const [selectedFrequency, setSelectedFrequency] = useState(formData.payoutFrequency || null);
 
     const pricingModels = [
         {
-            id: "commission",
-            name: "Commission Only",
-            description: "Pay only when you sell tickets",
-            icon: DollarSign,
+            id: "per_ticket",
+            name: "Per Ticket Selling",
+            description: "Pay commission on each ticket sold",
+            icon: Ticket,
             rate: "5-10% per ticket",
             bestFor: "New / Low Volume Theaters",
-            gradient: "from-emerald-500 to-teal-500"
+            gradient: "from-emerald-500 to-teal-500",
+            details: "No monthly fees, pay only when you sell"
         },
         {
-            id: "rent",
-            name: "Fixed Rent",
-            description: "Fixed monthly fee, zero commission",
-            icon: Building2,
-            rate: "$500 - $2,000/month",
-            bestFor: "High Volume / Established Theaters",
-            gradient: "from-blue-500 to-indigo-500"
-        },
-        {
-            id: "hybrid",
-            name: "Hybrid Model",
-            description: "Lower rent + reduced commission",
-            icon: TrendingUp,
-            rate: "$200-$1,000/month + 2-5% commission",
-            bestFor: "Medium Volume / Growing Theaters",
-            gradient: "from-purple-500 to-pink-500"
+            id: "contract",
+            name: "Contract Plan",
+            description: "Fixed contract with flexible terms",
+            icon: Calendar,
+            rate: "Varies by contract length",
+            bestFor: "Established Theaters with consistent sales",
+            gradient: "from-blue-500 to-indigo-500",
+            details: "Choose monthly, quarterly, or yearly contract"
         }
     ];
 
-    const payoutFrequencies = [
-        { id: "weekly", name: "Weekly", icon: Calendar, payout: "Every Monday", commission: "8%", holdback: "5% / 30 days" },
-        { id: "biweekly", name: "Bi-Weekly", icon: CalendarDays, payout: "1st & 15th", commission: "7.5%", holdback: "6% / 35 days" },
-        { id: "monthly", name: "Monthly", icon: Clock, payout: "5th of month", commission: "7%", holdback: "7% / 40 days" },
-        { id: "quarterly", name: "Quarterly", icon: Award, payout: "Jan/Apr/Jul/Oct", commission: "6%", holdback: "8% / 45 days" },
-        { id: "yearly", name: "Yearly", icon: Star, payout: "January 15th", commission: "5%", holdback: "10% / 60 days" }
+    const contractTypes = [
+        { id: "monthly", name: "Monthly Contract", icon: Calendar, price: "$299/month", discount: "0%", features: ["Month-to-month", "Cancel anytime", "Standard support"] },
+        { id: "quarterly", name: "Quarterly Contract", icon: Award, price: "$249/month", discount: "Save 15%", features: ["3-month term", "Priority support", "Featured listing"] },
+        { id: "yearly", name: "Yearly Contract", icon: Star, price: "$199/month", discount: "Save 33% (2 months free)", features: ["12-month term", "Premium support", "Top featured listing", "Marketing boost"] }
     ];
 
     return (
@@ -1320,8 +1095,8 @@ const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors })
                     <Wallet className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pricing & Payout Plan</h2>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Choose the plan that fits your business</p>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Pricing Plan</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Choose your preferred payment model</p>
                 </div>
             </div>
 
@@ -1329,7 +1104,7 @@ const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors })
                 <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                     Select Pricing Model <span className="text-red-500">*</span>
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {pricingModels.map((model) => {
                         const Icon = model.icon;
                         const isSelected = selectedModel === model.id;
@@ -1360,6 +1135,9 @@ const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors })
                                     {model.rate}
                                 </p>
                                 <p className={`text-xs mt-1 ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
+                                    {model.details}
+                                </p>
+                                <p className={`text-xs mt-2 ${isSelected ? 'text-white/80' : 'text-gray-400'}`}>
                                     Best for: {model.bestFor}
                                 </p>
                             </motion.div>
@@ -1369,78 +1147,53 @@ const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors })
                 {errors.pricingModel && <p className="text-xs text-red-500 mt-2">{errors.pricingModel}</p>}
             </div>
 
-            {selectedModel && (
+            {selectedModel === "contract" && (
                 <div className="mt-6">
                     <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        Select Payout Frequency <span className="text-red-500">*</span>
+                        Select Contract Type <span className="text-red-500">*</span>
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {payoutFrequencies.map((freq) => {
-                            const Icon = freq.icon;
-                            const isSelected = selectedFrequency === freq.id;
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {contractTypes.map((contract) => {
+                            const Icon = contract.icon;
+                            const isSelected = formData.contractType === contract.id;
                             return (
                                 <div
-                                    key={freq.id}
-                                    className={`cursor-pointer rounded-xl border-2 p-4 transition-all ${isSelected
-                                        ? 'border-teal-500 bg-teal-50 dark:bg-teal-900/20 shadow-md'
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                                    key={contract.id}
+                                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected
+                                        ? 'border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg'
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md'
                                         }`}
-                                    onClick={() => {
-                                        setSelectedFrequency(freq.id);
-                                        setFormData(prev => ({ ...prev, payoutFrequency: freq.id }));
-                                    }}
+                                    onClick={() => setFormData(prev => ({ ...prev, contractType: contract.id }))}
                                 >
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Icon className={`h-4 w-4 ${isSelected ? 'text-teal-600' : 'text-gray-400'}`} />
-                                        <span className={`font-semibold ${isSelected ? 'text-teal-600' : 'text-gray-900 dark:text-white'}`}>
-                                            {freq.name}
-                                        </span>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className={`p-2 rounded-xl ${isSelected ? 'bg-teal-100 dark:bg-teal-900/30' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                                            <Icon className={`h-5 w-5 ${isSelected ? 'text-teal-600' : 'text-gray-500'}`} />
+                                        </div>
+                                        {contract.discount !== "0%" && (
+                                            <span className="text-xs font-bold text-green-600 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                                                {contract.discount}
+                                            </span>
+                                        )}
                                     </div>
-                                    <p className="text-xs text-gray-500">Payout: {freq.payout}</p>
-                                    <p className="text-xs text-gray-500">Commission: {freq.commission}</p>
-                                    <p className="text-xs text-gray-400">Holdback: {freq.holdback}</p>
+                                    <h4 className={`font-bold ${isSelected ? 'text-teal-600' : 'text-gray-900 dark:text-white'}`}>
+                                        {contract.name}
+                                    </h4>
+                                    <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
+                                        {contract.price}
+                                    </p>
+                                    <div className="mt-3 space-y-1">
+                                        {contract.features.map((feature, idx) => (
+                                            <p key={idx} className="text-xs text-gray-500 flex items-center gap-1">
+                                                <CheckCircle className="h-3 w-3 text-green-500" />
+                                                {feature}
+                                            </p>
+                                        ))}
+                                    </div>
                                 </div>
                             );
                         })}
                     </div>
-                    {errors.payoutFrequency && <p className="text-xs text-red-500 mt-2">{errors.payoutFrequency}</p>}
-                </div>
-            )}
-
-            {selectedModel === "rent" && (
-                <div className="mt-6">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                        Select Rent Plan <span className="text-red-500">*</span>
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                            { name: "Monthly", fee: "$800/month", savings: "0%", bestFor: "Standard", gradient: "from-gray-500 to-gray-600" },
-                            { name: "Quarterly", fee: "$2,100/quarter", savings: "12.5%", bestFor: "Better value", gradient: "from-teal-500 to-emerald-500" },
-                            { name: "Yearly", fee: "$7,200/year", savings: "25% (2 months free)", bestFor: "Best value", gradient: "from-purple-500 to-pink-500" }
-                        ].map((plan, idx) => (
-                            <div
-                                key={idx}
-                                className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${formData.rentPlan === plan.name
-                                    ? `border-teal-500 bg-gradient-to-br ${plan.gradient} bg-opacity-10 shadow-lg`
-                                    : 'border-gray-200 dark:border-gray-700 hover:border-teal-300'
-                                    }`}
-                                onClick={() => setFormData(prev => ({ ...prev, rentPlan: plan.name }))}
-                            >
-                                <h4 className={`font-bold text-lg ${formData.rentPlan === plan.name ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                                    {plan.name}
-                                </h4>
-                                <p className={`text-2xl font-bold mt-2 ${formData.rentPlan === plan.name ? 'text-white' : 'text-teal-600'}`}>
-                                    {plan.fee}
-                                </p>
-                                <p className={`text-sm mt-1 ${formData.rentPlan === plan.name ? 'text-white/90' : 'text-green-600'}`}>
-                                    Save {plan.savings}
-                                </p>
-                                <p className={`text-xs mt-2 ${formData.rentPlan === plan.name ? 'text-white/80' : 'text-gray-500'}`}>
-                                    Best for: {plan.bestFor}
-                                </p>
-                            </div>
-                        ))}
-                    </div>
+                    {errors.contractType && <p className="text-xs text-red-500 mt-2">{errors.contractType}</p>}
                 </div>
             )}
         </div>
@@ -1448,7 +1201,7 @@ const PricingPlanStep: React.FC<StepProps> = ({ formData, setFormData, errors })
 };
 
 // ============================================
-// STEP 7: TERMS & AGREEMENT
+// STEP 6: TERMS & AGREEMENT (Moved from Step 7 to Step 6)
 // ============================================
 
 interface TermsStepProps {
@@ -1496,10 +1249,11 @@ const TermsStep: React.FC<TermsStepProps> = ({
                         <li>All information provided is accurate and complete</li>
                         <li>You will comply with all local laws and regulations</li>
                         <li>Commission rates will apply as per selected pricing plan</li>
+                        <li>For per-ticket model: 5-10% commission on each ticket sold</li>
+                        <li>For contract model: Fixed monthly/quarterly/yearly fee applies</li>
                         <li>Holdback policy applies for refunds and chargebacks</li>
                         <li>TheaterHUB reserves the right to verify submitted documents</li>
                         <li>You are authorized to represent the business</li>
-                        <li>You agree to the payout terms selected</li>
                         <li>You will maintain accurate show schedules and pricing</li>
                         <li>You will honor all ticket sales processed through TheaterHUB</li>
                     </ul>
@@ -1509,17 +1263,17 @@ const TermsStep: React.FC<TermsStepProps> = ({
                             <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
                             <div>
                                 <p className="text-amber-800 dark:text-amber-300 text-sm">
-                                    <strong>Important:</strong> Your registration will be reviewed by our team within 2-3 business days.
-                                    You will receive email confirmation once approved. Until approval, you will not be able to list shows or sell tickets.
+                                    <strong>Important:</strong> Your registration will be reviewed by our admin team within 2-3 business days.
+                                    After verification, you will receive an OTP to complete the registration process.
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/10 rounded-xl border border-red-200 dark:border-red-800">
+                    <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                         <div className="flex items-start gap-2">
-                            <XCircle className="h-4 w-4 text-red-600 mt-0.5" />
-                            <p className="text-red-800 dark:text-red-300 text-sm">
+                            <AlertCircle className="h-4 w-4 text-gray-600 mt-0.5" />
+                            <p className="text-gray-800 dark:text-gray-300 text-sm">
                                 <strong>NO REFUND POLICY:</strong> The registration fee of $299 is <span className="font-bold underline">NON-REFUNDABLE</span> under any circumstances, including but not limited to application rejection, withdrawal, or any other reason.
                             </p>
                         </div>
@@ -1573,10 +1327,10 @@ const TermsStep: React.FC<TermsStepProps> = ({
                         type="checkbox"
                         checked={agreedToNoRefund}
                         onChange={(e) => setAgreedToNoRefund(e.target.checked)}
-                        className="mt-1 h-5 w-5 text-red-600 rounded border-red-300 focus:ring-red-500"
+                        className="mt-1 h-5 w-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
                     />
                     <div>
-                        <p className="text-sm font-semibold text-red-600 dark:text-red-400 group-hover:text-red-700 transition">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-teal-600 transition">
                             I understand that the registration fee of $299 is <span className="underline">NON-REFUNDABLE</span>
                         </p>
                         <p className="text-xs text-gray-500 mt-0.5">
@@ -1605,6 +1359,7 @@ const TheaterRegistration: React.FC = () => {
     const [errors, setErrors] = useState<Errors>({});
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     const [formData, setFormData] = useState<FormData>({
         businessName: "",
@@ -1626,20 +1381,24 @@ const TheaterRegistration: React.FC = () => {
         emergencyPhone: "",
         emergencyRelation: "",
         theaterName: "",
+        theaterLogo: null,
+        theaterDescription: "",
+        theaterEmail: "",
+        theaterPhone: "",
+        totalHalls: "",
+        totalSeats: "",
+        services: [],
+        latitude: "",
+        longitude: "",
         city: "",
         region: "",
         address: "",
-        totalScreens: "",
-        seatingCapacity: "",
         screenTypes: [],
-        facilities: [],
-        hours: {},
-        shows: [],
         documents: {},
         pricingModel: "",
+        contractType: "",
         payoutFrequency: "",
         expeditedEnabled: false,
-        rentPlan: "",
         acceptMarketing: false,
         paymentCompleted: false,
         paymentIntentId: ""
@@ -1647,20 +1406,7 @@ const TheaterRegistration: React.FC = () => {
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
-        if (name.startsWith("hours_")) {
-            const [, day, period] = name.split("_");
-            setFormData(prev => ({
-                ...prev,
-                hours: {
-                    ...prev.hours,
-                    [`${day}_${period}`]: value
-                }
-            }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
-        }
-
+        setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: "" }));
     };
 
@@ -1669,13 +1415,30 @@ const TheaterRegistration: React.FC = () => {
         if (checked) {
             setFormData(prev => ({
                 ...prev,
-                facilities: [...(prev.facilities || []), value]
+                services: [...(prev.services || []), value]
             }));
         } else {
             setFormData(prev => ({
                 ...prev,
-                facilities: (prev.facilities || []).filter(f => f !== value)
+                services: (prev.services || []).filter(f => f !== value)
             }));
+        }
+    };
+
+    const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) {
+                setErrors(prev => ({ ...prev, theaterLogo: "Logo must be less than 2MB" }));
+                return;
+            }
+            const validTypes = ['image/jpeg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                setErrors(prev => ({ ...prev, theaterLogo: "Only JPEG or PNG files are allowed" }));
+                return;
+            }
+            setFormData(prev => ({ ...prev, theaterLogo: file }));
+            setErrors(prev => ({ ...prev, theaterLogo: "" }));
         }
     };
 
@@ -1723,23 +1486,26 @@ const TheaterRegistration: React.FC = () => {
             if (!formData.emergencyPhone.trim()) newErrors.emergencyPhone = "Emergency phone is required";
         } else if (step === 3) {
             if (!formData.theaterName.trim()) newErrors.theaterName = "Theater name is required";
+            if (!formData.theaterDescription.trim()) newErrors.theaterDescription = "Theater description is required";
+            if (!formData.theaterEmail.trim() || !formData.theaterEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) newErrors.theaterEmail = "Valid theater email is required";
+            if (!formData.theaterPhone.trim()) newErrors.theaterPhone = "Theater phone is required";
+            if (!formData.totalHalls || parseInt(formData.totalHalls) < 1) newErrors.totalHalls = "Valid number of halls is required";
+            if (!formData.totalSeats || parseInt(formData.totalSeats) < 1) newErrors.totalSeats = "Valid seating capacity is required";
             if (!formData.city) newErrors.city = "City is required";
             if (!formData.region) newErrors.region = "Region is required";
             if (!formData.address.trim()) newErrors.address = "Address is required";
-            if (!formData.totalScreens || parseInt(formData.totalScreens) < 1) newErrors.totalScreens = "Valid number of screens is required";
-            if (!formData.seatingCapacity || parseInt(formData.seatingCapacity) < 1) newErrors.seatingCapacity = "Valid seating capacity is required";
+            if (!formData.latitude.trim()) newErrors.latitude = "Latitude is required";
+            if (!formData.longitude.trim()) newErrors.longitude = "Longitude is required";
         } else if (step === 4) {
-            if (!formData.shows || formData.shows.length === 0) {
-                newErrors.shows = "At least one show is required";
-            }
-        } else if (step === 5) {
             if (!formData.documents.license) newErrors.license = "Business license is required";
             if (!formData.documents.taxCertificate) newErrors.taxCertificate = "Tax certificate is required";
             if (!formData.documents.ownerId) newErrors.ownerId = "Owner ID is required";
-        } else if (step === 6) {
+        } else if (step === 5) {
             if (!formData.pricingModel) newErrors.pricingModel = "Please select a pricing model";
-            if (!formData.payoutFrequency) newErrors.payoutFrequency = "Please select payout frequency";
-        } else if (step === 7) {
+            if (formData.pricingModel === "contract" && !formData.contractType) {
+                newErrors.contractType = "Please select a contract type";
+            }
+        } else if (step === 6) {
             if (!agreedToTerms) newErrors.terms = "You must agree to the accuracy of information";
             if (!agreedToNoRefund) newErrors.noRefund = "You must acknowledge the no-refund policy";
         }
@@ -1782,10 +1548,9 @@ const TheaterRegistration: React.FC = () => {
         { number: 1, title: "Business Info", component: BusinessInfoStep },
         { number: 2, title: "Contact Info", component: ContactInfoStep },
         { number: 3, title: "Theater Details", component: TheaterDetailsStep },
-        { number: 4, title: "Show Info", component: ShowInfoStep },
-        { number: 5, title: "Documents", component: DocumentUploadStep },
-        { number: 6, title: "Pricing Plan", component: PricingPlanStep },
-        { number: 7, title: "Terms", component: TermsStep }
+        { number: 4, title: "Documents", component: DocumentUploadStep },
+        { number: 5, title: "Pricing Plan", component: PricingPlanStep },
+        { number: 6, title: "Terms", component: TermsStep }
     ];
 
     const CurrentStepComponent = steps[step - 1].component;
@@ -1808,19 +1573,25 @@ const TheaterRegistration: React.FC = () => {
                         <CheckCircle className="h-10 w-10 text-white" />
                     </motion.div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        Registration & Payment Submitted!
+                        Registration Submitted for Review!
                     </h2>
                     <p className="text-gray-600 dark:text-gray-400 mb-6">
-                        Thank you for registering with TheaterHUB. Your payment has been processed and your application is being reviewed by our team. You'll receive an email within 2-3 business days.
+                        Thank you for registering with TheaterHUB. Your payment has been processed and your application has been sent to our admin team for review. You'll receive an OTP via email within 2-3 business days after verification.
                     </p>
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-4 mb-6 border border-gray-200 dark:border-gray-700">
                         <p className="text-sm text-gray-500 dark:text-gray-400">Application ID</p>
                         <p className="text-xl font-mono font-bold text-teal-600">TH-{Math.random().toString(36).substring(2, 10).toUpperCase()}</p>
                         <p className="text-xs text-gray-400 mt-2">Payment ID: {formData.paymentIntentId}</p>
                     </div>
-                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border-2 border-red-200 dark:border-red-800">
-                        <p className="text-sm text-red-600 dark:text-red-400 flex items-center justify-center gap-2">
-                            <XCircle className="h-4 w-4" />
+                    <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border-2 border-blue-200 dark:border-blue-800">
+                        <p className="text-sm text-blue-600 dark:text-blue-400 flex items-center justify-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            <span className="font-bold">Next Steps:</span> Admin will verify your information and send OTP for contract signing
+                        </p>
+                    </div>
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center justify-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
                             <span className="font-bold">IMPORTANT:</span> Registration fees are <span className="underline">NON-REFUNDABLE</span>
                         </p>
                     </div>
@@ -1853,7 +1624,7 @@ const TheaterRegistration: React.FC = () => {
                         transition={{ type: "spring", stiffness: 200 }}
                         className="inline-flex items-center justify-center h-20 w-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl mb-4 shadow-lg"
                     >
-                        <Building2 className="h-10 w-10 text-white" />
+                        <Theater className="h-10 w-10 text-white" />
                     </motion.div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 dark:from-teal-400 dark:to-teal-600 bg-clip-text text-transparent">
                         Theater Owner Registration
@@ -1861,9 +1632,9 @@ const TheaterRegistration: React.FC = () => {
                     <p className="text-gray-600 dark:text-gray-400 mt-2">
                         Join TheaterHUB and reach thousands of theater lovers
                     </p>
-                    <div className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-50 dark:bg-red-900/20 rounded-full border-2 border-red-200 dark:border-red-800">
-                        <Lock className="h-3 w-3 text-red-600" />
-                        <span className="text-xs text-red-600 dark:text-red-400 font-bold">NON-REFUNDABLE registration fee: $299</span>
+                    <div className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-gray-100 dark:bg-gray-800 rounded-full border-2 border-gray-200 dark:border-gray-700">
+                        <Lock className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                        <span className="text-xs text-gray-600 dark:text-gray-400 font-bold">NON-REFUNDABLE registration fee: $299</span>
                     </div>
                 </div>
 
@@ -1914,7 +1685,7 @@ const TheaterRegistration: React.FC = () => {
                         transition={{ duration: 0.3 }}
                         className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700"
                     >
-                        {step === 7 ? (
+                        {step === 6 ? (
                             <CurrentStepComponent
                                 agreedToTerms={agreedToTerms}
                                 setAgreedToTerms={setAgreedToTerms}
@@ -1926,7 +1697,7 @@ const TheaterRegistration: React.FC = () => {
                                 setFormData={setFormData}
                                 errors={errors}
                             />
-                        ) : step === 5 ? (
+                        ) : step === 4 ? (
                             <CurrentStepComponent
                                 formData={formData}
                                 setFormData={setFormData}
@@ -1941,6 +1712,8 @@ const TheaterRegistration: React.FC = () => {
                                 errors={errors}
                                 handleInputChange={handleInputChange}
                                 handleCheckboxChange={handleCheckboxChange}
+                                handleLogoUpload={handleLogoUpload}
+                                logoInputRef={logoInputRef}
                             />
                         ) : (
                             <CurrentStepComponent
@@ -1964,7 +1737,7 @@ const TheaterRegistration: React.FC = () => {
                                 </motion.button>
                             )}
 
-                            {step < 7 ? (
+                            {step < 6 ? (
                                 <motion.button
                                     whileHover={{ x: 2 }}
                                     whileTap={{ scale: 0.98 }}
@@ -1983,7 +1756,7 @@ const TheaterRegistration: React.FC = () => {
                                     className={`ml-auto px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 shadow-md ${isSubmitting || !agreedToTerms || !agreedToNoRefund
                                         ? 'bg-gray-400 cursor-not-allowed shadow-none'
                                         : !formData.paymentCompleted
-                                            ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white hover:shadow-lg'
+                                            ? 'bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white hover:shadow-lg'
                                             : 'bg-gradient-to-r from-teal-600 to-purple-600 hover:from-teal-700 hover:to-purple-700 text-white hover:shadow-lg'
                                         }`}
                                 >
@@ -2002,7 +1775,7 @@ const TheaterRegistration: React.FC = () => {
                                             ) : (
                                                 <>
                                                     <Send className="h-4 w-4" />
-                                                    Submit Registration
+                                                    Submit for Admin Review
                                                 </>
                                             )}
                                         </>

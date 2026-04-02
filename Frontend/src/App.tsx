@@ -234,11 +234,13 @@ import Login from "./components/auth/Login";
 import ForgotPassword from "./components/auth/Forgotpassword";
 import DashboardLayout from "./components/DashboardLayout/DashboardLayout";
 import HomePage from './pages/Home';
-import Blogs from "./pages/Blog"
+import Blogs from "./pages/Blog";
+import Gallery from "./pages/Gallery";
 import About from "./pages/About";
 import Help from "./pages/Help";
 import Contact from "./pages/Contact";
 import TheaterRegistration from './pages/TheaterRegistration';
+import BookingConfirmation from './pages/Legal/BookingConfirmation';
 import TermsOfService from './pages/Legal/TermsOfService';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import CookiePolicy from './pages/Legal/CookiePolicy';
@@ -328,10 +330,13 @@ function App() {
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="blogs" element={<Blogs />} />
+        <Route path="gallery" element={<Gallery />} />
         <Route path="about" element={<About />} />
         <Route path="help" element={<Help />} />
         <Route path="contact" element={<Contact />} />
         <Route path="account" element={<TheaterRegistration />} />
+        {/* for footer information  */}
+        <Route path="booking" element={<BookingConfirmation />} />
         <Route path="terms" element={<TermsOfService />} />
         <Route path="privacy" element={<PrivacyPolicy />} />
         <Route path="cookies" element={<CookiePolicy />} />

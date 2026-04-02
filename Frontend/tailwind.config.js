@@ -14,7 +14,7 @@ export default {
         success: '#22c55e',
         info: '#06b6d4',
         warning: '#facc15',
-        error: '#ef4444',
+        error: '#ef444dff',
 
         // 🎨 Background Variants
         'success-bg': '#dcfce7',

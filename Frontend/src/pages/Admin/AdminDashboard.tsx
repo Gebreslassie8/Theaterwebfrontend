@@ -266,7 +266,7 @@ const AdminDashboard: React.FC = () => {
             initial="hidden"
             animate="visible"
             variants={containerVariants}
-            className="space-y-8 lg:ml-4"
+            className="space-y-8 lg:ml-64"
         >
             {/* Welcome Header */}
             <motion.div
