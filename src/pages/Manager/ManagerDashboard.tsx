@@ -243,7 +243,7 @@ const ManagerDashboard: React.FC = () => {
             {/* Welcome Header */}
             <motion.div
                 variants={itemVariants}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 p-8 text-white"
+                className="lg:col-span-2 bg-gradient-to-br from-deepTeal to-deepBlue rounded-2xl p-6 text-white shadow-xl"
             >
                 <div className="absolute inset-0">
                     {[...Array(20)].map((_, i) => (

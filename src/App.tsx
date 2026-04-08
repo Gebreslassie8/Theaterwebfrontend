@@ -247,9 +247,19 @@ import CookiePolicy from './pages/Legal/CookiePolicy';
 // admin Dashboard pages
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import UserManagement from './pages/Admin/users/UserManagement';
-import AddNewUser from './pages/Admin/users/AddNewUser';
+// import AddNewUser from './pages/Admin/users/AddUser';
 import DeactivatedUsers from './pages/Admin/users/DeactivatedUsers';
 import ActivityLogs from './pages/Admin/users/ActivityLogs';
+import WalletBalance from './pages/Admin/wallet/WalletBalance';
+import TransactionHistory from './pages/Admin/wallet/TransactionHistory';
+import DepositFunds from './pages/Admin/wallet/DepositFunds';
+import WithdrawFunds from './pages/Admin/wallet/WithdrawFunds';
+import PaymentMethods from './pages/Admin/wallet/PaymentMethods';
+import BankAccounts from './pages/Admin/wallet/BankAccounts';
+import Commission from './pages/Admin/wallet/Commission';
+import FinancialReports from './pages/Admin/financial/FinancialReports';
+import RegistrationRequests from './pages/Admin/registration/RegistrationRequests';
+
 // Add this import
 import RolesAndPermissions from './pages/Admin/users/RolesAndPermissions';
 // Owner Dashboard pages
@@ -375,7 +385,6 @@ function App() {
         path="/admin"
 
         // Add these routes inside admin routes
-
         element={
           <ProtectedRoute allowedRoles={['admin']}>
             <DashboardLayout />
@@ -386,20 +395,36 @@ function App() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="users/all" element={<UserManagement />} />
-        <Route path="users/add" element={< AddNewUser />} />
+        {/* <Route path="users/add" element={< AddNewUser />} /> */}
         <Route path="users/roles" element={<RolesAndPermissions />} />
         <Route path="users/deactivated" element={<DeactivatedUsers />} />
         <Route path="users/activity-logs" element={<ActivityLogs />} />
+        {/* for syetem wallete management  */}
         <Route path="wallet" element={<AdminDashboard />} />
-        <Route path="wallet/balance" element={<AdminDashboard />} />
-        <Route path="wallet/transactions" element={<AdminDashboard />} />
-        <Route path="financial" element={<AdminDashboard />} />
-        <Route path="financial/revenue" element={<AdminDashboard />} />
-        <Route path="theater-accounts" element={<AdminDashboard />} />
-        <Route path="registration" element={<AdminDashboard />} />
+        <Route path="wallet/balance" element={<WalletBalance />} />
+        <Route path="wallet/transactions" element={<TransactionHistory />} />
+        <Route path="wallet/deposit" element={<DepositFunds />} />
+        <Route path="wallet/withdraw" element={<WithdrawFunds />} />
+        <Route path="wallet/payment-methods" element={<PaymentMethods />} />
+        <Route path="wallet/bank-accounts" element={<BankAccounts />} />
+        <Route path="wallet/commission" element={<Commission />} />
+        <Route path="financial/revenue" element={<FinancialReports />} />
+      // Add all routes for registration
+        <Route path="registration" element={<RegistrationRequests />} />
+        <Route path="theater-accounts/pending" element={<RegistrationRequests />} />
+        <Route path="registration/approve" element={<RegistrationRequests />} />
+        <Route path="registration/reject" element={<RegistrationRequests />} />
+        <Route path="registration/documents" element={<RegistrationRequests />} />
+
         <Route path="monitoring" element={<AdminDashboard />} />
         <Route path="security" element={<AdminDashboard />} />
       </Route>
+
+
+
+
+
+
 
       {/* Theater Owner Routes */}
       <Route

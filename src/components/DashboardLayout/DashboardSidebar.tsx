@@ -117,7 +117,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             name: "Manage Users", to: "/admin/users", icon: UsersRound, color: "text-purple-500",
             subItems: [
               { name: "All Users", to: "/admin/users", icon: Users },
-              { name: "Add New User", to: "/admin/users/add", icon: UserPlusIcon },
               { name: "Roles & Permissions", to: "/admin/users/roles", icon: UserCog },
               { name: "Deactivated Users", to: "/admin/users/deactivated", icon: UserX },
               { name: "Activity Logs", to: "/admin/users/activity-logs", icon: Activity }
@@ -139,7 +138,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               { name: "Deposit Funds", to: "/admin/wallet/deposit", icon: Banknote },
               { name: "Withdraw Funds", to: "/admin/wallet/withdraw", icon: TrendingDown },
               { name: "Payment Methods", to: "/admin/wallet/payment-methods", icon: CreditCardIcon },
-              { name: "Bank Accounts", to: "/admin/wallet/bank-accounts", icon: Landmark }
+              { name: "Bank Accounts", to: "/admin/wallet/bank-accounts", icon: Landmark },
+              { name: "Commission & Fees System", to: "/admin/wallet/Commission", icon: Percent }
             ]
           },
           {

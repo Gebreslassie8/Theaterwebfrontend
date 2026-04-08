@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+// to push exisitng code 
+git add .
+git commit -m "Add full frontend project"
+git push
