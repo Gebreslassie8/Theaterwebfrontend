@@ -255,6 +255,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             subItems: [
               { name: "Daily Schedule", to: "/manager/events/daily", icon: Calendar },
               { name: "Create Event", to: "/manager/events/create", icon: PlusCircle }
+              
             ]
           },
           {
