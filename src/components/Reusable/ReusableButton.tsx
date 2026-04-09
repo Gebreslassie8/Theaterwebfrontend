@@ -1,12 +1,12 @@
-// src/components/Reusable/ReusableButton.tsx
 import React, { useState } from 'react';
 import * as LucideIcons from 'lucide-react';
 import ButtonStyle from './ButtonStyle';
 
 interface ReusableButtonProps {
-    label: string;
+    label?: string; // ✅ allow optional (for icon-only buttons)
+    children?: React.ReactNode; // ✅ support children (important fix)
     icon?: keyof typeof LucideIcons;
-    onClick?: () => void;
+    onClick?: (e?: React.MouseEvent<HTMLButtonElement>) => void; // ✅ fix typing
     className?: string;
     style?: React.CSSProperties;
     type?: 'button' | 'submit' | 'reset';
@@ -16,6 +16,7 @@ interface ReusableButtonProps {
 
 const ReusableButton: React.FC<ReusableButtonProps> = ({
     label,
+    children,
     icon,
     onClick,
     className = "",
@@ -39,17 +40,24 @@ const ReusableButton: React.FC<ReusableButtonProps> = ({
 
     return (
         <button
-            type={type}
-            onClick={onClick}
+            type={type} // ✅ critical for submit
+            onClick={onClick} // ✅ ensures click works
             disabled={disabled}
-            className={`${ButtonStyle.base} ${className} flex items-center justify-center space-x-0.5 p-2 md:p-4 lg:p-6`}
+            className={`${ButtonStyle.base} ${className} flex items-center justify-center space-x-1 p-2 md:p-4 lg:p-6`}
             style={buttonStyle}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             form={formId}
         >
             {IconComponent && <IconComponent size={20} />}
-            <span className="text-sm md:text-base lg:text-lg ml-2">{label}</span>
+
+            {/* ✅ FIX: support BOTH label and children */}
+            {label && (
+                <span className="text-sm md:text-base lg:text-lg ml-2">
+                    {label}
+                </span>
+            )}
+            {children}
         </button>
     );
 };
