@@ -2,7 +2,15 @@
 import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
-import CustomerDashboard from './CustomerDashboard';
+import CustomerDashboard from './Dashboard/CustomerDashboard';
+import CustomerWallet from './Wallet/CustomerWallet';
+import CustomerWalletBalance from './Wallet/CustomerWalletBalance';
+import CustomerWalletAdd from './Wallet/CustomerWalletAdd';
+import CustomerWalletTransactions from './Wallet/CustomerWalletTransactions';
+import CustomerMyTickets from './Tickets/CustomerMyTickets';
+import CustomerMyTicketsDownload from './Tickets/CustomerMyTicketsDownload';
+import CustomerMyTicketsQr from './Tickets/CustomerMyTicketsQr';
+import CustomerSettings from './Settings/CustomerSettings';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -23,7 +31,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   return <>{children}</>;
 };
 
-// Create the customer route element
+// Create the customer route element (matching manager pattern)
 export const customerRouteElement = (
   <Route
     path="/customer"
@@ -35,13 +43,13 @@ export const customerRouteElement = (
   >
     <Route index element={<Navigate to="/customer/dashboard" replace />} />
     <Route path="dashboard" element={<CustomerDashboard />} />
-    <Route path="wallet" element={<CustomerDashboard />} />
-    <Route path="wallet/balance" element={<CustomerDashboard />} />
-    <Route path="wallet/add" element={<CustomerDashboard />} />
-    <Route path="wallet/transactions" element={<CustomerDashboard />} />
-    <Route path="my-tickets" element={<CustomerDashboard />} />
-    <Route path="my-tickets/download" element={<CustomerDashboard />} />
-    <Route path="my-tickets/qr" element={<CustomerDashboard />} />
-    <Route path="settings" element={<CustomerDashboard />} />
+    <Route path="wallet" element={<CustomerWallet />} />
+    <Route path="wallet/balance" element={<CustomerWalletBalance />} />
+    <Route path="wallet/add" element={<CustomerWalletAdd />} />
+    <Route path="wallet/transactions" element={<CustomerWalletTransactions />} />
+    <Route path="my-tickets" element={<CustomerMyTickets />} />
+    <Route path="my-tickets/download" element={<CustomerMyTicketsDownload />} />
+    <Route path="my-tickets/qr" element={<CustomerMyTicketsQr />} />
+    <Route path="settings" element={<CustomerSettings />} />
   </Route>
 );

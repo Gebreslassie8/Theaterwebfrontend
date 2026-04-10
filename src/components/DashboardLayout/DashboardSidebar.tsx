@@ -282,37 +282,37 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== CUSTOMER ONLY ====================
       {
-        name: "Customer",
-        icon: Users,
-        color: "from-rose-500 to-pink-500",
-        roles: ["customer"],
-        items: [
-          { name: "Overview", to: "/", icon: Home, color: "text-rose-500" },
-          {
-            name: "Search Events", to: "/search", icon: Search, color: "text-purple-500",
-            subItems: [
-              { name: "By Date", to: "/search/date", icon: Calendar },
-              { name: "By Location", to: "/search/location", icon: MapPin },
-              { name: "By Genre", to: "/search/genre", icon: Film }
-            ]
-          },
-          {
-            name: "My Tickets", to: "/my-tickets", icon: Ticket, color: "text-indigo-500",
-            subItems: [
-              { name: "Download E-Ticket", to: "/my-tickets/download", icon: Download },
-              { name: "QR Code", to: "/my-tickets/qr", icon: QrCode }
-            ]
-          },
-          {
-            name: "My Wallet", to: "/customer/wallet", icon: WalletIcon, color: "text-emerald-500",
-            subItems: [
-              { name: "Balance", to: "/customer/wallet/balance", icon: Coins },
-              { name: "Add Funds", to: "/customer/wallet/add", icon: Banknote },
-              { name: "Transaction History", to: "/customer/wallet/transactions", icon: ReceiptText }
-            ]
-          }
-        ]
-      },
+  name: "Customer",
+  icon: Users,
+  color: "from-rose-500 to-pink-500",
+  roles: ["customer"],
+  items: [
+    { name: "Overview", to: "/customer/dashboard", icon: Home, color: "text-rose-500" },
+    {
+      name: "Search Events", to: "/customer/search", icon: Search, color: "text-purple-500",
+      subItems: [
+        { name: "By Date", to: "/customer/search/date", icon: Calendar },
+        { name: "By Location", to: "/customer/search/location", icon: MapPin },
+        { name: "By Genre", to: "/customer/search/genre", icon: Film }
+      ]
+    },
+    {
+      name: "My Tickets", to: "/customer/my-tickets", icon: Ticket, color: "text-indigo-500",
+      subItems: [
+        { name: "Download E-Ticket", to: "/customer/my-tickets/download", icon: Download },
+        { name: "QR Code", to: "/customer/my-tickets/qr", icon: QrCode }
+      ]
+    },
+    {
+      name: "My Wallet", to: "/customer/wallet", icon: WalletIcon, color: "text-emerald-500",
+      subItems: [
+        { name: "Balance", to: "/customer/wallet/balance", icon: Coins },
+        { name: "Add Funds", to: "/customer/wallet/add", icon: Banknote },
+        { name: "Transaction History", to: "/customer/wallet/transactions", icon: ReceiptText }
+      ]
+    }
+  ]
+},
 
       // ==================== SCANNER ONLY ====================
       {
