@@ -161,7 +161,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           {
             name: "System Monitoring", to: "/admin/monitoring", icon: Activity, color: "text-cyan-500",
             subItems: [
-              { name: "Platform Health", to: "/admin/monitoring/health", icon: Heart },
+              { name: "Platform Health", to: "/admin/monitoring/platform_health", icon: Heart },
               { name: "System Logs", to: "/admin/monitoring/logs", icon: FileText },
               { name: "Performance", to: "/admin/monitoring/performance", icon: BarChart3 }
             ]

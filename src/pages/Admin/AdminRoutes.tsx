@@ -68,8 +68,8 @@ export const adminRouteElement = (
     <Route path="theaters/theaters" element={<TheaterManagement />} />
     <Route path="theaters/Requests" element={<RegistrationRequests />} />
     <Route path="theaters/deactivated" element={<DeactivateTheaters />} />
-    <Route path="/admin/monitoring/health" element={<PlatformHealth />} />
-    <Route path="/admin/monitoring/logs" element={<SystemLogs />} />
-    <Route path="/admin/monitoring/performance" element={<Performance />} />
+    <Route path="monitoring/platform_health" element={<PlatformHealth />} />
+    <Route path="monitoring/logs" element={<SystemLogs />} />
+    <Route path="monitoring/performance" element={<Performance />} />
   </Route>
 );
