@@ -154,7 +154,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             subItems: [
               { name: "All Theaters", to: "/admin/theaters/theaters", icon: Building },
               { name: "Registration Requests", to: "/admin/theaters/Requests", icon: Ban },
-              { name: "View All", to: "/admin/theaters/all", icon: Users },
               { name: "Deactivate Theaters", to: "/admin/theaters/deactivated", icon: Ban }
             ]
           },
@@ -162,19 +161,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           {
             name: "System Monitoring", to: "/admin/monitoring", icon: Activity, color: "text-cyan-500",
             subItems: [
-              { name: "Platform Health", to: "/admin/monitoring/health", icon: Heart },
+              { name: "Platform Health", to: "/admin/monitoring/platform_health", icon: Heart },
               { name: "System Logs", to: "/admin/monitoring/logs", icon: FileText },
               { name: "Performance", to: "/admin/monitoring/performance", icon: BarChart3 }
             ]
           },
-          {
-            name: "Security & Access", to: "/admin/security", icon: ShieldCheck, color: "text-red-500",
-            subItems: [
-              { name: "Role Management", to: "/admin/security/roles", icon: Key },
-              { name: "Permissions", to: "/admin/security/permissions", icon: Lock },
-              { name: "Audit Logs", to: "/admin/security/audit", icon: ClipboardCheck }
-            ]
-          }
         ]
       },
 

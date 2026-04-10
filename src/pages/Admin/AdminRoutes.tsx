@@ -15,7 +15,11 @@ import BankAccounts from './wallet/BankAccounts';
 import Commission from './wallet/Commission';
 import FinancialReports from './financial/FinancialReports';
 import TheaterManagement from './theateres/Theatermanagement';
-
+import RegistrationRequests from './theateres/RegistrationRequests';
+import DeactivateTheaters from './theateres/DeactivateTheaters';
+import PlatformHealth from './monitoring/PlatformHealth';
+import SystemLogs from './monitoring/SystemLogs';
+import Performance from './monitoring/Performance';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
@@ -62,7 +66,10 @@ export const adminRouteElement = (
     <Route path="wallet/commission" element={<Commission />} />
     <Route path="financial/revenue" element={<FinancialReports />} />
     <Route path="theaters/theaters" element={<TheaterManagement />} />
-    <Route path="monitoring" element={<AdminDashboard />} />
-    <Route path="security" element={<AdminDashboard />} />
+    <Route path="theaters/Requests" element={<RegistrationRequests />} />
+    <Route path="theaters/deactivated" element={<DeactivateTheaters />} />
+    <Route path="monitoring/platform_health" element={<PlatformHealth />} />
+    <Route path="monitoring/logs" element={<SystemLogs />} />
+    <Route path="monitoring/performance" element={<Performance />} />
   </Route>
 );
