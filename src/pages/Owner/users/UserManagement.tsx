@@ -10,21 +10,23 @@ import {
     RefreshCw,
     Ban,
     Phone,
+    Calendar,
+    DollarSign,
+    Ticket,
     CheckCircle,
     XCircle,
+    Clock,
     AlertCircle,
     Search,
     TrendingUp,
     Activity,
+    UserMinus,
     UserCheck,
     ShieldCheck,
     Crown,
     Shield,
-    LayoutGrid,
-    ArrowRight,
-    Mail,
-    Lock,
-    Image as ImageIcon
+    XCircle as XCircleIcon,
+    LayoutGrid
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -33,30 +35,37 @@ import AddUser from './AddNewUser';
 import UpdateUser from './UpdateUser';
 import ViewUsers from './ViewUsers';
 
+
 // User Type Definition
 interface User {
     id: number;
-    username: string;
+    name: string;
     email: string;
     phone: string;
-    password: string;
-    image: string;
-    role: 'Admin' | 'Manager' | 'Theater Owner' | 'Salesperson' | 'Scanner' | 'Customer';
-    status: 'Active' | 'Inactive';
+    role: 'Admin' | 'Manager' | 'User' | 'Theater Owner';
+    status: 'Active' | 'Inactive' | 'Pending';
+    joinDate: string;
+    lastActive: string;
+    bookings: number;
+    totalSpent: number;
+    address?: string;
+    department?: string;
+    theater?: string;
+    rating?: number;
 }
 
 // Mock User Data
 const mockUsers: User[] = [
-    { id: 1, username: 'john_admin', email: 'john.doe@example.com', phone: '+251 911 234 567', password: '********', image: 'https://ui-avatars.com/api/?name=John&background=0D9488&color=fff&size=128', role: 'Admin', status: 'Active' },
-    { id: 2, username: 'jane_manager', email: 'jane.smith@example.com', phone: '+251 912 345 678', password: '********', image: 'https://ui-avatars.com/api/?name=Jane&background=0D9488&color=fff&size=128', role: 'Manager', status: 'Active' },
-    { id: 3, username: 'mike_customer', email: 'mike.johnson@example.com', phone: '+251 913 456 789', password: '********', image: 'https://ui-avatars.com/api/?name=Mike&background=0D9488&color=fff&size=128', role: 'Customer', status: 'Active' },
-    { id: 4, username: 'sarah_owner', email: 'sarah.williams@example.com', phone: '+251 914 567 890', password: '********', image: 'https://ui-avatars.com/api/?name=Sarah&background=0D9488&color=fff&size=128', role: 'Theater Owner', status: 'Active' },
-    { id: 5, username: 'david_user', email: 'david.brown@example.com', phone: '+251 915 678 901', password: '********', image: 'https://ui-avatars.com/api/?name=David&background=0D9488&color=fff&size=128', role: 'Customer', status: 'Inactive' },
-    { id: 6, username: 'emily_manager', email: 'emily.davis@example.com', phone: '+251 916 789 012', password: '********', image: 'https://ui-avatars.com/api/?name=Emily&background=0D9488&color=fff&size=128', role: 'Manager', status: 'Active' },
-    { id: 7, username: 'jessica_owner', email: 'jessica.taylor@example.com', phone: '+251 918 901 234', password: '********', image: 'https://ui-avatars.com/api/?name=Jessica&background=0D9488&color=fff&size=128', role: 'Theater Owner', status: 'Active' },
-    { id: 8, username: 'robert_sales', email: 'robert.anderson@example.com', phone: '+251 919 012 345', password: '********', image: 'https://ui-avatars.com/api/?name=Robert&background=0D9488&color=fff&size=128', role: 'Salesperson', status: 'Active' },
-    { id: 9, username: 'lisa_customer', email: 'lisa.martinez@example.com', phone: '+251 910 123 456', password: '********', image: 'https://ui-avatars.com/api/?name=Lisa&background=0D9488&color=fff&size=128', role: 'Customer', status: 'Active' },
-    { id: 10, username: 'michael_scanner', email: 'michael.wilson@example.com', phone: '+251 917 890 123', password: '********', image: 'https://ui-avatars.com/api/?name=Michael&background=0D9488&color=fff&size=128', role: 'Scanner', status: 'Active' }
+    { id: 1, name: 'John Doe', email: 'john.doe@example.com', phone: '+251 911 234 567', role: 'Admin', status: 'Active', joinDate: '2024-01-15', lastActive: '2024-04-01', bookings: 45, totalSpent: 12500 },
+    { id: 2, name: 'Jane Smith', email: 'jane.smith@example.com', phone: '+251 912 345 678', role: 'Manager', status: 'Active', joinDate: '2024-02-20', lastActive: '2024-04-02', bookings: 32, totalSpent: 8900 },
+    { id: 3, name: 'Mike Johnson', email: 'mike.johnson@example.com', phone: '+251 913 456 789', role: 'User', status: 'Active', joinDate: '2024-03-10', lastActive: '2024-04-01', bookings: 12, totalSpent: 3400 },
+    { id: 4, name: 'Sarah Williams', email: 'sarah.williams@example.com', phone: '+251 914 567 890', role: 'Theater Owner', status: 'Active', joinDate: '2024-01-05', lastActive: '2024-04-03', bookings: 89, totalSpent: 25600 },
+    { id: 5, name: 'David Brown', email: 'david.brown@example.com', phone: '+251 915 678 901', role: 'User', status: 'Inactive', joinDate: '2023-12-01', lastActive: '2024-03-15', bookings: 5, totalSpent: 1200 },
+    { id: 6, name: 'Emily Davis', email: 'emily.davis@example.com', phone: '+251 916 789 012', role: 'Manager', status: 'Active', joinDate: '2024-01-25', lastActive: '2024-04-02', bookings: 28, totalSpent: 7600 },
+    { id: 7, name: 'Michael Wilson', email: 'michael.wilson@example.com', phone: '+251 917 890 123', role: 'User', status: 'Pending', joinDate: '2024-03-20', lastActive: '2024-03-28', bookings: 0, totalSpent: 0 },
+    { id: 8, name: 'Jessica Taylor', email: 'jessica.taylor@example.com', phone: '+251 918 901 234', role: 'Theater Owner', status: 'Active', joinDate: '2023-11-10', lastActive: '2024-04-01', bookings: 156, totalSpent: 45200 },
+    { id: 9, name: 'Robert Anderson', email: 'robert.anderson@example.com', phone: '+251 919 012 345', role: 'User', status: 'Active', joinDate: '2024-02-05', lastActive: '2024-04-02', bookings: 18, totalSpent: 5100 },
+    { id: 10, name: 'Lisa Martinez', email: 'lisa.martinez@example.com', phone: '+251 910 123 456', role: 'Manager', status: 'Active', joinDate: '2024-01-18', lastActive: '2024-04-03', bookings: 42, totalSpent: 11800 },
 ];
 
 const UserManagement: React.FC = () => {
@@ -77,13 +86,16 @@ const UserManagement: React.FC = () => {
     const [filterRole, setFilterRole] = useState<string>('all');
     const [filterStatus, setFilterStatus] = useState<string>('all');
 
+    // Success Popup State
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
 
+    // Get current user role from localStorage (in real app, from auth context)
     const currentUserRole = 'admin';
 
+    // Filtered users
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.phone.includes(searchTerm);
         const matchesRole = filterRole === 'all' || user.role === filterRole;
@@ -91,56 +103,41 @@ const UserManagement: React.FC = () => {
         return matchesSearch && matchesRole && matchesStatus;
     });
 
+    // Stats
     const stats = {
         totalUsers: users.length,
         activeUsers: users.filter(u => u.status === 'Active').length,
-        inactiveUsers: users.filter(u => u.status === 'Inactive').length
+        pendingUsers: users.filter(u => u.status === 'Pending').length,
+        totalBookings: users.reduce((sum, u) => sum + u.bookings, 0),
     };
 
+    // Check if user can be deactivated
     const canDeactivate = (user: User): boolean => {
         const authorizedRoles = ['admin', 'super_admin'];
         return authorizedRoles.includes(currentUserRole) && user.role !== 'Admin' && user.status === 'Active';
     };
 
+    // Check if user can be reactivated
     const canReactivate = (user: User): boolean => {
         const authorizedRoles = ['admin', 'super_admin'];
         return authorizedRoles.includes(currentUserRole) && user.status === 'Inactive';
     };
 
-    // Column definitions - Separate columns for Username, Email, Password, Image
+    // Column definitions
     const columns = [
         {
-            Header: 'Image',
-            accessor: 'image',
-            sortable: false,
-            Cell: (row: User) => (
-                <div className="flex items-center justify-center">
-                    <img
-                        src={row.image}
-                        alt={row.username}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-teal-500/20"
-                    />
-                </div>
-            )
-        },
-        {
-            Header: 'Username',
-            accessor: 'username',
+            Header: 'User',
+            accessor: 'name',
             sortable: true,
             Cell: (row: User) => (
-                <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">{row.username}</span>
-                </div>
-            )
-        },
-        {
-            Header: 'Email',
-            accessor: 'email',
-            sortable: true,
-            Cell: (row: User) => (
-                <div className="flex items-center gap-2">
-                    <Mail className="h-3 w-3 text-gray-400" />
-                    <span className="text-sm text-gray-600">{row.email}</span>
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-deepTeal to-teal-600 flex items-center justify-center text-white font-bold">
+                        {row.name.charAt(0)}
+                    </div>
+                    <div>
+                        <p className="font-medium text-gray-900">{row.name}</p>
+                        <p className="text-xs text-gray-500">{row.email}</p>
+                    </div>
                 </div>
             )
         },
@@ -156,17 +153,6 @@ const UserManagement: React.FC = () => {
             )
         },
         {
-            Header: 'Password',
-            accessor: 'password',
-            sortable: false,
-            Cell: (row: User) => (
-                <div className="flex items-center gap-2">
-                    <Lock className="h-3 w-3 text-gray-400" />
-                    <span className="text-sm font-mono text-gray-600">{row.password}</span>
-                </div>
-            )
-        },
-        {
             Header: 'Role',
             accessor: 'role',
             sortable: true,
@@ -175,9 +161,7 @@ const UserManagement: React.FC = () => {
                     Admin: { icon: ShieldCheck, color: 'bg-red-100 text-red-700', label: 'Admin' },
                     Manager: { icon: Shield, color: 'bg-blue-100 text-blue-700', label: 'Manager' },
                     'Theater Owner': { icon: Crown, color: 'bg-amber-100 text-amber-700', label: 'Theater Owner' },
-                    Salesperson: { icon: UserCheck, color: 'bg-green-100 text-green-700', label: 'Salesperson' },
-                    Scanner: { icon: Shield, color: 'bg-purple-100 text-purple-700', label: 'Scanner' },
-                    Customer: { icon: UserCheck, color: 'bg-teal-100 text-teal-700', label: 'Customer' }
+                    User: { icon: UserCheck, color: 'bg-green-100 text-green-700', label: 'User' }
                 };
                 const c = config[row.role];
                 const Icon = c.icon;
@@ -196,7 +180,8 @@ const UserManagement: React.FC = () => {
             Cell: (row: User) => {
                 const config = {
                     Active: { icon: CheckCircle, color: 'bg-green-100 text-green-700', label: 'Active' },
-                    Inactive: { icon: XCircle, color: 'bg-red-100 text-red-700', label: 'Inactive' }
+                    Inactive: { icon: XCircle, color: 'bg-red-100 text-red-700', label: 'Inactive' },
+                    Pending: { icon: Clock, color: 'bg-yellow-100 text-yellow-700', label: 'Pending' }
                 };
                 const c = config[row.status];
                 const Icon = c.icon;
@@ -207,66 +192,105 @@ const UserManagement: React.FC = () => {
                     </span>
                 );
             }
+        },
+        {
+            Header: 'Bookings',
+            accessor: 'bookings',
+            sortable: true,
+            Cell: (row: User) => (
+                <div className="flex items-center gap-1">
+                    <Ticket className="h-3 w-3 text-gray-400" />
+                    <span className="text-sm text-gray-600">{row.bookings}</span>
+                </div>
+            )
+        },
+        {
+            Header: 'Total Spent',
+            accessor: 'totalSpent',
+            sortable: true,
+            Cell: (row: User) => (
+                <div className="flex items-center gap-1">
+                    <DollarSign className="h-3 w-3 text-green-500" />
+                    <span className="text-sm font-medium text-green-600">ETB {row.totalSpent.toLocaleString()}</span>
+                </div>
+            )
+        },
+        {
+            Header: 'Join Date',
+            accessor: 'joinDate',
+            sortable: true,
+            Cell: (row: User) => (
+                <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3 text-gray-400" />
+                    <span className="text-sm text-gray-600">{new Date(row.joinDate).toLocaleDateString()}</span>
+                </div>
+            )
         }
     ];
 
+    // Action buttons for each row - FIXED POSITIONING
     const renderActions = (row: User) => (
         <div className="flex items-center justify-start gap-2">
+            {/* View Button */}
             <button
                 onClick={() => {
                     setViewingUser(row);
                     setShowViewModal(true);
                 }}
-                className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200"
+                className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group"
                 title="View Details"
             >
                 <Eye className="h-4 w-4 text-blue-600" />
             </button>
 
+            {/* Edit Button */}
             <button
                 onClick={() => {
                     setSelectedUser(row);
                     setShowUpdateModal(true);
                 }}
-                className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200"
+                className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200 group"
                 title="Edit User"
             >
                 <Edit className="h-4 w-4 text-teal-600" />
             </button>
 
+            {/* Deactivate Button - Only for Active users */}
             {canDeactivate(row) && (
                 <button
                     onClick={() => {
                         setUserToDeactivate(row);
                         setShowDeactivateConfirm(true);
                     }}
-                    className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-200"
+                    className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-200 group"
                     title="Deactivate User"
                 >
                     <Ban className="h-4 w-4 text-orange-600" />
                 </button>
             )}
 
+            {/* Reactivate Button - Only for Inactive users */}
             {canReactivate(row) && (
                 <button
                     onClick={() => {
                         setUserToReactivate(row);
                         setShowReactivateConfirm(true);
                     }}
-                    className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-200"
+                    className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-200 group"
                     title="Reactivate User"
                 >
                     <RefreshCw className="h-4 w-4 text-green-600" />
                 </button>
             )}
 
+            {/* Delete Button - For all non-admin users */}
             {row.role !== 'Admin' && (
                 <button
                     onClick={() => {
                         setUserToDelete(row);
                         setShowDeleteConfirm(true);
                     }}
-                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all duration-200"
+                    className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all duration-200 group"
                     title="Delete User"
                 >
                     <Trash2 className="h-4 w-4 text-red-600" />
@@ -282,7 +306,7 @@ const UserManagement: React.FC = () => {
             setUserToDelete(null);
             setPopupMessage({
                 title: 'User Deleted!',
-                message: `${userToDelete.username} has been removed successfully`,
+                message: `${userToDelete.name} has been removed successfully`,
                 type: 'success'
             });
             setShowSuccessPopup(true);
@@ -297,12 +321,14 @@ const UserManagement: React.FC = () => {
                     : user
             );
             setUsers(updatedUsers);
+
             setShowDeactivateConfirm(false);
             setUserToDeactivate(null);
             setDeactivationReason('');
+
             setPopupMessage({
                 title: 'User Deactivated!',
-                message: `${userToDeactivate.username} has been deactivated successfully`,
+                message: `${userToDeactivate.name} has been deactivated successfully`,
                 type: 'warning'
             });
             setShowSuccessPopup(true);
@@ -313,15 +339,17 @@ const UserManagement: React.FC = () => {
         if (userToReactivate) {
             const updatedUsers = users.map(user =>
                 user.id === userToReactivate.id
-                    ? { ...user, status: 'Active' as const }
+                    ? { ...user, status: 'Active' as const, lastActive: new Date().toISOString().split('T')[0] }
                     : user
             );
             setUsers(updatedUsers);
+
             setShowReactivateConfirm(false);
             setUserToReactivate(null);
+
             setPopupMessage({
                 title: 'User Reactivated!',
-                message: `${userToReactivate.username} has been reactivated successfully`,
+                message: `${userToReactivate.name} has been reactivated successfully`,
                 type: 'success'
             });
             setShowSuccessPopup(true);
@@ -331,17 +359,17 @@ const UserManagement: React.FC = () => {
     const handleAddUser = (userData: any) => {
         const newUser: User = {
             id: users.length + 1,
-            username: userData.username,
+            name: userData.username,
             email: userData.email,
             phone: userData.phone,
-            password: '********',
-            image: `https://ui-avatars.com/api/?name=${userData.username.charAt(0).toUpperCase()}&background=0D9488&color=fff&size=128`,
             role: userData.role === 'admin' ? 'Admin' :
                 userData.role === 'manager' ? 'Manager' :
-                    userData.role === 'theater_owner' ? 'Theater Owner' :
-                        userData.role === 'salesperson' ? 'Salesperson' :
-                            userData.role === 'scanner' ? 'Scanner' : 'Customer',
-            status: userData.status
+                    userData.role === 'theater_owner' ? 'Theater Owner' : 'User',
+            status: userData.status,
+            joinDate: new Date().toISOString().split('T')[0],
+            lastActive: new Date().toISOString().split('T')[0],
+            bookings: 0,
+            totalSpent: 0
         };
         setUsers([...users, newUser]);
         setShowAddModal(false);
@@ -363,12 +391,13 @@ const UserManagement: React.FC = () => {
         setSelectedUser(null);
         setPopupMessage({
             title: 'User Updated!',
-            message: `${updatedUserData.username} has been updated successfully`,
+            message: `${updatedUserData.name} has been updated successfully`,
             type: 'success'
         });
         setShowSuccessPopup(true);
     };
 
+    // Add actions column to columns array
     const columnsWithActions = [
         ...columns,
         {
@@ -381,47 +410,96 @@ const UserManagement: React.FC = () => {
     ];
 
     return (
-        <div className="space-y-8 p-6 bg-gray-50 min-h-screen">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-                    <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                    {/* Total Users Card */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Total Users</p>
+                                <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+                            </div>
+                            <div className="p-3 bg-purple-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
                                 <UsersRound className="h-6 w-6 text-purple-600" />
                             </div>
-                            <div className="flex-1">
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Users</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalUsers}</p>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-green-600 flex items-center gap-1">
+                                <TrendingUp className="h-3 w-3" />
+                                +{stats.activeUsers} active
+                            </span>
+                            <span className="text-gray-400">{Math.round((stats.activeUsers / stats.totalUsers) * 100)}% active rate</span>
+                        </div>
+                        <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-purple-500 rounded-full" style={{ width: `${(stats.activeUsers / stats.totalUsers) * 100}%` }}></div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    {/* Active Users Card */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Active Users</p>
+                                <p className="text-3xl font-bold text-green-600">{stats.activeUsers}</p>
+                            </div>
+                            <div className="p-3 bg-green-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
                                 <UserCheck className="h-6 w-6 text-green-600" />
                             </div>
-                            <div className="flex-1">
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Active Users</p>
-                                <p className="text-2xl font-bold text-green-600 mt-1">{stats.activeUsers}</p>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-green-600 flex items-center gap-1">
+                                <Activity className="h-3 w-3" />
+                                Currently online
+                            </span>
+                            <span className="text-gray-400">{Math.round((stats.activeUsers / stats.totalUsers) * 100)}% of total</span>
+                        </div>
+                        <div className="mt-3 text-xs text-gray-500">Active users count</div>
+                    </div>
+
+                    {/* Pending Approval Card */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Pending Approval</p>
+                                <p className="text-3xl font-bold text-yellow-600">{stats.pendingUsers}</p>
                             </div>
-                            <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
+                            <div className="p-3 bg-yellow-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <UserMinus className="h-6 w-6 text-yellow-600" />
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-yellow-600 flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Awaiting verification
+                            </span>
+                            <span className="text-gray-400">{stats.pendingUsers} pending</span>
+                        </div>
+                        <div className="mt-3 h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${(stats.pendingUsers / stats.totalUsers) * 100}%` }}></div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl p-5 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 group">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <XCircle className="h-6 w-6 text-gray-600" />
+                    {/* Total Bookings Card */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Total Bookings</p>
+                                <p className="text-3xl font-bold text-gray-900">{stats.totalBookings.toLocaleString()}</p>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">Inactive Users</p>
-                                <p className="text-2xl font-bold text-gray-600 mt-1">{stats.inactiveUsers}</p>
+                            <div className="p-3 bg-blue-100 rounded-xl group-hover:scale-110 transition-transform duration-300">
+                                <Ticket className="h-6 w-6 text-blue-600" />
                             </div>
-                            <ArrowRight className="h-4 w-4 text-gray-400 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-1" />
                         </div>
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-blue-600 flex items-center gap-1">
+                                <Ticket className="h-3 w-3" />
+                                Lifetime bookings
+                            </span>
+                            <span className="text-gray-400">{Math.round(stats.totalBookings / stats.totalUsers)} per user</span>
+                        </div>
+                        <div className="mt-3 text-xs text-gray-500">Total tickets sold</div>
                     </div>
                 </div>
 
@@ -432,40 +510,39 @@ const UserManagement: React.FC = () => {
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search by username, email, or phone..."
+                                placeholder="Search by name, email, or phone..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                             />
                         </div>
                         <select
                             value={filterRole}
                             onChange={(e) => setFilterRole(e.target.value)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white min-w-[140px]"
                         >
                             <option value="all">All Roles</option>
                             <option value="Admin">Admin</option>
                             <option value="Manager">Manager</option>
                             <option value="Theater Owner">Theater Owner</option>
-                            <option value="Salesperson">Salesperson</option>
-                            <option value="Scanner">Scanner</option>
-                            <option value="Customer">Customer</option>
+                            <option value="User">User</option>
                         </select>
                         <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 bg-white min-w-[140px]"
                         >
                             <option value="all">All Status</option>
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
+                            <option value="Pending">Pending</option>
                         </select>
                     </div>
                     <ReusableButton
                         onClick={() => setShowAddModal(true)}
                         icon="UserPlus"
                         label="Add New User"
-                        className="px-5 py-2.5 text-sm whitespace-nowrap bg-teal-600 hover:bg-teal-700 text-white"
+                        className="px-5 py-2.5 text-sm whitespace-nowrap"
                     />
                 </div>
 
@@ -475,11 +552,13 @@ const UserManagement: React.FC = () => {
                     data={filteredUsers}
                     icon={LayoutGrid}
                     showSearch={false}
-                    showExport={false}
-                    showPrint={false}
+                    showExport={true}
+                    showPrint={true}
+                    onExport={() => console.log('Export')}
+                    onPrint={() => console.log('Print')}
                 />
 
-                {/* Modals */}
+                {/* Add User Modal */}
                 {showAddModal && (
                     <AddUser
                         onSubmit={handleAddUser}
@@ -488,6 +567,7 @@ const UserManagement: React.FC = () => {
                     />
                 )}
 
+                {/* Update User Modal */}
                 {showUpdateModal && selectedUser && (
                     <UpdateUser
                         user={selectedUser}
@@ -500,6 +580,7 @@ const UserManagement: React.FC = () => {
                     />
                 )}
 
+                {/* View User Modal */}
                 {showViewModal && viewingUser && (
                     <ViewUsers
                         user={viewingUser}
@@ -532,7 +613,7 @@ const UserManagement: React.FC = () => {
                                 <h3 className="text-xl font-bold text-gray-900">Deactivate User</h3>
                             </div>
                             <p className="text-gray-600 mb-4">
-                                Are you sure you want to deactivate <strong>{userToDeactivate.username}</strong>?
+                                Are you sure you want to deactivate <strong>{userToDeactivate.name}</strong>?
                             </p>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Reason for deactivation</label>
@@ -550,8 +631,19 @@ const UserManagement: React.FC = () => {
                                 </select>
                             </div>
                             <div className="flex gap-3">
-                                <button onClick={() => setShowDeactivateConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
-                                <button onClick={handleDeactivateUser} disabled={!deactivationReason} className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition">Deactivate User</button>
+                                <button
+                                    onClick={() => setShowDeactivateConfirm(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeactivateUser}
+                                    disabled={!deactivationReason}
+                                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition"
+                                >
+                                    Deactivate User
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -573,11 +665,24 @@ const UserManagement: React.FC = () => {
                                 <h3 className="text-xl font-bold text-gray-900">Reactivate User</h3>
                             </div>
                             <p className="text-gray-600 mb-4">
-                                Are you sure you want to reactivate <strong>{userToReactivate.username}</strong>?
+                                Are you sure you want to reactivate <strong>{userToReactivate.name}</strong>?
+                            </p>
+                            <p className="text-sm text-gray-500 mb-6">
+                                The user will regain access to their account with their previous role and permissions.
                             </p>
                             <div className="flex gap-3">
-                                <button onClick={() => setShowReactivateConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
-                                <button onClick={handleReactivateUser} className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">Reactivate User</button>
+                                <button
+                                    onClick={() => setShowReactivateConfirm(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleReactivateUser}
+                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                                >
+                                    Reactivate User
+                                </button>
                             </div>
                         </motion.div>
                     </div>
@@ -599,16 +704,27 @@ const UserManagement: React.FC = () => {
                                 <h3 className="text-xl font-bold text-gray-900">Delete User</h3>
                             </div>
                             <p className="text-gray-600 mb-6">
-                                Are you sure you want to delete user <strong>{userToDelete.username}</strong>? This action cannot be undone.
+                                Are you sure you want to delete user <strong className="text-gray-900">{userToDelete.name}</strong>? This action cannot be undone.
                             </p>
                             <div className="flex gap-3">
-                                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
-                                <button onClick={handleDeleteUser} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete User</button>
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleDeleteUser}
+                                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                                >
+                                    Delete User
+                                </button>
                             </div>
                         </motion.div>
                     </div>
                 )}
 
+                {/* Success Popup */}
                 <SuccessPopup
                     isOpen={showSuccessPopup}
                     onClose={() => setShowSuccessPopup(false)}

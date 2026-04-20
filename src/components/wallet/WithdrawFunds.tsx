@@ -25,8 +25,8 @@ import {
 } from 'lucide-react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types
 interface WithdrawalMethod {
@@ -733,8 +733,8 @@ const WithdrawFunds: React.FC = () => {
                                                 onClick={() => handleAmountSelect(amt)}
                                                 disabled={isDisabled}
                                                 className={`px-4 py-2.5 border-2 rounded-xl transition-all font-medium ${isDisabled
-                                                        ? 'border-gray-200 opacity-50 cursor-not-allowed bg-gray-50 text-gray-400'
-                                                        : `border-gray-200 hover:border-${selectedMethod.id === 'chapa' ? 'teal-500' : selectedMethod.id === 'bank_transfer' ? 'blue-500' : selectedMethod.id === 'telebirr' ? 'green-500' : selectedMethod.id === 'cbebirr' ? 'cyan-500' : 'orange-500'} hover:bg-${selectedMethod.id === 'chapa' ? 'teal-50' : selectedMethod.id === 'bank_transfer' ? 'blue-50' : selectedMethod.id === 'telebirr' ? 'green-50' : selectedMethod.id === 'cbebirr' ? 'cyan-50' : 'orange-50'} text-gray-700`
+                                                    ? 'border-gray-200 opacity-50 cursor-not-allowed bg-gray-50 text-gray-400'
+                                                    : `border-gray-200 hover:border-${selectedMethod.id === 'chapa' ? 'teal-500' : selectedMethod.id === 'bank_transfer' ? 'blue-500' : selectedMethod.id === 'telebirr' ? 'green-500' : selectedMethod.id === 'cbebirr' ? 'cyan-500' : 'orange-500'} hover:bg-${selectedMethod.id === 'chapa' ? 'teal-50' : selectedMethod.id === 'bank_transfer' ? 'blue-50' : selectedMethod.id === 'telebirr' ? 'green-50' : selectedMethod.id === 'cbebirr' ? 'cyan-50' : 'orange-50'} text-gray-700`
                                                     }`}
                                             >
                                                 {formatCurrency(amt)}

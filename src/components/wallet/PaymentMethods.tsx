@@ -31,8 +31,8 @@ import {
     DollarSign,
     AlertTriangle
 } from 'lucide-react';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 import * as Yup from 'yup';
 
 // Types

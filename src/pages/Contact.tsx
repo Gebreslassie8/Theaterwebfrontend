@@ -1,12 +1,13 @@
+// Frontend/src/pages/Contact.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     Mail, Phone, MapPin, Clock, Send, MessageCircle,
     Facebook, Twitter, Instagram, Linkedin, Youtube,
-    Headphones, Award, Globe, Coffee, Users,
-    CheckCircle, AlertCircle, Sparkles, ArrowRight,
+    Headphones, Award, Globe, Users,
+    CheckCircle, AlertCircle, ArrowRight,
     Calendar, Building, Star, Heart, Gift, Ticket,
-    HelpCircle  // ← This was missing
+    HelpCircle
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -78,16 +79,6 @@ const Contact: React.FC = () => {
         }
     ];
 
-    // FAQ Quick Links
-    const quickLinks = [
-        { question: 'How do I book tickets?', link: '/help/booking' },
-        { question: 'Payment methods accepted?', link: '/help/payments' },
-        { question: 'Refund policy?', link: '/help/refunds' },
-        { question: 'How to get my tickets?', link: '/help/tickets' },
-        { question: 'Theater locations?', link: '/theaters' },
-        { question: 'Loyalty program?', link: '/help/loyalty' }
-    ];
-
     // Social Media Links
     const socialLinks = [
         { icon: Facebook, href: 'https://facebook.com', color: 'hover:bg-[#1877F2]', label: 'Facebook' },
@@ -135,7 +126,6 @@ const Contact: React.FC = () => {
 
         setIsSubmitting(true);
 
-        // Simulate API call
         setTimeout(() => {
             console.log('Form submitted:', formData);
             setSubmitStatus('success');
@@ -149,7 +139,6 @@ const Contact: React.FC = () => {
             });
             setIsSubmitting(false);
 
-            // Clear success message after 5 seconds
             setTimeout(() => setSubmitStatus(null), 5000);
         }, 1500);
     };
@@ -157,7 +146,6 @@ const Contact: React.FC = () => {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear error when user starts typing
         if (errors[name as keyof FormErrors]) {
             setErrors(prev => ({ ...prev, [name]: undefined }));
         }
@@ -231,7 +219,7 @@ const Contact: React.FC = () => {
                     ))}
                 </div>
 
-                {/* Contact Form & Map Section */}
+                {/* Contact Form & Social Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Contact Form */}
                     <motion.div
@@ -393,36 +381,12 @@ const Contact: React.FC = () => {
                         </form>
                     </motion.div>
 
-                    {/* Quick Help & Social */}
+                    {/* Social & Business Hours */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="space-y-8"
                     >
-                        {/* FAQ Quick Links */}
-                        <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 rounded-lg bg-deepTeal/10">
-                                    <HelpCircle className="h-6 w-6 text-deepTeal" />
-                                </div>
-                                <h2 className="text-xl font-bold text-gray-900">Quick Answers</h2>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {quickLinks.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        to={link.link}
-                                        className="flex items-center gap-2 p-3 bg-gray-50 rounded-xl hover:bg-deepTeal/5 transition-all group"
-                                    >
-                                        <ArrowRight className="h-4 w-4 text-deepTeal group-hover:translate-x-1 transition-transform" />
-                                        <span className="text-sm text-gray-700 group-hover:text-deepTeal transition-colors">
-                                            {link.question}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
-
                         {/* Business Hours */}
                         <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
                             <div className="flex items-center gap-3 mb-6">
@@ -473,7 +437,7 @@ const Contact: React.FC = () => {
                                             className={`p-3 bg-gray-100 rounded-xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 ${social.color}`}
                                             aria-label={social.label}
                                         >
-                                            <Icon className="h-6 w-6 text-gray-600 group-hover:text-white transition-colors" />
+                                            <Icon className="h-6 w-6 text-gray-600 hover:text-white transition-colors" />
                                         </a>
                                     );
                                 })}

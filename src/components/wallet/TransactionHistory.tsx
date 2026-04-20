@@ -32,9 +32,9 @@ import {
     Copy,
     Check
 } from 'lucide-react';
-import ReusableTable from '../../../components/Reusable/ReusableTable';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableTable from '../Reusable/ReusableTable';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types
 interface Transaction {

@@ -1,11 +1,25 @@
 // src/pages/Admin/monitoring/SystemLogs.tsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, Search, Filter, Download, Trash2, Eye, AlertCircle, 
-  CheckCircle, Info, AlertTriangle, Clock, User, Activity, 
-  Server, Database, Shield, RefreshCw, Calendar, ChevronDown, X,
-  Copy, Share2, Archive, FilterX
+import {
+  FileText,
+  Search,
+  Download,
+  Trash2,
+  Eye,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  AlertTriangle,
+  Clock,
+  User,
+  Activity,
+  Server,
+  RefreshCw,
+  X,
+  Copy,
+  Archive,
+  FilterX
 } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
@@ -38,6 +52,17 @@ const SystemLogs: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('today');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check for mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Mock log data
   const mockLogs: SystemLog[] = [
@@ -101,7 +126,6 @@ const SystemLogs: React.FC = () => {
       IP: log.ipAddress || 'N/A',
       UserAgent: log.userAgent || 'N/A'
     }));
-    
     const csv = convertToCSV(exportData);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -110,7 +134,7 @@ const SystemLogs: React.FC = () => {
     a.download = `system-logs-${new Date().toISOString()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
-    
+
     setSuccessMessage('Logs exported successfully');
     setShowSuccess(true);
   };
@@ -118,12 +142,6 @@ const SystemLogs: React.FC = () => {
   const handleCopyLog = (log: SystemLog) => {
     navigator.clipboard.writeText(JSON.stringify(log, null, 2));
     setSuccessMessage('Log copied to clipboard');
-    setShowSuccess(true);
-  };
-
-  const handleShareLog = (log: SystemLog) => {
-    // In a real app, this would share via email or internal system
-    setSuccessMessage(`Log ${log.id} shared with support team`);
     setShowSuccess(true);
   };
 
@@ -168,22 +186,14 @@ const SystemLogs: React.FC = () => {
   };
 
   const handleSelectLog = (id: string) => {
-    setSelectedLogs(prev => 
+    setSelectedLogs(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
-  const handleSelectAll = () => {
-    if (selectedLogs.length === filteredLogs.length) {
-      setSelectedLogs([]);
-    } else {
-      setSelectedLogs(filteredLogs.map(log => log.id));
-    }
-  };
-
   const getDateFilter = (date: Date) => {
     const now = new Date();
-    switch(dateRange) {
+    switch (dateRange) {
       case 'today':
         return date.toDateString() === now.toDateString();
       case 'week':
@@ -198,9 +208,9 @@ const SystemLogs: React.FC = () => {
   };
 
   const sources = ['all', ...Array.from(new Set(logs.map(l => l.source)))];
-  
+
   const filteredLogs = logs.filter(log => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       log.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.source.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (log.userId && log.userId.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -223,12 +233,13 @@ const SystemLogs: React.FC = () => {
       Header: '',
       accessor: 'select',
       sortable: false,
+      width: '50px',
       Cell: (row: SystemLog) => (
         <input
           type="checkbox"
           checked={selectedLogs.includes(row.id)}
           onChange={() => handleSelectLog(row.id)}
-          className="w-4 h-4 rounded border-gray-300 text-deepTeal focus:ring-deepTeal"
+          className="w-4 h-4 rounded border-gray-300 text-deepTeal focus:ring-deepTeal cursor-pointer"
         />
       )
     },
@@ -285,28 +296,22 @@ const SystemLogs: React.FC = () => {
       Header: 'Actions',
       accessor: 'id',
       sortable: false,
+      width: '100px',
       Cell: (row: SystemLog) => (
         <div className="flex items-center gap-1">
           <button
             onClick={() => { setSelectedLog(row); setShowDetails(true); }}
-            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors group"
+            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
             title="View Details"
           >
             <Eye className="h-4 w-4 text-blue-600" />
           </button>
           <button
             onClick={() => handleCopyLog(row)}
-            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors group"
+            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
             title="Copy Log"
           >
             <Copy className="h-4 w-4 text-gray-600" />
-          </button>
-          <button
-            onClick={() => handleShareLog(row)}
-            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors group"
-            title="Share Log"
-          >
-            <Share2 className="h-4 w-4 text-green-600" />
           </button>
         </div>
       )
@@ -332,10 +337,10 @@ const SystemLogs: React.FC = () => {
               </div>
             </div>
             <div className="flex gap-3">
-              <ReusableButton 
-                size="sm" 
-                variant={autoRefresh ? "danger" : "secondary"} 
-                icon={RefreshCw} 
+              <ReusableButton
+                size="sm"
+                variant={autoRefresh ? "danger" : "secondary"}
+                icon={RefreshCw}
                 onClick={() => setAutoRefresh(!autoRefresh)}
               >
                 {autoRefresh ? 'Auto-refresh On' : 'Auto-refresh Off'}
@@ -354,7 +359,6 @@ const SystemLogs: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-bold text-gray-900">{levelCounts.total}</p>
-            <p className="text-xs text-gray-500 mt-1">Last 24 hours</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
@@ -364,7 +368,6 @@ const SystemLogs: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-bold text-red-600">{levelCounts.error}</p>
-            <p className="text-xs text-gray-500 mt-1">Critical issues</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
@@ -374,17 +377,15 @@ const SystemLogs: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-bold text-yellow-600">{levelCounts.warning}</p>
-            <p className="text-xs text-gray-500 mt-1">Needs attention</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Info Events</span>
+              <span className="text-sm text-gray-500">Info</span>
               <div className="p-2 bg-blue-100 rounded-lg">
                 <Info className="h-4 w-4 text-blue-600" />
               </div>
             </div>
             <p className="text-2xl font-bold text-blue-600">{levelCounts.info}</p>
-            <p className="text-xs text-gray-500 mt-1">Informational</p>
           </div>
           <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between mb-2">
@@ -394,7 +395,6 @@ const SystemLogs: React.FC = () => {
               </div>
             </div>
             <p className="text-2xl font-bold text-purple-600">{levelCounts.debug}</p>
-            <p className="text-xs text-gray-500 mt-1">Debug information</p>
           </div>
         </div>
 
@@ -408,21 +408,20 @@ const SystemLogs: React.FC = () => {
                 placeholder="Search by message, source, or user ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:outline-none bg-gray-50 hover:bg-white transition-colors"
-                style={{ focusRingColor: deepTeal }}
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent bg-gray-50 hover:bg-white transition-colors outline-none"
               />
             </div>
-            
+
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
               className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
             >
-              <option value="all">📊 All Levels</option>
-              <option value="info">ℹ️ Info</option>
-              <option value="warning">⚠️ Warning</option>
-              <option value="error">❌ Error</option>
-              <option value="debug">🐛 Debug</option>
+              <option value="all">All Levels</option>
+              <option value="info">Info</option>
+              <option value="warning">Warning</option>
+              <option value="error">Error</option>
+              <option value="debug">Debug</option>
             </select>
 
             <select
@@ -432,7 +431,7 @@ const SystemLogs: React.FC = () => {
             >
               {sources.map(source => (
                 <option key={source} value={source}>
-                  {source === 'all' ? '🔌 All Sources' : `📡 ${source}`}
+                  {source === 'all' ? 'All Sources' : source}
                 </option>
               ))}
             </select>
@@ -442,29 +441,29 @@ const SystemLogs: React.FC = () => {
               onChange={(e) => setDateRange(e.target.value as any)}
               className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
             >
-              <option value="today">📅 Today</option>
-              <option value="week">📅 Last 7 Days</option>
-              <option value="month">📅 Last 30 Days</option>
-              <option value="all">📅 All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Last 7 Days</option>
+              <option value="month">Last 30 Days</option>
+              <option value="all">All Time</option>
             </select>
 
             <ReusableButton size="md" variant="secondary" icon={Download} onClick={handleExport}>
               Export
             </ReusableButton>
-            
+
             <ReusableButton size="md" variant="secondary" icon={Archive} onClick={handleArchiveLogs}>
               Archive Selected
             </ReusableButton>
-            
+
             <ReusableButton size="md" variant="danger" icon={Trash2} onClick={handleClearLogs}>
               Clear All
             </ReusableButton>
-            
+
             <ReusableButton size="md" variant="secondary" icon={FilterX} onClick={handleClearFilters}>
               Clear Filters
             </ReusableButton>
           </div>
-          
+
           {/* Selected logs indicator */}
           {selectedLogs.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
@@ -484,18 +483,11 @@ const SystemLogs: React.FC = () => {
 
         {/* Logs Table */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={selectedLogs.length === filteredLogs.length && filteredLogs.length > 0}
-                onChange={handleSelectAll}
-                className="w-4 h-4 rounded border-gray-300 text-deepTeal focus:ring-deepTeal"
-              />
-              <span className="text-sm text-gray-600 ml-2">Select All</span>
-            </div>
-            <div className="text-sm text-gray-500">
-              Showing {filteredLogs.length} of {logs.length} logs
+          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-gray-500">
+                Showing {filteredLogs.length} of {logs.length} logs
+              </div>
             </div>
           </div>
           <ReusableTable
@@ -528,14 +520,14 @@ const SystemLogs: React.FC = () => {
                       <p className="text-white/80 text-sm">ID: {selectedLog.id}</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setShowDetails(false)} 
+                  <button
+                    onClick={() => setShowDetails(false)}
                     className="p-2 hover:bg-white/20 rounded-xl transition-colors"
                   >
                     <X className="h-5 w-5 text-white" />
                   </button>
                 </div>
-                
+
                 <div className="p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-80px)]">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-gray-50 rounded-xl p-3">
@@ -563,12 +555,12 @@ const SystemLogs: React.FC = () => {
                       <p className="font-medium text-gray-900 mt-1 text-sm">{selectedLog.userAgent || 'N/A'}</p>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 rounded-xl p-4">
                     <label className="text-xs text-gray-500 uppercase tracking-wide">Message</label>
                     <p className="mt-2 text-gray-800">{selectedLog.message}</p>
                   </div>
-                  
+
                   {selectedLog.details && (
                     <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                       <label className="text-xs text-blue-600 uppercase tracking-wide flex items-center gap-1">
@@ -579,7 +571,7 @@ const SystemLogs: React.FC = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <div className="border-t px-6 py-4 flex justify-end gap-3 bg-gray-50">
                   <ReusableButton variant="secondary" onClick={() => handleCopyLog(selectedLog)}>
                     Copy Log

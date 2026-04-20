@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Login from "./components/auth/Login";
 import ForgotPassword from "./components/auth/Forgotpassword";
-import DashboardLayout from "./components/DashboardLayout/DashboardLayout";
 import HomePage from './pages/Home';
 import Blogs from "./pages/Blog";
 import Gallery from "./pages/Gallery";
@@ -11,6 +10,7 @@ import About from "./pages/About";
 import Help from "./pages/Help";
 import Contact from "./pages/Contact";
 import TheaterRegistration from './pages/TheaterRegistration';
+import CustomerRegistration from './pages/CustomerRegistration';
 import BookingConfirmation from './pages/Legal/BookingConfirmation';
 import TermsOfService from './pages/Legal/TermsOfService';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
@@ -98,7 +98,8 @@ function App() {
         <Route path="about" element={<About />} />
         <Route path="help" element={<Help />} />
         <Route path="contact" element={<Contact />} />
-        <Route path="account" element={<TheaterRegistration />} />
+        <Route path="customerAcount" element={<CustomerRegistration />} />
+        <Route path="theater" element={<TheaterRegistration />} />
         <Route path="booking" element={<BookingConfirmation />} />
         <Route path="terms" element={<TermsOfService />} />
         <Route path="privacy" element={<PrivacyPolicy />} />

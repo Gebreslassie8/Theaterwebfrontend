@@ -41,6 +41,7 @@ interface NavLink {
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
     const [isLangOpen, setIsLangOpen] = useState<boolean>(false);
+    const [isJoinOpen, setIsJoinOpen] = useState<boolean>(false);
     const [isScrolled, setIsScrolled] = useState<boolean>(false);
     const [currentLang, setCurrentLang] = useState<string>('en');
     const location = useLocation();
@@ -72,7 +73,6 @@ const Navbar: React.FC = () => {
         { to: '/gallery', label: 'Gallery', icon: Star },
         { to: '/contact', label: 'Contact', icon: MessageCircle },
         { to: '/help', label: 'Help', icon: HelpCircle }
-
     ];
 
     const isActive = (path: string): boolean => location.pathname === path;
@@ -172,14 +172,66 @@ const Navbar: React.FC = () => {
                             <span>Sign In</span>
                         </Link>
 
-                        {/* Join Now Button - Desktop (Prominent like image) */}
-                        <Link
-                            to="/account"
-                            className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-6 py-2 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg"
+                        {/* Join Now Dropdown - Hoverable */}
+                        <div
+                            className="relative hidden md:block"
+                            onMouseEnter={() => setIsJoinOpen(true)}
+                            onMouseLeave={() => setIsJoinOpen(false)}
                         >
-                            <UserPlus className="h-4 w-4" />
-                            <span>Join Now</span>
-                        </Link>
+                            <button className="flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-6 py-2 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg">
+                                <UserPlus className="h-4 w-4" />
+                                <span>Join Now</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isJoinOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            <AnimatePresence>
+                                {isJoinOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="absolute right-0 mt-2 bg-white shadow-xl rounded-xl w-64 z-50 border border-gray-100 overflow-hidden"
+                                    >
+                                        {/* Customer Account Option */}
+                                        <Link
+                                            to="/customerAcount"
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-teal-50 hover:to-transparent transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                                <User className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-800 group-hover:text-teal-600 transition-colors">
+                                                    Customer Account
+                                                </p>
+                                                <p className="text-xs text-gray-500">Book tickets & enjoy shows</p>
+                                            </div>
+                                            <ChevronDown className="h-4 w-4 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-all rotate-270" />
+                                        </Link>
+
+                                        <div className="h-px bg-gray-100 my-1"></div>
+
+                                        {/* Theater Owner Account Option */}
+                                        <Link
+                                            to="/theater"
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-teal-50 hover:to-transparent transition-all group"
+                                        >
+                                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                                <Building2 className="h-5 w-5 text-purple-600" />
+                                            </div>
+                                            <div>
+                                                <p className="font-semibold text-gray-800 group-hover:text-teal-600 transition-colors">
+                                                    Theater Owner Account
+                                                </p>
+                                                <p className="text-xs text-gray-500">List & manage your theater</p>
+                                            </div>
+                                            <ChevronDown className="h-4 w-4 text-gray-400 ml-auto opacity-0 group-hover:opacity-100 transition-all rotate-270" />
+                                        </Link>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
 
                         {/* Mobile Menu Button */}
                         <button
@@ -238,7 +290,7 @@ const Navbar: React.FC = () => {
                                     <span className="font-medium">Sign In</span>
                                 </Link>
 
-                                {/* Join Now - Mobile (Prominent) */}
+                                {/* Customer Account - Mobile */}
                                 <Link
                                     to="/account"
                                     className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-deepBlue text-white shadow-md hover:brightness-110 hover:shadow-lg transition-all duration-300"

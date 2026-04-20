@@ -32,9 +32,9 @@ import {
     Filter,
     X
 } from 'lucide-react';
-import ReusableTable from '../../../components/Reusable/ReusableTable';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableTable from '../Reusable/ReusableTable';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 import DepositFunds from './DepositFunds';
 import WithdrawFunds from './WithdrawFunds';
 import TransactionHistory from './TransactionHistory';

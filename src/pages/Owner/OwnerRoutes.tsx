@@ -5,9 +5,9 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import OwnerDashboard from './OwnerDashboard';
 
 // Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
-  children, 
-  allowedRoles = [] 
+const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
+  children,
+  allowedRoles = []
 }) => {
   const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -34,6 +34,15 @@ export const ownerRouteElement = (
     }
   >
     <Route index element={<Navigate to="/owner/dashboard" replace />} />
+
+    {/* <Route path="wallet" element={<OwnerDashboard />} /> */}
+    <Route path="wallet/balance" element={<OwnerDashboard />} />
+    <Route path="wallet/transactions" element={<OwnerDashboard />} />
+    <Route path="wallet/deposit" element={<OwnerDashboard />} />
+    <Route path="wallet/withdraw" element={<OwnerDashboard />} />
+    <Route path="wallet/bank-accounts" element={<OwnerDashboard />} />
+    <Route path="wallet/commission" element={<OwnerDashboard />} />
+    <Route path="booking" element={<OwnerDashboard />} />
     <Route path="dashboard" element={<OwnerDashboard />} />
     <Route path="financial" element={<OwnerDashboard />} />
     <Route path="financial/revenue" element={<OwnerDashboard />} />
@@ -54,5 +63,12 @@ export const ownerRouteElement = (
     <Route path="halls/manage" element={<OwnerDashboard />} />
     <Route path="halls/seating" element={<OwnerDashboard />} />
     <Route path="halls/vip" element={<OwnerDashboard />} />
+    <Route path="dashboard" element={<OwnerDashboard />} />
+    <Route path="financial" element={<OwnerDashboard />} />
+    <Route path="financial/revenue" element={<OwnerDashboard />} />
+    <Route path="financial/daily" element={<OwnerDashboard />} />
+    <Route path="financial/monthly" element={<OwnerDashboard />} />
+    <Route path="financial/tax" element={<OwnerDashboard />} />
+
   </Route>
 );

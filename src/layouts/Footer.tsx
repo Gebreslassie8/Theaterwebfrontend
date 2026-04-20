@@ -39,10 +39,9 @@ const Footer = () => {
   ];
 
   const chapaPaymentMethods = [
-    { name: 'Chapa', icon: '💳', description: 'Ethiopian Payment Gateway' },
     { name: 'Tele Birr', icon: '📱', description: 'Mobile Money' },
     { name: 'CBE Birr', icon: '🏦', description: 'Commercial Bank' },
-    { name: 'HelloCash', icon: '💸', description: 'HelloCash' }
+    { name: 'HelloCash', icon: '💸', description: 'Cash' }
   ];
 
   const showSuccessPopup = () => {
@@ -303,23 +302,6 @@ const Footer = () => {
                   ))}
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-400">Trusted By:</span>
-                <div className="flex flex-wrap gap-2">
-                  <span className="bg-gray-800 px-3 py-2 rounded-lg text-sm text-gray-400 border border-gray-700 flex items-center gap-1 hover:border-teal-500 hover:text-teal-400 transition-colors">
-                    <Shield className="h-4 w-4 text-teal-500" />
-                    SSL Secure
-                  </span>
-                  <span className="bg-gray-800 px-3 py-2 rounded-lg text-sm text-gray-400 border border-gray-700 flex items-center gap-1 hover:border-teal-500 hover:text-teal-400 transition-colors">
-                    <Award className="h-4 w-4 text-teal-500" />
-                    100% Safe
-                  </span>
-                  <span className="bg-gray-800 px-3 py-2 rounded-lg text-sm text-gray-400 border border-gray-700 flex items-center gap-1 hover:border-teal-500 hover:text-teal-400 transition-colors">
-                    <Globe className="h-4 w-4 text-teal-500" />
-                    Global Service
-                  </span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -339,9 +321,7 @@ const Footer = () => {
                 <Link to="/cookies" className="text-sm text-gray-400 hover:text-teal-400 transition-colors">
                   Cookies
                 </Link>
-                <Link to="/sitemap" className="text-sm text-gray-400 hover:text-teal-400 transition-colors">
-                  Sitemap
-                </Link>
+
               </div>
             </div>
           </div>

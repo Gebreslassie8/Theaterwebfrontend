@@ -158,9 +158,6 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ featuredShows }) => {
                     transition={{ delay: 0.1, duration: 0.5 }}
                     className="mb-4"
                   >
-                    <span className="text-3xl md:text-4xl font-['Noto_Sans_Ethiopic'] text-amber-400 font-bold block mb-2">
-                      እንኳን ወደ ኢትዮጵያ ቲያትር ማዕከል በሰላም መጡ
-                    </span>
                     <div className="w-24 h-1 bg-gradient-to-r from-amber-400 to-deepTeal mx-auto rounded-full"></div>
                   </motion.div>
 

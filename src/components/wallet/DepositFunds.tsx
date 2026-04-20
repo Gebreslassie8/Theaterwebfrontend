@@ -19,9 +19,9 @@ import {
     Check
 } from 'lucide-react';
 import * as Yup from 'yup';
-import ReusableForm from '../../../components/Reusable/ReusableForm';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableForm from '../Reusable/ReusableForm';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types
 interface DepositMethod {

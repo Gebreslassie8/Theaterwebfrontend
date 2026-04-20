@@ -1,7 +1,7 @@
 // src/pages/Admin/users/UpdateUser.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Mail, Phone, Shield, Save, Lock, Image as ImageIcon } from 'lucide-react';
+import { X, Eye, EyeOff, User, Mail, Phone, Shield, Briefcase, Save } from 'lucide-react';
 import * as Yup from 'yup';
 import ReusableForm from '../../../components/Reusable/ReusableForm';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -18,13 +18,15 @@ interface UpdateUserProps {
 
 interface User {
     id: number;
-    username: string;
+    name: string;
     email: string;
     phone: string;
-    password: string;
-    image: string;
-    role: 'Admin' | 'Manager' | 'Theater Owner' | 'Salesperson' | 'Scanner' | 'Customer';
-    status: 'Active' | 'Inactive';
+    role: 'Admin' | 'Manager' | 'User' | 'Theater Owner';
+    status: 'Active' | 'Inactive' | 'Pending';
+    joinDate: string;
+    lastActive: string;
+    bookings: number;
+    totalSpent: number;
 }
 
 // Validation Schema
@@ -38,27 +40,12 @@ const ValidationSchema = Yup.object({
         .email('Please enter a valid email address'),
     phone: Yup.string()
         .required('Phone number is required')
-        .test('phone', 'Enter a valid Ethiopian phone number (e.g., 0912345678, 0912 345 678, or +251912345678)', function (value) {
-            if (!value) return false;
-            const cleanNumber = value.replace(/[\s\-\(\)]/g, '');
-            const patterns = [
-                /^09\d{8}$/,
-                /^\+2519\d{8}$/,
-                /^2519\d{8}$/,
-                /^9\d{8}$/
-            ];
-            return patterns.some(pattern => pattern.test(cleanNumber));
-        }),
-    password: Yup.string()
-        .optional()
-        .min(6, 'Password must be at least 6 characters'),
-    image: Yup.string()
-        .optional()
-        .url('Please enter a valid image URL'),
+        .matches(/^[0-9+\-\s()]{10,15}$/, 'Please enter a valid phone number'),
     role: Yup.string()
         .required('Role is required'),
     status: Yup.string()
-        .required('Status is required')
+        .required('Status is required'),
+    department: Yup.string(),
 });
 
 // Reusable Button Component
@@ -120,19 +107,28 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
     onClose,
     onUpdate
 }) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
 
-    // Initial values for the form - based on User columns
+    const togglePasswordVisibility = () => {
+        setShowPassword((prev) => !prev);
+    };
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword((prev) => !prev);
+    };
+
+    // Initial values for the form
     const initialValues = {
-        username: user?.username || '',
+        username: user?.name || '',
         email: user?.email || '',
         phone: user?.phone || '',
-        password: '',
-        image: user?.image || '',
-        role: user?.role?.toLowerCase().replace(' ', '_') || 'customer',
-        status: user?.status || 'Active'
+        role: user?.role?.toLowerCase().replace(' ', '_') || 'user',
+        status: user?.status || 'Active',
+        department: '',
     };
 
     const formFields = [
@@ -141,62 +137,50 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
             type: 'text' as const,
             label: 'Username',
             placeholder: 'Enter username',
-            required: true
         },
         {
             name: 'email',
             type: 'email' as const,
             label: 'Email Address',
             placeholder: 'Enter email address',
-            required: true
         },
         {
             name: 'phone',
             type: 'text' as const,
             label: 'Phone Number',
             placeholder: 'Enter phone number',
-            required: true
-        },
-        {
-            name: 'password',
-            type: 'password' as const,
-            label: 'Password',
-            placeholder: 'Enter new password (leave blank to keep current)',
-            required: false
-        },
-        {
-            name: 'image',
-            type: 'text' as const,
-            label: 'Profile Image URL',
-            placeholder: 'Enter image URL (e.g., https://ui-avatars.com/api/?name=John&background=0D9488&color=fff)',
-            required: false
         },
         {
             name: 'role',
             type: 'select' as const,
             label: 'Role',
             placeholder: 'Select role',
-            required: true,
             options: [
                 { value: 'admin', label: 'Admin' },
                 { value: 'manager', label: 'Manager' },
                 { value: 'theater_owner', label: 'Theater Owner' },
                 { value: 'salesperson', label: 'Salesperson' },
                 { value: 'scanner', label: 'Scanner' },
-                { value: 'customer', label: 'Customer' }
-            ]
+                { value: 'customer', label: 'Customer' },
+            ],
         },
         {
             name: 'status',
             type: 'select' as const,
             label: 'Status',
             placeholder: 'Select status',
-            required: true,
             options: [
                 { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' }
-            ]
-        }
+                { value: 'Inactive', label: 'Inactive' },
+                { value: 'Pending', label: 'Pending' },
+            ],
+        },
+        {
+            name: 'department',
+            type: 'text' as const,
+            label: 'Department (Optional)',
+            placeholder: 'Enter department name',
+        },
     ];
 
     const handleSubmit = async (values: any, { setSubmitting }: any) => {
@@ -207,19 +191,14 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
 
         const updatedUser = {
             id: user?.id,
-            username: values.username,
+            name: values.username,
             email: values.email,
             phone: values.phone,
-            // Only update password if provided
-            ...(values.password && { password: values.password }),
-            // Use existing image if not provided
-            image: values.image || user?.image,
             role: values.role === 'admin' ? 'Admin' :
                 values.role === 'manager' ? 'Manager' :
-                    values.role === 'theater_owner' ? 'Theater Owner' :
-                        values.role === 'salesperson' ? 'Salesperson' :
-                            values.role === 'scanner' ? 'Scanner' : 'Customer',
-            status: values.status
+                    values.role === 'theater_owner' ? 'Theater Owner' : 'User',
+            status: values.status,
+            department: values.department,
         };
 
         onUpdate(updatedUser);
@@ -233,6 +212,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
         });
         setShowSuccessPopup(true);
 
+        // Close modal after 1.5 seconds
         setTimeout(() => {
             onClose();
         }, 1500);
@@ -264,23 +244,6 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
                             <X className="h-5 w-5 text-gray-500" />
                         </button>
                     </div>
-
-                    {/* Current Avatar Preview */}
-                    {user?.image && (
-                        <div className="px-6 pt-4 pb-2">
-                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                <img
-                                    src={user.image}
-                                    alt={user.username}
-                                    className="w-12 h-12 rounded-full object-cover ring-2 ring-teal-500/20"
-                                />
-                                <div>
-                                    <p className="text-xs text-gray-500">Current Avatar</p>
-                                    <p className="text-sm text-gray-700 font-medium">{user.username}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* Form */}
                     <div className="p-6">

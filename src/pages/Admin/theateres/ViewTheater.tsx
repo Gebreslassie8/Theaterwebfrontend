@@ -11,7 +11,6 @@ import ReusableButton from '../../../components/Reusable/ReusableButton';
 
 interface Theater {
     id: number;
-    // Business Information
     businessName?: string;
     tradeName?: string;
     businessType?: string;
@@ -19,7 +18,6 @@ interface Theater {
     taxId?: string;
     yearsInOperation?: string;
     businessDescription?: string;
-    // Contact Information
     ownerName: string;
     ownerPosition?: string;
     ownerEmail?: string;

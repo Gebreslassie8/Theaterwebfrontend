@@ -20,30 +20,37 @@ interface DashboardLayoutProps {
 const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
   // Check authentication & redirect if not logged in
   useEffect(() => {
-    const userDataStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+    const checkAuth = async () => {
+      try {
+        const userDataStr = localStorage.getItem("user") || sessionStorage.getItem("user");
 
-    if (!userDataStr) {
-      navigate("/login", { replace: true });
-      return;
-    }
+        if (!userDataStr) {
+          navigate("/login", { replace: true });
+          return;
+        }
 
-    try {
-      const parsedUser: User = JSON.parse(userDataStr);
-      if (!parsedUser?.role) {
-        throw new Error("Invalid user data: role missing");
+        const parsedUser: User = JSON.parse(userDataStr);
+        if (!parsedUser?.role) {
+          throw new Error("Invalid user data: role missing");
+        }
+        setUser(parsedUser);
+      } catch (err) {
+        console.error("Failed to parse user data:", err);
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+        navigate("/login", { replace: true });
+      } finally {
+        setIsLoading(false);
       }
-      setUser(parsedUser);
-    } catch (err) {
-      console.error("Failed to parse user data:", err);
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("user");
-      navigate("/login", { replace: true });
-    }
+    };
+
+    checkAuth();
   }, [navigate]);
 
   // Prevent body scroll when mobile sidebar is open
@@ -68,17 +75,25 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
     storage.setItem("user", JSON.stringify(updatedUser));
   };
 
-  // Show nothing (or loading spinner) while checking auth
-  if (!user) {
+  // Show loading spinner while checking auth
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-900">
-        <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
       </div>
     );
   }
 
+  // Show nothing if no user
+  if (!user) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex flex-col">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Desktop Sidebar – always visible on lg+ */}
       <div className="hidden lg:block fixed inset-y-0 left-0 z-50 w-64 shadow-xl">
         <DashboardSidebar
@@ -93,7 +108,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
         onMenuClick={() => setSidebarOpen(true)}
         user={user}
         onUserUpdate={handleUserUpdate}
-        className="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-white/80 dark:bg-dark-800/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-700"
+        className="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700"
       />
 
       {/* Mobile Sidebar – drawer style */}
@@ -109,7 +124,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
         {/* Sidebar drawer */}
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-500 ease-in-out shadow-2xl ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out shadow-2xl ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
         >
           <DashboardSidebar
@@ -121,9 +136,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
       </div>
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 lg:ml-64`}>
+      <div className="flex-1 flex flex-col min-h-screen transition-all duration-300 lg:ml-64">
         <div className="h-16" /> {/* Spacer for header */}
-        <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8">
+        <main className="flex-1 py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             {/* Pass user context to child routes */}
             <Outlet context={{ user, onUserUpdate: handleUserUpdate }} />
