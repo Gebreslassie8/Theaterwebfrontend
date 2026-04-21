@@ -8,7 +8,8 @@ import {
     CheckCircle, ArrowRight, Quote, Smartphone,
     Linkedin, Twitter, Facebook, Instagram, Youtube,
     Rocket, Target, Eye, Compass, Flag, Milestone,
-    Headphones, Gift
+    Headphones, Gift, Target as TargetIcon, Eye as EyeIcon,
+    Compass as CompassIcon, Rocket as RocketIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -91,6 +92,14 @@ const About: React.FC = () => {
         { icon: Shield, title: 'Secure Payments', description: 'Safe and encrypted transactions' }
     ];
 
+    // Contact Options
+    const contactOptions = [
+        { icon: Phone, title: 'Phone Support', details: '+251 911 234 567', description: 'Available 24/7 for urgent inquiries' },
+        { icon: Mail, title: 'Email Us', details: 'hello@theatrehub.com', description: 'We respond within 24 hours' },
+        { icon: MessageCircle, title: 'Live Chat', details: 'Chat with our team', description: 'Available 9 AM - 9 PM' },
+        { icon: Headphones, title: 'Customer Support', details: 'Dedicated support team', description: 'Always here to help' }
+    ];
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Hero Section */}
@@ -108,7 +117,7 @@ const About: React.FC = () => {
                             className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-xl rounded-full mb-6"
                         >
                             <Building className="h-5 w-5" />
-                            <span className="text-sm font-medium">Our Story</span>
+                            <span className="text-sm font-medium">About Us</span>
                         </motion.div>
 
                         <motion.h1
@@ -172,8 +181,75 @@ const About: React.FC = () => {
                 </div>
             </div>
 
-            {/* Our Story Section */}
+            {/* Mission & Vision Section */}
             <div className="bg-white py-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Mission & Vision</h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
+                        <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+                            Guiding our path to transform theater experiences in Ethiopia and beyond
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Mission Card */}
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -5 }}
+                            className="bg-gradient-to-br from-deepTeal/5 to-deepBlue/5 rounded-2xl p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all"
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-3 rounded-xl bg-gradient-to-r from-deepTeal to-teal-500">
+                                    <TargetIcon className="h-6 w-6 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Our Mission</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed text-lg mb-4">
+                                To democratize access to theater experiences by providing a seamless, 
+                                innovative, and inclusive platform that connects audiences with the magic 
+                                of live performances across Ethiopia and beyond.
+                            </p>
+                            <div className="mt-4 flex items-center gap-2 text-deepTeal">
+                                <CheckCircle className="h-5 w-5" />
+                                <span className="text-sm font-medium">Making theater accessible to all</span>
+                            </div>
+                        </motion.div>
+
+                        {/* Vision Card */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true }}
+                            whileHover={{ y: -5 }}
+                            className="bg-gradient-to-br from-deepTeal/5 to-deepBlue/5 rounded-2xl p-8 border border-gray-100 shadow-lg hover:shadow-xl transition-all"
+                        >
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="p-3 rounded-xl bg-gradient-to-r from-deepBlue to-blue-500">
+                                    <EyeIcon className="h-6 w-6 text-white" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-gray-900">Our Vision</h3>
+                            </div>
+                            <p className="text-gray-700 leading-relaxed text-lg mb-4">
+                                To become the premier theater booking platform in Africa, revolutionizing 
+                                how people discover, book, and experience live performances while fostering 
+                                a vibrant theater culture that enriches communities.
+                            </p>
+                            <div className="mt-4 flex items-center gap-2 text-deepTeal">
+                                <RocketIcon className="h-5 w-5" />
+                                <span className="text-sm font-medium">Leading theater innovation in Africa</span>
+                            </div>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Our Story Section - Simplified */}
+            <div className="bg-gray-50 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <motion.div
@@ -182,27 +258,24 @@ const About: React.FC = () => {
                             transition={{ duration: 0.6 }}
                             viewport={{ once: true }}
                         >
-                            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Story</h2>
+                            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Journey</h2>
                             <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-teal-500 mb-6"></div>
                             <p className="text-gray-600 mb-4 leading-relaxed">
-                                TheaterHUB was born from a simple idea: make theater experiences accessible to everyone. Founded in 2020, we started as a small startup with a big dream to transform how people discover and book shows.
+                                TheaterHUB was founded with a simple yet powerful vision: to make exceptional 
+                                theater experiences accessible to everyone. What started as a small startup in 
+                                2020 has grown into Ethiopia's leading theater booking platform.
                             </p>
                             <p className="text-gray-600 mb-4 leading-relaxed">
-                                Today, we're proud to be Ethiopia's leading theater booking platform, connecting thousands of theater lovers with the best shows across the country. Our platform partners with over 50 theaters, offering a seamless booking experience.
+                                Today, we proudly partner with over 50 theaters across the country, serving 
+                                thousands of theater lovers and processing hundreds of thousands of tickets 
+                                annually. Our platform continues to evolve, bringing innovation and convenience 
+                                to the theater industry.
                             </p>
                             <p className="text-gray-600 leading-relaxed">
-                                We believe in the power of live performances to inspire, entertain, and bring communities together. Every day, we work to make that magic accessible to more people.
+                                We believe in the transformative power of live performances to inspire, 
+                                entertain, and unite communities. Every day, we work passionately to make 
+                                that magic accessible to more people.
                             </p>
-                            <div className="mt-6 flex gap-4">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-5 w-5 text-deepTeal" />
-                                    <span className="text-sm text-gray-600">Trusted Platform</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-5 w-5 text-deepTeal" />
-                                    <span className="text-sm text-gray-600">Secure Payments</span>
-                                </div>
-                            </div>
                         </motion.div>
 
                         <motion.div
@@ -217,7 +290,8 @@ const About: React.FC = () => {
                                     <Quote className="h-12 w-12 text-deepTeal/30" />
                                 </div>
                                 <p className="text-xl italic text-gray-700 mb-6 relative z-10">
-                                    "We're not just booking tickets; we're creating memories that last a lifetime. Every show is an opportunity to bring joy and inspiration to our community."
+                                    "We're not just booking tickets; we're creating memories that last a lifetime. 
+                                    Every show is an opportunity to bring joy and inspiration to our community."
                                 </p>
                                 <div className="flex items-center gap-4">
                                     <div className="w-14 h-14 rounded-full bg-gradient-to-r from-deepTeal to-deepBlue flex items-center justify-center text-white font-bold text-xl shadow-lg">
@@ -235,13 +309,13 @@ const About: React.FC = () => {
             </div>
 
             {/* Our Values */}
-            <div className="bg-gray-50 py-20">
+            <div className="bg-white py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Core Values</h2>
                         <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
                         <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                            These core principles guide everything we do at TheaterHUB
+                            These principles guide everything we do at TheaterHUB
                         </p>
                     </div>
 
@@ -254,7 +328,7 @@ const About: React.FC = () => {
                                 transition={{ delay: index * 0.1 }}
                                 viewport={{ once: true }}
                                 whileHover={{ y: -5 }}
-                                className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all group"
+                                className="bg-gray-50 rounded-2xl p-6 shadow-lg border border-gray-200 hover:shadow-xl transition-all group"
                             >
                                 <div className={`w-14 h-14 rounded-xl bg-gradient-to-r ${value.color} flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                                     <value.icon className="h-7 w-7 text-white" />
@@ -268,7 +342,7 @@ const About: React.FC = () => {
             </div>
 
             {/* Features Section */}
-            <div className="bg-white py-20">
+            <div className="bg-gray-50 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                         <h2 className="text-4xl font-bold text-gray-900 mb-4">Why Choose TheaterHUB</h2>
@@ -287,7 +361,7 @@ const About: React.FC = () => {
                                 transition={{ delay: index * 0.1 }}
                                 viewport={{ once: true }}
                                 whileHover={{ y: -5 }}
-                                className="flex items-start gap-4 p-6 bg-gray-50 rounded-2xl hover:bg-white hover:shadow-xl transition-all group border border-gray-100"
+                                className="flex items-start gap-4 p-6 bg-white rounded-2xl hover:bg-white hover:shadow-xl transition-all group border border-gray-100"
                             >
                                 <div className="p-3 rounded-xl bg-gradient-to-r from-deepTeal to-deepBlue group-hover:scale-110 transition-transform duration-300">
                                     <feature.icon className="h-6 w-6 text-white" />
@@ -302,11 +376,45 @@ const About: React.FC = () => {
                 </div>
             </div>
 
+            {/* Contact Options Section - Professional */}
+            <div className="bg-white py-20">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Get In Touch</h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
+                        <p className="text-gray-600 max-w-2xl mx-auto text-lg">
+                            We're here to help! Choose how you'd like to reach us
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {contactOptions.map((option, index) => (
+                            <motion.div
+                                key={option.title}
+                                initial={{ opacity: 0, y: 20 }}
+                                whileInView={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                viewport={{ once: true }}
+                                whileHover={{ y: -5 }}
+                                className="bg-gray-50 rounded-2xl p-6 text-center border border-gray-200 hover:shadow-xl transition-all group cursor-pointer"
+                            >
+                                <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-r from-deepTeal to-deepBlue flex items-center justify-center mb-4 shadow-lg group-hover:scale-110 transition-transform duration-300">
+                                    <option.icon className="h-8 w-8 text-white" />
+                                </div>
+                                <h3 className="text-lg font-semibold text-gray-900 mb-2">{option.title}</h3>
+                                <p className="text-deepTeal font-medium mb-1">{option.details}</p>
+                                <p className="text-xs text-gray-500">{option.description}</p>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* Team Section */}
             <div className="bg-gray-50 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Meet Our Leadership</h2>
                         <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
                         <p className="text-gray-600 max-w-2xl mx-auto text-lg">
                             Passionate individuals dedicated to bringing you the best theater experience

@@ -3,13 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
-    Search, Calendar, Clock, Eye, TrendingUp, ChevronRight,
-    Heart, Bookmark, LayoutGrid, List, CheckCircle, Loader2, Plus,
+    Search, Calendar, Clock, Eye, TrendingUp,
+    Heart, Bookmark, LayoutGrid, List, CheckCircle,
     ChevronDown, Star, Users, Zap, Lightbulb, HeartHandshake, Newspaper, X,
-    ArrowRight, BookOpen, Sparkles
+    ArrowRight, BookOpen, Sparkles, Filter, SortAsc, SortDesc, Theater,
+    ChevronLeft, ChevronRight, MessageCircle, ChevronUp
 } from 'lucide-react';
-import ReusableButton from '../components/Reusable/ReusableButton';
-import ShowCard from '../components/UI/ShowCard';
+import BlogShowCard from '../components/UI/BlogShowCard';
 
 // Types for Blog
 interface Author {
@@ -39,38 +39,18 @@ interface BlogPost {
     views: number;
     likes: number;
     bookmarks: number;
+    comments: number;
     isTrending: boolean;
+    isFeatured?: boolean;
 }
 
-// Convert BlogPost to Show format for ShowCard compatibility
-const convertToShowFormat = (post: BlogPost) => {
-    return {
-        id: post.id,
-        title: post.title,
-        description: post.excerpt,
-        genre: post.categories[0]?.name || 'Article',
-        category: 'Blog',
-        duration: post.readTime * 10,
-        ageRating: 'All',
-        venue: post.author.name,
-        images: {
-            poster: post.featuredImage,
-            gallery: []
-        },
-        dates: [{ date: post.publishedAt, time: '10:00', availableSeats: 100, price: 0 }],
-        priceRange: { min: 0, max: 0 },
-        isFeatured: post.isTrending,
-        rating: 4.5,
-        reviews: post.views,
-        isBlog: true
-    };
-};
-
-// Mock Data
+// Mock Data - Professional blog posts
 const mockAuthors: Author[] = [
     { id: '1', name: 'Sarah Johnson', avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=007590&color=fff', role: 'Theater Critic' },
     { id: '2', name: 'Michael Chen', avatar: 'https://ui-avatars.com/api/?name=Michael+Chen&background=007590&color=fff', role: 'Technical Director' },
-    { id: '3', name: 'Emma Rodriguez', avatar: 'https://ui-avatars.com/api/?name=Emma+Rodriguez&background=007590&color=fff', role: 'Arts Journalist' }
+    { id: '3', name: 'Emma Rodriguez', avatar: 'https://ui-avatars.com/api/?name=Emma+Rodriguez&background=007590&color=fff', role: 'Arts Journalist' },
+    { id: '4', name: 'David Kim', avatar: 'https://ui-avatars.com/api/?name=David+Kim&background=007590&color=fff', role: 'Creative Director' },
+    { id: '5', name: 'Lisa Wong', avatar: 'https://ui-avatars.com/api/?name=Lisa+Wong&background=007590&color=fff', role: 'Stage Designer' }
 ];
 
 const mockCategories: Category[] = [
@@ -82,13 +62,14 @@ const mockCategories: Category[] = [
     { id: '6', name: 'Community', icon: HeartHandshake, count: 10 }
 ];
 
+// Professional blog posts
 const mockBlogPosts: BlogPost[] = [
     {
         id: '1',
-        title: 'The Future of Digital Ticketing in Theater',
-        slug: 'future-digital-ticketing',
-        excerpt: 'Discover how blockchain technology is revolutionizing theater ticketing.',
-        featuredImage: 'https://images.unsplash.com/photo-1503095396549-8070c434c0a2?w=800',
+        title: 'The Art of Stage Design in Modern Theater',
+        slug: 'art-of-stage-design',
+        excerpt: 'Exploring the creative process behind bringing theatrical productions to life through innovative stage design and visual storytelling.',
+        featuredImage: 'https://images.unsplash.com/photo-1503095396549-8070c434c0a2?w=800&auto=format&fit=crop',
         author: mockAuthors[0],
         categories: [mockCategories[2], mockCategories[0]],
         publishedAt: '2024-03-15T10:00:00Z',
@@ -96,14 +77,16 @@ const mockBlogPosts: BlogPost[] = [
         views: 3450,
         likes: 234,
         bookmarks: 123,
-        isTrending: true
+        comments: 45,
+        isTrending: true,
+        isFeatured: true
     },
     {
         id: '2',
-        title: 'Behind the Scenes: Phantom of the Opera',
-        slug: 'behind-scenes-phantom',
-        excerpt: 'An exclusive look at the technical marvels behind this timeless classic.',
-        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800',
+        title: 'Interview with Award-Winning Director',
+        slug: 'director-interview',
+        excerpt: 'An exclusive conversation with a Tony Award-winning director about their creative journey and vision for modern theater.',
+        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800&auto=format&fit=crop',
         author: mockAuthors[1],
         categories: [mockCategories[1], mockCategories[3]],
         publishedAt: '2024-03-12T14:30:00Z',
@@ -111,103 +94,210 @@ const mockBlogPosts: BlogPost[] = [
         views: 2890,
         likes: 456,
         bookmarks: 234,
-        isTrending: true
+        comments: 67,
+        isTrending: true,
+        isFeatured: true
     },
     {
         id: '3',
-        title: 'How AI is Transforming Script Writing',
-        slug: 'ai-script-writing',
-        excerpt: 'Exploring the role of artificial intelligence in modern theater creation.',
-        featuredImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800',
-        author: mockAuthors[2],
-        categories: [mockCategories[3], mockCategories[2]],
-        publishedAt: '2024-03-10T09:15:00Z',
-        readTime: 10,
-        views: 2100,
-        likes: 189,
-        bookmarks: 98,
-        isTrending: true
-    },
-    {
-        id: '4',
-        title: 'Top 10 Theater Venues to Visit in 2024',
-        slug: 'top-10-venues-2024',
-        excerpt: 'Discover the must-visit performance spaces around the world.',
-        featuredImage: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800',
-        author: mockAuthors[0],
-        categories: [mockCategories[4], mockCategories[5]],
-        publishedAt: '2024-03-08T16:45:00Z',
-        readTime: 15,
-        views: 5670,
-        likes: 892,
-        bookmarks: 445,
-        isTrending: false
-    },
-    {
-        id: '5',
-        title: 'Sustainable Theater: How Venues Are Going Green',
+        title: 'Sustainable Practices in Theater Production',
         slug: 'sustainable-theater',
-        excerpt: 'Learn about innovative eco-friendly practices being adopted by theaters worldwide.',
-        featuredImage: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800',
-        author: mockAuthors[1],
+        excerpt: 'How theaters are adopting eco-friendly practices to reduce their environmental impact while maintaining production quality.',
+        featuredImage: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop',
+        author: mockAuthors[2],
         categories: [mockCategories[0], mockCategories[5]],
-        publishedAt: '2024-03-05T11:20:00Z',
+        publishedAt: '2024-03-10T09:15:00Z',
         readTime: 7,
         views: 1890,
         likes: 267,
         bookmarks: 89,
-        isTrending: false
+        comments: 23,
+        isTrending: false,
+        isFeatured: false
     },
     {
-        id: '6',
-        title: 'Stage Lighting Techniques for Beginners',
-        slug: 'stage-lighting-beginners',
-        excerpt: 'A comprehensive guide to professional stage lighting designs.',
-        featuredImage: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800',
+        id: '4',
+        title: 'Mastering Stage Lighting Techniques',
+        slug: 'stage-lighting-techniques',
+        excerpt: 'A comprehensive guide to professional stage lighting designs, equipment, and techniques for creating magical moments.',
+        featuredImage: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop',
         author: mockAuthors[1],
         categories: [mockCategories[4], mockCategories[2]],
-        publishedAt: '2024-03-03T13:00:00Z',
+        publishedAt: '2024-03-05T11:20:00Z',
         readTime: 20,
         views: 3420,
         likes: 567,
         bookmarks: 234,
-        isTrending: false
+        comments: 89,
+        isTrending: false,
+        isFeatured: false
+    },
+    {
+        id: '5',
+        title: 'The Psychology of Audience Engagement',
+        slug: 'audience-engagement',
+        excerpt: 'Understanding what makes theater audiences connect with performances on an emotional and psychological level.',
+        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800&auto=format&fit=crop',
+        author: mockAuthors[0],
+        categories: [mockCategories[1], mockCategories[5]],
+        publishedAt: '2024-02-28T10:00:00Z',
+        readTime: 14,
+        views: 2450,
+        likes: 345,
+        bookmarks: 156,
+        comments: 56,
+        isTrending: false,
+        isFeatured: true
+    },
+    {
+        id: '6',
+        title: 'How Technology is Transforming Theater',
+        slug: 'technology-transforming-theater',
+        excerpt: 'From augmented reality to immersive sound, discover how cutting-edge technology is changing live performances forever.',
+        featuredImage: 'https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?w=800&auto=format&fit=crop',
+        author: mockAuthors[1],
+        categories: [mockCategories[2], mockCategories[0]],
+        publishedAt: '2024-02-25T14:30:00Z',
+        readTime: 11,
+        views: 2890,
+        likes: 423,
+        bookmarks: 178,
+        comments: 34,
+        isTrending: true,
+        isFeatured: false
+    },
+    {
+        id: '7',
+        title: 'The Art of Costume Design',
+        slug: 'costume-design-art',
+        excerpt: 'Exploring the creative process behind bringing characters to life through intricate costume design and fabric selection.',
+        featuredImage: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=800&auto=format&fit=crop',
+        author: mockAuthors[4],
+        categories: [mockCategories[1], mockCategories[4]],
+        publishedAt: '2024-02-20T09:00:00Z',
+        readTime: 9,
+        views: 2150,
+        likes: 345,
+        bookmarks: 156,
+        comments: 28,
+        isTrending: false,
+        isFeatured: false
+    },
+    {
+        id: '8',
+        title: 'Inclusive Casting: A New Era',
+        slug: 'inclusive-casting',
+        excerpt: 'How theaters are embracing diversity and inclusion in casting decisions to create more representative storytelling.',
+        featuredImage: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=800&auto=format&fit=crop',
+        author: mockAuthors[0],
+        categories: [mockCategories[0], mockCategories[5]],
+        publishedAt: '2024-02-15T14:30:00Z',
+        readTime: 12,
+        views: 2980,
+        likes: 567,
+        bookmarks: 234,
+        comments: 78,
+        isTrending: true,
+        isFeatured: true
+    },
+    {
+        id: '9',
+        title: 'The Business of Broadway Economics',
+        slug: 'broadway-economics',
+        excerpt: 'An in-depth analysis of the financial landscape of professional theater and what makes a production successful.',
+        featuredImage: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800&auto=format&fit=crop',
+        author: mockAuthors[1],
+        categories: [mockCategories[0], mockCategories[2]],
+        publishedAt: '2024-02-10T10:00:00Z',
+        readTime: 16,
+        views: 3240,
+        likes: 456,
+        bookmarks: 234,
+        comments: 45,
+        isTrending: true,
+        isFeatured: false
+    },
+    {
+        id: '10',
+        title: 'Reviving Classic Plays for Modern Audiences',
+        slug: 'reviving-classic-plays',
+        excerpt: 'How directors are reimagining timeless classics for today\'s viewers while preserving their original essence.',
+        featuredImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop',
+        author: mockAuthors[2],
+        categories: [mockCategories[1], mockCategories[4]],
+        publishedAt: '2024-02-05T11:30:00Z',
+        readTime: 11,
+        views: 2450,
+        likes: 345,
+        bookmarks: 156,
+        comments: 34,
+        isTrending: false,
+        isFeatured: true
+    },
+    {
+        id: '11',
+        title: 'The Magic of Puppetry in Modern Theater',
+        slug: 'puppetry-modern-theater',
+        excerpt: 'Exploring how puppetry is being reinvented for contemporary audiences with innovative techniques and storytelling.',
+        featuredImage: 'https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop',
+        author: mockAuthors[4],
+        categories: [mockCategories[1], mockCategories[5]],
+        publishedAt: '2024-01-28T10:00:00Z',
+        readTime: 10,
+        views: 1870,
+        likes: 234,
+        bookmarks: 98,
+        comments: 23,
+        isTrending: false,
+        isFeatured: false
+    },
+    {
+        id: '12',
+        title: 'Sound Design: The Unseen Hero',
+        slug: 'sound-design-hero',
+        excerpt: 'Behind the scenes of professional sound design and how it shapes the audience\'s emotional experience.',
+        featuredImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop',
+        author: mockAuthors[1],
+        categories: [mockCategories[2], mockCategories[4]],
+        publishedAt: '2024-01-20T14:30:00Z',
+        readTime: 9,
+        views: 2340,
+        likes: 345,
+        bookmarks: 123,
+        comments: 31,
+        isTrending: false,
+        isFeatured: false
     }
 ];
 
-// Generate more posts for load more
-const generateMorePosts = (): BlogPost[] => {
-    const morePosts: BlogPost[] = [];
-    for (let i = 7; i <= 30; i++) {
-        const basePost = mockBlogPosts[i % mockBlogPosts.length];
-        morePosts.push({
-            ...basePost,
-            id: i.toString(),
-            title: `${basePost.title} - Part ${Math.floor(i / 6) + 1}`,
-            slug: `${basePost.slug}-${i}`,
-            publishedAt: `2024-03-${(i % 28) + 1}T10:00:00Z`,
-            views: Math.floor(Math.random() * 5000),
-            likes: Math.floor(Math.random() * 500),
-            bookmarks: Math.floor(Math.random() * 200),
-            isTrending: i % 5 === 0,
-        });
-    }
-    return morePosts;
-};
-
-const allPosts = [...mockBlogPosts, ...generateMorePosts()];
-
 const Blog = () => {
-    const [posts, setPosts] = useState<BlogPost[]>(allPosts);
-    const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(allPosts);
-    const [displayedShows, setDisplayedShows] = useState<BlogPost[]>([]);
+    const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts);
+    const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(mockBlogPosts);
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'trending'>('newest');
-    const [visibleCount, setVisibleCount] = useState(6);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const itemsPerPage = 6;
+    const [currentPage, setCurrentPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(true);
+    const [showScrollTop, setShowScrollTop] = useState(false);
+    const itemsPerPage = 12;
+
+    useEffect(() => {
+        setTimeout(() => setIsLoading(false), 800);
+    }, []);
+
+    // Scroll to top button visibility
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 500);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
     useEffect(() => {
         let filtered = [...posts];
@@ -237,20 +327,14 @@ const Blog = () => {
         });
 
         setFilteredPosts(filtered);
-        setVisibleCount(itemsPerPage);
+        setCurrentPage(1);
     }, [posts, selectedCategory, searchQuery, sortBy]);
 
-    useEffect(() => {
-        setDisplayedShows(filteredPosts.slice(0, visibleCount));
-    }, [filteredPosts, visibleCount]);
-
-    const handleLoadMore = () => {
-        setIsLoadingMore(true);
-        setTimeout(() => {
-            setVisibleCount(prev => Math.min(prev + itemsPerPage, filteredPosts.length));
-            setIsLoadingMore(false);
-        }, 500);
-    };
+    const totalPages = Math.ceil(filteredPosts.length / itemsPerPage);
+    const paginatedPosts = filteredPosts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const handleClearFilters = () => {
         setSelectedCategory(null);
@@ -258,78 +342,153 @@ const Blog = () => {
         setSortBy('newest');
     };
 
-    const hasMore = visibleCount < filteredPosts.length;
-    const remainingItems = filteredPosts.length - visibleCount;
-    const nextLoadAmount = Math.min(itemsPerPage, remainingItems);
+    const getGridClass = () => {
+        if (viewMode === 'list') return 'grid-cols-1';
+        return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+    };
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <div className="animate-pulse">
+                        <div className="h-12 bg-gray-200 rounded-lg w-64 mb-8 mx-auto"></div>
+                        <div className="h-8 bg-gray-200 rounded-lg w-96 mb-12 mx-auto"></div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                <div key={i} className="bg-gray-200 rounded-2xl h-96"></div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-dark-900">
+        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
             {/* Hero Section */}
-            <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue py-16">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue">
+                <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6 }}
                         className="text-center"
                     >
-                        <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", delay: 0.2 }}
+                            className="inline-flex items-center justify-center mb-6"
+                        >
+                            <div className="bg-white/20 backdrop-blur-lg rounded-full p-4">
+                                <BookOpen className="h-8 w-8 text-white" />
+                            </div>
+                        </motion.div>
+
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
                             Behind the Curtain
                         </h1>
+
                         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
                             Discover insights, interviews, and inspiration from the world of theater
                         </p>
-                        <div className="relative max-w-2xl mx-auto">
-                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search articles..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-4 bg-white rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
-                            />
-                            {searchQuery && (
-                                <button onClick={() => setSearchQuery('')} className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                                    <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                                </button>
-                            )}
+
+                        <div className="flex flex-wrap gap-4 justify-center">
+                            <a
+                                href="#blog-content"
+                                className="group px-8 py-3 bg-white text-deepTeal rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
+                            >
+                                Explore Articles
+                                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                            </a>
+                            <Link
+                                to="/theaters"
+                                className="group px-8 py-3 border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
+                            >
+                                <Theater className="h-5 w-5" />
+                                Find Shows
+                            </Link>
                         </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Categories */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div className="flex flex-wrap justify-center gap-2 mb-8">
-                    <button
-                        onClick={() => setSelectedCategory(null)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${!selectedCategory
-                            ? 'bg-deepTeal text-white shadow-md'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                    >
-                        All
-                    </button>
-                    {mockCategories.map((category) => (
+            {/* Blog Content */}
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-12" id="blog-content">
+                {/* Category Filters */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="mb-8"
+                >
+                    <div className="flex flex-wrap gap-3 justify-center mb-6">
                         <button
-                            key={category.id}
-                            onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedCategory === category.id
-                                ? 'bg-deepTeal text-white shadow-md'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
+                            onClick={() => setSelectedCategory(null)}
+                            className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                                !selectedCategory
+                                    ? 'bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg'
+                                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                            }`}
                         >
-                            {category.name}
+                            <Sparkles className="h-4 w-4" />
+                            <span>All</span>
+                            <span className={`text-xs ${!selectedCategory ? 'text-white/80' : 'text-gray-400'}`}>
+                                ({filteredPosts.length})
+                            </span>
                         </button>
-                    ))}
-                </div>
-
-                {/* Filter Bar */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-4 border-b border-gray-200">
-                    <div className="text-sm text-gray-600 flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        {filteredPosts.length} {filteredPosts.length === 1 ? 'article' : 'articles'}
+                        {mockCategories.map((category) => {
+                            const Icon = category.icon;
+                            const isActive = selectedCategory === category.id;
+                            const count = filteredPosts.filter(p => p.categories.some(c => c.id === category.id)).length;
+                            return (
+                                <button
+                                    key={category.id}
+                                    onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
+                                    className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
+                                        isActive
+                                            ? 'bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg'
+                                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                                    }`}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                    <span>{category.name}</span>
+                                    <span className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-400'}`}>
+                                        ({count})
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div className="flex items-center gap-3">
+
+                    {/* Search and Controls */}
+                    <div className="flex flex-wrap justify-center items-center gap-4">
+                        <div className="relative w-64">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search articles..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-deepTeal focus:border-transparent"
+                            />
+                        </div>
+                        <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm">
+                            <SortAsc className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm text-gray-500 font-medium">Sort by:</span>
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                className="text-sm text-gray-700 bg-transparent focus:outline-none"
+                            >
+                                <option value="newest">Newest</option>
+                                <option value="popular">Most Popular</option>
+                                <option value="trending">Trending</option>
+                            </select>
+                        </div>
                         <div className="flex bg-gray-100 rounded-lg p-1">
                             <button
                                 onClick={() => setViewMode('grid')}
@@ -344,79 +503,121 @@ const Blog = () => {
                                 <List className="h-4 w-4" />
                             </button>
                         </div>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
-                            className="px-3 py-1.5 bg-gray-100 rounded-lg text-sm"
-                        >
-                            <option value="newest">Newest</option>
-                            <option value="popular">Most Popular</option>
-                            <option value="trending">Trending</option>
-                        </select>
+                        {(selectedCategory || searchQuery || sortBy !== 'newest') && (
+                            <button
+                                onClick={handleClearFilters}
+                                className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
+                            >
+                                <X className="h-4 w-4" />
+                                Clear filters
+                            </button>
+                        )}
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Posts Grid - Same as Home page (3 columns, 6 items initially) */}
-                {displayedShows.length > 0 ? (
+                {/* Posts Grid - Using BlogShowCard */}
+                {paginatedPosts.length > 0 ? (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {displayedShows.map((post) => (
-                                <Link key={post.id} to={`/blog/${post.slug}`}>
-                                    <ShowCard show={convertToShowFormat(post)} />
-                                </Link>
+                        <div className={`grid gap-6 ${getGridClass()}`}>
+                            {paginatedPosts.map((post, index) => (
+                                <motion.div
+                                    key={post.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <BlogShowCard post={post} />
+                                </motion.div>
                             ))}
                         </div>
 
-                        {/* Load More Button */}
-                        {hasMore && (
-                            <div className="flex justify-center mt-12">
-                                <ReusableButton
-                                    variant="primary"
-                                    onClick={handleLoadMore}
-                                    isLoading={isLoadingMore}
-                                    className="px-8 py-3 text-base min-w-[200px]"
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center items-center gap-2 mt-12">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    disabled={currentPage === 1}
+                                    className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
                                 >
-                                    {isLoadingMore ? (
-                                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Loading more articles...</>
-                                    ) : (
-                                        <><Plus className="h-5 w-5 mr-2" /> Load More ({nextLoadAmount} more)</>
+                                    <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <div className="flex gap-2">
+                                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                        let pageNum;
+                                        if (totalPages <= 5) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage <= 3) {
+                                            pageNum = i + 1;
+                                        } else if (currentPage >= totalPages - 2) {
+                                            pageNum = totalPages - 4 + i;
+                                        } else {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        return (
+                                            <button
+                                                key={pageNum}
+                                                onClick={() => setCurrentPage(pageNum)}
+                                                className={`w-10 h-10 rounded-lg font-medium transition ${
+                                                    currentPage === pageNum
+                                                        ? 'bg-deepTeal text-white shadow-md'
+                                                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                                                }`}
+                                            >
+                                                {pageNum}
+                                            </button>
+                                        );
+                                    })}
+                                    {totalPages > 5 && currentPage < totalPages - 2 && (
+                                        <>
+                                            <span className="w-10 h-10 flex items-center justify-center">...</span>
+                                            <button
+                                                onClick={() => setCurrentPage(totalPages)}
+                                                className="w-10 h-10 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                                            >
+                                                {totalPages}
+                                            </button>
+                                        </>
                                     )}
-                                </ReusableButton>
+                                </div>
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    disabled={currentPage === totalPages}
+                                    className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                                >
+                                    <ChevronRight className="h-5 w-5" />
+                                </button>
                             </div>
                         )}
 
-                        {/* Progress Indicator */}
-                        {hasMore && (
-                            <div className="mt-6 text-center">
-                                <div className="text-sm text-gray-500">
-                                    {visibleCount} of {filteredPosts.length} articles loaded
-                                </div>
-                                <div className="w-48 h-1 bg-gray-200 rounded-full mt-2 mx-auto overflow-hidden">
-                                    <div
-                                        className="h-full bg-deepTeal rounded-full transition-all"
-                                        style={{ width: `${(visibleCount / filteredPosts.length) * 100}%` }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Completion Message */}
-                        {!hasMore && filteredPosts.length > 0 && (
-                            <div className="text-center mt-12 p-6 bg-gray-50 rounded-xl">
-                                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                                <p className="text-gray-600">You've seen all {filteredPosts.length} articles!</p>
-                            </div>
-                        )}
+                        {/* Showing info */}
+                        <div className="text-center mt-6 text-sm text-gray-500">
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredPosts.length)} of {filteredPosts.length} articles
+                        </div>
                     </>
                 ) : (
                     <div className="text-center py-16">
-                        <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold mb-2">No articles found</h3>
+                        <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No articles found</h3>
                         <p className="text-gray-500 mb-4">Try adjusting your search or filter</p>
                         <button onClick={handleClearFilters} className="px-4 py-2 bg-deepTeal text-white rounded-lg">Clear all filters</button>
                     </div>
                 )}
             </div>
+
+            {/* SCROLL TO TOP BUTTON */}
+            <AnimatePresence>
+                {showScrollTop && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        onClick={scrollToTop}
+                        className="fixed bottom-6 right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
+                    >
+                        <ChevronUp className="h-5 w-5" />
+                    </motion.button>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
