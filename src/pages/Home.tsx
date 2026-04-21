@@ -22,7 +22,6 @@ import {
     Crown,
     Gift,
     CheckCircle,
-    Loader2,
     Plus,
     PlayCircle,
     CalendarDays,
@@ -116,7 +115,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.9,
         reviews: 1280,
-        viewCount: 0
+        viewCount: 1250
     },
     {
         id: '2',
@@ -143,7 +142,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.8,
         reviews: 2150,
-        viewCount: 0
+        viewCount: 980
     },
     {
         id: '3',
@@ -169,7 +168,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.9,
         reviews: 890,
-        viewCount: 0
+        viewCount: 450
     },
     {
         id: '4',
@@ -194,7 +193,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.6,
         reviews: 1780,
-        viewCount: 0
+        viewCount: 560
     },
     {
         id: '5',
@@ -220,7 +219,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.4,
         reviews: 230,
-        viewCount: 0
+        viewCount: 320
     },
     {
         id: '6',
@@ -245,7 +244,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.8,
         reviews: 670,
-        viewCount: 0
+        viewCount: 280
     },
     {
         id: '7',
@@ -270,7 +269,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.9,
         reviews: 2450,
-        viewCount: 0
+        viewCount: 2100
     },
     {
         id: '8',
@@ -295,7 +294,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.8,
         reviews: 1890,
-        viewCount: 0
+        viewCount: 890
     },
     {
         id: '9',
@@ -320,7 +319,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.6,
         reviews: 1560,
-        viewCount: 0
+        viewCount: 670
     },
     {
         id: '10',
@@ -345,7 +344,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.9,
         reviews: 3120,
-        viewCount: 0
+        viewCount: 1850
     },
     {
         id: '11',
@@ -370,7 +369,7 @@ const showsData: Show[] = [
         isFeatured: false,
         rating: 4.5,
         reviews: 980,
-        viewCount: 0
+        viewCount: 340
     },
     {
         id: '12',
@@ -395,7 +394,7 @@ const showsData: Show[] = [
         isFeatured: true,
         rating: 4.7,
         reviews: 1450,
-        viewCount: 0
+        viewCount: 520
     }
 ];
 
@@ -413,14 +412,6 @@ const sortOptions = [
 // Items per page for load more - load 6 items per click
 const ITEMS_PER_PAGE = 6;
 
-// Navigation items
-const navItems = [
-    { name: 'Home', icon: HomeIcon, path: '/' },
-    { name: 'Explore', icon: Compass, path: '/explore' },
-    { name: 'Bookings', icon: CalendarIcon, path: '/bookings' },
-    { name: 'Profile', icon: User, path: '/profile' },
-];
-
 // ============================================
 // HOME PAGE COMPONENT
 // ============================================
@@ -434,36 +425,31 @@ const Home: React.FC = () => {
     const [sortBy, setSortBy] = useState('date');
     const [showFilters, setShowFilters] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
     const [hasMore, setHasMore] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [showMostPopularAll, setShowMostPopularAll] = useState(false);
+    const [showFeaturedAll, setShowFeaturedAll] = useState(false);
 
-    const [viewedShows, setViewedShows] = useState<Set<string>>(new Set());
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const sortDropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
 
-    // Load mock data with skeleton loading
+    // Load data immediately (no loading delay)
     useEffect(() => {
-        const loadTimer = setTimeout(() => {
-            const sortedShows = [...showsData].sort((a, b) => {
-                const dateA = a.dates?.[0]?.date ? new Date(a.dates[0].date).getTime() : 0;
-                const dateB = b.dates?.[0]?.date ? new Date(b.dates[0].date).getTime() : 0;
-                return dateB - dateA;
-            });
-            setShows(sortedShows);
-            setFilteredShows(sortedShows);
-            setIsLoading(false);
-        }, 1500);
-
-        return () => clearTimeout(loadTimer);
+        const sortedShows = [...showsData].sort((a, b) => {
+            const dateA = a.dates?.[0]?.date ? new Date(a.dates[0].date).getTime() : 0;
+            const dateB = b.dates?.[0]?.date ? new Date(b.dates[0].date).getTime() : 0;
+            return dateB - dateA;
+        });
+        setShows(sortedShows);
+        setFilteredShows(sortedShows);
     }, []);
 
     // Infinite scroll observer
     useEffect(() => {
-        if (!hasMore || isLoadingMore || isLoading) return;
+        if (!hasMore || isLoadingMore) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -479,7 +465,7 @@ const Home: React.FC = () => {
         }
 
         return () => observer.disconnect();
-    }, [hasMore, isLoadingMore, isLoading, displayedShows.length]);
+    }, [hasMore, isLoadingMore, displayedShows.length]);
 
     // Filter and sort shows
     useEffect(() => {
@@ -558,11 +544,17 @@ const Home: React.FC = () => {
         return option ? option.label : 'Sort by';
     };
 
-    // Get most viewed shows
-    const mostViewedShows = [...shows].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0)).slice(0, 4);
+    // Get most viewed shows (top 4 or all if showAll)
+    const getMostViewedShows = () => {
+        const sorted = [...shows].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+        return showMostPopularAll ? sorted : sorted.slice(0, 4);
+    };
 
-    // Get featured shows
-    const featuredShows = shows.filter(show => show.isFeatured).slice(0, 4);
+    // Get featured shows (top 4 or all if showAll)
+    const getFeaturedShows = () => {
+        const featured = shows.filter(show => show.isFeatured);
+        return showFeaturedAll ? featured : featured.slice(0, 4);
+    };
 
     // Scroll to top button visibility
     const [showScrollTop, setShowScrollTop] = useState(false);
@@ -579,486 +571,331 @@ const Home: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Loading Skeleton Component with shimmer effect
-    const LoadingSkeleton = () => (
-        <div className="min-h-screen bg-gray-50 dark:bg-dark-900">
-            <div className="container mx-auto px-4 py-12">
-                {/* Hero Banner Skeleton */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-gray-200 to-gray-300 dark:from-dark-700 dark:to-dark-800 h-[400px] mb-12">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
-                </div>
+    // Handle View All click for Most Popular
+    const handleViewAllMostPopular = () => {
+        setShowMostPopularAll(true);
+        setTimeout(() => {
+            document.getElementById('most-popular-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
 
-                {/* Welcome Section Skeleton */}
-                <div className="mb-8 text-center">
-                    <div className="h-10 bg-gray-200 dark:bg-dark-700 rounded-lg w-64 mx-auto mb-3 animate-pulse"></div>
-                    <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded-lg w-96 mx-auto animate-pulse"></div>
-                </div>
+    // Handle View All click for Featured Picks
+    const handleViewAllFeatured = () => {
+        setShowFeaturedAll(true);
+        setTimeout(() => {
+            document.getElementById('featured-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+    };
 
-                {/* Search Section Skeleton */}
-                <div className="mb-10">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                            <div className="flex-1 h-14 bg-gray-200 dark:bg-dark-700 rounded-xl animate-pulse"></div>
-                            <div className="w-48 h-14 bg-gray-200 dark:bg-dark-700 rounded-xl animate-pulse"></div>
-                            <div className="w-32 h-14 bg-gray-200 dark:bg-dark-700 rounded-xl animate-pulse"></div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Featured Sections Skeleton */}
-                <div className="mb-12">
-                    <div className="flex items-center justify-between mb-6">
-                        <div className="h-8 bg-gray-200 dark:bg-dark-700 rounded-lg w-48 animate-pulse"></div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden">
-                                <div className="h-48 bg-gray-200 dark:bg-dark-700 animate-pulse"></div>
-                                <div className="p-4">
-                                    <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                    <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/2 mb-3 animate-pulse"></div>
-                                    <div className="h-8 bg-gray-200 dark:bg-dark-700 rounded w-full animate-pulse"></div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Shows Grid Skeleton */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden">
-                            <div className="h-56 bg-gray-200 dark:bg-dark-700 animate-pulse"></div>
-                            <div className="p-4">
-                                <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-3/4 mb-2 animate-pulse"></div>
-                                <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/2 mb-3 animate-pulse"></div>
-                                <div className="space-y-2 mb-3">
-                                    <div className="flex justify-between">
-                                        <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/3 animate-pulse"></div>
-                                        <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/4 animate-pulse"></div>
-                                    </div>
-                                    <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full animate-pulse"></div>
-                                </div>
-                                <div className="flex justify-between items-center mt-3 pt-2">
-                                    <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-1/3 animate-pulse"></div>
-                                    <div className="h-9 bg-gray-200 dark:bg-dark-700 rounded-lg w-1/3 animate-pulse"></div>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Shimmer animation keyframes */}
-            <style>{`
-                @keyframes shimmer {
-                    0% { transform: translateX(-100%); }
-                    100% { transform: translateX(100%); }
-                }
-                .animate-shimmer {
-                    animation: shimmer 2s infinite;
-                }
-            `}</style>
-        </div>
-    );
-
-    if (isLoading) {
-        return <LoadingSkeleton />;
-    }
+    const mostViewedShows = getMostViewedShows();
+    const featuredShows = getFeaturedShows();
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
-            {/* TOP NAVIGATION BAR */}
-            <nav className="fixed top-0 left-0 right-0 bg-white dark:bg-dark-800 shadow-md z-50">
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center justify-between h-16">
-                        {/* Logo */}
-                        <Link to="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-gradient-to-r from-deepTeal to-teal-600 rounded-lg flex items-center justify-center">
-                                <Theater className="h-5 w-5 text-white" />
-                            </div>
-                            <span className="font-bold text-lg text-gray-900 dark:text-white">
-                                Theatre<span className="text-deepTeal">Hub</span>
-                            </span>
-                        </Link>
+            {/* Hero Banner */}
+            <HeroBanner featuredShows={shows.filter(show => show.isFeatured)} />
 
-                        {/* Desktop Navigation */}
-                        <div className="hidden md:flex items-center gap-6">
-                            {navItems.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = location.pathname === item.path;
-                                return (
-                                    <Link
-                                        key={item.name}
-                                        to={item.path}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 ${isActive
-                                                ? 'text-deepTeal bg-deepTeal/10'
-                                                : 'text-gray-600 dark:text-gray-300 hover:text-deepTeal hover:bg-deepTeal/5'
-                                            }`}
-                                    >
-                                        <Icon className="h-5 w-5" />
-                                        <span className="text-sm font-medium">{item.name}</span>
-                                    </Link>
-                                );
-                            })}
+            <div className="container mx-auto px-4 py-12">
+                {/* Welcome Section */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                    className="mb-8 text-center"
+                >
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                        Welcome to <span className="text-deepTeal">Theatre Hub Ethiopia</span>
+                    </h1>
+                    <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                        Experience the best of Ethiopian and international theatre, musicals, and performances
+                    </p>
+                </motion.div>
+
+                {/* Search & Filter Section */}
+                <div className="mb-10">
+                    <div className="max-w-5xl mx-auto">
+                        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search for shows, venues, artists, or descriptions..."
+                                    className="w-full pl-12 pr-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent dark:text-white placeholder:text-gray-400 shadow-sm"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                />
+                            </div>
+
+                            <div className="relative" ref={sortDropdownRef}>
+                                <button
+                                    onClick={() => setIsSortOpen(!isSortOpen)}
+                                    className="w-full sm:w-48 px-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors shadow-sm flex items-center justify-between gap-2"
+                                >
+                                    <span className="truncate">{getCurrentSortLabel()}</span>
+                                    <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {isSortOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="absolute right-0 sm:left-0 mt-2 w-full sm:w-64 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden"
+                                        >
+                                            {sortOptions.map((option) => {
+                                                const Icon = option.icon;
+                                                return (
+                                                    <button
+                                                        key={option.value}
+                                                        onClick={() => {
+                                                            setSortBy(option.value);
+                                                            setIsSortOpen(false);
+                                                        }}
+                                                        className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors flex items-center gap-3 ${sortBy === option.value
+                                                                ? 'bg-deepTeal/10 text-deepTeal'
+                                                                : 'text-gray-700 dark:text-gray-300'
+                                                            }`}
+                                                    >
+                                                        <Icon className="h-4 w-4" />
+                                                        <span className="flex-1">{option.label}</span>
+                                                        {sortBy === option.value && (
+                                                            <CheckCircle className="h-4 w-4 text-deepTeal" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            <button
+                                onClick={() => setShowFilters(!showFilters)}
+                                className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${showFilters
+                                        ? 'bg-deepTeal text-white'
+                                        : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700'
+                                    }`}
+                            >
+                                <Filter className="h-5 w-5" />
+                                <span>Filters</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
+                            </button>
                         </div>
 
-                        {/* Mobile Menu Button */}
-                        <button
-                            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-colors"
-                        >
-                            {isMobileMenuOpen ? (
-                                <X className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                            ) : (
-                                <Menu className="h-6 w-6 text-gray-600 dark:text-gray-300" />
-                            )}
-                        </button>
+                        {/* Active Filter Indicator */}
+                        {(selectedCategory !== 'All' || searchQuery) && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center justify-between bg-deepTeal/5 rounded-lg p-3"
+                            >
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-sm font-medium text-deepTeal">Active filters:</span>
+                                    {selectedCategory !== 'All' && (
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-deepTeal/10 text-deepTeal rounded-full text-sm">
+                                            Category: {selectedCategory}
+                                        </span>
+                                    )}
+                                    {searchQuery && (
+                                        <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm">
+                                            "{searchQuery}"
+                                        </span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
+                                >
+                                    Clear All
+                                </button>
+                            </motion.div>
+                        )}
                     </div>
                 </div>
 
-                {/* Mobile Navigation Menu */}
+                {/* Filters Panel */}
                 <AnimatePresence>
-                    {isMobileMenuOpen && (
+                    {showFilters && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="md:hidden bg-white dark:bg-dark-800 border-t border-gray-100 dark:border-dark-700"
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden mb-8"
                         >
-                            <div className="container mx-auto px-4 py-4">
-                                <div className="flex flex-col gap-2">
-                                    {navItems.map((item) => {
-                                        const Icon = item.icon;
-                                        const isActive = location.pathname === item.path;
-                                        return (
-                                            <Link
-                                                key={item.name}
-                                                to={item.path}
-                                                onClick={() => setIsMobileMenuOpen(false)}
-                                                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive
-                                                        ? 'text-deepTeal bg-deepTeal/10'
-                                                        : 'text-gray-600 dark:text-gray-300 hover:text-deepTeal hover:bg-deepTeal/5'
-                                                    }`}
-                                            >
-                                                <Icon className="h-5 w-5" />
-                                                <span className="text-sm font-medium">{item.name}</span>
-                                            </Link>
-                                        );
-                                    })}
-                                </div>
-                            </div>
+                            <ShowFilter
+                                selectedCategory={selectedCategory}
+                                setSelectedCategory={setSelectedCategory}
+                                onClearFilters={handleClearFilters}
+                            />
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </nav>
 
-            {/* Main Content - Add padding-top to account for fixed navbar */}
-            <div className="pt-16">
-                {/* Hero Banner */}
-                <HeroBanner featuredShows={shows.filter(show => show.isFeatured)} />
-
-                <div className="container mx-auto px-4 py-12">
-                    {/* Welcome Section */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="mb-8 text-center"
-                    >
-                        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                            Welcome to <span className="text-deepTeal">Theatre Hub Ethiopia</span>
-                        </h1>
-                        <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                            Experience the best of Ethiopian and international theatre, musicals, and performances
-                        </p>
-                    </motion.div>
-
-                    {/* Search & Filter Section */}
-                    <div className="mb-10">
-                        <div className="max-w-5xl mx-auto">
-                            <div className="flex flex-col sm:flex-row gap-3 mb-4">
-                                <div className="flex-1 relative">
-                                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search for shows, venues, artists, or descriptions..."
-                                        className="w-full pl-12 pr-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent dark:text-white placeholder:text-gray-400 shadow-sm"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onKeyPress={handleKeyPress}
-                                    />
+                {/* MOST POPULAR SECTION */}
+                {mostViewedShows.length > 0 && (
+                    <section id="most-popular-section" className="mb-12">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
+                                    <Heart className="h-5 w-5 text-white" />
                                 </div>
-
-                                <div className="relative" ref={sortDropdownRef}>
-                                    <button
-                                        onClick={() => setIsSortOpen(!isSortOpen)}
-                                        className="w-full sm:w-48 px-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors shadow-sm flex items-center justify-between gap-2"
-                                    >
-                                        <span className="truncate">{getCurrentSortLabel()}</span>
-                                        <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? 'rotate-180' : ''}`} />
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isSortOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="absolute right-0 sm:left-0 mt-2 w-full sm:w-64 bg-white dark:bg-dark-800 rounded-xl shadow-xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden"
-                                            >
-                                                {sortOptions.map((option) => {
-                                                    const Icon = option.icon;
-                                                    return (
-                                                        <button
-                                                            key={option.value}
-                                                            onClick={() => {
-                                                                setSortBy(option.value);
-                                                                setIsSortOpen(false);
-                                                            }}
-                                                            className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors flex items-center gap-3 ${sortBy === option.value
-                                                                ? 'bg-deepTeal/10 text-deepTeal'
-                                                                : 'text-gray-700 dark:text-gray-300'
-                                                                }`}
-                                                        >
-                                                            <Icon className="h-4 w-4" />
-                                                            <span className="flex-1">{option.label}</span>
-                                                            {sortBy === option.value && (
-                                                                <CheckCircle className="h-4 w-4 text-deepTeal" />
-                                                            )}
-                                                        </button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-
-                                <button
-                                    onClick={() => setShowFilters(!showFilters)}
-                                    className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${showFilters
-                                        ? 'bg-deepTeal text-white'
-                                        : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700'
-                                        }`}
-                                >
-                                    <Filter className="h-5 w-5" />
-                                    <span>Filters</span>
-                                    <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showFilters ? 'rotate-180' : ''}`} />
-                                </button>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    Most Popular
+                                </h2>
+                                <span className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-sm font-medium">
+                                    Fan Favorites
+                                </span>
                             </div>
-
-                            {/* Active Filter Indicator */}
-                            {(selectedCategory !== 'All' || searchQuery) && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="flex items-center justify-between bg-deepTeal/5 rounded-lg p-3"
+                            {!showMostPopularAll && mostViewedShows.length >= 4 && (
+                                <button
+                                    onClick={handleViewAllMostPopular}
+                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
                                 >
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-medium text-deepTeal">Active filters:</span>
-                                        {selectedCategory !== 'All' && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-deepTeal/10 text-deepTeal rounded-full text-sm">
-                                                Category: {selectedCategory}
-                                            </span>
-                                        )}
-                                        {searchQuery && (
-                                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-sm">
-                                                "{searchQuery}"
-                                            </span>
-                                        )}
-                                    </div>
-                                    <button
-                                        onClick={handleClearFilters}
-                                        className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
-                                    >
-                                        Clear All
-                                    </button>
-                                </motion.div>
+                                    View All <ChevronRight className="h-4 w-4" />
+                                </button>
+                            )}
+                            {showMostPopularAll && (
+                                <button
+                                    onClick={() => setShowMostPopularAll(false)}
+                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
+                                >
+                                    Show Less <ChevronRight className="h-4 w-4 rotate-90" />
+                                </button>
                             )}
                         </div>
-                    </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {mostViewedShows.map((show) => (
+                                <ShowCard key={show.id} show={show} compact={true} />
+                            ))}
+                        </div>
+                    </section>
+                )}
 
-                    {/* Filters Panel */}
-                    <AnimatePresence>
-                        {showFilters && (
+                {/* FEATURED PICKS SECTION */}
+                {featuredShows.length > 0 && (
+                    <section id="featured-section" className="mb-12">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg">
+                                    <Crown className="h-5 w-5 text-white" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    Featured Picks
+                                </h2>
+                                <span className="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-sm font-medium">
+                                    Editor's Choice
+                                </span>
+                            </div>
+                            {!showFeaturedAll && featuredShows.length >= 4 && (
+                                <button
+                                    onClick={handleViewAllFeatured}
+                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
+                                >
+                                    View All <ChevronRight className="h-4 w-4" />
+                                </button>
+                            )}
+                            {showFeaturedAll && (
+                                <button
+                                    onClick={() => setShowFeaturedAll(false)}
+                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
+                                >
+                                    Show Less <ChevronRight className="h-4 w-4 rotate-90" />
+                                </button>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {featuredShows.map((show) => (
+                                <ShowCard key={show.id} show={show} compact={true} />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* All Shows Grid */}
+                {displayedShows.length > 0 ? (
+                    <section>
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    All Shows
+                                </h2>
+                                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                    Showing {displayedShows.length} of {filteredShows.length} shows
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {displayedShows.map((show, index) => (
+                                <motion.div
+                                    key={show.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05 }}
+                                >
+                                    <ShowCard show={show} />
+                                </motion.div>
+                            ))}
+                        </div>
+
+                        {/* Infinite Scroll Loader - Skeleton Cards */}
+                        {hasMore && (
+                            <div ref={loadMoreRef} className="mt-8">
+                                {isLoadingMore && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {[1, 2, 3].map((i) => (
+                                            <div key={i} className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden animate-pulse">
+                                                <div className="h-56 bg-gray-200 dark:bg-dark-700"></div>
+                                                <div className="p-4">
+                                                    <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-3/4 mb-2"></div>
+                                                    <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/2 mb-3"></div>
+                                                    <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full mb-3"></div>
+                                                    <div className="h-9 bg-gray-200 dark:bg-dark-700 rounded-lg w-full"></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Completion message */}
+                        {!hasMore && filteredShows.length > 0 && (
                             <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden mb-8"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="text-center mt-12 p-6 bg-gray-50 dark:bg-dark-800 rounded-xl"
                             >
-                                <ShowFilter
-                                    selectedCategory={selectedCategory}
-                                    setSelectedCategory={setSelectedCategory}
-                                    onClearFilters={handleClearFilters}
-                                />
+                                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                                <p className="text-gray-600 dark:text-gray-400">
+                                    You've seen all {filteredShows.length} shows!
+                                </p>
                             </motion.div>
                         )}
-                    </AnimatePresence>
-
-                    {/* MOST POPULAR SECTION */}
-                    {mostViewedShows.length > 0 && (
-                        <section className="mb-12">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
-                                        <Heart className="h-5 w-5 text-white" />
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                        Most Popular
-                                    </h2>
-                                    <span className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-sm font-medium">
-                                        Fan Favorites
-                                    </span>
-                                </div>
-                                <button className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors">
-                                    View All <ChevronRight className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {mostViewedShows.map((show) => (
-                                    <ShowCard key={show.id} show={show} compact={true} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* FEATURED PICKS SECTION */}
-                    {featuredShows.length > 0 && (
-                        <section className="mb-12">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg">
-                                        <Crown className="h-5 w-5 text-white" />
-                                    </div>
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                        Featured Picks
-                                    </h2>
-                                    <span className="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-sm font-medium">
-                                        Editor's Choice
-                                    </span>
-                                </div>
-                                <button className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors">
-                                    View All <ChevronRight className="h-4 w-4" />
-                                </button>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {featuredShows.map((show) => (
-                                    <ShowCard key={show.id} show={show} compact={true} />
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {/* All Shows Grid */}
-                    {displayedShows.length > 0 ? (
-                        <section>
-                            <div className="flex items-center justify-between mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                        All Shows
-                                    </h2>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                        Showing {displayedShows.length} of {filteredShows.length} shows
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {displayedShows.map((show, index) => (
-                                    <motion.div
-                                        key={show.id}
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <ShowCard show={show} />
-                                    </motion.div>
-                                ))}
-                            </div>
-
-                            {/* Infinite Scroll Loader - Skeleton Cards */}
-                            {hasMore && (
-                                <div ref={loadMoreRef} className="mt-8">
-                                    {isLoadingMore && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            {[1, 2, 3].map((i) => (
-                                                <div key={i} className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden animate-pulse">
-                                                    <div className="h-56 bg-gray-200 dark:bg-dark-700"></div>
-                                                    <div className="p-4">
-                                                        <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-3/4 mb-2"></div>
-                                                        <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/2 mb-3"></div>
-                                                        <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full mb-3"></div>
-                                                        <div className="h-9 bg-gray-200 dark:bg-dark-700 rounded-lg w-full"></div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Completion message */}
-                            {!hasMore && filteredShows.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    className="text-center mt-12 p-6 bg-gray-50 dark:bg-dark-800 rounded-xl"
-                                >
-                                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                                    <p className="text-gray-600 dark:text-gray-400">
-                                        You've seen all {filteredShows.length} shows!
-                                    </p>
-                                </motion.div>
-                            )}
-                        </section>
-                    ) : (
-                        <div className="text-center py-16">
-                            <div className="bg-gray-100 dark:bg-dark-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
-                                <Ticket className="h-10 w-10 text-gray-400" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                                No shows found
-                            </h3>
-                            <p className="text-gray-500 dark:text-gray-400">
-                                Try adjusting your filters or search criteria
-                            </p>
-                            <button
-                                onClick={handleClearFilters}
-                                className="mt-4 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
-                            >
-                                Clear all filters
-                            </button>
+                    </section>
+                ) : (
+                    <div className="text-center py-16">
+                        <div className="bg-gray-100 dark:bg-dark-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                            <Ticket className="h-10 w-10 text-gray-400" />
                         </div>
-                    )}
-                </div>
-            </div>
-
-            {/* BOTTOM NAVIGATION BAR - Mobile Only */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-dark-800 border-t border-gray-200 dark:border-dark-700 md:hidden z-50">
-                <div className="container mx-auto px-4">
-                    <div className="flex items-center justify-around py-2">
-                        {navItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = location.pathname === item.path;
-                            return (
-                                <Link
-                                    key={item.name}
-                                    to={item.path}
-                                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all duration-200 ${isActive
-                                            ? 'text-deepTeal'
-                                            : 'text-gray-500 dark:text-gray-400 hover:text-deepTeal'
-                                        }`}
-                                >
-                                    <Icon className="h-5 w-5" />
-                                    <span className="text-[10px] font-medium">{item.name}</span>
-                                </Link>
-                            );
-                        })}
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                            No shows found
+                        </h3>
+                        <p className="text-gray-500 dark:text-gray-400">
+                            Try adjusting your filters or search criteria
+                        </p>
+                        <button
+                            onClick={handleClearFilters}
+                            className="mt-4 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
+                        >
+                            Clear all filters
+                        </button>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* SCROLL TO TOP BUTTON */}
@@ -1069,7 +906,7 @@ const Home: React.FC = () => {
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0 }}
                         onClick={scrollToTop}
-                        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
+                        className="fixed bottom-6 right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
                     >
                         <ChevronUp className="h-5 w-5" />
                     </motion.button>
