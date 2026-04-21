@@ -127,7 +127,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
     const InfoSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
         <div className="mb-6">
             <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
-                <div className="p-1.5 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-lg">
+                <div className="p-1.5 bg-gradient-to-r from-teal-100 to-teal-200 rounded-lg">
                     {icon}
                 </div>
                 <h3 className="text-md font-semibold text-gray-800">{title}</h3>
@@ -173,8 +173,8 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                     className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header with Gradient */}
-                    <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 flex items-center justify-between z-10">
+                    {/* Header with Deepteal Gradient */}
+                    <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-5 flex items-center justify-between z-10">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
                                 <Building className="h-6 w-6 text-white" />
@@ -196,7 +196,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                     <div className="p-6">
                         {/* Theater Header with Avatar and Status */}
                         <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-lg">
                                 <Building className="h-10 w-10 text-white" />
                             </div>
                             <div className="flex-1">
@@ -214,7 +214,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                             <div className="space-y-6">
                                 {/* Business Information */}
                                 {(theater.businessName || theater.tradeName || theater.businessType) && (
-                                    <InfoSection title="Business Information" icon={<Briefcase className="h-4 w-4 text-indigo-600" />}>
+                                    <InfoSection title="Business Information" icon={<Briefcase className="h-4 w-4 text-teal-600" />}>
                                         <div className="grid grid-cols-1 gap-3">
                                             {theater.businessName && (
                                                 <InfoRow icon={<Building className="h-4 w-4" />} label="Business Name" value={theater.businessName} />
@@ -242,7 +242,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                 )}
 
                                 {/* Contact Information */}
-                                <InfoSection title="Contact Information" icon={<User className="h-4 w-4 text-indigo-600" />}>
+                                <InfoSection title="Contact Information" icon={<User className="h-4 w-4 text-teal-600" />}>
                                     <div className="grid grid-cols-1 gap-3">
                                         <InfoRow icon={<User className="h-4 w-4" />} label="Owner Name" value={theater.ownerName} />
                                         {theater.ownerPosition && (
@@ -302,7 +302,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                             {/* Right Column */}
                             <div className="space-y-6">
                                 {/* Theater Details */}
-                                <InfoSection title="Theater Details" icon={<Building className="h-4 w-4 text-indigo-600" />}>
+                                <InfoSection title="Theater Details" icon={<Building className="h-4 w-4 text-teal-600" />}>
                                     <div className="grid grid-cols-1 gap-3">
                                         {theater.theaterDescription && (
                                             <InfoRow icon={<Info className="h-4 w-4" />} label="Description" value={theater.theaterDescription} colSpan />
@@ -340,7 +340,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
 
                                 {/* Services & Screen Types */}
                                 {(theater.services && theater.services.length > 0) && (
-                                    <InfoSection title="Services & Amenities" icon={<Sparkles className="h-4 w-4 text-indigo-600" />}>
+                                    <InfoSection title="Services & Amenities" icon={<Sparkles className="h-4 w-4 text-teal-600" />}>
                                         <div className="flex flex-wrap gap-2">
                                             {theater.services.map((service, index) => (
                                                 <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
@@ -353,7 +353,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                 )}
 
                                 {(theater.screenTypes && theater.screenTypes.length > 0) && (
-                                    <InfoSection title="Screen Types" icon={<Film className="h-4 w-4 text-indigo-600" />}>
+                                    <InfoSection title="Screen Types" icon={<Film className="h-4 w-4 text-teal-600" />}>
                                         <div className="flex flex-wrap gap-2">
                                             {theater.screenTypes.map((type, index) => (
                                                 <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
@@ -366,7 +366,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                 )}
 
                                 {/* Pricing & Performance */}
-                                <InfoSection title="Pricing & Performance" icon={<CreditCard className="h-4 w-4 text-indigo-600" />}>
+                                <InfoSection title="Pricing & Performance" icon={<CreditCard className="h-4 w-4 text-teal-600" />}>
                                     <div className="grid grid-cols-2 gap-3">
                                         {theater.pricingModel && (
                                             <InfoRow icon={<CreditCard className="h-4 w-4" />} label="Pricing Model" value={theater.pricingModel.replace('_', ' ')} />
@@ -393,7 +393,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
 
                                 {/* Agreements */}
                                 {(theater.acceptMarketing !== undefined || theater.paymentCompleted !== undefined) && (
-                                    <InfoSection title="Agreements" icon={<Shield className="h-4 w-4 text-indigo-600" />}>
+                                    <InfoSection title="Agreements" icon={<Shield className="h-4 w-4 text-teal-600" />}>
                                         <div className="grid grid-cols-1 gap-3">
                                             {theater.acceptMarketing !== undefined && (
                                                 <InfoRow 
@@ -415,21 +415,14 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                             </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="mt-6 pt-4 border-t border-gray-200 flex gap-3">
+                        {/* Action Buttons - Removed Print button, only Close */}
+                        <div className="mt-6 pt-4 border-t border-gray-200">
                             <ReusableButton 
                                 variant="secondary" 
                                 onClick={onClose}
-                                className="flex-1"
+                                className="w-full"
                             >
                                 Close
-                            </ReusableButton>
-                            <ReusableButton 
-                                variant="primary" 
-                                onClick={() => window.print()}
-                                className="flex-1"
-                            >
-                                Print Details
                             </ReusableButton>
                         </div>
                     </div>

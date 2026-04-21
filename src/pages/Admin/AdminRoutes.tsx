@@ -4,22 +4,21 @@ import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import AdminDashboard from './AdminDashboard';
 import UserManagement from './users/UserManagement';
+import TheaterManagement from './theateres/Theatermanagement';
+// Financial management Imports
 import WalletBalance from '../../components/wallet/WalletBalance';
 import TransactionHistory from '../../components/wallet/TransactionHistory';
 import DepositFunds from '../../components/wallet/DepositFunds';
 import WithdrawFunds from '../../components/wallet/WithdrawFunds';
 import BankAccounts from '../../components/wallet/BankAccounts';
 import Commission from '../../components/wallet/Commission';
-import DeactivatedUsers from './users/DeactivatedUsers';
-import ActivityLogs from './users/ActivityLogs';
 import RolesAndPermissions from './users/RolesAndPermissions';
 import FinancialReports from './financial/FinancialReports';
-import TheaterManagement from './theateres/Theatermanagement';
-import RegistrationRequests from './theateres/RegistrationRequests';
-import DeactivateTheaters from './theateres/DeactivateTheaters';
+// Content system monitoring Imports
 import PlatformHealth from './monitoring/PlatformHealth';
 import SystemLogs from './monitoring/SystemLogs';
 import Performance from './monitoring/Performance';
+import ActivityLogs from './monitoring/ActivityLogs';
 // Content Management Imports
 import ContactManagement from './content/ContactManagement';
 import CustomerManagement from './content/CustomerManagement';
@@ -63,8 +62,6 @@ export const adminRouteElement = (
     {/* <Route path="wallet" element={<AdminDashboard />} /> */}
 
     <Route path="users/roles" element={<RolesAndPermissions />} />
-    <Route path="users/deactivated" element={<DeactivatedUsers />} />
-    <Route path="users/activity-logs" element={<ActivityLogs />} />
     <Route path="wallet" element={<AdminDashboard />} />
     <Route path="wallet/balance" element={<WalletBalance />} />
     <Route path="wallet/transactions" element={<TransactionHistory />} />
@@ -74,11 +71,11 @@ export const adminRouteElement = (
     <Route path="wallet/commission" element={<Commission />} />
     <Route path="financial/revenue" element={<FinancialReports />} />
     <Route path="theaters/theaters" element={<TheaterManagement />} />
-    <Route path="theaters/Requests" element={<RegistrationRequests />} />
-    <Route path="theaters/deactivated" element={<DeactivateTheaters />} />
     <Route path="monitoring/platform_health" element={<PlatformHealth />} />
     <Route path="monitoring/logs" element={<SystemLogs />} />
     <Route path="monitoring/performance" element={<Performance />} />
+    <Route path="users/activity-logs" element={<ActivityLogs />} />
+
     {/* Content Management */}
     <Route path="content/contacts" element={<ContactManagement />} />
     <Route path="content/customers" element={<CustomerManagement />} />

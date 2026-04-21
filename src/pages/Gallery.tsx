@@ -3,28 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     X,
-    Play,
     Camera,
-    Video,
     Calendar,
     MapPin,
     Users,
     Heart,
     Share2,
     Download,
-    Maximize2,
     Award,
     Theater,
     Grid,
     Columns,
-    LayoutGrid,
     Image as ImageIcon,
-    Sparkles,
     ArrowRight,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    ChevronUp
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import GalleryCard from '../components/UI/GalleryCard';
 
 // Types
 interface GalleryImage {
@@ -53,6 +50,7 @@ const Gallery: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [columns, setColumns] = useState<number>(4);
     const [currentPage, setCurrentPage] = useState(1);
+    const [showScrollTop, setShowScrollTop] = useState(false);
     const itemsPerPage = 12;
 
     // Mock Gallery Images
@@ -229,6 +227,19 @@ const Gallery: React.FC = () => {
         setCurrentPage(1);
     }, [selectedCategory]);
 
+    // Scroll to top button visibility
+    useEffect(() => {
+        const handleScroll = () => {
+            setShowScrollTop(window.scrollY > 500);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    const scrollToTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     const handleImageClick = (image: GalleryImage) => {
         setSelectedImage(image);
         document.body.style.overflow = 'hidden';
@@ -256,6 +267,31 @@ const Gallery: React.FC = () => {
         }
     };
 
+    // Get page numbers for pagination with ellipsis
+    const getPageNumbers = () => {
+        const pages: (number | string)[] = [];
+        if (totalPages <= 7) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 5; i++) pages.push(i);
+                pages.push('...');
+                pages.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1);
+                pages.push('...');
+                for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+            } else {
+                pages.push(1);
+                pages.push('...');
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+                pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+        return pages;
+    };
+
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-24">
@@ -276,7 +312,7 @@ const Gallery: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-            {/* Hero Section - Full Width */}
+            {/* Hero Section */}
             <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
                 <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
@@ -286,7 +322,6 @@ const Gallery: React.FC = () => {
                         transition={{ duration: 0.6 }}
                         className="text-center"
                     >
-                        {/* "Our Gallery" Badge */}
                         <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
@@ -298,24 +333,15 @@ const Gallery: React.FC = () => {
                             </div>
                         </motion.div>
 
-                        {/* Main Heading */}
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
                             Theater Gallery
                         </h1>
 
-                        {/* Description */}
                         <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-
                             Explore performances, behind-the-scenes moments, costumes, venues, and audience experiences from our organized theater collection.
                         </p>
 
-                        {/* CTA Buttons */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.4 }}
-                            className="flex flex-wrap gap-4 justify-center"
-                        >
+                        <div className="flex flex-wrap gap-4 justify-center">
                             <a
                                 href="#gallery"
                                 className="group px-8 py-3 bg-white text-deepTeal rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
@@ -330,12 +356,12 @@ const Gallery: React.FC = () => {
                                 <Theater className="h-5 w-5" />
                                 Find Shows
                             </Link>
-                        </motion.div>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Gallery Content - Full Width */}
+            {/* Gallery Content */}
             <div className="w-full px-4 sm:px-6 lg:px-8 py-12" id="gallery">
                 {/* Category Filters */}
                 <motion.div
@@ -355,7 +381,7 @@ const Gallery: React.FC = () => {
                                     className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${isActive
                                         ? 'bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg'
                                         : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                        }`}
+                                    }`}
                                 >
                                     <Icon className="h-4 w-4" />
                                     <span>{category.name}</span>
@@ -380,7 +406,7 @@ const Gallery: React.FC = () => {
                                         className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${columns === col
                                             ? 'bg-deepTeal text-white shadow-md'
                                             : 'text-gray-600 hover:bg-gray-100'
-                                            }`}
+                                        }`}
                                     >
                                         {col}
                                     </button>
@@ -393,75 +419,19 @@ const Gallery: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Images Grid - Full Width Cards */}
+                {/* Images Grid - Using GalleryCard Component */}
                 <div className={`grid gap-6 ${getGridClass()}`}>
                     {paginatedImages.map((image, index) => (
-                        <motion.div
+                        <GalleryCard
                             key={image.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={{ y: -8 }}
-                            className="group cursor-pointer"
+                            image={image}
                             onClick={() => handleImageClick(image)}
-                        >
-                            <div className="bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 h-full flex flex-col">
-                                <div className="relative overflow-hidden aspect-[4/3]">
-                                    <img
-                                        src={image.src}
-                                        alt={image.title}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center">
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); }}
-                                                    className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/30 transition"
-                                                >
-                                                    <Heart className="h-4 w-4 text-white" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); }}
-                                                    className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/30 transition"
-                                                >
-                                                    <Share2 className="h-4 w-4 text-white" />
-                                                </button>
-                                            </div>
-                                            <button
-                                                onClick={(e) => e.stopPropagation()}
-                                                className="p-2 bg-white/20 backdrop-blur rounded-full hover:bg-white/30 transition"
-                                            >
-                                                <Maximize2 className="h-4 w-4 text-white" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="p-4 flex-grow">
-                                    <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-deepTeal transition-colors line-clamp-1">
-                                        {image.title}
-                                    </h3>
-                                    <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="h-3 w-3" />
-                                            {image.date}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <MapPin className="h-3 w-3" />
-                                            {image.venue}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                                        <span>❤️ {image.likes}</span>
-                                        <span>👁️ {image.views}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
+                            index={index}
+                        />
                     ))}
                 </div>
 
-                {/* Pagination */}
+                {/* Pagination with Ellipsis */}
                 {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-12">
                         <button
@@ -472,17 +442,23 @@ const Gallery: React.FC = () => {
                             <ChevronLeft className="h-5 w-5" />
                         </button>
                         <div className="flex gap-2">
-                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                                <button
-                                    key={page}
-                                    onClick={() => setCurrentPage(page)}
-                                    className={`w-10 h-10 rounded-lg font-medium transition ${currentPage === page
-                                        ? 'bg-deepTeal text-white shadow-md'
-                                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            {getPageNumbers().map((page, idx) => (
+                                page === '...' ? (
+                                    <span key={`ellipsis-${idx}`} className="w-10 h-10 flex items-center justify-center text-gray-500">
+                                        ...
+                                    </span>
+                                ) : (
+                                    <button
+                                        key={page}
+                                        onClick={() => setCurrentPage(page as number)}
+                                        className={`w-10 h-10 rounded-lg font-medium transition ${currentPage === page
+                                            ? 'bg-deepTeal text-white shadow-md'
+                                            : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
                                         }`}
-                                >
-                                    {page}
-                                </button>
+                                    >
+                                        {page}
+                                    </button>
+                                )
                             ))}
                         </div>
                         <button
@@ -492,6 +468,13 @@ const Gallery: React.FC = () => {
                         >
                             <ChevronRight className="h-5 w-5" />
                         </button>
+                    </div>
+                )}
+
+                {/* Showing info */}
+                {totalPages > 1 && (
+                    <div className="text-center mt-4 text-sm text-gray-500">
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, filteredImages.length)} of {filteredImages.length} images
                     </div>
                 )}
 
@@ -575,6 +558,21 @@ const Gallery: React.FC = () => {
                             </div>
                         </motion.div>
                     </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* SCROLL TO TOP BUTTON */}
+            <AnimatePresence>
+                {showScrollTop && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0 }}
+                        onClick={scrollToTop}
+                        className="fixed bottom-6 right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
+                    >
+                        <ChevronUp className="h-5 w-5" />
+                    </motion.button>
                 )}
             </AnimatePresence>
         </div>

@@ -130,29 +130,10 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         roles: ["admin"],
         items: [
           { name: "Overview", to: "/admin/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
-          {
-            name: "Manage Users",
-            to: "/admin/users",
-            icon: UsersRound,
-            color: "text-purple-500",
-            subItems: [
-              { name: "All Users", to: "/admin/users", icon: UsersRound },
-              { name: "Roles & Permissions", to: "/admin/users/roles", icon: UserCog },
-              { name: "Deactivated Users", to: "/admin/users/deactivated", icon: UserX },
-              { name: "Activity Logs", to: "/admin/users/activity-logs", icon: Activity }
-            ]
-          },
-          {
-            name: "Manage Theaters",
-            to: "/admin/theaters/theaters",
-            icon: Building,
-            color: "text-indigo-500",
-            subItems: [
-              { name: "All Theaters", to: "/admin/theaters/theaters", icon: Building },
-              { name: "Registration Requests", to: "/admin/theaters/requests", icon: Ban },
-              { name: "Deactivate Theaters", to: "/admin/theaters/deactivated", icon: Ban }
-            ]
-          },
+          { name: "Manage Users",to: "/admin/users",icon: UsersRound,color: "text-purple-500"},
+          { name: "Manage Theaters", to: "/admin/theaters/theaters", icon: Building },
+          { name: "Registration Requests", to: "/admin/theaters/requests", icon: Ban },
+
           {
             name: "Manage Wallet Balance",
             to: "/admin/wallet/balance",
@@ -201,7 +182,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             subItems: [
               { name: "Platform Health", to: "/admin/monitoring/platform_health", icon: Heart },
               { name: "System Logs", to: "/admin/monitoring/logs", icon: FileText },
-              { name: "Performance", to: "/admin/monitoring/performance", icon: BarChart3 }
+              { name: "Performance", to: "/admin/monitoring/performance", icon: BarChart3 },
+              { name: "Activity Logs", to: "/admin/users/activity-logs", icon: Activity }
+
             ]
           }
         ]
@@ -257,6 +240,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-orange-500",
             subItems: [
               { name: "Create Event", to: "/owner/events/create", icon: PlusCircle },
+              { name: "Roles & Permissions", to: "/admin/users/roles", icon: UserCog },
+
               { name: "View All Events", to: "/owner/events", icon: Calendar },
               { name: "Update Event", to: "/owner/events/update", icon: Edit }
             ]

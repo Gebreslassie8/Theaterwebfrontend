@@ -1,10 +1,13 @@
 // src/pages/Admin/theaters/TheaterManagement.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
-    Building, Eye, Edit, RefreshCw, Ban, Phone, Calendar, DollarSign,
-    Ticket, CheckCircle, XCircle, Clock, AlertCircle, Search, TrendingUp,
-    Activity, MapPin, Mail, Star, LayoutGrid, UserPlus
+    Building, Eye, Edit, RefreshCw, Ban, Phone, Calendar,
+    CheckCircle, XCircle, Clock, AlertCircle, Search, TrendingUp,
+    Activity, MapPin, Mail, Star, LayoutGrid, UserPlus,
+    Users, ArrowRight, Theater, Crown, Shield, UserCheck,
+    Check, X, ThumbsUp, ThumbsDown, AlertTriangle, FileText, CreditCard
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -28,7 +31,6 @@ interface Theater {
     lastActive: string;
     screens?: number;
     capacity?: number;
-    // Additional fields for update
     businessName?: string;
     tradeName?: string;
     businessType?: string;
@@ -50,9 +52,12 @@ interface Theater {
     expeditedEnabled?: boolean;
     acceptMarketing?: boolean;
     paymentCompleted?: boolean;
+    submittedDate?: string;
+    rejectionReason?: string;
+    rejectionNotes?: string;
 }
 
-// Complete mock data with all fields for UpdateTheater
+// Complete mock data with all fields
 const fullMockTheaters: any[] = [
     { 
         id: 1, name: 'Grand Cinema', ownerName: 'John Doe', email: 'john@grandcinema.com', phone: '+251 911 234 567', 
@@ -64,7 +69,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Grand Cinema', theaterEmail: 'contact@grandcinema.com', theaterPhone: '+251 911 234 567',
         totalHalls: 5, totalSeats: 1200, city: 'Addis Ababa', region: 'Bole', address: 'Bole Road',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'weekly',
-        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true
+        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true,
+        submittedDate: '2024-01-10T10:30:00Z'
     },
     { 
         id: 2, name: 'Star Multiplex', ownerName: 'Sarah Johnson', email: 'sarah@starmultiplex.com', phone: '+251 922 345 678',
@@ -76,7 +82,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Star Multiplex', theaterEmail: 'info@starmultiplex.com', theaterPhone: '+251 922 345 678',
         totalHalls: 4, totalSeats: 950, city: 'Addis Ababa', region: 'Kazanchis', address: 'Kazanchis Business District',
         pricingModel: 'contract', contractType: 'yearly', payoutFrequency: 'monthly',
-        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: true
+        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: true,
+        submittedDate: '2024-01-12T14:45:00Z'
     },
     { 
         id: 3, name: 'City Cinema', ownerName: 'Michael Brown', email: 'michael@citycinema.com', phone: '+251 933 456 789',
@@ -88,7 +95,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'City Cinema', theaterEmail: 'city@citycinema.com', theaterPhone: '+251 933 456 789',
         totalHalls: 3, totalSeats: 700, city: 'Addis Ababa', region: 'Piassa', address: 'Piassa Square',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'weekly',
-        expeditedEnabled: false, acceptMarketing: true, paymentCompleted: true
+        expeditedEnabled: false, acceptMarketing: true, paymentCompleted: true,
+        submittedDate: '2024-01-05T09:15:00Z'
     },
     { 
         id: 4, name: 'Sunset Theater', ownerName: 'Emily Wilson', email: 'emily@sunsettheater.com', phone: '+251 944 567 890',
@@ -100,7 +108,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Sunset Theater', theaterEmail: 'info@sunsettheater.com', theaterPhone: '+251 944 567 890',
         totalHalls: 2, totalSeats: 400, city: 'Bahir Dar', region: 'Amhara', address: 'Lake Tana Road',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'weekly',
-        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: false
+        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: false,
+        submittedDate: '2024-03-25T11:00:00Z'
     },
     { 
         id: 5, name: 'Oasis Cinema', ownerName: 'David Miller', email: 'david@oasiscinema.com', phone: '+251 955 678 901',
@@ -112,7 +121,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Oasis Cinema', theaterEmail: 'contact@oasiscinema.com', theaterPhone: '+251 955 678 901',
         totalHalls: 4, totalSeats: 850, city: 'Addis Ababa', region: 'CMC', address: 'CMC Road',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'biweekly',
-        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true
+        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true,
+        submittedDate: '2024-01-20T16:20:00Z'
     },
     { 
         id: 6, name: 'Royal Theater', ownerName: 'Lisa Anderson', email: 'lisa@royaltheater.com', phone: '+251 966 789 012',
@@ -124,7 +134,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Royal Theater', theaterEmail: 'royal@royaltheater.com', theaterPhone: '+251 966 789 012',
         totalHalls: 3, totalSeats: 600, city: 'Gondar', region: 'Amhara', address: 'Fasiladas Area',
         pricingModel: 'contract', contractType: 'monthly', payoutFrequency: 'monthly',
-        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: false
+        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: false,
+        submittedDate: '2024-03-28T09:30:00Z'
     },
     { 
         id: 7, name: 'Plaza Cinema', ownerName: 'James Wilson', email: 'james@plazacinema.com', phone: '+251 977 890 123',
@@ -136,7 +147,8 @@ const fullMockTheaters: any[] = [
         theaterName: 'Plaza Cinema', theaterEmail: 'plaza@plazacinema.com', theaterPhone: '+251 977 890 123',
         totalHalls: 6, totalSeats: 1400, city: 'Addis Ababa', region: 'Mexico', address: 'Mexico Square',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'weekly',
-        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true
+        expeditedEnabled: true, acceptMarketing: true, paymentCompleted: true,
+        submittedDate: '2024-01-08T13:45:00Z'
     },
     { 
         id: 8, name: 'Mega Movies', ownerName: 'Patricia Brown', email: 'patricia@megamovies.com', phone: '+251 988 901 234',
@@ -148,22 +160,123 @@ const fullMockTheaters: any[] = [
         theaterName: 'Mega Movies', theaterEmail: 'mega@megamovies.com', theaterPhone: '+251 988 901 234',
         totalHalls: 2, totalSeats: 450, city: 'Hawassa', region: 'Sidama', address: 'Main Road',
         pricingModel: 'per_ticket', contractType: '', payoutFrequency: 'weekly',
-        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: true
+        expeditedEnabled: false, acceptMarketing: false, paymentCompleted: true,
+        submittedDate: '2023-12-10T10:00:00Z'
     }
 ];
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05,
+            delayChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring" as const,
+            stiffness: 100,
+            damping: 12
+        }
+    }
+};
+
+// Stat Card Component
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ElementType;
+    color: string;
+    delay: number;
+    link?: string;
+    notification?: boolean;
+    notificationCount?: number;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, link, notification, notificationCount }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const getNotificationColor = () => {
+        if (title === 'Pending Theaters') return 'bg-yellow-500';
+        return 'bg-teal-500';
+    };
+
+    const CardContent = () => (
+        <div
+            className="relative overflow-hidden cursor-pointer transition-all duration-300"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-500">{title}</p>
+                        {notification && notificationCount && notificationCount > 0 && (
+                            <span className={`px-1.5 py-0.5 text-[9px] font-bold ${getNotificationColor()} text-white rounded-full animate-pulse`}>
+                                {notificationCount}
+                            </span>
+                        )}
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                </div>
+                {link && (
+                    <div className={`transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-1 opacity-0'}`}>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, type: "spring", stiffness: 100 }}
+            whileHover={{ y: -2 }}
+            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
+        >
+            {link ? (
+                <Link to={link} className="block">
+                    <CardContent />
+                </Link>
+            ) : (
+                <CardContent />
+            )}
+        </motion.div>
+    );
+};
 
 const TheaterManagement: React.FC = () => {
     const [theaters, setTheaters] = useState<any[]>(fullMockTheaters);
     const [showAddModal, setShowAddModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [showApproveRejectModal, setShowApproveRejectModal] = useState(false);
+    const [showRejectForm, setShowRejectForm] = useState(false);
     const [selectedTheater, setSelectedTheater] = useState<any | null>(null);
     const [viewingTheater, setViewingTheater] = useState<any | null>(null);
+    const [pendingTheaterAction, setPendingTheaterAction] = useState<any | null>(null);
     const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
     const [showReactivateConfirm, setShowReactivateConfirm] = useState(false);
     const [theaterToDeactivate, setTheaterToDeactivate] = useState<any | null>(null);
     const [theaterToReactivate, setTheaterToReactivate] = useState<any | null>(null);
     const [deactivationReason, setDeactivationReason] = useState('');
+    const [rejectReason, setRejectReason] = useState('');
+    const [rejectNotes, setRejectNotes] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -174,9 +287,14 @@ const TheaterManagement: React.FC = () => {
         activeTheaters: theaters.filter(t => t.status === 'Active').length,
         pendingTheaters: theaters.filter(t => t.status === 'Pending').length,
         inactiveTheaters: theaters.filter(t => t.status === 'Inactive').length,
-        totalRevenue: theaters.reduce((sum, t) => sum + (t.totalRevenue || 0), 0),
-        totalBookings: theaters.reduce((sum, t) => sum + (t.totalBookings || 0), 0),
     };
+
+    const dashboardCards = [
+        { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/theaters', notification: false },
+        { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15, link: '/admin/theaters?status=pending', notification: true, notificationCount: stats.pendingTheaters },
+        { title: 'Active Theaters', value: stats.activeTheaters, icon: Theater, color: 'from-green-500 to-emerald-600', delay: 0.2, link: '/admin/theaters?status=active', notification: true, notificationCount: stats.activeTheaters },
+        { title: 'Inactive Theaters', value: stats.inactiveTheaters, icon: Ban, color: 'from-red-500 to-rose-600', delay: 0.25, link: '/admin/theaters?status=inactive', notification: true, notificationCount: stats.inactiveTheaters }
+    ];
 
     const filteredTheaters = theaters.filter(theater => {
         const matchesSearch = (theater.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -197,10 +315,11 @@ const TheaterManagement: React.FC = () => {
             rating: 0,
             joinDate: new Date().toISOString().split('T')[0],
             lastActive: new Date().toISOString().split('T')[0],
+            submittedDate: new Date().toISOString()
         };
         setTheaters([...theaters, newTheater]);
         setShowAddModal(false);
-        setPopupMessage({ title: 'Success!', message: `${data.theaterName || data.name} has been added`, type: 'success' });
+        setPopupMessage({ title: 'Success!', message: `${data.theaterName || data.name} has been added and is pending approval`, type: 'success' });
         setShowSuccessPopup(true);
     };
 
@@ -212,6 +331,50 @@ const TheaterManagement: React.FC = () => {
         setSelectedTheater(null);
         setPopupMessage({ title: 'Success!', message: `${data.theaterName || data.name} has been updated`, type: 'success' });
         setShowSuccessPopup(true);
+    };
+
+    const handleApproveTheater = async () => {
+        if (pendingTheaterAction) {
+            setIsSubmitting(true);
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setTheaters(theaters.map(theater =>
+                theater.id === pendingTheaterAction.id ? { ...theater, status: 'Active' } : theater
+            ));
+            setShowApproveRejectModal(false);
+            setPendingTheaterAction(null);
+            setPopupMessage({ 
+                title: 'Approved!', 
+                message: `✅ Theater "${pendingTheaterAction.name}" has been approved successfully! An email notification has been sent.`, 
+                type: 'success' 
+            });
+            setShowSuccessPopup(true);
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleRejectTheater = async () => {
+        if (pendingTheaterAction && rejectReason) {
+            setIsSubmitting(true);
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 500));
+            setTheaters(theaters.filter(theater => theater.id !== pendingTheaterAction.id));
+            setShowRejectForm(false);
+            setShowApproveRejectModal(false);
+            setPendingTheaterAction(null);
+            setRejectReason('');
+            setRejectNotes('');
+            setPopupMessage({ 
+                title: 'Rejected!', 
+                message: `❌ Theater "${pendingTheaterAction.name}" has been rejected. Reason: ${rejectReason}`, 
+                type: 'warning' 
+            });
+            setShowSuccessPopup(true);
+            setIsSubmitting(false);
+        } else if (!rejectReason) {
+            setPopupMessage({ title: 'Error!', message: 'Please select a rejection reason.', type: 'error' });
+            setShowSuccessPopup(true);
+        }
     };
 
     const handleDeactivateTheater = () => {
@@ -240,9 +403,26 @@ const TheaterManagement: React.FC = () => {
     };
 
     const handleEditClick = (row: any) => {
-        // Pass the full theater data to the update modal
         setSelectedTheater(row);
         setShowUpdateModal(true);
+    };
+
+    const handleViewClick = (row: any) => {
+        setViewingTheater(row);
+        setShowViewModal(true);
+    };
+
+    const getStatusBadge = (status: string) => {
+        switch(status) {
+            case 'Active':
+                return <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">✅ Active</span>;
+            case 'Inactive':
+                return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">❌ Inactive</span>;
+            case 'Pending':
+                return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">⏳ Pending</span>;
+            default:
+                return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{status}</span>;
+        }
     };
 
     const columns = [
@@ -295,43 +475,7 @@ const TheaterManagement: React.FC = () => {
             Header: 'Status',
             accessor: 'status',
             sortable: true,
-            Cell: (row: any) => {
-                const configs: Record<string, { icon: any; color: string }> = {
-                    Active: { icon: CheckCircle, color: 'bg-green-100 text-green-700' },
-                    Inactive: { icon: XCircle, color: 'bg-red-100 text-red-700' },
-                    Pending: { icon: Clock, color: 'bg-yellow-100 text-yellow-700' }
-                };
-                const config = configs[row.status];
-                const Icon = config.icon;
-                return (
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-                        <Icon className="h-3 w-3" />
-                        {row.status}
-                    </span>
-                );
-            }
-        },
-        {
-            Header: 'Revenue',
-            accessor: 'totalRevenue',
-            sortable: true,
-            Cell: (row: any) => (
-                <div className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3 text-green-500" />
-                    <span className="text-sm font-medium text-green-600">ETB {(row.totalRevenue || 0).toLocaleString()}</span>
-                </div>
-            )
-        },
-        {
-            Header: 'Bookings',
-            accessor: 'totalBookings',
-            sortable: true,
-            Cell: (row: any) => (
-                <div className="flex items-center gap-1">
-                    <Ticket className="h-3 w-3 text-gray-400" />
-                    <span className="text-sm text-gray-600">{(row.totalBookings || 0).toLocaleString()}</span>
-                </div>
-            )
+            Cell: (row: any) => getStatusBadge(row.status)
         },
         {
             Header: 'Rating',
@@ -351,19 +495,36 @@ const TheaterManagement: React.FC = () => {
             Cell: (row: any) => (
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => { setViewingTheater(row); setShowViewModal(true); }}
+                        onClick={() => handleViewClick(row)}
                         className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                         title="View Details"
                     >
                         <Eye className="h-4 w-4 text-blue-600" />
                     </button>
-                    <button
-                        onClick={() => handleEditClick(row)}
-                        className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
-                        title="Edit Theater"
-                    >
-                        <Edit className="h-4 w-4 text-teal-600" />
-                    </button>
+
+                    {row.status !== 'Pending' && (
+                        <button
+                            onClick={() => handleEditClick(row)}
+                            className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
+                            title="Edit Theater"
+                        >
+                            <Edit className="h-4 w-4 text-teal-600" />
+                        </button>
+                    )}
+
+                    {row.status === 'Pending' && (
+                        <button
+                            onClick={() => {
+                                setPendingTheaterAction(row);
+                                setShowApproveRejectModal(true);
+                            }}
+                            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
+                            title="Approve/Reject"
+                        >
+                            <ThumbsUp className="h-4 w-4 text-green-600" />
+                        </button>
+                    )}
+
                     {row.status === 'Active' && (
                         <button
                             onClick={() => { setTheaterToDeactivate(row); setShowDeactivateConfirm(true); }}
@@ -373,6 +534,7 @@ const TheaterManagement: React.FC = () => {
                             <Ban className="h-4 w-4 text-orange-600" />
                         </button>
                     )}
+
                     {row.status === 'Inactive' && (
                         <button
                             onClick={() => { setTheaterToReactivate(row); setShowReactivateConfirm(true); }}
@@ -388,76 +550,29 @@ const TheaterManagement: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-6"
+        >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <Building className="h-8 w-8 text-indigo-600" />
-                        Theater Management
-                    </h1>
-                    <p className="text-gray-500 mt-1">Manage all registered theaters, view analytics, and control theater status</p>
-                </div>
-
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Theaters</p>
-                                <p className="text-3xl font-bold text-gray-900">{stats.totalTheaters}</p>
-                            </div>
-                            <div className="p-3 bg-indigo-100 rounded-xl">
-                                <Building className="h-6 w-6 text-indigo-600" />
-                            </div>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                            {stats.activeTheaters} Active · {stats.pendingTheaters} Pending · {stats.inactiveTheaters} Inactive
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Revenue</p>
-                                <p className="text-3xl font-bold text-gray-900">ETB {stats.totalRevenue.toLocaleString()}</p>
-                            </div>
-                            <div className="p-3 bg-emerald-100 rounded-xl">
-                                <DollarSign className="h-6 w-6 text-emerald-600" />
-                            </div>
-                        </div>
-                        <div className="text-sm text-emerald-600 flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            +12% from last month
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Bookings</p>
-                                <p className="text-3xl font-bold text-gray-900">{stats.totalBookings.toLocaleString()}</p>
-                            </div>
-                            <div className="p-3 bg-blue-100 rounded-xl">
-                                <Ticket className="h-6 w-6 text-blue-600" />
-                            </div>
-                        </div>
-                        <div className="text-sm text-gray-500">Lifetime ticket sales</div>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="text-sm text-gray-500">Active Rate</p>
-                                <p className="text-3xl font-bold text-gray-900">{Math.round((stats.activeTheaters / stats.totalTheaters) * 100)}%</p>
-                            </div>
-                            <div className="p-3 bg-purple-100 rounded-xl">
-                                <Activity className="h-6 w-6 text-purple-600" />
-                            </div>
-                        </div>
-                        <div className="text-sm text-gray-500">Theaters currently operating</div>
-                    </div>
-                </div>
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                    {dashboardCards.map((card, index) => (
+                        <StatCard
+                            key={index}
+                            title={card.title}
+                            value={card.value}
+                            icon={card.icon}
+                            color={card.color}
+                            delay={card.delay}
+                            link={card.link}
+                            notification={card.notification}
+                            notificationCount={card.notificationCount}
+                        />
+                    ))}
+                </motion.div>
 
                 {/* Search and Add Button */}
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -526,6 +641,193 @@ const TheaterManagement: React.FC = () => {
                         isOpen={showViewModal}
                         onClose={() => { setShowViewModal(false); setViewingTheater(null); }}
                     />
+                )}
+
+                {/* Approve/Reject Modal */}
+                {showApproveRejectModal && pendingTheaterAction && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white rounded-2xl max-w-md w-full shadow-xl"
+                        >
+                            <div className="border-b px-6 py-4 bg-yellow-50 rounded-t-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-yellow-100 rounded-full">
+                                        <Clock className="w-5 h-5 text-yellow-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800">Registration Request</h2>
+                                        <p className="text-sm text-gray-600 mt-1">Theater: {pendingTheaterAction.name}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="p-6">
+                                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <p className="text-sm text-blue-800">
+                                        📋 Please review the theater details before making a decision.
+                                    </p>
+                                </div>
+                                
+                                <div className="space-y-3 mb-6">
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Owner:</span>
+                                        <span className="font-medium">{pendingTheaterAction.ownerName}</span>
+                                    </div>
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Email:</span>
+                                        <span className="font-medium">{pendingTheaterAction.email}</span>
+                                    </div>
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Location:</span>
+                                        <span className="font-medium">{pendingTheaterAction.location}</span>
+                                    </div>
+                                    <div className="flex justify-between py-2 border-b">
+                                        <span className="text-gray-600">Submitted:</span>
+                                        <span className="font-medium">{pendingTheaterAction.submittedDate ? new Date(pendingTheaterAction.submittedDate).toLocaleDateString() : 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowApproveRejectModal(false);
+                                        setPendingTheaterAction(null);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setShowApproveRejectModal(false);
+                                        setShowRejectForm(true);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                                >
+                                    <X className="w-4 h-4" />
+                                    Reject
+                                </button>
+                                <button
+                                    onClick={handleApproveTheater}
+                                    disabled={isSubmitting}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="w-4 h-4" />
+                                            Approve
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Reject Form Modal */}
+                {showRejectForm && pendingTheaterAction && (
+                    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            className="bg-white rounded-2xl max-w-md w-full shadow-xl"
+                        >
+                            <div className="border-b px-6 py-4 bg-red-50 rounded-t-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-red-100 rounded-full">
+                                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800">Reject Registration</h2>
+                                        <p className="text-sm text-gray-600 mt-1">Theater: {pendingTheaterAction.name}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="p-6">
+                                <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                    <p className="text-sm text-yellow-800">
+                                        ⚠️ Warning: This action will permanently reject this registration request.
+                                    </p>
+                                </div>
+                                
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Rejection Reason <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={rejectReason}
+                                        onChange={(e) => setRejectReason(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                                        required
+                                    >
+                                        <option value="">Select Rejection Reason</option>
+                                        <option value="incomplete_documents">📄 Incomplete Documents</option>
+                                        <option value="invalid_information">⚠️ Invalid Information</option>
+                                        <option value="duplicate_registration">🔄 Duplicate Registration</option>
+                                        <option value="policy_violation">🚫 Policy Violation</option>
+                                        <option value="payment_issue">💳 Payment Issue</option>
+                                        <option value="business_verification_failed">🔍 Business Verification Failed</option>
+                                        <option value="other">📝 Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Additional Notes
+                                    </label>
+                                    <textarea
+                                        value={rejectNotes}
+                                        onChange={(e) => setRejectNotes(e.target.value)}
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none resize-none"
+                                        placeholder="Provide more details about the rejection..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {rejectNotes.length} / 500 characters
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setShowRejectForm(false);
+                                        setRejectReason('');
+                                        setRejectNotes('');
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleRejectTheater}
+                                    disabled={isSubmitting || !rejectReason}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <X className="w-4 h-4" />
+                                            Confirm Rejection
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
                 )}
 
                 {/* Deactivate Confirm Modal */}
@@ -631,11 +933,11 @@ const TheaterManagement: React.FC = () => {
                     type={popupMessage.type}
                     title={popupMessage.title}
                     message={popupMessage.message}
-                    duration={3000}
+                    duration={4000}
                     position="top-right"
                 />
             </div>
-        </div>
+        </motion.div>
     );
 };
 
