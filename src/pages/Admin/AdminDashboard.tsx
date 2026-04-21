@@ -304,7 +304,7 @@ const AdminDashboard: React.FC = () => {
 
     // Dashboard Cards Data - Updated with new card
     const dashboardCards = [
-        { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/theaters', notification: false },
+        { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/theaters/theaters', notification: false },
         { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15, link: '/admin/registration/pending', notification: true, notificationCount: 3 },
         { title: 'Total Users', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'from-blue-500 to-cyan-600', delay: 0.2, link: '/admin/users', notification: false },
         { title: 'New Users Today', value: stats.newUsersToday, icon: UserCheck, color: 'from-indigo-500 to-purple-600', delay: 0.25, link: '/admin/users?filter=new', notification: true, notificationCount: stats.newUsersToday },
