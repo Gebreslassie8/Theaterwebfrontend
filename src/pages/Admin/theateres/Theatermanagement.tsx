@@ -635,13 +635,23 @@ const TheaterManagement: React.FC = () => {
                         onUpdate={handleUpdateTheater}
                     />
                 )}
-                {showViewModal && viewingTheater && (
-                    <ViewTheater
-                        theater={viewingTheater}
-                        isOpen={showViewModal}
-                        onClose={() => { setShowViewModal(false); setViewingTheater(null); }}
-                    />
-                )}
+               // In TheaterManagement.tsx, update the ViewTheater component usage:
+
+{showViewModal && viewingTheater && (
+    <ViewTheater
+        theater={viewingTheater}
+        isOpen={showViewModal}
+        onClose={() => { 
+            setShowViewModal(false); 
+            setViewingTheater(null); 
+        }}
+        onEdit={(theater) => {
+            setShowViewModal(false);
+            setSelectedTheater(theater);
+            setShowUpdateModal(true);
+        }}
+    />
+)}
 
                 {/* Approve/Reject Modal */}
                 {showApproveRejectModal && pendingTheaterAction && (

@@ -5,8 +5,9 @@ import {
     X, Building, Mail, User, Phone, MapPin, Hash, Users, Calendar, 
     DollarSign, Ticket, Star, Briefcase, Home, Globe, Clock, CreditCard, 
     FileText, Heart, Shield, AlertCircle, CheckCircle, Info, Layers, 
-    Navigation, Film, Coffee, Wifi, Car, Utensils, Wine, Sparkles
+    Navigation, Film, Coffee, Wifi, Car, Utensils, Wine, Sparkles, Edit
 } from 'lucide-react';
+import { FaWineGlassAlt, FaAccessibleIcon, FaGift } from 'react-icons/fa';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 
 interface Theater {
@@ -29,7 +30,6 @@ interface Theater {
     emergencyName?: string;
     emergencyPhone?: string;
     emergencyRelation?: string;
-    // Theater Details
     theaterName?: string;
     theaterDescription?: string;
     theaterEmail?: string;
@@ -43,15 +43,12 @@ interface Theater {
     region?: string;
     address?: string;
     screenTypes?: string[];
-    // Pricing Plan
     pricingModel?: string;
     contractType?: string;
     payoutFrequency?: string;
     expeditedEnabled?: boolean;
-    // Agreements
     acceptMarketing?: boolean;
     paymentCompleted?: boolean;
-    // Legacy fields
     name?: string;
     email?: string;
     phone?: string;
@@ -70,9 +67,10 @@ interface ViewTheaterProps {
     theater: Theater;
     isOpen: boolean;
     onClose: () => void;
+    onEdit?: (theater: Theater) => void;
 }
 
-const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) => {
+const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose, onEdit }) => {
     if (!isOpen) return null;
 
     const getStatusColor = (status: string) => {
@@ -94,34 +92,33 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
     };
 
     const formatServiceIcon = (service: string) => {
-        const icons: Record<string, string> = {
-            food_court: '🍔',
-            vip_lounge: '✨',
-            parking: '🅿️',
-            wheelchair_access: '♿',
-            concessions: '🍿',
-            party_rooms: '🎉',
-            arcade: '🎮',
-            cafe: '☕',
-            wine_bar: '🍷',
-            art_gallery: '🎨',
-            fine_dining: '🍽️',
-            valet_parking: '🚗'
+        const icons: Record<string, { icon: React.ReactNode; label: string }> = {
+            'Ticket Booking': { icon: <Ticket className="h-3 w-3" />, label: '🎫 Ticket Booking' },
+            'Refreshments': { icon: <Coffee className="h-3 w-3" />, label: '☕ Refreshments' },
+            'Premium Bar': { icon: <FaWineGlassAlt className="h-3 w-3" />, label: '🍷 Premium Bar' },
+            'Dining': { icon: <Utensils className="h-3 w-3" />, label: '🍽️ Dining' },
+            'Free WiFi': { icon: <Wifi className="h-3 w-3" />, label: '📶 Free WiFi' },
+            'Valet Parking': { icon: <Car className="h-3 w-3" />, label: '🚗 Valet Parking' },
+            'Wheelchair Access': { icon: <FaAccessibleIcon className="h-3 w-3" />, label: '♿ Wheelchair Access' },
+            'Gift Cards': { icon: <FaGift className="h-3 w-3" />, label: '🎁 Gift Cards' },
+            'Group Bookings': { icon: <Users className="h-3 w-3" />, label: '👥 Group Bookings' },
+            'Private Events': { icon: <Sparkles className="h-3 w-3" />, label: '✨ Private Events' }
         };
-        return icons[service] || '📌';
+        return icons[service] || { icon: <Star className="h-3 w-3" />, label: service };
     };
 
     const formatScreenTypeIcon = (type: string) => {
         const icons: Record<string, string> = {
-            standard: '📽️',
-            imax: '🎬',
-            '4dx': '💺',
-            dolby_atmos: '🔊',
-            '3d': '👓',
-            xd: '⭐',
-            screenx: '🖥️'
+            'Standard': '📽️ Standard',
+            'IMAX': '🎬 IMAX',
+            '4DX': '💺 4DX',
+            'Dolby Cinema': '🔊 Dolby Cinema',
+            'VIP Screen': '⭐ VIP Screen',
+            '3D': '👓 3D',
+            '2D': '📺 2D',
+            'Drive-in': '🚗 Drive-in'
         };
-        return icons[type] || '📺';
+        return icons[type] || type;
     };
 
     const InfoSection: React.FC<{ title: string; icon: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
@@ -151,11 +148,6 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
     const getDisplayName = () => theater.theaterName || theater.name || 'N/A';
     const getDisplayEmail = () => theater.theaterEmail || theater.email || theater.ownerEmail || 'N/A';
     const getDisplayPhone = () => theater.theaterPhone || theater.phone || theater.ownerPhone || 'N/A';
-    const getDisplayLocation = () => {
-        if (theater.city && theater.region) return `${theater.city}, ${theater.region}`;
-        if (theater.location) return theater.location;
-        return 'N/A';
-    };
 
     return (
         <AnimatePresence>
@@ -173,7 +165,7 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                     className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
                     onClick={(e) => e.stopPropagation()}
                 >
-                    {/* Header with Deepteal Gradient */}
+                    {/* Header with Teal Gradient */}
                     <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-5 flex items-center justify-between z-10">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -342,12 +334,15 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                 {(theater.services && theater.services.length > 0) && (
                                     <InfoSection title="Services & Amenities" icon={<Sparkles className="h-4 w-4 text-teal-600" />}>
                                         <div className="flex flex-wrap gap-2">
-                                            {theater.services.map((service, index) => (
-                                                <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
-                                                    <span>{formatServiceIcon(service)}</span>
-                                                    <span className="capitalize">{service.replace('_', ' ')}</span>
-                                                </span>
-                                            ))}
+                                            {theater.services.map((service, index) => {
+                                                const formatted = formatServiceIcon(service);
+                                                return (
+                                                    <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
+                                                        {formatted.icon}
+                                                        <span className="capitalize">{formatted.label}</span>
+                                                    </span>
+                                                );
+                                            })}
                                         </div>
                                     </InfoSection>
                                 )}
@@ -356,9 +351,8 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                     <InfoSection title="Screen Types" icon={<Film className="h-4 w-4 text-teal-600" />}>
                                         <div className="flex flex-wrap gap-2">
                                             {theater.screenTypes.map((type, index) => (
-                                                <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
+                                                <span key={index} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-full text-sm">
                                                     <span>{formatScreenTypeIcon(type)}</span>
-                                                    <span className="capitalize">{type.replace('_', ' ')}</span>
                                                 </span>
                                             ))}
                                         </div>
@@ -369,13 +363,13 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                                 <InfoSection title="Pricing & Performance" icon={<CreditCard className="h-4 w-4 text-teal-600" />}>
                                     <div className="grid grid-cols-2 gap-3">
                                         {theater.pricingModel && (
-                                            <InfoRow icon={<CreditCard className="h-4 w-4" />} label="Pricing Model" value={theater.pricingModel.replace('_', ' ')} />
+                                            <InfoRow icon={<CreditCard className="h-4 w-4" />} label="Pricing Model" value={theater.pricingModel === 'per_ticket' ? 'Per Ticket Commission' : 'Contract Based'} />
                                         )}
                                         {theater.contractType && (
-                                            <InfoRow icon={<FileText className="h-4 w-4" />} label="Contract Type" value={theater.contractType} />
+                                            <InfoRow icon={<FileText className="h-4 w-4" />} label="Contract Type" value={theater.contractType.charAt(0).toUpperCase() + theater.contractType.slice(1)} />
                                         )}
                                         {theater.payoutFrequency && (
-                                            <InfoRow icon={<Clock className="h-4 w-4" />} label="Payout Frequency" value={theater.payoutFrequency} />
+                                            <InfoRow icon={<Clock className="h-4 w-4" />} label="Payout Frequency" value={theater.payoutFrequency.charAt(0).toUpperCase() + theater.payoutFrequency.slice(1)} />
                                         )}
                                         {theater.expeditedEnabled !== undefined && (
                                             <InfoRow icon={<Shield className="h-4 w-4" />} label="Expedited Processing" value={theater.expeditedEnabled ? 'Yes' : 'No'} />
@@ -415,15 +409,25 @@ const ViewTheater: React.FC<ViewTheaterProps> = ({ theater, isOpen, onClose }) =
                             </div>
                         </div>
 
-                        {/* Action Buttons - Removed Print button, only Close */}
-                        <div className="mt-6 pt-4 border-t border-gray-200">
+                        {/* Action Buttons */}
+                        <div className="mt-6 pt-4 border-t border-gray-200 flex gap-3">
                             <ReusableButton 
                                 variant="secondary" 
                                 onClick={onClose}
-                                className="w-full"
+                                className="flex-1"
                             >
                                 Close
                             </ReusableButton>
+                            {onEdit && (
+                                <ReusableButton 
+                                    variant="primary" 
+                                    onClick={() => onEdit(theater)}
+                                    className="flex-1 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800"
+                                    icon={<Edit className="h-4 w-4" />}
+                                >
+                                    Edit Theater
+                                </ReusableButton>
+                            )}
                         </div>
                     </div>
                 </motion.div>
