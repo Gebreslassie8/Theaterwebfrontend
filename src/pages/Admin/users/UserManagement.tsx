@@ -57,7 +57,6 @@ interface User {
 
 // Mock User Data with enhanced deactivation info
 const mockUsers: User[] = [
-    { id: 1, username: 'john_admin', email: 'john.doe@example.com', phone: '+251 911 234 567', password: '********', image: 'https://ui-avatars.com/api/?name=John&background=0D9488&color=fff&size=128', role: 'Admin', status: 'Active' },
     { id: 2, username: 'jane_manager', email: 'jane.smith@example.com', phone: '+251 912 345 678', password: '********', image: 'https://ui-avatars.com/api/?name=Jane&background=0D9488&color=fff&size=128', role: 'Manager', status: 'Active' },
     { id: 3, username: 'mike_customer', email: 'mike.johnson@example.com', phone: '+251 913 456 789', password: '********', image: 'https://ui-avatars.com/api/?name=Mike&background=0D9488&color=fff&size=128', role: 'Customer', status: 'Active' },
     { id: 4, username: 'sarah_owner', email: 'sarah.williams@example.com', phone: '+251 914 567 890', password: '********', image: 'https://ui-avatars.com/api/?name=Sarah&background=0D9488&color=fff&size=128', role: 'Theater Owner', status: 'Active' },

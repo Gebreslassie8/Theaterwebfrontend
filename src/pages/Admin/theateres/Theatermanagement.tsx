@@ -290,10 +290,10 @@ const TheaterManagement: React.FC = () => {
     };
 
     const dashboardCards = [
-        { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/theaters', notification: false },
-        { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15, link: '/admin/theaters?status=pending', notification: true, notificationCount: stats.pendingTheaters },
-        { title: 'Active Theaters', value: stats.activeTheaters, icon: Theater, color: 'from-green-500 to-emerald-600', delay: 0.2, link: '/admin/theaters?status=active', notification: true, notificationCount: stats.activeTheaters },
-        { title: 'Inactive Theaters', value: stats.inactiveTheaters, icon: Ban, color: 'from-red-500 to-rose-600', delay: 0.25, link: '/admin/theaters?status=inactive', notification: true, notificationCount: stats.inactiveTheaters }
+        { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1,  notification: false },
+        { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15,  notification: true, notificationCount: stats.pendingTheaters },
+        { title: 'Active Theaters', value: stats.activeTheaters, icon: Theater, color: 'from-green-500 to-emerald-600', delay: 0.2,  notification: true, notificationCount: stats.activeTheaters },
+        { title: 'Inactive Theaters', value: stats.inactiveTheaters, icon: Ban, color: 'from-red-500 to-rose-600', delay: 0.25,  notification: true, notificationCount: stats.inactiveTheaters }
     ];
 
     const filteredTheaters = theaters.filter(theater => {
