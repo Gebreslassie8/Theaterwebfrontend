@@ -111,8 +111,6 @@ const recentScans: RecentScan[] = [
     { id: 8, ticket: 'TKT-2024-008', show: 'Hamilton', time: '2 hours ago', status: 'invalid', gate: 'Gate C', timestamp: new Date(Date.now() - 120 * 60000) },
     { id: 9, ticket: 'TKT-2024-009', show: 'The Lion King', time: '1 day ago', status: 'valid', gate: 'Gate A', timestamp: new Date(Date.now() - 24 * 60 * 60000) },
     { id: 10, ticket: 'TKT-2024-010', show: 'Wicked', time: '2 days ago', status: 'valid', gate: 'Gate B', timestamp: new Date(Date.now() - 48 * 60 * 60000) },
-    { id: 9, ticket: 'TKT-2024-009', show: 'The Lion King', time: '1 day ago', status: 'valid', gate: 'Gate A', timestamp: new Date(Date.now() - 24 * 60 * 60000) },
-    { id: 10, ticket: 'TKT-2024-010', show: 'Wicked', time: '2 days ago', status: 'valid', gate: 'Gate B', timestamp: new Date(Date.now() - 48 * 60 * 60000) },
 ];
 
 // Stat Card Component
@@ -174,140 +172,62 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
     );
 };
 
-// Filter Modal Component
-interface FilterModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onApply: (filters: any) => void;
-    currentFilters: any;
-}
-
-const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, onApply, currentFilters }) => {
-    const [selectedStatus, setSelectedStatus] = useState<string>(currentFilters.status || 'all');
-    const [selectedGate, setSelectedGate] = useState<string>(currentFilters.gate || 'all');
-    const [dateRange, setDateRange] = useState<string>(currentFilters.dateRange || 'today');
-    const [customStartDate, setCustomStartDate] = useState<string>('');
-    const [customEndDate, setCustomEndDate] = useState<string>('');
-
-    if (!isOpen) return null;
-
-    const handleApply = () => {
-        const filters: any = {
-            status: selectedStatus,
-            gate: selectedGate,
-            dateRange: dateRange
-        };
-
-        if (dateRange === 'custom') {
-            filters.startDate = customStartDate;
-            filters.endDate = customEndDate;
-        }
-
-        onApply(filters);
-        onClose();
-    };
+// Hoverable Hourly Chart Component
+const HoverableHourlyChart: React.FC<{ data: HourlyScanData[] }> = ({ data }) => {
+    const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+    const maxScans = Math.max(...data.map(d => d.scans));
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" onClick={onClose}>
-            <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <div className="flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-teal-600" />
-                        <h3 className="text-lg font-semibold text-gray-900">Filter Scans</h3>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+        <div className="w-full">
+            <div className="flex items-end justify-between gap-2 h-48">
+                {data.map((item, index) => (
+                    <div
+                        key={index}
+                        className="flex-1 flex flex-col items-center gap-2 relative group"
+                        onMouseEnter={() => setHoveredBar(index)}
+                        onMouseLeave={() => setHoveredBar(null)}
                     >
-                        <X className="h-5 w-5 text-gray-500" />
-                    </button>
-                </div>
-                <div className="p-6 space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                        <select
-                            value={selectedStatus}
-                            onChange={(e) => setSelectedStatus(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="valid">Valid</option>
-                            <option value="invalid">Invalid</option>
-                            <option value="duplicate">Duplicate</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Gate</label>
-                        <select
-                            value={selectedGate}
-                            onChange={(e) => setSelectedGate(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        >
-                            <option value="all">All Gates</option>
-                            <option value="Gate A">Gate A</option>
-                            <option value="Gate B">Gate B</option>
-                            <option value="Gate C">Gate C</option>
-                            <option value="Gate D">Gate D</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Date Range</label>
-                        <select
-                            value={dateRange}
-                            onChange={(e) => setDateRange(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                        >
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="last7days">Last 7 Days</option>
-                            <option value="last30days">Last 30 Days</option>
-                            <option value="custom">Custom Range</option>
-                        </select>
-                    </div>
-                    {dateRange === 'custom' && (
-                        <div className="space-y-3">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                                <input
-                                    type="date"
-                                    value={customStartDate}
-                                    onChange={(e) => setCustomStartDate(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                />
+                        <div className="relative w-full flex justify-center">
+                            <div
+                                className="w-full max-w-[60px] bg-gradient-to-t from-teal-500 to-emerald-400 rounded-t-lg transition-all duration-500 cursor-pointer hover:opacity-80"
+                                style={{ height: `${(item.scans / maxScans) * 160}px` }}
+                            >
+                                {/* Hover Tooltip */}
+                                {hoveredBar === index && (
+                                    <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-10 shadow-lg">
+                                        <div className="font-semibold">{item.hour}</div>
+                                        <div className="text-teal-300">Scans: {item.scans}</div>
+                                        <div className="text-green-300">Valid: {item.valid}</div>
+                                        <div className="text-red-300">Invalid: {item.invalid}</div>
+                                        <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-800 rotate-45"></div>
+                                    </div>
+                                )}
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                                <input
-                                    type="date"
-                                    value={customEndDate}
-                                    onChange={(e) => setCustomEndDate(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                />
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-semibold text-gray-700 whitespace-nowrap">
+                                {item.scans}
                             </div>
                         </div>
-                    )}
+                        <div className="text-xs text-gray-500 font-medium mt-2">{item.hour}</div>
+                    </div>
+                ))}
+            </div>
+            <div className="flex justify-center gap-6 mt-6 text-xs">
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-teal-500 rounded"></div>
+                    <span className="text-gray-600">Total Scans</span>
                 </div>
-                <div className="flex gap-3 p-6 border-t border-gray-200">
-                    <button
-                        onClick={handleApply}
-                        className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-lg transition-all"
-                    >
-                        Apply Filters
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all"
-                    >
-                        Cancel
-                    </button>
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span className="text-gray-600">Valid</span>
                 </div>
-            </motion.div>
+                <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-red-500 rounded"></div>
+                    <span className="text-gray-600">Invalid</span>
+                </div>
+            </div>
+            <div className="text-center text-xs text-gray-400 mt-3">
+                💡 Hover over any bar to see detailed statistics
+            </div>
         </div>
     );
 };
@@ -349,7 +269,6 @@ const ScannerDashboard: React.FC = () => {
     const filteredScans = useMemo(() => {
         let filtered = [...recentScans];
 
-        // Apply search filter
         if (searchTerm) {
             const query = searchTerm.toLowerCase();
             filtered = filtered.filter(scan =>
@@ -359,12 +278,10 @@ const ScannerDashboard: React.FC = () => {
             );
         }
 
-        // Apply status filter
         if (filterStatus !== 'all') {
             filtered = filtered.filter(scan => scan.status === filterStatus);
         }
 
-        // Apply gate filter
         if (filterGate !== 'all') {
             filtered = filtered.filter(scan => scan.gate === filterGate);
         }
@@ -372,7 +289,6 @@ const ScannerDashboard: React.FC = () => {
         return filtered;
     }, [recentScans, searchTerm, filterStatus, filterGate]);
 
-    // Clear all filters
     const clearAllFilters = () => {
         setSearchTerm('');
         setFilterStatus('all');
@@ -393,8 +309,6 @@ const ScannerDashboard: React.FC = () => {
         validEntries: recentScans.filter(s => s.status === 'valid').length,
         invalidTickets: recentScans.filter(s => s.status === 'invalid').length,
         duplicateAttempts: recentScans.filter(s => s.status === 'duplicate').length,
-        avgScanTime: '1.2s',
-        peakHour: '7:00 PM'
     };
 
     // Scan History Columns for ReusableTable
@@ -411,7 +325,7 @@ const ScannerDashboard: React.FC = () => {
         { title: "Scanned Today", value: stats.scannedToday, icon: Scan, color: "from-emerald-500 to-teal-600", delay: 0.1, change: `+${stats.scannedThisHour} this hour`, trend: 'up' as const },
         { title: "Valid Entries", value: stats.validEntries, icon: CheckCircle, color: "from-green-500 to-emerald-600", delay: 0.15, change: `${((stats.validEntries / stats.totalScanned) * 100).toFixed(1)}% rate`, trend: 'up' as const },
         { title: "Invalid Tickets", value: stats.invalidTickets, icon: XCircle, color: "from-red-500 to-pink-600", delay: 0.2, change: `${stats.duplicateAttempts} duplicates`, trend: 'down' as const },
-        { title: "Avg. Scan Time", value: stats.avgScanTime, icon: Clock, color: "from-blue-500 to-cyan-600", delay: 0.25, change: `Peak: ${stats.peakHour}`, trend: 'up' as const },
+        { title: "Total Scans", value: stats.totalScanned, icon: Activity, color: "from-purple-500 to-indigo-600", delay: 0.25, change: `All time`, trend: 'up' as const },
     ];
 
     return (
@@ -420,12 +334,6 @@ const ScannerDashboard: React.FC = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
-                        <button
-                            onClick={() => navigate('/scanner')}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition"
-                        >
-                            <ArrowLeft className="h-5 w-5 text-gray-600" />
-                        </button>
                         <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
                             <QrCode className="h-6 w-6 text-white" />
                         </div>
@@ -436,7 +344,7 @@ const ScannerDashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Stats Grid */}
+                {/* Stats Grid - 4 Cards */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -458,7 +366,7 @@ const ScannerDashboard: React.FC = () => {
 
                 {/* Charts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Hourly Scan Activity Chart */}
+                    {/* Hoverable Hourly Scan Activity Chart */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -468,24 +376,10 @@ const ScannerDashboard: React.FC = () => {
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-lg font-semibold text-gray-900">Hourly Scan Activity</h3>
-                                <p className="text-sm text-gray-500">Scan volume by hour</p>
+                                <p className="text-sm text-gray-500">Hover over bars to see details</p>
                             </div>
-                            <RouterLink to="/scanner/reports" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
-                                View Details <ArrowRight className="h-4 w-4" />
-                            </RouterLink>
                         </div>
-                        <div className="h-80">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={hourlyScanData}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
-                                    <XAxis dataKey="hour" stroke="#6B7280" />
-                                    <YAxis stroke="#6B7280" />
-                                    <Tooltip />
-                                    <Bar dataKey="valid" name="Valid Scans" fill="#22c55e" radius={[8, 8, 0, 0]} />
-                                    <Bar dataKey="invalid" name="Invalid Scans" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        <HoverableHourlyChart data={hourlyScanData} />
                     </motion.div>
 
                     {/* Gate Status Distribution */}
@@ -497,7 +391,7 @@ const ScannerDashboard: React.FC = () => {
                     >
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-semibold text-gray-900">Gate Status</h3>
-                            <RouterLink to="/scanner/gates" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
+                            <RouterLink to="/scanner/gate-management" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
                                 Manage Gates <ArrowRight className="h-4 w-4" />
                             </RouterLink>
                         </div>
@@ -624,50 +518,6 @@ const ScannerDashboard: React.FC = () => {
 
                         <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
                             Showing {filteredScans.length} of {recentScans.length} scans
-                        </div>
-                    </div>
-                </div>
-
-                {/* Quick Actions */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-                    <RouterLink to="/scanner/manual-entry">
-                        <button className="w-full py-3 px-4 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                            <Ticket className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                            Manual Entry
-                        </button>
-                    </RouterLink>
-                    <RouterLink to="/scanner/settings">
-                        <button className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                            <Settings className="h-4 w-4 group-hover:rotate-90 transition-transform" />
-                            Scanner Settings
-                        </button>
-                    </RouterLink>
-                    <RouterLink to="/scanner/reports">
-                        <button className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                            <BarChart3 className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                            View Reports
-                        </button>
-                    </RouterLink>
-                    <RouterLink to="/scanner/help">
-                        <button className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl font-medium hover:shadow-lg transition-all flex items-center justify-center gap-2 group">
-                            <HelpCircle className="h-4 w-4 group-hover:rotate-12 transition-transform" />
-                            Help Guide
-                        </button>
-                    </RouterLink>
-                </div>
-
-                {/* Tips Card */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                            <p className="text-sm font-medium text-blue-800">Scanner Tips</p>
-                            <p className="text-xs text-blue-700 mt-1">
-                                • Ensure good lighting when scanning QR codes<br />
-                                • Use filters to find specific tickets quickly<br />
-                                • Search by ticket number for quick lookup<br />
-                                • Monitor gate status for optimal performance
-                            </p>
                         </div>
                     </div>
                 </div>
