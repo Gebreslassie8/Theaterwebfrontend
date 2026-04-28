@@ -11,7 +11,6 @@ import Help from "./pages/Help";
 import Contact from "./pages/Contact";
 import TheaterRegistration from './pages/TheaterRegistration';
 import CustomerRegistration from './pages/CustomerRegistration';
-import BookingConfirmation from './pages/Legal/BookingConfirmation';
 import TermsOfService from './pages/Legal/TermsOfService';
 import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
 import CookiePolicy from './pages/Legal/CookiePolicy';
@@ -88,10 +87,10 @@ const getDashboardPath = (role: string): string => {
 const originalWarn = console.warn;
 console.warn = (...args) => {
   if (
-    typeof args[0] === 'string' && 
+    typeof args[0] === 'string' &&
     (args[0].includes('React Router Future Flag Warning') ||
-     args[0].includes('v7_startTransition') ||
-     args[0].includes('v7_relativeSplatPath'))
+      args[0].includes('v7_startTransition') ||
+      args[0].includes('v7_relativeSplatPath'))
   ) {
     return;
   }
@@ -114,7 +113,6 @@ function App() {
         <Route path="contact" element={<Contact />} />
         <Route path="customerAcount" element={<CustomerRegistration />} />
         <Route path="theater" element={<TheaterRegistration />} />
-        <Route path="booking" element={<BookingConfirmation />} />
         <Route path="terms" element={<TermsOfService />} />
         <Route path="privacy" element={<PrivacyPolicy />} />
         <Route path="cookies" element={<CookiePolicy />} />

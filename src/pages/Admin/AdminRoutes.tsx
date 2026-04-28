@@ -4,17 +4,12 @@ import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import AdminDashboard from './AdminDashboard';
 import UserManagement from './users/UserManagement';
-import TheaterManagement from './theateres/Theatermanagement';
-// Financial management Imports
 import WalletBalance from '../../components/wallet/WalletBalance';
-import TransactionHistory from '../../components/wallet/TransactionHistory';
-import DepositFunds from '../../components/wallet/DepositFunds';
-import WithdrawFunds from '../../components/wallet/WithdrawFunds';
-import BankAccounts from '../../components/wallet/BankAccounts';
 import Commission from '../../components/wallet/Commission';
-import RolesAndPermissions from './users/RolesAndPermissions';
+import TheaterManagement from './theateres/Theatermanagement';
 import FinancialReports from './financial/FinancialReports';
-// Content system monitoring Imports
+
+// system monitoring Imports
 import PlatformHealth from './monitoring/PlatformHealth';
 import SystemLogs from './monitoring/SystemLogs';
 import Performance from './monitoring/Performance';
@@ -59,23 +54,15 @@ export const adminRouteElement = (
     <Route path="dashboard" element={<AdminDashboard />} />
     <Route path="users" element={<UserManagement />} />
     <Route path="users/all" element={<UserManagement />} />
-    {/* <Route path="wallet" element={<AdminDashboard />} /> */}
-
-    <Route path="users/roles" element={<RolesAndPermissions />} />
-    <Route path="wallet" element={<AdminDashboard />} />
     <Route path="wallet/balance" element={<WalletBalance />} />
-    <Route path="wallet/transactions" element={<TransactionHistory />} />
-    <Route path="wallet/deposit" element={<DepositFunds />} />
-    <Route path="wallet/withdraw" element={<WithdrawFunds />} />
-    <Route path="wallet/bank-accounts" element={<BankAccounts />} />
     <Route path="wallet/commission" element={<Commission />} />
     <Route path="financial/revenue" element={<FinancialReports />} />
     <Route path="theaters/theaters" element={<TheaterManagement />} />
+    {/* system monitoring */}
     <Route path="monitoring/platform_health" element={<PlatformHealth />} />
     <Route path="monitoring/logs" element={<SystemLogs />} />
     <Route path="monitoring/performance" element={<Performance />} />
     <Route path="users/activity-logs" element={<ActivityLogs />} />
-
     {/* Content Management */}
     <Route path="content/contacts" element={<ContactManagement />} />
     <Route path="content/customers" element={<CustomerManagement />} />

@@ -665,11 +665,11 @@ const Login = () => {
               >
                 <p className="text-[10px] sm:text-xs text-center text-gray-500 dark:text-gray-400">
                   By signing in, you agree to our{' '}
-                  <a href="#" className="text-deepTeal hover:text-deepTeal hover:underline transition-colors">
+                  <a href="terms" className="text-deepTeal hover:text-deepTeal hover:underline transition-colors">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-deepTeal hover:text-deepTeal hover:underline transition-colors">
+                  <a href="privacy" className="text-deepTeal hover:text-deepTeal hover:underline transition-colors">
                     Privacy Policy
                   </a>
                 </p>

@@ -130,9 +130,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         roles: ["admin"],
         items: [
           { name: "Overview", to: "/admin/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
-          { name: "Manage Users",to: "/admin/users",icon: UsersRound,color: "text-purple-500"},
+          { name: "Manage Users", to: "/admin/users", icon: UsersRound, color: "text-purple-500" },
           { name: "Manage Theaters", to: "/admin/theaters/theaters", icon: Building },
-          { name: "Registration Requests", to: "/admin/theaters/requests", icon: Ban },
 
           {
             name: "Manage Wallet Balance",
@@ -141,26 +140,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-emerald-500",
             subItems: [
               { name: "Wallet Balance", to: "/admin/wallet/balance", icon: Coins },
-              { name: "Transaction History", to: "/admin/wallet/transactions", icon: ReceiptText },
-              { name: "Commission & Fees System", to: "/admin/wallet/commission", icon: Percent },
-              { name: "Deposit Funds", to: "/admin/wallet/deposit", icon: Banknote },
-              { name: "Withdraw Funds", to: "/admin/wallet/withdraw", icon: TrendingDown },
-              { name: "Bank Accounts", to: "/admin/wallet/bank-accounts", icon: Landmark },
-              { name: "Payment Methods", to: "/admin/wallet/payment-methods", icon: CreditCard }
+              { name: "Commission & Fees System", to: "/admin/wallet/commission", icon: Percent }
+
             ]
           },
           {
-            name: "Financial Analytics",
-            to: "/admin/financial/revenue",
-            icon: TrendingUp,
-            color: "text-green-500",
-            subItems: [
-              { name: "Revenue Overview", to: "/admin/financial/revenue", icon: TrendingUp },
-              { name: "Daily Reports", to: "/admin/financial/daily", icon: Calendar },
-              { name: "Monthly Reports", to: "/admin/financial/monthly", icon: CalendarDays },
-              { name: "Tax Reports", to: "/admin/financial/tax", icon: FileText }
-            ]
+            name: "Financial Analytics", to: "/admin/financial/revenue", icon: TrendingUp, color: "text-green-500"
           },
+
           {
             name: "Content Management",
             icon: FileText,
@@ -195,68 +182,26 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         roles: ["theater_owner"],
         items: [
           { name: "Dashboard", to: "/owner/dashboard", icon: LayoutDashboard, color: "text-amber-500" },
-          {
-            name: "System Wallet",
-            to: "/owner/wallet",
-            icon: WalletIcon,
-            color: "text-emerald-500",
-            subItems: [
-              { name: "Wallet Balance", to: "/owner/wallet/balance", icon: Coins },
-              { name: "Transaction History", to: "/owner/wallet/transactions", icon: ReceiptText },
-              { name: "Deposit Funds", to: "/owner/wallet/deposit", icon: Banknote },
-              { name: "Withdraw Funds", to: "/owner/wallet/withdraw", icon: TrendingDown },
-              { name: "Bank Accounts", to: "/owner/wallet/bank-accounts", icon: Landmark },
-              { name: "Payment Methods", to: "/owner/wallet/payment-methods", icon: CreditCard }
-            ]
-          },
-          {
-            name: "Financial",
-            to: "/owner/financial",
-            icon: DollarSign,
-            color: "text-emerald-500",
-            subItems: [
-              { name: "Revenue Overview", to: "/owner/financial/revenue", icon: TrendingUp },
-              { name: "Daily Reports", to: "/owner/financial/daily", icon: Calendar },
-              { name: "Monthly Reports", to: "/owner/financial/monthly", icon: CalendarDays },
-              { name: "Tax Reports", to: "/owner/financial/tax", icon: FileText }
-            ]
-          },
-          {
-            name: "Bookings",
-            to: "/owner/booking",
-            icon: Ticket,
-            color: "text-emerald-500",
-            subItems: [
-              { name: "All Bookings", to: "/owner/booking", icon: ClipboardCheck },
-              { name: "Pending Bookings", to: "/owner/booking/pending", icon: Clock },
-              { name: "Confirmed Bookings", to: "/owner/booking/confirmed", icon: CheckCircle },
-              { name: "Cancelled Bookings", to: "/owner/booking/cancelled", icon: Ban }
-            ]
-          },
-          {
-            name: "Events Management",
-            to: "/owner/events",
-            icon: Calendar,
-            color: "text-orange-500",
-            subItems: [
-              { name: "Create Event", to: "/owner/events/create", icon: PlusCircle },
-              { name: "Roles & Permissions", to: "/admin/users/roles", icon: UserCog },
 
-              { name: "View All Events", to: "/owner/events", icon: Calendar },
-              { name: "Update Event", to: "/owner/events/update", icon: Edit }
-            ]
-          },
-          {
-            name: "Halls & Seating",
-            to: "/owner/halls",
-            icon: ChairIcon,
-            color: "text-pink-500",
-            subItems: [
-              { name: "Manage Halls", to: "/owner/halls/manage", icon: Building },
-              { name: "Seating Layouts", to: "/owner/halls/seating", icon: GridIcon },
-              { name: "VIP Sections", to: "/owner/halls/vip", icon: Crown }
-            ]
-          }
+          { name: "Financial", to: "/owner/financial", icon: DollarSign, color: "text-emerald-500" },
+
+          { name: "Wallet Balance", to: "/owner/wallet/balance", icon: Coins, color: "text-emerald-500" },
+
+          { name: "Events Management", to: "/owner/events", icon: Calendar, color: "text-orange-500" },
+
+          { name: "Event Schedule", to: "/owner/events/schedule", icon: Clock, color: "text-orange-500" },
+
+          { name: "Bookings Control", to: "/owner/bookings", icon: Ticket, color: "text-emerald-500" },
+
+          { name: "Manage Halls", to: "/owner/halls/manage", icon: Building, color: "text-pink-500" },
+
+          { name: "Manage Seating Layouts", to: "/owner/halls/seating", icon: GridIcon, color: "text-pink-500" },
+
+          { name: "Manage VIP Sections", to: "/owner/halls/vip", icon: Crown, color: "text-pink-500" },
+
+          { name: "Reports", to: "/owner/reports", icon: FileText, color: "text-purple-500" },
+
+          { name: "Staff Management", to: "/owner/staff", icon: Users, color: "text-blue-500" }
         ]
       },
 

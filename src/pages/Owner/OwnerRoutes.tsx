@@ -3,6 +3,7 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import OwnerDashboard from './OwnerDashboard';
+import WalletBalance from '../../components/wallet/WalletBalance';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
@@ -36,14 +37,8 @@ export const ownerRouteElement = (
     <Route index element={<Navigate to="/owner/dashboard" replace />} />
 
     {/* <Route path="wallet" element={<OwnerDashboard />} /> */}
-    <Route path="wallet/balance" element={<OwnerDashboard />} />
-    <Route path="wallet/transactions" element={<OwnerDashboard />} />
-    <Route path="wallet/deposit" element={<OwnerDashboard />} />
-    <Route path="wallet/withdraw" element={<OwnerDashboard />} />
-    <Route path="wallet/bank-accounts" element={<OwnerDashboard />} />
-    <Route path="wallet/commission" element={<OwnerDashboard />} />
+    <Route path="wallet/balance" element={<WalletBalance />} />
     <Route path="booking" element={<OwnerDashboard />} />
-    <Route path="dashboard" element={<OwnerDashboard />} />
     <Route path="financial" element={<OwnerDashboard />} />
     <Route path="financial/revenue" element={<OwnerDashboard />} />
     <Route path="financial/daily" element={<OwnerDashboard />} />

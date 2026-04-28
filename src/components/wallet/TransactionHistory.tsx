@@ -30,11 +30,12 @@ import {
     Info,
     FileText,
     Copy,
-    Check
+    ArrowRight
 } from 'lucide-react';
 import ReusableTable from '../Reusable/ReusableTable';
 import ReusableButton from '../Reusable/ReusableButton';
 import SuccessPopup from '../Reusable/SuccessPopup';
+import { Link } from 'react-router-dom';
 
 // Types
 interface Transaction {
@@ -66,16 +67,101 @@ interface Transaction {
     receipt?: string;
 }
 
-interface TransactionStats {
-    totalTransactions: number;
-    totalCredits: number;
-    totalDebits: number;
-    netBalance: number;
-    successRate: number;
-    averageTransaction: number;
-    thisMonthTransactions: number;
-    pendingTransactions: number;
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ElementType;
+    color: string;
+    delay: number;
+    link?: string;
+    subtitle?: string;
+    trend?: string;
+    trendUp?: boolean;
 }
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05,
+            delayChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring" as const,
+            stiffness: 100,
+            damping: 12
+        }
+    }
+};
+
+// Stat Card Component - Like AdminDashboard
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, link, subtitle, trend, trendUp }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const CardContent = () => (
+        <div
+            className="relative overflow-hidden cursor-pointer transition-all duration-300"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                        <p className="text-xs text-gray-500">{title}</p>
+                        {trend && (
+                            <div className="flex items-center gap-0.5">
+                                {trendUp ? (
+                                    <TrendingUp className="h-2.5 w-2.5 text-green-500" />
+                                ) : (
+                                    <TrendingDown className="h-2.5 w-2.5 text-red-500" />
+                                )}
+                                <span className={`text-[9px] font-medium ${trendUp ? 'text-green-600' : 'text-red-600'}`}>{trend}</span>
+                            </div>
+                        )}
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                    {subtitle && <p className="text-[10px] text-gray-400 mt-0.5">{subtitle}</p>}
+                </div>
+                {link && (
+                    <div className={`transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-1 opacity-0'}`}>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, type: "spring", stiffness: 100 }}
+            whileHover={{ y: -2 }}
+            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
+        >
+            {link ? (
+                <Link to={link} className="block">
+                    <CardContent />
+                </Link>
+            ) : (
+                <CardContent />
+            )}
+        </motion.div>
+    );
+};
 
 // Mock Data
 const mockTransactions: Transaction[] = [
@@ -199,20 +285,60 @@ const TransactionHistory: React.FC = () => {
     const [copied, setCopied] = useState(false);
 
     // Calculate Statistics
-    const stats: TransactionStats = {
-        totalTransactions: transactions.length,
-        totalCredits: transactions.filter(t => t.type === 'credit' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0),
-        totalDebits: transactions.filter(t => t.type === 'debit' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0),
-        netBalance: transactions.filter(t => t.status === 'completed').reduce((sum, t) => t.type === 'credit' ? sum + t.amount : sum - t.amount, 0),
-        successRate: (transactions.filter(t => t.status === 'completed').length / transactions.length) * 100,
-        averageTransaction: transactions.reduce((sum, t) => sum + t.amount, 0) / transactions.length,
-        thisMonthTransactions: transactions.filter(t => {
-            const transactionDate = new Date(t.date);
-            const now = new Date();
-            return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
-        }).length,
-        pendingTransactions: transactions.filter(t => t.status === 'pending').length
-    };
+    const totalTransactions = transactions.length;
+    const totalCredits = transactions.filter(t => t.type === 'credit' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
+    const totalDebits = transactions.filter(t => t.type === 'debit' && t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
+    const netBalance = transactions.filter(t => t.status === 'completed').reduce((sum, t) => t.type === 'credit' ? sum + t.amount : sum - t.amount, 0);
+    const thisMonthTransactions = transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        const now = new Date();
+        return transactionDate.getMonth() === now.getMonth() && transactionDate.getFullYear() === now.getFullYear();
+    }).length;
+    const pendingTransactions = transactions.filter(t => t.status === 'pending').length;
+
+    // Dashboard Cards Data - Like AdminDashboard
+    const dashboardCards = [
+        {
+            title: 'Total Transactions',
+            value: totalTransactions,
+            icon: ReceiptText,
+            color: 'from-blue-500 to-cyan-600',
+            delay: 0.1,
+            subtitle: `${thisMonthTransactions} this month`,
+            trend: '+12%',
+            trendUp: true
+        },
+        {
+            title: 'Total Credits (Inflow)',
+            value: `ETB ${totalCredits.toLocaleString()}`,
+            icon: TrendingUp,
+            color: 'from-green-500 to-emerald-600',
+            delay: 0.15,
+            subtitle: 'Money received',
+            trend: '+8%',
+            trendUp: true
+        },
+        {
+            title: 'Total Debits (Outflow)',
+            value: `ETB ${totalDebits.toLocaleString()}`,
+            icon: TrendingDown,
+            color: 'from-red-500 to-rose-600',
+            delay: 0.2,
+            subtitle: 'Money paid out',
+            trend: '-3%',
+            trendUp: false
+        },
+        {
+            title: 'Net Balance',
+            value: `ETB ${netBalance.toLocaleString()}`,
+            icon: Wallet,
+            color: 'from-purple-500 to-indigo-600',
+            delay: 0.25,
+            subtitle: `${pendingTransactions} pending`,
+            trend: '+5%',
+            trendUp: true
+        }
+    ];
 
     // Filter transactions
     const filteredTransactions = transactions.filter(transaction => {
@@ -479,19 +605,23 @@ const TransactionHistory: React.FC = () => {
             accessor: 'status',
             sortable: true,
             Cell: (row: Transaction) => getStatusBadge(row.status)
-        }
-    ];
-
-    // Action buttons for table
-    const transactionActions = [
+        },
         {
-            label: 'View Details',
-            icon: Eye,
-            onClick: (row: Transaction) => {
-                setSelectedTransaction(row);
-                setShowDetailsModal(true);
-            },
-            color: 'info' as const
+            Header: '',
+            accessor: 'id',
+            sortable: false,
+            Cell: (row: Transaction) => (
+                <button
+                    onClick={() => {
+                        setSelectedTransaction(row);
+                        setShowDetailsModal(true);
+                    }}
+                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                    title="View Details"
+                >
+                    <Eye className="h-4 w-4 text-blue-600" />
+                </button>
+            )
         }
     ];
 
@@ -507,134 +637,112 @@ const TransactionHistory: React.FC = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-blue-100 rounded-xl">
-                                    <ReceiptText className="h-6 w-6 text-blue-600" />
-                                </div>
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8 p-6"
+        >
+            {/* Header */}
+            <motion.div variants={itemVariants}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2.5 bg-blue-100 rounded-xl">
+                                <ReceiptText className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
                                 <h1 className="text-2xl font-bold text-gray-900">Transaction History</h1>
+                                <p className="text-sm text-gray-500">View and manage all financial transactions</p>
                             </div>
-                            <p className="text-gray-600">View and manage all financial transactions</p>
-                        </div>
-                        <div className="flex gap-2">
-                            <ReusableButton
-                                onClick={handleExport}
-                                icon="Download"
-                                label="Export"
-                                className="px-4 py-2 text-sm"
-                            />
-                            <ReusableButton
-                                onClick={handlePrint}
-                                icon="Printer"
-                                label="Print"
-                                className="px-4 py-2 text-sm"
-                            />
                         </div>
                     </div>
-                </motion.div>
-
-                {/* Statistics Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-                    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="p-2 bg-blue-100 rounded-lg">
-                                <ReceiptText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-gray-900">{stats.totalTransactions}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Total Transactions</p>
-                        <p className="text-xs text-gray-400 mt-1">{stats.thisMonthTransactions} this month</p>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="p-2 bg-green-100 rounded-lg">
-                                <TrendingUp className="h-5 w-5 text-green-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-green-600">{formatCurrency(stats.totalCredits)}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Total Credits (Inflow)</p>
-                        <p className="text-xs text-gray-400 mt-1">Money received</p>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="p-2 bg-red-100 rounded-lg">
-                                <TrendingDown className="h-5 w-5 text-red-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-red-600">{formatCurrency(stats.totalDebits)}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Total Debits (Outflow)</p>
-                        <p className="text-xs text-gray-400 mt-1">Money paid out</p>
-                    </div>
-
-                    <div className="bg-white rounded-2xl p-5 shadow-md border border-gray-100">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="p-2 bg-purple-100 rounded-lg">
-                                <Wallet className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <span className="text-2xl font-bold text-purple-600">{formatCurrency(stats.netBalance)}</span>
-                        </div>
-                        <p className="text-sm text-gray-600">Net Balance</p>
-                        <p className="text-xs text-gray-400 mt-1">{stats.pendingTransactions} pending</p>
+                    <div className="flex gap-2">
+                        <ReusableButton
+                            onClick={handleExport}
+                            icon={Download}
+                            label="Export"
+                            variant="secondary"
+                            className="px-4 py-2 text-sm"
+                        />
+                        <ReusableButton
+                            onClick={handlePrint}
+                            icon={Printer}
+                            label="Print"
+                            variant="secondary"
+                            className="px-4 py-2 text-sm"
+                        />
                     </div>
                 </div>
+            </motion.div>
 
-                {/* Search and Filters */}
-                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative min-w-[280px]">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search by transaction ID, description, reference, or user..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                            />
-                        </div>
-                        <select
-                            value={filterType}
-                            onChange={(e) => setFilterType(e.target.value)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white min-w-[130px]"
-                        >
-                            <option value="all">All Types</option>
-                            <option value="credit">Credits (+)</option>
-                            <option value="debit">Debits (-)</option>
-                        </select>
-                        <select
-                            value={filterCategory}
-                            onChange={(e) => setFilterCategory(e.target.value)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white min-w-[150px]"
-                        >
-                            {categories.map(cat => (
-                                <option key={cat.value} value={cat.value}>{cat.label}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={filterStatus}
-                            onChange={(e) => setFilterStatus(e.target.value)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white min-w-[130px]"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="completed">Completed</option>
-                            <option value="pending">Pending</option>
-                            <option value="failed">Failed</option>
-                            <option value="cancelled">Cancelled</option>
-                        </select>
+            {/* Statistics Cards - Like AdminDashboard */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+                {dashboardCards.map((card, index) => (
+                    <StatCard
+                        key={index}
+                        title={card.title}
+                        value={card.value}
+                        icon={card.icon}
+                        color={card.color}
+                        delay={card.delay}
+                        subtitle={card.subtitle}
+                        trend={card.trend}
+                        trendUp={card.trendUp}
+                    />
+                ))}
+            </motion.div>
+
+            {/* Search and Filters */}
+            <motion.div variants={itemVariants} className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+                <div className="flex flex-wrap gap-3">
+                    <div className="relative flex-1 min-w-[200px]">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Search by transaction ID, description, reference, or user..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                        />
                     </div>
+                    <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                        <option value="all">All Types</option>
+                        <option value="credit">Credits (+)</option>
+                        <option value="debit">Debits (-)</option>
+                    </select>
+                    <select
+                        value={filterCategory}
+                        onChange={(e) => setFilterCategory(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                        {categories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                        ))}
+                    </select>
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    >
+                        <option value="all">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
                 </div>
+            </motion.div>
 
-                {/* Transactions Table */}
+            {/* Transactions Table */}
+            <motion.div variants={itemVariants}>
                 <ReusableTable
                     columns={transactionColumns}
                     data={filteredTransactions}
-                    actions={transactionActions}
                     title="All Transactions"
                     icon={ReceiptText}
                     showSearch={false}
@@ -642,169 +750,169 @@ const TransactionHistory: React.FC = () => {
                     showPrint={false}
                     itemsPerPage={15}
                 />
+            </motion.div>
 
-                {/* Transaction Details Modal */}
-                {showDetailsModal && selectedTransaction && (
-                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailsModal(false)}>
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-100 rounded-lg">
-                                        <ReceiptText className="h-5 w-5 text-blue-600" />
-                                    </div>
-                                    <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
+            {/* Transaction Details Modal */}
+            {showDetailsModal && selectedTransaction && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailsModal(false)}>
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.9, opacity: 0 }}
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-y-auto"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                    <ReceiptText className="h-5 w-5 text-blue-600" />
                                 </div>
-                                <button onClick={() => setShowDetailsModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
-                                    <XCircleIcon className="h-5 w-5 text-gray-500" />
-                                </button>
+                                <h2 className="text-xl font-bold text-gray-900">Transaction Details</h2>
                             </div>
-                            <div className="p-6">
-                                <div className="grid grid-cols-2 gap-4 mb-6">
-                                    <div>
-                                        <p className="text-xs text-gray-500">Transaction ID</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <p className="text-sm font-mono font-medium text-gray-900">{selectedTransaction.transactionId}</p>
-                                            <button
-                                                onClick={() => copyToClipboard(selectedTransaction.transactionId, 'Transaction ID')}
-                                                className="p-1 hover:bg-gray-100 rounded transition"
-                                            >
-                                                <Copy className="h-3 w-3 text-gray-400" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Reference</p>
-                                        <p className="text-sm font-medium text-gray-900">{selectedTransaction.reference}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Amount</p>
-                                        <p className={`text-lg font-bold ${selectedTransaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {selectedTransaction.type === 'credit' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
-                                        </p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Status</p>
-                                        <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Date & Time</p>
-                                        <p className="text-sm font-medium text-gray-900">{formatDate(selectedTransaction.date)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Payment Method</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            {getPaymentMethodIcon(selectedTransaction.paymentMethod)}
-                                            <span className="text-sm font-medium text-gray-900 capitalize">{selectedTransaction.paymentMethod}</span>
-                                        </div>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <p className="text-xs text-gray-500">Description</p>
-                                        <p className="text-sm font-medium text-gray-900">{selectedTransaction.description}</p>
-                                    </div>
-                                    <div className="col-span-2">
-                                        <p className="text-xs text-gray-500">Category</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            {getCategoryIcon(selectedTransaction.category)}
-                                            <span className="text-sm font-medium text-gray-900 capitalize">{getCategoryName(selectedTransaction.category)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {selectedTransaction.user && (
-                                    <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                            <User className="h-4 w-4 text-gray-500" />
-                                            User Information
-                                        </h4>
-                                        <div className="grid grid-cols-2 gap-3 text-sm">
-                                            <div>
-                                                <p className="text-xs text-gray-500">Name</p>
-                                                <p className="font-medium text-gray-900">{selectedTransaction.user.name}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Email</p>
-                                                <p className="font-medium text-gray-900">{selectedTransaction.user.email}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-xs text-gray-500">Role</p>
-                                                <p className="font-medium text-gray-900 capitalize">{selectedTransaction.user.role}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedTransaction.theater && (
-                                    <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                            <Building className="h-4 w-4 text-gray-500" />
-                                            Theater Information
-                                        </h4>
-                                        <div>
-                                            <p className="text-xs text-gray-500">Theater Name</p>
-                                            <p className="font-medium text-gray-900">{selectedTransaction.theater.name}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedTransaction.show && (
-                                    <div className="mb-4 p-4 bg-gray-50 rounded-xl">
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                                            <Ticket className="h-4 w-4 text-gray-500" />
-                                            Show Information
-                                        </h4>
-                                        <div>
-                                            <p className="text-xs text-gray-500">Show Title</p>
-                                            <p className="font-medium text-gray-900">{selectedTransaction.show.title}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {selectedTransaction.note && (
-                                    <div className="mb-4 p-4 bg-yellow-50 rounded-xl">
-                                        <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                                            <Info className="h-4 w-4 text-yellow-600" />
-                                            Note
-                                        </h4>
-                                        <p className="text-sm text-gray-700">{selectedTransaction.note}</p>
-                                    </div>
-                                )}
-
-                                {selectedTransaction.receipt && (
-                                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                        <a
-                                            href={selectedTransaction.receipt}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 px-4 py-2 bg-deepTeal text-white rounded-lg text-center hover:bg-deepTeal/80 transition flex items-center justify-center gap-2"
+                            <button onClick={() => setShowDetailsModal(false)} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                                <XCircleIcon className="h-5 w-5 text-gray-500" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <p className="text-xs text-gray-500">Transaction ID</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-sm font-mono font-medium text-gray-900">{selectedTransaction.transactionId}</p>
+                                        <button
+                                            onClick={() => copyToClipboard(selectedTransaction.transactionId, 'Transaction ID')}
+                                            className="p-1 hover:bg-gray-100 rounded transition"
                                         >
-                                            <FileText className="h-4 w-4" />
-                                            View Receipt
-                                        </a>
+                                            <Copy className="h-3 w-3 text-gray-400" />
+                                        </button>
                                     </div>
-                                )}
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Reference</p>
+                                    <p className="text-sm font-medium text-gray-900">{selectedTransaction.reference}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Amount</p>
+                                    <p className={`text-lg font-bold ${selectedTransaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                        {selectedTransaction.type === 'credit' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Status</p>
+                                    <div className="mt-1">{getStatusBadge(selectedTransaction.status)}</div>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Date & Time</p>
+                                    <p className="text-sm font-medium text-gray-900">{formatDate(selectedTransaction.date)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Payment Method</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {getPaymentMethodIcon(selectedTransaction.paymentMethod)}
+                                        <span className="text-sm font-medium text-gray-900 capitalize">{selectedTransaction.paymentMethod}</span>
+                                    </div>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-xs text-gray-500">Description</p>
+                                    <p className="text-sm font-medium text-gray-900">{selectedTransaction.description}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-xs text-gray-500">Category</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {getCategoryIcon(selectedTransaction.category)}
+                                        <span className="text-sm font-medium text-gray-900 capitalize">{getCategoryName(selectedTransaction.category)}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </motion.div>
-                    </div>
-                )}
 
-                {/* Success Popup */}
-                <SuccessPopup
-                    isOpen={showSuccessPopup}
-                    onClose={() => setShowSuccessPopup(false)}
-                    type={popupMessage.type}
-                    title={popupMessage.title}
-                    message={popupMessage.message}
-                    duration={3000}
-                    position="top-right"
-                />
-            </div>
-        </div>
+                            {selectedTransaction.user && (
+                                <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <User className="h-4 w-4 text-gray-500" />
+                                        User Information
+                                    </h4>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-xs text-gray-500">Name</p>
+                                            <p className="font-medium text-gray-900">{selectedTransaction.user.name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Email</p>
+                                            <p className="font-medium text-gray-900">{selectedTransaction.user.email}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-gray-500">Role</p>
+                                            <p className="font-medium text-gray-900 capitalize">{selectedTransaction.user.role}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedTransaction.theater && (
+                                <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Building className="h-4 w-4 text-gray-500" />
+                                        Theater Information
+                                    </h4>
+                                    <div>
+                                        <p className="text-xs text-gray-500">Theater Name</p>
+                                        <p className="font-medium text-gray-900">{selectedTransaction.theater.name}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedTransaction.show && (
+                                <div className="mb-4 p-4 bg-gray-50 rounded-xl">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <Ticket className="h-4 w-4 text-gray-500" />
+                                        Show Information
+                                    </h4>
+                                    <div>
+                                        <p className="text-xs text-gray-500">Show Title</p>
+                                        <p className="font-medium text-gray-900">{selectedTransaction.show.title}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedTransaction.note && (
+                                <div className="mb-4 p-4 bg-yellow-50 rounded-xl">
+                                    <h4 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <Info className="h-4 w-4 text-yellow-600" />
+                                        Note
+                                    </h4>
+                                    <p className="text-sm text-gray-700">{selectedTransaction.note}</p>
+                                </div>
+                            )}
+
+                            {selectedTransaction.receipt && (
+                                <div className="flex gap-3 pt-4 border-t border-gray-200">
+                                    <a
+                                        href={selectedTransaction.receipt}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg text-center hover:bg-teal-700 transition flex items-center justify-center gap-2"
+                                    >
+                                        <FileText className="h-4 w-4" />
+                                        View Receipt
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Success Popup */}
+            <SuccessPopup
+                isOpen={showSuccessPopup}
+                onClose={() => setShowSuccessPopup(false)}
+                type={popupMessage.type}
+                title={popupMessage.title}
+                message={popupMessage.message}
+                duration={3000}
+                position="top-right"
+            />
+        </motion.div>
     );
 };
 

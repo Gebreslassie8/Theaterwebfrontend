@@ -11,16 +11,14 @@ const Footer = () => {
 
   const quickLinks = [
     { to: '/about', label: 'About Us', icon: Star },
-    { to: '/movies', label: 'Movies', icon: Film },
-    { to: '/theaters', label: 'Theaters', icon: MapPin },
-    { to: '/blog', label: 'Blog', icon: FileText }
+    { to: '/blog', label: 'Blog', icon: FileText },
+    { to: '/gallery', label: 'Gallery', icon: Film },
   ];
 
   const supportLinks = [
     { to: '/help', label: 'Help Center', icon: HelpCircle },
     { to: '/contact', label: 'Contact Us', icon: Mail },
     { to: '/faq', label: 'FAQ', icon: HelpCircle },
-    { to: '/booking', label: 'booking Info', icon: Truck },
 
   ];
 

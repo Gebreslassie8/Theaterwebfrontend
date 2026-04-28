@@ -1,18 +1,26 @@
-// src/pages/Admin/wallet/Commission.tsx
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// src/components/wallet/Commission.tsx
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import {
-    Percent, TrendingUp, TrendingDown, Edit2, Save, X, AlertCircle,
-    Shield, DollarSign, Clock, Calendar, Users, Ticket, Building,
-    Smartphone, Landmark, CreditCard, Wallet, CheckCircle, Plus,
-    Trash2, Settings, BarChart3, PiggyBank, AlertTriangle, Search,
-    Filter, RefreshCw, ChevronLeft, ChevronRight, Eye, Power, PowerOff
+    Percent,
+    DollarSign,
+    Edit,
+    Trash2,
+    Plus,
+    CheckCircle,
+    XCircle,
+    TrendingUp,
+    Wallet,
+    Search,
+    AlertCircle,
+    ArrowRight,
+    LayoutGrid,
+    Banknote,
+    CreditCard
 } from 'lucide-react';
 import ReusableButton from '../Reusable/ReusableButton';
-import ReusableForm from '../Reusable/ReusableForm';
 import ReusableTable from '../Reusable/ReusableTable';
 import SuccessPopup from '../Reusable/SuccessPopup';
-import * as Yup from 'yup';
 
 // Types
 interface CommissionRule {
@@ -20,12 +28,12 @@ interface CommissionRule {
     name: string;
     type: 'percentage' | 'fixed';
     value: number;
-    appliesTo: 'booking' | 'ticket' | 'subscription' | 'all';
-    userType: 'all' | 'theater' | 'customer' | 'admin';
-    minAmount?: number;
-    maxAmount?: number;
+    appliesTo: string;
+    targetName?: string;
+    minCommission?: number;
+    maxCommission?: number;
     isActive: boolean;
-    createdAt: string;
+    priority: number;
     updatedAt: string;
 }
 
@@ -33,1345 +41,733 @@ interface FeeStructure {
     id: string;
     name: string;
     description: string;
-    type: 'withdrawal' | 'deposit' | 'transfer' | 'refund';
-    feeType: 'percentage' | 'fixed';
+    type: 'withdrawal' | 'deposit' | 'transaction';
+    feeType: 'fixed' | 'percentage';
     feeValue: number;
     minFee?: number;
     maxFee?: number;
     appliesTo: string[];
     isActive: boolean;
-    createdAt: string;
 }
 
-const deepTeal = "#007590";
-
-// Mock Data
-const mockCommissions: CommissionRule[] = [
-    {
-        id: '1',
-        name: 'Standard Booking Commission',
-        type: 'percentage',
-        value: 5,
-        appliesTo: 'booking',
-        userType: 'theater',
-        minAmount: 100,
-        maxAmount: 10000,
-        isActive: true,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-03-15'
-    },
-    {
-        id: '2',
-        name: 'Premium Ticket Fee',
-        type: 'fixed',
-        value: 25,
-        appliesTo: 'ticket',
-        userType: 'customer',
-        minAmount: 500,
-        isActive: true,
-        createdAt: '2024-01-01',
-        updatedAt: '2024-03-10'
-    },
-    {
-        id: '3',
-        name: 'Subscription Commission',
-        type: 'percentage',
-        value: 10,
-        appliesTo: 'subscription',
-        userType: 'all',
-        isActive: true,
-        createdAt: '2024-02-01',
-        updatedAt: '2024-02-01'
-    },
-    {
-        id: '4',
-        name: 'Event Booking Fee',
-        type: 'percentage',
-        value: 7.5,
-        appliesTo: 'booking',
-        userType: 'all',
-        minAmount: 50,
-        maxAmount: 5000,
-        isActive: false,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-03-01'
-    }
+// Mock Data - NO REFUND
+const mockCommissionRules: CommissionRule[] = [
+    { id: '1', name: 'Standard Commission', type: 'percentage', value: 15, appliesTo: 'all', minCommission: 10, maxCommission: 500, isActive: true, priority: 1, updatedAt: '2024-03-15' },
+    { id: '2', name: 'Grand Cinema Special', type: 'percentage', value: 12, appliesTo: 'theater', targetName: 'Grand Cinema', minCommission: 8, maxCommission: 400, isActive: true, priority: 2, updatedAt: '2024-03-10' }
 ];
 
-const mockFees: FeeStructure[] = [
-    {
-        id: '1',
-        name: 'Bank Transfer Fee',
-        description: 'Fee for bank transfer withdrawals',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: 25,
-        minFee: 25,
-        maxFee: 500,
-        appliesTo: ['bank_transfer'],
-        isActive: true,
-        createdAt: '2024-01-01'
-    },
-    {
-        id: '2',
-        name: 'Telebirr Fee',
-        description: 'Fee for Telebirr withdrawals',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: 10,
-        minFee: 10,
-        maxFee: 200,
-        appliesTo: ['telebirr'],
-        isActive: true,
-        createdAt: '2024-01-01'
-    },
-    {
-        id: '3',
-        name: 'CBE Birr Fee',
-        description: 'Fee for CBE Birr withdrawals',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: 10,
-        minFee: 10,
-        maxFee: 200,
-        appliesTo: ['cbebirr'],
-        isActive: true,
-        createdAt: '2024-01-01'
-    },
-    {
-        id: '4',
-        name: 'HelloCash Fee',
-        description: 'Fee for HelloCash withdrawals',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: 10,
-        minFee: 10,
-        maxFee: 200,
-        appliesTo: ['hellocash'],
-        isActive: true,
-        createdAt: '2024-01-01'
-    },
-    {
-        id: '5',
-        name: 'Chapa Fee',
-        description: 'Fee for Chapa withdrawals',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: 15,
-        minFee: 15,
-        maxFee: 300,
-        appliesTo: ['chapa'],
-        isActive: true,
-        createdAt: '2024-01-01'
-    }
+const mockFeeStructures: FeeStructure[] = [
+    { id: '1', name: 'Bank Transfer Fee', description: 'Fee for bank transfer withdrawals', type: 'withdrawal', feeType: 'fixed', feeValue: 25, minFee: 25, maxFee: 500, appliesTo: ['bank_transfer'], isActive: true },
+    { id: '2', name: 'Telebirr Fee', description: 'Fee for Telebirr withdrawals', type: 'withdrawal', feeType: 'fixed', feeValue: 10, minFee: 10, maxFee: 200, appliesTo: ['telebirr'], isActive: true },
+    { id: '3', name: 'CBE Birr Fee', description: 'Fee for CBE Birr withdrawals', type: 'withdrawal', feeType: 'fixed', feeValue: 10, minFee: 10, maxFee: 200, appliesTo: ['cbebirr'], isActive: true },
+    { id: '4', name: 'HelloCash Fee', description: 'Fee for HelloCash withdrawals', type: 'withdrawal', feeType: 'fixed', feeValue: 10, minFee: 10, maxFee: 200, appliesTo: ['hellocash'], isActive: true },
+    { id: '5', name: 'Chapa Fee', description: 'Fee for Chapa withdrawals', type: 'withdrawal', feeType: 'fixed', feeValue: 15, minFee: 15, maxFee: 300, appliesTo: ['chapa'], isActive: true },
+    { id: '6', name: 'Transaction Fee', description: 'Fee per booking transaction', type: 'transaction', feeType: 'fixed', feeValue: 5, appliesTo: ['all_bookings'], isActive: true }
 ];
 
-// Validation Schemas
-const commissionValidationSchema = Yup.object({
-    name: Yup.string().required('Rule name is required').min(3, 'Name must be at least 3 characters'),
-    type: Yup.string().required('Commission type is required'),
-    value: Yup.number().required('Value is required').positive('Value must be positive'),
-    appliesTo: Yup.string().required('Applies to is required'),
-    userType: Yup.string().required('User type is required'),
-    minAmount: Yup.number().min(0, 'Min amount cannot be negative'),
-    maxAmount: Yup.number().min(0, 'Max amount cannot be negative'),
-});
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05,
+            delayChildren: 0.1
+        }
+    }
+};
 
-const feeValidationSchema = Yup.object({
-    name: Yup.string().required('Fee name is required').min(3, 'Name must be at least 3 characters'),
-    description: Yup.string(),
-    type: Yup.string().required('Fee type is required'),
-    feeType: Yup.string().required('Fee calculation type is required'),
-    feeValue: Yup.number().required('Fee value is required').positive('Fee value must be positive'),
-    minFee: Yup.number().min(0, 'Min fee cannot be negative'),
-    maxFee: Yup.number().min(0, 'Max fee cannot be negative'),
-    appliesTo: Yup.array().min(1, 'Select at least one payment method'),
-});
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+        y: 0,
+        opacity: 1,
+        transition: {
+            type: "spring" as const,
+            stiffness: 100,
+            damping: 12
+        }
+    }
+};
+
+// Stat Card Component
+interface StatCardProps {
+    title: string;
+    value: string | number;
+    icon: React.ElementType;
+    color: string;
+    delay: number;
+    link?: string;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, link }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    const CardContent = () => (
+        <div
+            className="relative overflow-hidden cursor-pointer transition-all duration-300"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-xs text-gray-500">{title}</p>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                </div>
+                {link && (
+                    <div className={`transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-1 opacity-0'}`}>
+                        <ArrowRight className="h-4 w-4 text-gray-400" />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, type: "spring", stiffness: 100 }}
+            whileHover={{ y: -2 }}
+            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
+        >
+            {link ? (
+                <a href={link} className="block">
+                    <CardContent />
+                </a>
+            ) : (
+                <CardContent />
+            )}
+        </motion.div>
+    );
+};
 
 const Commission: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'commissions' | 'fees'>('commissions');
-    const [commissions, setCommissions] = useState<CommissionRule[]>(mockCommissions);
-    const [fees, setFees] = useState<FeeStructure[]>(mockFees);
-    const [showModal, setShowModal] = useState(false);
-    const [editingItem, setEditingItem] = useState<any>(null);
-    const [modalType, setModalType] = useState<'commission' | 'fee'>('commission');
+    const [activeTab, setActiveTab] = useState<'rules' | 'fees'>('rules');
+    const [rules, setRules] = useState<CommissionRule[]>(mockCommissionRules);
+    const [fees, setFees] = useState<FeeStructure[]>(mockFeeStructures);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [selectedItem, setSelectedItem] = useState<any>(null);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
-    const [selectedItem, setSelectedItem] = useState<any>(null);
-    const [showViewModal, setShowViewModal] = useState(false);
 
-    // Modal states
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
-    const [showReactivateModal, setShowReactivateModal] = useState(false);
-    const [itemToAction, setItemToAction] = useState<any>(null);
-    const [itemType, setItemType] = useState<'commission' | 'fee'>('commission');
-    const [deactivateReason, setDeactivateReason] = useState('');
-    const [reactivateReason, setReactivateReason] = useState('');
+    // Form state for add/edit
+    const [formData, setFormData] = useState({
+        name: '',
+        type: 'percentage',
+        value: 0,
+        appliesTo: 'all',
+        minCommission: '',
+        maxCommission: '',
+        priority: 1,
+        description: '',
+        feeType: 'fixed',
+        minFee: '',
+        maxFee: ''
+    });
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ETB',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(value);
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB', minimumFractionDigits: 0 }).format(amount);
     };
 
-    // Commission Form Fields with proper support for Value, Min Amount, Max Amount
-    const commissionFormFields = [
-        { name: 'name', label: 'Rule Name', type: 'text', placeholder: 'e.g., Standard Booking Commission', required: true },
-        {
-            name: 'type',
-            label: 'Commission Type',
-            type: 'select',
-            required: true,
-            options: [
-                { value: 'percentage', label: 'Percentage (%)' },
-                { value: 'fixed', label: 'Fixed Amount (ETB)' }
-            ]
-        },
-        { name: 'value', label: 'Value', type: 'number', placeholder: '5', required: true, step: '0.01' },
-        {
-            name: 'appliesTo',
-            label: 'Applies To',
-            type: 'select',
-            required: true,
-            options: [
-                { value: 'all', label: 'All' },
-                { value: 'booking', label: 'Bookings' },
-                { value: 'ticket', label: 'Tickets' },
-                { value: 'subscription', label: 'Subscriptions' }
-            ]
-        },
-        {
-            name: 'userType',
-            label: 'User Type',
-            type: 'select',
-            required: true,
-            options: [
-                { value: 'all', label: 'All Users' },
-                { value: 'theater', label: 'Theaters Only' },
-                { value: 'customer', label: 'Customers Only' },
-                { value: 'admin', label: 'Admin Only' }
-            ]
-        },
-        { name: 'minAmount', label: 'Min Amount (Optional)', type: 'number', placeholder: '100', step: '0.01' },
-        { name: 'maxAmount', label: 'Max Amount (Optional)', type: 'number', placeholder: '10000', step: '0.01' },
-    ];
+    const formatDate = (date: string) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
-    // Fee Form Fields with proper support for Fee Value, Min Fee, Max Fee
-    const feeFormFields = [
-        { name: 'name', label: 'Fee Name', type: 'text', placeholder: 'e.g., Bank Transfer Fee', required: true },
-        { name: 'description', label: 'Description', type: 'textarea', placeholder: 'Describe this fee structure', rows: 2 },
-        {
-            name: 'type',
-            label: 'Fee Type',
-            type: 'select',
-            required: true,
-            options: [
-                { value: 'withdrawal', label: 'Withdrawal' },
-                { value: 'deposit', label: 'Deposit' },
-                { value: 'transfer', label: 'Transfer' },
-                { value: 'refund', label: 'Refund' }
-            ]
-        },
-        {
-            name: 'feeType',
-            label: 'Fee Calculation',
-            type: 'select',
-            required: true,
-            options: [
-                { value: 'fixed', label: 'Fixed Amount' },
-                { value: 'percentage', label: 'Percentage' }
-            ]
-        },
-        { name: 'feeValue', label: 'Fee Value', type: 'number', placeholder: '25', required: true, step: '0.01' },
-        { name: 'minFee', label: 'Min Fee (Optional)', type: 'number', placeholder: '10', step: '0.01' },
-        { name: 'maxFee', label: 'Max Fee (Optional)', type: 'number', placeholder: '500', step: '0.01' },
-    ];
+    const getStatusBadge = (isActive: boolean) => (
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+            {isActive ? <CheckCircle className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+            {isActive ? 'Active' : 'Inactive'}
+        </span>
+    );
 
-    const handleSaveCommission = async (values: any, { setSubmitting }: any) => {
-        const minAmount = values.minAmount ? parseFloat(values.minAmount) : undefined;
-        const maxAmount = values.maxAmount ? parseFloat(values.maxAmount) : undefined;
+    const getFeeTypeIcon = (type: string) => {
+        switch (type) {
+            case 'withdrawal': return <Banknote className="h-3 w-3" />;
+            case 'deposit': return <CreditCard className="h-3 w-3" />;
+            default: return <CreditCard className="h-3 w-3" />;
+        }
+    };
 
-        if (editingItem) {
-            setCommissions(commissions.map(comm =>
-                comm.id === editingItem.id
-                    ? { ...comm, ...values, minAmount, maxAmount, value: parseFloat(values.value), updatedAt: new Date().toISOString().split('T')[0] }
-                    : comm
-            ));
-            setPopupMessage({
-                title: 'Commission Updated',
-                message: 'Commission rule has been updated successfully.',
-                type: 'success'
+    // CRUD Operations
+    const handleAdd = () => {
+        setFormData({
+            name: '',
+            type: 'percentage',
+            value: 0,
+            appliesTo: 'all',
+            minCommission: '',
+            maxCommission: '',
+            priority: rules.length + 1,
+            description: '',
+            feeType: 'fixed',
+            minFee: '',
+            maxFee: ''
+        });
+        setShowAddModal(true);
+    };
+
+    const handleEdit = (item: any) => {
+        if (activeTab === 'rules') {
+            setFormData({
+                name: item.name,
+                type: item.type,
+                value: item.value,
+                appliesTo: item.appliesTo,
+                minCommission: item.minCommission?.toString() || '',
+                maxCommission: item.maxCommission?.toString() || '',
+                priority: item.priority,
+                description: '',
+                feeType: 'fixed',
+                minFee: '',
+                maxFee: ''
             });
         } else {
-            const newCommission: CommissionRule = {
-                id: Date.now().toString(),
-                ...values,
-                value: parseFloat(values.value),
-                minAmount,
-                maxAmount,
-                isActive: true,
-                createdAt: new Date().toISOString().split('T')[0],
-                updatedAt: new Date().toISOString().split('T')[0]
-            };
-            setCommissions([...commissions, newCommission]);
-            setPopupMessage({
-                title: 'Commission Added',
-                message: 'New commission rule has been added successfully.',
-                type: 'success'
+            setFormData({
+                name: item.name,
+                type: 'percentage',
+                value: item.feeValue,
+                appliesTo: 'all',
+                minCommission: '',
+                maxCommission: '',
+                priority: 1,
+                description: item.description,
+                feeType: item.feeType,
+                minFee: item.minFee?.toString() || '',
+                maxFee: item.maxFee?.toString() || ''
             });
         }
-        setShowModal(false);
-        setEditingItem(null);
-        setShowSuccessPopup(true);
-        setSubmitting(false);
+        setSelectedItem(item);
+        setShowEditModal(true);
     };
 
-    const handleSaveFee = async (values: any, { setSubmitting }: any) => {
-        const appliesTo = values.appliesTo ? (typeof values.appliesTo === 'string' ? [values.appliesTo] : values.appliesTo) : [];
-        const minFee = values.minFee ? parseFloat(values.minFee) : undefined;
-        const maxFee = values.maxFee ? parseFloat(values.maxFee) : undefined;
+    const handleDelete = (item: any) => {
+        setSelectedItem(item);
+        setShowDeleteConfirm(true);
+    };
 
-        if (editingItem) {
-            setFees(fees.map(fee =>
-                fee.id === editingItem.id
-                    ? { ...fee, ...values, appliesTo, feeValue: parseFloat(values.feeValue), minFee, maxFee }
-                    : fee
-            ));
-            setPopupMessage({
-                title: 'Fee Updated',
-                message: 'Fee structure has been updated successfully.',
-                type: 'success'
-            });
+    const handleToggleStatus = (id: string, isRule: boolean) => {
+        if (isRule) {
+            setRules(rules.map(rule => rule.id === id ? { ...rule, isActive: !rule.isActive } : rule));
+        } else {
+            setFees(fees.map(fee => fee.id === id ? { ...fee, isActive: !fee.isActive } : fee));
+        }
+        setPopupMessage({ title: 'Status Updated', message: 'Status changed successfully', type: 'success' });
+        setShowSuccessPopup(true);
+    };
+
+    const confirmDelete = () => {
+        if (selectedItem) {
+            if (activeTab === 'rules') {
+                setRules(rules.filter(r => r.id !== selectedItem.id));
+            } else {
+                setFees(fees.filter(f => f.id !== selectedItem.id));
+            }
+            setPopupMessage({ title: 'Deleted', message: `${selectedItem.name} has been deleted`, type: 'success' });
+            setShowSuccessPopup(true);
+        }
+        setShowDeleteConfirm(false);
+        setSelectedItem(null);
+    };
+
+    const handleAddSubmit = () => {
+        if (activeTab === 'rules') {
+            const newRule: CommissionRule = {
+                id: Date.now().toString(),
+                name: formData.name,
+                type: formData.type as 'percentage' | 'fixed',
+                value: formData.value,
+                appliesTo: formData.appliesTo,
+                minCommission: formData.minCommission ? Number(formData.minCommission) : undefined,
+                maxCommission: formData.maxCommission ? Number(formData.maxCommission) : undefined,
+                isActive: true,
+                priority: formData.priority,
+                updatedAt: new Date().toISOString().split('T')[0]
+            };
+            setRules([newRule, ...rules]);
+            setPopupMessage({ title: 'Rule Added', message: `${formData.name} added successfully`, type: 'success' });
         } else {
             const newFee: FeeStructure = {
                 id: Date.now().toString(),
-                ...values,
-                feeValue: parseFloat(values.feeValue),
-                appliesTo,
-                minFee,
-                maxFee,
-                isActive: true,
-                createdAt: new Date().toISOString().split('T')[0]
+                name: formData.name,
+                description: formData.description,
+                type: 'withdrawal',
+                feeType: formData.feeType as 'fixed' | 'percentage',
+                feeValue: formData.value,
+                minFee: formData.minFee ? Number(formData.minFee) : undefined,
+                maxFee: formData.maxFee ? Number(formData.maxFee) : undefined,
+                appliesTo: ['bank_transfer'],
+                isActive: true
             };
-            setFees([...fees, newFee]);
-            setPopupMessage({
-                title: 'Fee Added',
-                message: 'New fee structure has been added successfully.',
-                type: 'success'
-            });
+            setFees([newFee, ...fees]);
+            setPopupMessage({ title: 'Fee Added', message: `${formData.name} added successfully`, type: 'success' });
         }
-        setShowModal(false);
-        setEditingItem(null);
-        setShowSuccessPopup(true);
-        setSubmitting(false);
-    };
-
-    // Delete Modal Handlers
-    const openDeleteModal = (item: any, type: 'commission' | 'fee') => {
-        setItemToAction(item);
-        setItemType(type);
-        setShowDeleteModal(true);
-    };
-
-    const handleConfirmDelete = () => {
-        if (itemType === 'commission') {
-            setCommissions(commissions.filter(c => c.id !== itemToAction.id));
-            setPopupMessage({
-                title: 'Commission Deleted',
-                message: `"${itemToAction.name}" has been permanently deleted.`,
-                type: 'success'
-            });
-        } else {
-            setFees(fees.filter(f => f.id !== itemToAction.id));
-            setPopupMessage({
-                title: 'Fee Deleted',
-                message: `"${itemToAction.name}" has been permanently deleted.`,
-                type: 'success'
-            });
-        }
-        setShowDeleteModal(false);
-        setItemToAction(null);
+        setShowAddModal(false);
         setShowSuccessPopup(true);
     };
 
-    // Deactivate Modal Handlers
-    const openDeactivateModal = (item: any, type: 'commission' | 'fee') => {
-        setItemToAction(item);
-        setItemType(type);
-        setDeactivateReason('');
-        setShowDeactivateModal(true);
-    };
-
-    const handleConfirmDeactivate = () => {
-        if (!deactivateReason) {
-            setPopupMessage({
-                title: 'Reason Required',
-                message: 'Please provide a reason for deactivation.',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
-
-        if (itemType === 'commission') {
-            setCommissions(commissions.map(c =>
-                c.id === itemToAction.id ? { ...c, isActive: false } : c
+    const handleEditSubmit = () => {
+        if (activeTab === 'rules' && selectedItem) {
+            setRules(rules.map(rule =>
+                rule.id === selectedItem.id
+                    ? {
+                        ...rule,
+                        name: formData.name,
+                        type: formData.type as 'percentage' | 'fixed',
+                        value: formData.value,
+                        appliesTo: formData.appliesTo,
+                        minCommission: formData.minCommission ? Number(formData.minCommission) : undefined,
+                        maxCommission: formData.maxCommission ? Number(formData.maxCommission) : undefined,
+                        priority: formData.priority,
+                        updatedAt: new Date().toISOString().split('T')[0]
+                    }
+                    : rule
             ));
-            setPopupMessage({
-                title: 'Commission Deactivated',
-                message: `"${itemToAction.name}" has been deactivated. Reason: ${deactivateReason}`,
-                type: 'warning'
-            });
-        } else {
-            setFees(fees.map(f =>
-                f.id === itemToAction.id ? { ...f, isActive: false } : f
+            setPopupMessage({ title: 'Rule Updated', message: `${formData.name} updated successfully`, type: 'success' });
+        } else if (selectedItem) {
+            setFees(fees.map(fee =>
+                fee.id === selectedItem.id
+                    ? {
+                        ...fee,
+                        name: formData.name,
+                        description: formData.description,
+                        feeType: formData.feeType as 'fixed' | 'percentage',
+                        feeValue: formData.value,
+                        minFee: formData.minFee ? Number(formData.minFee) : undefined,
+                        maxFee: formData.maxFee ? Number(formData.maxFee) : undefined
+                    }
+                    : fee
             ));
-            setPopupMessage({
-                title: 'Fee Deactivated',
-                message: `"${itemToAction.name}" has been deactivated. Reason: ${deactivateReason}`,
-                type: 'warning'
-            });
+            setPopupMessage({ title: 'Fee Updated', message: `${formData.name} updated successfully`, type: 'success' });
         }
-        setShowDeactivateModal(false);
-        setItemToAction(null);
-        setDeactivateReason('');
+        setShowEditModal(false);
+        setSelectedItem(null);
         setShowSuccessPopup(true);
     };
 
-    // Reactivate Modal Handlers
-    const openReactivateModal = (item: any, type: 'commission' | 'fee') => {
-        setItemToAction(item);
-        setItemType(type);
-        setReactivateReason('');
-        setShowReactivateModal(true);
-    };
-
-    const handleConfirmReactivate = () => {
-        if (!reactivateReason) {
-            setPopupMessage({
-                title: 'Reason Required',
-                message: 'Please provide a reason for reactivation.',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
-
-        if (itemType === 'commission') {
-            setCommissions(commissions.map(c =>
-                c.id === itemToAction.id ? { ...c, isActive: true } : c
-            ));
-            setPopupMessage({
-                title: 'Commission Reactivated',
-                message: `"${itemToAction.name}" has been reactivated. Reason: ${reactivateReason}`,
-                type: 'success'
-            });
-        } else {
-            setFees(fees.map(f =>
-                f.id === itemToAction.id ? { ...f, isActive: true } : f
-            ));
-            setPopupMessage({
-                title: 'Fee Reactivated',
-                message: `"${itemToAction.name}" has been reactivated. Reason: ${reactivateReason}`,
-                type: 'success'
-            });
-        }
-        setShowReactivateModal(false);
-        setItemToAction(null);
-        setReactivateReason('');
-        setShowSuccessPopup(true);
-    };
-
-    const handleEdit = (item: any, type: 'commission' | 'fee') => {
-        setEditingItem(item);
-        setModalType(type);
-        setShowModal(true);
-    };
-
-    const handleView = (item: any) => {
-        setSelectedItem(item);
-        setShowViewModal(true);
-    };
-
-    const getStatusBadge = (isActive: boolean) => {
-        return isActive ? (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                <CheckCircle className="h-3 w-3" />
-                Active
-            </span>
-        ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                <X className="h-3 w-3" />
-                Inactive
-            </span>
-        );
-    };
-
-    // Table Columns for Commissions
-    const commissionColumns = [
-        {
-            Header: 'Rule Name',
-            accessor: 'name',
-            sortable: true,
-            Cell: (row: CommissionRule) => (
-                <div>
-                    <div className="font-medium text-gray-900">{row.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">ID: {row.id}</div>
-                </div>
-            )
-        },
-        {
-            Header: 'Value',
-            accessor: 'value',
-            sortable: true,
-            Cell: (row: CommissionRule) => (
-                <span className="font-semibold" style={{ color: deepTeal }}>
-                    {row.type === 'percentage' ? `${row.value}%` : formatCurrency(row.value)}
-                </span>
-            )
-        },
-        {
-            Header: 'Applies To',
-            accessor: 'appliesTo',
-            sortable: true,
-            Cell: (row: CommissionRule) => (
-                <span className="capitalize text-gray-700">{row.appliesTo}</span>
-            )
-        },
-        {
-            Header: 'User Type',
-            accessor: 'userType',
-            sortable: true,
-            Cell: (row: CommissionRule) => (
-                <span className="capitalize text-gray-700">{row.userType}</span>
-            )
-        },
-        {
-            Header: 'Status',
-            accessor: 'isActive',
-            sortable: true,
-            Cell: (row: CommissionRule) => getStatusBadge(row.isActive)
-        },
-        {
-            Header: 'Last Updated',
-            accessor: 'updatedAt',
-            sortable: true,
-            Cell: (row: CommissionRule) => (
-                <div className="text-sm text-gray-500">{row.updatedAt}</div>
-            )
-        },
-        {
-            Header: 'Actions',
-            accessor: 'id',
-            sortable: false,
-            Cell: (row: CommissionRule) => (
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => handleView(row)}
-                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-                        title="View Details"
-                    >
-                        <Eye className="h-4 w-4 text-blue-600" />
-                    </button>
-                    <button
-                        onClick={() => handleEdit(row, 'commission')}
-                        className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
-                        title="Edit"
-                    >
-                        <Edit2 className="h-4 w-4 text-teal-600" />
-                    </button>
-                    {row.isActive ? (
-                        <button
-                            onClick={() => openDeactivateModal(row, 'commission')}
-                            className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors"
-                            title="Deactivate"
-                        >
-                            <PowerOff className="h-4 w-4 text-orange-600" />
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => openReactivateModal(row, 'commission')}
-                            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-                            title="Reactivate"
-                        >
-                            <Power className="h-4 w-4 text-green-600" />
-                        </button>
-                    )}
-                    <button
-                        onClick={() => openDeleteModal(row, 'commission')}
-                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
-                        title="Delete"
-                    >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                    </button>
-                </div>
-            )
-        }
+    // Table Columns
+    const ruleColumns = [
+        { Header: 'Rule Name', accessor: 'name', Cell: (row: CommissionRule) => <div><p className="font-medium text-gray-900">{row.name}</p><p className="text-xs text-gray-500">Priority: {row.priority}</p></div> },
+        { Header: 'Value', accessor: 'value', Cell: (row: CommissionRule) => <span className="font-semibold text-purple-600">{row.type === 'percentage' ? `${row.value}%` : formatCurrency(row.value)}</span> },
+        { Header: 'Applies To', accessor: 'appliesTo', Cell: (row: CommissionRule) => <span className="text-sm capitalize">{row.appliesTo}{row.targetName && `: ${row.targetName}`}</span> },
+        { Header: 'Min/Max', accessor: 'minCommission', Cell: (row: CommissionRule) => <span className="text-sm">{row.minCommission ? formatCurrency(row.minCommission) : '-'}{row.maxCommission ? ` - ${formatCurrency(row.maxCommission)}` : ''}</span> },
+        { Header: 'Status', accessor: 'isActive', Cell: (row: CommissionRule) => getStatusBadge(row.isActive) },
+        { Header: 'Updated', accessor: 'updatedAt', Cell: (row: CommissionRule) => formatDate(row.updatedAt) }
     ];
 
-    // Table Columns for Fees
     const feeColumns = [
-        {
-            Header: 'Fee Name',
-            accessor: 'name',
-            sortable: true,
-            Cell: (row: FeeStructure) => (
-                <div>
-                    <div className="font-medium text-gray-900">{row.name}</div>
-                    <div className="text-xs text-gray-500">{row.description}</div>
-                </div>
-            )
-        },
-        {
-            Header: 'Fee Value',
-            accessor: 'feeValue',
-            sortable: true,
-            Cell: (row: FeeStructure) => (
-                <span className="font-semibold" style={{ color: deepTeal }}>
-                    {row.feeType === 'percentage' ? `${row.feeValue}%` : formatCurrency(row.feeValue)}
-                </span>
-            )
-        },
-        {
-            Header: 'Type',
-            accessor: 'type',
-            sortable: true,
-            Cell: (row: FeeStructure) => (
-                <span className="capitalize text-gray-700">{row.type}</span>
-            )
-        },
-        {
-            Header: 'Payment Methods',
-            accessor: 'appliesTo',
-            sortable: false,
-            Cell: (row: FeeStructure) => (
-                <div className="flex flex-wrap gap-1">
-                    {row.appliesTo.map(method => (
-                        <span key={method} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
-                            {method.replace('_', ' ')}
-                        </span>
-                    ))}
-                </div>
-            )
-        },
-        {
-            Header: 'Status',
-            accessor: 'isActive',
-            sortable: true,
-            Cell: (row: FeeStructure) => getStatusBadge(row.isActive)
-        },
-        {
-            Header: 'Actions',
-            accessor: 'id',
-            sortable: false,
-            Cell: (row: FeeStructure) => (
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => handleView(row)}
-                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-                        title="View Details"
-                    >
-                        <Eye className="h-4 w-4 text-blue-600" />
-                    </button>
-                    <button
-                        onClick={() => handleEdit(row, 'fee')}
-                        className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
-                        title="Edit"
-                    >
-                        <Edit2 className="h-4 w-4 text-teal-600" />
-                    </button>
-                    {row.isActive ? (
-                        <button
-                            onClick={() => openDeactivateModal(row, 'fee')}
-                            className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors"
-                            title="Deactivate"
-                        >
-                            <PowerOff className="h-4 w-4 text-orange-600" />
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => openReactivateModal(row, 'fee')}
-                            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-                            title="Reactivate"
-                        >
-                            <Power className="h-4 w-4 text-green-600" />
-                        </button>
-                    )}
-                    <button
-                        onClick={() => openDeleteModal(row, 'fee')}
-                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
-                        title="Delete"
-                    >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                    </button>
-                </div>
-            )
-        }
+        { Header: 'Fee Name', accessor: 'name', Cell: (row: FeeStructure) => <div><p className="font-medium text-gray-900">{row.name}</p><p className="text-xs text-gray-500">{row.description}</p></div> },
+        { Header: 'Type', accessor: 'type', Cell: (row: FeeStructure) => <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-700 capitalize">{getFeeTypeIcon(row.type)} {row.type}</span> },
+        { Header: 'Value', accessor: 'feeValue', Cell: (row: FeeStructure) => <span className="font-semibold text-blue-600">{row.feeType === 'percentage' ? `${row.feeValue}%` : formatCurrency(row.feeValue)}</span> },
+        { Header: 'Min/Max', accessor: 'minFee', Cell: (row: FeeStructure) => <span className="text-sm">{row.minFee ? formatCurrency(row.minFee) : '-'}{row.maxFee ? ` - ${formatCurrency(row.maxFee)}` : ''}</span> },
+        { Header: 'Status', accessor: 'isActive', Cell: (row: FeeStructure) => getStatusBadge(row.isActive) }
     ];
 
-    const filteredCommissions = commissions.filter(c => {
-        const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && c.isActive) || (statusFilter === 'inactive' && !c.isActive);
-        return matchesSearch && matchesStatus;
-    });
+    // Action Buttons
+    const ruleActions = [
+        { label: 'Edit', icon: Edit, onClick: (row: CommissionRule) => handleEdit(row), color: 'success' as const },
+        { label: 'Delete', icon: Trash2, onClick: (row: CommissionRule) => handleDelete(row), color: 'danger' as const },
+        { label: row => row.isActive ? 'Deactivate' : 'Activate', icon: row => row.isActive ? XCircle : CheckCircle, onClick: (row: CommissionRule) => handleToggleStatus(row.id, true), color: row => row.isActive ? 'warning' : 'success', dynamic: true as const }
+    ];
 
-    const filteredFees = fees.filter(f => {
-        const matchesSearch = f.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || (statusFilter === 'active' && f.isActive) || (statusFilter === 'inactive' && !f.isActive);
-        return matchesSearch && matchesStatus;
-    });
+    const feeActions = [
+        { label: 'Edit', icon: Edit, onClick: (row: FeeStructure) => handleEdit(row), color: 'success' as const },
+        { label: 'Delete', icon: Trash2, onClick: (row: FeeStructure) => handleDelete(row), color: 'danger' as const },
+        { label: row => row.isActive ? 'Deactivate' : 'Activate', icon: row => row.isActive ? XCircle : CheckCircle, onClick: (row: FeeStructure) => handleToggleStatus(row.id, false), color: row => row.isActive ? 'warning' : 'success', dynamic: true as const }
+    ];
+
+    const filteredRules = rules.filter(r => r.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const filteredFees = fees.filter(f => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const totalCommission = rules.filter(r => r.isActive && r.type === 'percentage').reduce((sum, r) => sum + r.value, 0);
+    const avgCommission = (totalCommission / (rules.filter(r => r.isActive && r.type === 'percentage').length || 1)).toFixed(1);
 
     const stats = {
-        totalCommissionRate: commissions.filter(c => c.isActive).reduce((sum, c) => sum + c.value, 0),
-        activeCommissions: commissions.filter(c => c.isActive).length,
-        totalFees: fees.filter(f => f.isActive).reduce((sum, f) => sum + f.feeValue, 0),
-        activeFees: fees.filter(f => f.isActive).length
-    };
-
-    const initialCommissionValues = editingItem ? {
-        name: editingItem.name,
-        type: editingItem.type,
-        value: editingItem.value,
-        appliesTo: editingItem.appliesTo,
-        userType: editingItem.userType,
-        minAmount: editingItem.minAmount || '',
-        maxAmount: editingItem.maxAmount || ''
-    } : {
-        name: '',
-        type: 'percentage',
-        value: '',
-        appliesTo: 'all',
-        userType: 'all',
-        minAmount: '',
-        maxAmount: ''
-    };
-
-    const initialFeeValues = editingItem ? {
-        name: editingItem.name,
-        description: editingItem.description || '',
-        type: editingItem.type,
-        feeType: editingItem.feeType,
-        feeValue: editingItem.feeValue,
-        minFee: editingItem.minFee || '',
-        maxFee: editingItem.maxFee || '',
-        appliesTo: editingItem.appliesTo || []
-    } : {
-        name: '',
-        description: '',
-        type: 'withdrawal',
-        feeType: 'fixed',
-        feeValue: '',
-        minFee: '',
-        maxFee: '',
-        appliesTo: []
+        avgCommission: avgCommission,
+        activeRules: rules.filter(r => r.isActive).length,
+        activeFees: fees.filter(f => f.isActive).length,
+        totalItems: rules.length + fees.length
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8 p-6 bg-gray-50 min-h-screen"
+        >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg">
+                            <Percent className="h-6 w-6 text-white" />
+                        </div>
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2.5 rounded-xl" style={{ background: `linear-gradient(135deg, ${deepTeal} 0%, ${deepTeal}CC 100%)` }}>
-                                    <Percent className="h-6 w-6 text-white" />
-                                </div>
-                                <h1 className="text-2xl font-bold text-gray-900">Commission & Fees System</h1>
-                            </div>
-                            <p className="text-gray-600">Manage platform commissions and transaction fees</p>
-                        </div>
-                        <div className="flex gap-3">
-                            <div className="px-4 py-2 rounded-xl border" style={{ backgroundColor: `${deepTeal}10`, borderColor: `${deepTeal}30` }}>
-                                <div className="flex items-center gap-2">
-                                    <Shield className="h-4 w-4" style={{ color: deepTeal }} />
-                                    <span className="text-sm" style={{ color: deepTeal }}>Automated Calculations</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </motion.div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Commission Rate</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats.totalCommissionRate}%</p>
-                            </div>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${deepTeal}15` }}>
-                                <Percent className="h-5 w-5" style={{ color: deepTeal }} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Active Commissions</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats.activeCommissions}</p>
-                            </div>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${deepTeal}15` }}>
-                                <TrendingUp className="h-5 w-5" style={{ color: deepTeal }} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Fees</p>
-                                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalFees)}</p>
-                            </div>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${deepTeal}15` }}>
-                                <DollarSign className="h-5 w-5" style={{ color: deepTeal }} />
-                            </div>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Active Fees</p>
-                                <p className="text-2xl font-bold text-gray-900">{stats.activeFees}</p>
-                            </div>
-                            <div className="p-2 rounded-lg" style={{ backgroundColor: `${deepTeal}15` }}>
-                                <PiggyBank className="h-5 w-5" style={{ color: deepTeal }} />
-                            </div>
+                            <h1 className="text-2xl font-bold text-gray-900">Commission & Fees</h1>
+                            <p className="text-sm text-gray-500">Manage platform commission rates and fee structures</p>
                         </div>
                     </div>
                 </div>
 
+                {/* Stats Cards */}
+                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                    <StatCard title="Avg Commission Rate" value={`${stats.avgCommission}%`} icon={Percent} color="from-purple-500 to-pink-500" delay={0.1} />
+                    <StatCard title="Active Rules" value={stats.activeRules} icon={CheckCircle} color="from-green-500 to-emerald-600" delay={0.15} />
+                    <StatCard title="Active Fees" value={stats.activeFees} icon={Wallet} color="from-blue-500 to-cyan-600" delay={0.2} />
+                    <StatCard title="Total Items" value={stats.totalItems} icon={TrendingUp} color="from-amber-500 to-orange-600" delay={0.25} />
+                </motion.div>
+
                 {/* Tabs */}
-                <div className="mb-6">
-                    <div className="flex gap-2 border-b border-gray-200">
+                <div className="border-b border-gray-200 mb-6">
+                    <nav className="flex gap-1">
                         <button
-                            onClick={() => setActiveTab('commissions')}
-                            className={`px-6 py-3 text-sm font-medium transition-all rounded-t-lg ${activeTab === 'commissions' ? 'border-b-2' : 'text-gray-500 hover:text-gray-700'}`}
-                            style={activeTab === 'commissions' ? { color: deepTeal, borderBottomColor: deepTeal, backgroundColor: `${deepTeal}08` } : {}}
+                            onClick={() => setActiveTab('rules')}
+                            className={`px-6 py-3 text-sm font-medium transition-all rounded-t-lg flex items-center gap-2 ${activeTab === 'rules' ? 'border-b-2 border-purple-500 text-purple-600 bg-purple-50' : 'text-gray-500'}`}
                         >
-                            <div className="flex items-center gap-2">
-                                <Percent className="h-4 w-4" />
-                                Commission Rules
-                            </div>
+                            <Percent className="h-4 w-4" /> Commission Rules ({rules.length})
                         </button>
                         <button
                             onClick={() => setActiveTab('fees')}
-                            className={`px-6 py-3 text-sm font-medium transition-all rounded-t-lg ${activeTab === 'fees' ? 'border-b-2' : 'text-gray-500 hover:text-gray-700'}`}
-                            style={activeTab === 'fees' ? { color: deepTeal, borderBottomColor: deepTeal, backgroundColor: `${deepTeal}08` } : {}}
+                            className={`px-6 py-3 text-sm font-medium transition-all rounded-t-lg flex items-center gap-2 ${activeTab === 'fees' ? 'border-b-2 border-purple-500 text-purple-600 bg-purple-50' : 'text-gray-500'}`}
                         >
-                            <div className="flex items-center gap-2">
-                                <DollarSign className="h-4 w-4" />
-                                Fee Structures
-                            </div>
+                            <DollarSign className="h-4 w-4" /> Fee Structures ({fees.length})
                         </button>
-                    </div>
+                    </nav>
                 </div>
 
-                {/* Search and Filter Bar */}
-                <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-100">
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="relative flex-1 min-w-[250px]">
+                {/* Search and Add Button */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[250px]">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder={`Search ${activeTab === 'commissions' ? 'commission rules' : 'fee structures'}...`}
+                                placeholder="Search..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:outline-none bg-gray-50 hover:bg-white transition-all"
-                                style={{ focusRingColor: deepTeal }}
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
                             />
                         </div>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as any)}
-                            className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
-                        >
-                            <option value="all">All Status</option>
-                            <option value="active">Active Only</option>
-                            <option value="inactive">Inactive Only</option>
-                        </select>
-                        <ReusableButton
-                            onClick={() => {
-                                setSearchTerm('');
-                                setStatusFilter('all');
-                            }}
-                            variant="secondary"
-                            size="sm"
-                            icon={RefreshCw}
-                        >
-                            Reset
-                        </ReusableButton>
-                        <ReusableButton
-                            onClick={() => {
-                                setEditingItem(null);
-                                setModalType(activeTab === 'commissions' ? 'commission' : 'fee');
-                                setShowModal(true);
-                            }}
-                            variant="primary"
-                            icon={Plus}
-                        >
-                            Add {activeTab === 'commissions' ? 'Commission' : 'Fee'}
-                        </ReusableButton>
                     </div>
+                    <ReusableButton
+                        onClick={handleAdd}
+                        icon={Plus}
+                        label={`Add ${activeTab === 'rules' ? 'Commission Rule' : 'Fee Structure'}`}
+                        className="px-5 py-2.5 text-sm whitespace-nowrap bg-purple-600 hover:bg-purple-700 text-white"
+                    />
                 </div>
 
                 {/* Tables */}
-                {activeTab === 'commissions' && (
+                {activeTab === 'rules' && (
                     <ReusableTable
-                        columns={commissionColumns}
-                        data={filteredCommissions}
-                        title="Commission Rules"
-                        icon={Percent}
+                        columns={ruleColumns}
+                        data={filteredRules}
+                        actions={ruleActions}
+                        icon={LayoutGrid}
                         showSearch={false}
-                        showExport={true}
-                        showPrint={true}
-                        itemsPerPage={10}
+                        showExport={false}
+                        showPrint={false}
                     />
                 )}
-
                 {activeTab === 'fees' && (
                     <ReusableTable
                         columns={feeColumns}
                         data={filteredFees}
-                        title="Fee Structures"
-                        icon={DollarSign}
+                        actions={feeActions}
+                        icon={LayoutGrid}
                         showSearch={false}
-                        showExport={true}
-                        showPrint={true}
-                        itemsPerPage={10}
+                        showExport={false}
+                        showPrint={false}
                     />
                 )}
 
-                {/* Add/Edit Modal */}
-                <AnimatePresence>
-                    {showModal && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-                            >
-                                <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${deepTeal}15` }}>
-                                            {modalType === 'commission' ? (
-                                                <Percent className="h-5 w-5" style={{ color: deepTeal }} />
-                                            ) : (
-                                                <DollarSign className="h-5 w-5" style={{ color: deepTeal }} />
-                                            )}
+                {/* Add Modal */}
+                {showAddModal && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl max-w-md w-full p-6"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-purple-100 rounded-lg">
+                                    <Plus className="h-6 w-6 text-purple-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">Add {activeTab === 'rules' ? 'Commission Rule' : 'Fee Structure'}</h3>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                        placeholder="Enter name"
+                                    />
+                                </div>
+
+                                {activeTab === 'rules' ? (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Commission Type *</label>
+                                            <select
+                                                value={formData.type}
+                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            >
+                                                <option value="percentage">Percentage (%)</option>
+                                                <option value="fixed">Fixed Amount (ETB)</option>
+                                            </select>
                                         </div>
-                                        <h2 className="text-xl font-bold text-gray-900">
-                                            {editingItem ? 'Edit' : 'Add'} {modalType === 'commission' ? 'Commission Rule' : 'Fee Structure'}
-                                        </h2>
-                                    </div>
-                                    <button onClick={() => { setShowModal(false); setEditingItem(null); }} className="p-1 hover:bg-gray-100 rounded-lg">
-                                        <X className="h-5 w-5 text-gray-500" />
-                                    </button>
-                                </div>
-
-                                <div className="p-6">
-                                    {modalType === 'commission' ? (
-                                        <>
-                                            <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: `${deepTeal}10` }}>
-                                                <p className="text-sm" style={{ color: deepTeal }}>
-                                                    <AlertCircle className="h-4 w-4 inline mr-2" />
-                                                    Commission rules determine how much the platform earns from each transaction.
-                                                    <br />
-                                                    <strong>Note:</strong> Min/Max amounts define the transaction range where this rule applies.
-                                                </p>
-                                            </div>
-                                            <ReusableForm
-                                                fields={commissionFormFields}
-                                                onSubmit={handleSaveCommission}
-                                                initialValues={initialCommissionValues}
-                                                validationSchema={commissionValidationSchema}
-                                                submitLabel={editingItem ? 'Update Commission' : 'Add Commission'}
-                                                cancelLabel="Cancel"
-                                                onCancel={() => { setShowModal(false); setEditingItem(null); }}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Value *</label>
+                                            <input
+                                                type="number"
+                                                value={formData.value}
+                                                onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                placeholder={formData.type === 'percentage' ? 'Enter percentage' : 'Enter amount'}
                                             />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div className="mb-4 p-3 rounded-lg" style={{ backgroundColor: `${deepTeal}10` }}>
-                                                <p className="text-sm" style={{ color: deepTeal }}>
-                                                    <AlertCircle className="h-4 w-4 inline mr-2" />
-                                                    Fee structures define charges for payment processing and withdrawals.
-                                                    <br />
-                                                    <strong>Note:</strong> Min/Max fees set the boundaries for the applied fee amount.
-                                                </p>
-                                            </div>
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-2">Payment Methods *</label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {['chapa', 'telebirr', 'cbebirr', 'hellocash', 'bank_transfer'].map(method => (
-                                                        <label key={method} className="flex items-center gap-2 p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                                                            <input
-                                                                type="checkbox"
-                                                                value={method}
-                                                                checked={initialFeeValues.appliesTo?.includes(method)}
-                                                                onChange={(e) => {
-                                                                    const newAppliesTo = e.target.checked
-                                                                        ? [...(initialFeeValues.appliesTo || []), method]
-                                                                        : (initialFeeValues.appliesTo || []).filter(m => m !== method);
-                                                                    setEditingItem({ ...initialFeeValues, appliesTo: newAppliesTo });
-                                                                }}
-                                                                className="w-4 h-4 rounded" style={{ accentColor: deepTeal }}
-                                                            />
-                                                            <span className="text-sm text-gray-700 capitalize">{method.replace('_', ' ')}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <ReusableForm
-                                                fields={feeFormFields}
-                                                onSubmit={handleSaveFee}
-                                                initialValues={initialFeeValues}
-                                                validationSchema={feeValidationSchema}
-                                                submitLabel={editingItem ? 'Update Fee' : 'Add Fee'}
-                                                cancelLabel="Cancel"
-                                                onCancel={() => { setShowModal(false); setEditingItem(null); }}
-                                            />
-                                        </>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* View Details Modal */}
-                <AnimatePresence>
-                    {showViewModal && selectedItem && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto"
-                            >
-                                <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center" style={{ background: `linear-gradient(135deg, ${deepTeal} 0%, ${deepTeal}CC 100%)` }}>
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white/20 rounded-xl">
-                                            {'type' in selectedItem && (selectedItem.type === 'percentage' || selectedItem.feeType === 'percentage') ? (
-                                                <Percent className="h-5 w-5 text-white" />
-                                            ) : (
-                                                <DollarSign className="h-5 w-5 text-white" />
-                                            )}
                                         </div>
-                                        <h2 className="text-xl font-bold text-white">Details</h2>
-                                    </div>
-                                    <button onClick={() => setShowViewModal(false)} className="p-1 hover:bg-white/20 rounded-lg">
-                                        <X className="h-5 w-5 text-white" />
-                                    </button>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Applies To *</label>
+                                            <select
+                                                value={formData.appliesTo}
+                                                onChange={(e) => setFormData({ ...formData, appliesTo: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            >
+                                                <option value="all">All</option>
+                                                <option value="theater">Specific Theater</option>
+                                                <option value="show">Specific Show</option>
+                                                <option value="category">Seat Category</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Min Commission</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.minCommission}
+                                                    onChange={(e) => setFormData({ ...formData, minCommission: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                    placeholder="Optional"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Max Commission</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.maxCommission}
+                                                    onChange={(e) => setFormData({ ...formData, maxCommission: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                    placeholder="Optional"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label>
+                                            <input
+                                                type="number"
+                                                value={formData.priority}
+                                                onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                placeholder="Lower number = higher priority"
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                            <textarea
+                                                value={formData.description}
+                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                rows={2}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                placeholder="Describe the fee"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Fee Type *</label>
+                                            <select
+                                                value={formData.feeType}
+                                                onChange={(e) => setFormData({ ...formData, feeType: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            >
+                                                <option value="fixed">Fixed Amount (ETB)</option>
+                                                <option value="percentage">Percentage (%)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Fee Value *</label>
+                                            <input
+                                                type="number"
+                                                value={formData.value}
+                                                onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                placeholder={formData.feeType === 'percentage' ? 'Enter percentage' : 'Enter amount'}
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Min Fee</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.minFee}
+                                                    onChange={(e) => setFormData({ ...formData, minFee: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                    placeholder="Optional"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Max Fee</label>
+                                                <input
+                                                    type="number"
+                                                    value={formData.maxFee}
+                                                    onChange={(e) => setFormData({ ...formData, maxFee: e.target.value })}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                    placeholder="Optional"
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 mt-6">
+                                <button onClick={() => setShowAddModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                                <button onClick={handleAddSubmit} disabled={!formData.name || formData.value <= 0} className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition">Add {activeTab === 'rules' ? 'Rule' : 'Fee'}</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {/* Edit Modal */}
+                {showEditModal && selectedItem && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl max-w-md w-full p-6"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-teal-100 rounded-lg">
+                                    <Edit className="h-6 w-6 text-teal-600" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">Edit {activeTab === 'rules' ? 'Commission Rule' : 'Fee Structure'}</h3>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                                    <input
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                    />
                                 </div>
 
-                                <div className="p-6 space-y-4">
-                                    {'minAmount' in selectedItem ? (
-                                        // Commission Details with Value, Min Amount, Max Amount
-                                        <>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Rule Name</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.name}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Value</label>
-                                                    <p className="font-medium mt-1" style={{ color: deepTeal }}>
-                                                        {selectedItem.type === 'percentage' ? `${selectedItem.value}%` : formatCurrency(selectedItem.value)}
-                                                    </p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Applies To</label>
-                                                    <p className="font-medium text-gray-900 mt-1 capitalize">{selectedItem.appliesTo}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">User Type</label>
-                                                    <p className="font-medium text-gray-900 mt-1 capitalize">{selectedItem.userType}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Min Amount</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.minAmount ? formatCurrency(selectedItem.minAmount) : 'Not set'}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Max Amount</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.maxAmount ? formatCurrency(selectedItem.maxAmount) : 'Not set'}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Status</label>
-                                                    <div className="mt-1">{getStatusBadge(selectedItem.isActive)}</div>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Last Updated</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.updatedAt}</p>
-                                                </div>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        // Fee Details with Fee Value, Min Fee, Max Fee
-                                        <>
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Fee Name</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.name}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Description</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.description || 'N/A'}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Fee Value</label>
-                                                    <p className="font-medium mt-1" style={{ color: deepTeal }}>
-                                                        {selectedItem.feeType === 'percentage' ? `${selectedItem.feeValue}%` : formatCurrency(selectedItem.feeValue)}
-                                                    </p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Fee Type</label>
-                                                    <p className="font-medium text-gray-900 mt-1 capitalize">{selectedItem.type}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Min Fee</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.minFee ? formatCurrency(selectedItem.minFee) : 'Not set'}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Max Fee</label>
-                                                    <p className="font-medium text-gray-900 mt-1">{selectedItem.maxFee ? formatCurrency(selectedItem.maxFee) : 'Not set'}</p>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Payment Methods</label>
-                                                    <div className="flex flex-wrap gap-1 mt-1">
-                                                        {selectedItem.appliesTo.map((method: string) => (
-                                                            <span key={method} className="px-2 py-0.5 bg-gray-200 rounded text-xs text-gray-700">
-                                                                {method.replace('_', ' ')}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="bg-gray-50 rounded-xl p-3">
-                                                    <label className="text-xs text-gray-500 uppercase">Status</label>
-                                                    <div className="mt-1">{getStatusBadge(selectedItem.isActive)}</div>
-                                                </div>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
+                                {activeTab === 'rules' ? (
+                                    <>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Commission Type *</label>
+                                            <select
+                                                value={formData.type}
+                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            >
+                                                <option value="percentage">Percentage (%)</option>
+                                                <option value="fixed">Fixed Amount (ETB)</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Value *</label>
+                                            <input
+                                                type="number"
+                                                value={formData.value}
+                                                onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Applies To *</label>
+                                            <select
+                                                value={formData.appliesTo}
+                                                onChange={(e) => setFormData({ ...formData, appliesTo: e.target.value })}
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                            >
+                                                <option value="all">All</option>
+                                                <option value="theater">Specific Theater</option>
+                                                <option value="show">Specific Show</option>
+                                                <option value="category">Seat Category</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Min Commission</label><input type="number" value={formData.minCommission} onChange={(e) => setFormData({ ...formData, minCommission: e.target.value })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Max Commission</label><input type="number" value={formData.maxCommission} onChange={(e) => setFormData({ ...formData, maxCommission: e.target.value })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                        </div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Priority *</label><input type="number" value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Description</label><textarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Fee Type *</label><select value={formData.feeType} onChange={(e) => setFormData({ ...formData, feeType: e.target.value })} className="w-full px-3 py-2 border rounded-lg"><option value="fixed">Fixed Amount</option><option value="percentage">Percentage</option></select></div>
+                                        <div><label className="block text-sm font-medium text-gray-700 mb-1">Fee Value *</label><input type="number" value={formData.value} onChange={(e) => setFormData({ ...formData, value: Number(e.target.value) })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Min Fee</label><input type="number" value={formData.minFee} onChange={(e) => setFormData({ ...formData, minFee: e.target.value })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                            <div><label className="block text-sm font-medium text-gray-700 mb-1">Max Fee</label><input type="number" value={formData.maxFee} onChange={(e) => setFormData({ ...formData, maxFee: e.target.value })} className="w-full px-3 py-2 border rounded-lg" /></div>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
 
-                                <div className="border-t px-6 py-4 flex justify-end gap-3">
-                                    <ReusableButton variant="secondary" onClick={() => setShowViewModal(false)}>Close</ReusableButton>
-                                    <ReusableButton
-                                        variant="primary"
-                                        onClick={() => {
-                                            setShowViewModal(false);
-                                            handleEdit(selectedItem, 'minAmount' in selectedItem ? 'commission' : 'fee');
-                                        }}
-                                    >
-                                        Edit Item
-                                    </ReusableButton>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+                            <div className="flex gap-3 mt-6">
+                                <button onClick={() => setShowEditModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                                <button onClick={handleEditSubmit} disabled={!formData.name || formData.value <= 0} className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition">Save Changes</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
 
                 {/* Delete Confirmation Modal */}
-                <AnimatePresence>
-                    {showDeleteModal && itemToAction && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl max-w-md w-full"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 bg-red-100 rounded-full">
-                                            <AlertTriangle className="h-6 w-6 text-red-600" />
-                                        </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Confirm Delete</h2>
-                                    </div>
-                                    <p className="text-gray-600 mb-2">
-                                        Are you sure you want to delete <strong className="text-gray-900">{itemToAction.name}</strong>?
-                                    </p>
-                                    <p className="text-sm text-red-600 mb-6">
-                                        ⚠️ This action cannot be undone. The {itemType} rule will be permanently removed.
-                                    </p>
-                                    <div className="flex gap-3">
-                                        <ReusableButton
-                                            variant="secondary"
-                                            onClick={() => setShowDeleteModal(false)}
-                                            className="flex-1"
-                                        >
-                                            Cancel
-                                        </ReusableButton>
-                                        <ReusableButton
-                                            variant="danger"
-                                            onClick={handleConfirmDelete}
-                                            className="flex-1"
-                                        >
-                                            Delete Permanently
-                                        </ReusableButton>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+                {showDeleteConfirm && selectedItem && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="bg-white rounded-2xl max-w-md w-full p-6"
+                        >
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="p-2 bg-red-100 rounded-lg"><AlertCircle className="h-6 w-6 text-red-600" /></div>
+                                <h3 className="text-xl font-bold text-gray-900">Delete {activeTab === 'rules' ? 'Commission Rule' : 'Fee Structure'}</h3>
+                            </div>
+                            <p className="text-gray-600 mb-6">Delete <strong>{selectedItem.name}</strong>? This action cannot be undone.</p>
+                            <div className="flex gap-3">
+                                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">Cancel</button>
+                                <button onClick={confirmDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">Delete</button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
 
-                {/* Deactivate Confirmation Modal */}
-                <AnimatePresence>
-                    {showDeactivateModal && itemToAction && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl max-w-md w-full"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 bg-orange-100 rounded-full">
-                                            <PowerOff className="h-6 w-6 text-orange-600" />
-                                        </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Deactivate {itemType === 'commission' ? 'Commission' : 'Fee'}</h2>
-                                    </div>
-                                    <p className="text-gray-600 mb-2">
-                                        Are you sure you want to deactivate <strong className="text-gray-900">{itemToAction.name}</strong>?
-                                    </p>
-                                    <p className="text-sm text-orange-600 mb-4">
-                                        ⚠️ This rule will no longer be applied to new transactions.
-                                    </p>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Reason for deactivation <span className="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            value={deactivateReason}
-                                            onChange={(e) => setDeactivateReason(e.target.value)}
-                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                        >
-                                            <option value="">Select reason</option>
-                                            <option value="No longer needed">No longer needed</option>
-                                            <option value="Temporary pause">Temporary pause</option>
-                                            <option value="Under review">Under review</option>
-                                            <option value="Policy change">Policy change</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    {deactivateReason === 'Other' && (
-                                        <div className="mb-4">
-                                            <textarea
-                                                value={deactivateReason}
-                                                onChange={(e) => setDeactivateReason(e.target.value)}
-                                                placeholder="Please specify reason..."
-                                                rows={2}
-                                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="flex gap-3">
-                                        <ReusableButton
-                                            variant="secondary"
-                                            onClick={() => setShowDeactivateModal(false)}
-                                            className="flex-1"
-                                        >
-                                            Cancel
-                                        </ReusableButton>
-                                        <ReusableButton
-                                            variant="danger"
-                                            onClick={handleConfirmDeactivate}
-                                            className="flex-1"
-                                        >
-                                            Confirm Deactivation
-                                        </ReusableButton>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* Reactivate Confirmation Modal */}
-                <AnimatePresence>
-                    {showReactivateModal && itemToAction && (
-                        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="bg-white rounded-2xl max-w-md w-full"
-                            >
-                                <div className="p-6">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 bg-green-100 rounded-full">
-                                            <Power className="h-6 w-6 text-green-600" />
-                                        </div>
-                                        <h2 className="text-xl font-bold text-gray-900">Reactivate {itemType === 'commission' ? 'Commission' : 'Fee'}</h2>
-                                    </div>
-                                    <p className="text-gray-600 mb-2">
-                                        Are you sure you want to reactivate <strong className="text-gray-900">{itemToAction.name}</strong>?
-                                    </p>
-                                    <p className="text-sm text-green-600 mb-4">
-                                        ✅ This rule will be applied to new transactions once reactivated.
-                                    </p>
-                                    <div className="mb-4">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Reason for reactivation <span className="text-red-500">*</span>
-                                        </label>
-                                        <select
-                                            value={reactivateReason}
-                                            onChange={(e) => setReactivateReason(e.target.value)}
-                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                        >
-                                            <option value="">Select reason</option>
-                                            <option value="Policy restored">Policy restored</option>
-                                            <option value="Review completed">Review completed</option>
-                                            <option value="Issue resolved">Issue resolved</option>
-                                            <option value="Business need">Business need</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    {reactivateReason === 'Other' && (
-                                        <div className="mb-4">
-                                            <textarea
-                                                value={reactivateReason}
-                                                onChange={(e) => setReactivateReason(e.target.value)}
-                                                placeholder="Please specify reason..."
-                                                rows={2}
-                                                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500"
-                                            />
-                                        </div>
-                                    )}
-                                    <div className="flex gap-3">
-                                        <ReusableButton
-                                            variant="secondary"
-                                            onClick={() => setShowReactivateModal(false)}
-                                            className="flex-1"
-                                        >
-                                            Cancel
-                                        </ReusableButton>
-                                        <ReusableButton
-                                            variant="success"
-                                            onClick={handleConfirmReactivate}
-                                            className="flex-1"
-                                        >
-                                            Confirm Reactivation
-                                        </ReusableButton>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+                {/* No Refund Policy Note */}
+                <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-blue-600" />
+                        <p className="text-sm text-blue-700"><strong>Note:</strong> Refunds are NOT allowed in this system. Only Withdrawal, Deposit, and Transaction fees apply.</p>
+                    </div>
+                </div>
 
                 {/* Success Popup */}
                 <SuccessPopup
@@ -1384,7 +780,7 @@ const Commission: React.FC = () => {
                     position="top-right"
                 />
             </div>
-        </div>
+        </motion.div>
     );
 };
 

@@ -5,18 +5,23 @@ import {
     Banknote,
     ArrowLeft,
     CreditCard,
-    Smartphone,
-    Landmark,
-    Building,
     Shield,
     Lock,
     CheckCircle,
     AlertCircle,
-    Upload,
     FileText,
     DollarSign,
     Copy,
-    Check
+    Check,
+    Smartphone,
+    Building,
+    Landmark,
+    ChevronRight,
+    ChevronLeft,
+    Loader2,
+    TrendingUp,
+    Wallet,
+    Sparkles
 } from 'lucide-react';
 import * as Yup from 'yup';
 import ReusableForm from '../Reusable/ReusableForm';
@@ -33,8 +38,18 @@ interface DepositMethod {
     maxAmount: number;
     fee: number;
     processingTime: string;
-    supportedBanks?: string[];
 }
+
+// Amount preset options with display formatting
+const amountPresets = [
+    { value: 500, label: 'ETB 500', icon: Wallet, recommended: false },
+    { value: 1000, label: 'ETB 1,000', icon: Wallet, recommended: false },
+    { value: 2000, label: 'ETB 2,000', icon: Wallet, recommended: false },
+    { value: 5000, label: 'ETB 5,000', icon: Wallet, recommended: true },
+    { value: 10000, label: 'ETB 10,000', icon: TrendingUp, recommended: false },
+    { value: 20000, label: 'ETB 20,000', icon: TrendingUp, recommended: false },
+    { value: 50000, label: 'ETB 50,000', icon: Sparkles, recommended: false }
+];
 
 // Validation Schema
 const depositSchema = Yup.object({
@@ -52,64 +67,21 @@ const depositSchema = Yup.object({
     notes: Yup.string().max(500, 'Notes cannot exceed 500 characters')
 });
 
-// Payment Methods
-const depositMethods: DepositMethod[] = [
-    {
-        id: 'chapa',
-        name: 'Chapa',
-        icon: CreditCard,
-        description: 'Card / Bank Transfer',
-        minAmount: 100,
-        maxAmount: 100000,
-        fee: 0,
-        processingTime: 'Instant'
-    },
-    {
-        id: 'telebirr',
-        name: 'TeleBirr',
-        icon: Smartphone,
-        description: 'Mobile Money',
-        minAmount: 50,
-        maxAmount: 50000,
-        fee: 0,
-        processingTime: 'Instant'
-    },
-    {
-        id: 'cbebirr',
-        name: 'CBE Birr',
-        icon: Landmark,
-        description: 'CBE Mobile Banking',
-        minAmount: 100,
-        maxAmount: 75000,
-        fee: 0,
-        processingTime: 'Instant'
-    },
-    {
-        id: 'hellocash',
-        name: 'HelloCash',
-        icon: Smartphone,
-        description: 'HelloCash Mobile',
-        minAmount: 50,
-        maxAmount: 30000,
-        fee: 0,
-        processingTime: 'Instant'
-    },
-    {
-        id: 'bank_transfer',
-        name: 'Bank Transfer',
-        icon: Building,
-        description: 'Direct Bank Transfer',
-        minAmount: 1000,
-        maxAmount: 500000,
-        fee: 0,
-        processingTime: '1-2 Business Days',
-        supportedBanks: ['Commercial Bank of Ethiopia', 'Dashen Bank', 'Awash Bank', 'United Bank', 'Zemen Bank']
-    }
-];
+// Chapa Payment Method Only
+const chapaMethod: DepositMethod = {
+    id: 'chapa',
+    name: 'Chapa',
+    icon: CreditCard,
+    description: 'Card / Bank Transfer / Mobile Money',
+    minAmount: 100,
+    maxAmount: 100000,
+    fee: 0,
+    processingTime: 'Instant'
+};
 
 const DepositFunds: React.FC = () => {
     const [step, setStep] = useState(1);
-    const [selectedMethod, setSelectedMethod] = useState<DepositMethod | null>(null);
+    const [selectedMethod] = useState<DepositMethod>(chapaMethod);
     const [amount, setAmount] = useState<number>(0);
     const [customAmount, setCustomAmount] = useState<string>('');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -118,7 +90,7 @@ const DepositFunds: React.FC = () => {
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
     const [copied, setCopied] = useState(false);
-    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [chapaCheckoutUrl, setChapaCheckoutUrl] = useState('');
 
     // Form fields for ReusableForm
     const formFields = [
@@ -154,13 +126,6 @@ const DepositFunds: React.FC = () => {
         }
     ];
 
-    const amountOptions = [500, 1000, 2000, 5000, 10000, 20000, 50000];
-
-    const handleMethodSelect = (method: DepositMethod) => {
-        setSelectedMethod(method);
-        setStep(2);
-    };
-
     const handleAmountSelect = (selectedAmount: number) => {
         setAmount(selectedAmount);
         setCustomAmount('');
@@ -177,30 +142,23 @@ const DepositFunds: React.FC = () => {
         }
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert('File size must be less than 5MB');
-                return;
-            }
-            setReceiptFile(file);
-        }
-    };
-
     const handleSubmit = async (values: any, { setSubmitting }: any) => {
         setIsProcessing(true);
 
-        // Simulate API call
+        // Simulate Chapa API call
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        const reference = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+        const reference = `CHAPA-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+
+        // Simulate Chapa checkout URL
+        const checkoutUrl = `https://checkout.chapa.co/checkout/${reference}`;
+        setChapaCheckoutUrl(checkoutUrl);
         setDepositReference(reference);
         setDepositComplete(true);
 
         setPopupMessage({
-            title: 'Deposit Initiated!',
-            message: `Your deposit of ${formatCurrency(amount)} via ${selectedMethod?.name} has been initiated. Reference: ${reference}`,
+            title: 'Redirecting to Chapa!',
+            message: `You will be redirected to Chapa to complete your payment of ${formatCurrency(amount)}.`,
             type: 'success'
         });
         setShowSuccessPopup(true);
@@ -211,12 +169,17 @@ const DepositFunds: React.FC = () => {
 
     const handleNewDeposit = () => {
         setStep(1);
-        setSelectedMethod(null);
         setAmount(0);
         setCustomAmount('');
         setDepositComplete(false);
-        setReceiptFile(null);
+        setChapaCheckoutUrl('');
         setCopied(false);
+    };
+
+    const handleChapaPayment = () => {
+        if (chapaCheckoutUrl) {
+            window.open(chapaCheckoutUrl, '_blank');
+        }
     };
 
     const formatCurrency = (value: number) => {
@@ -234,14 +197,13 @@ const DepositFunds: React.FC = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const getBankAccountDetails = () => {
-        return {
-            bankName: 'Commercial Bank of Ethiopia',
-            accountName: 'TheaterHUB PLC',
-            accountNumber: '1000134567890',
-            branch: 'Bole Branch',
-            swiftCode: 'CBETETAA'
-        };
+    // Navigation between steps
+    const goToNextStep = () => {
+        if (step < 3) setStep(step + 1);
+    };
+
+    const goToPrevStep = () => {
+        if (step > 1) setStep(step - 1);
     };
 
     // Initial values for the form
@@ -253,11 +215,43 @@ const DepositFunds: React.FC = () => {
         notes: ''
     };
 
+    // Step indicators
+    const StepIndicator = () => (
+        <div className="flex items-center justify-center gap-2 mb-8">
+            {[1, 2, 3].map((s) => (
+                <div
+                    key={s}
+                    className={`flex items-center ${s < 3 ? 'flex-1 max-w-24' : ''}`}
+                >
+                    <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all duration-300 cursor-pointer ${step >= s
+                                ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+                                : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
+                            }`}
+                        onClick={() => s < step && setStep(s)}
+                    >
+                        {step > s ? <Check className="h-5 w-5" /> : s}
+                    </div>
+                    {s < 3 && (
+                        <div
+                            className={`flex-1 h-1 mx-2 rounded-full transition-all duration-300 ${step > s ? 'bg-green-600' : 'bg-gray-200'
+                                }`}
+                        />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Header */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-8"
+                >
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
@@ -266,72 +260,95 @@ const DepositFunds: React.FC = () => {
                                 </div>
                                 <h1 className="text-2xl font-bold text-gray-900">Deposit Funds</h1>
                             </div>
-                            <p className="text-gray-600">Add money to your system wallet</p>
+                            <p className="text-gray-600">Add money to your system wallet via Chapa</p>
                         </div>
                         {step > 1 && !depositComplete && (
-                            <button
-                                onClick={() => setStep(step - 1)}
-                                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 transition"
-                            >
-                                <ArrowLeft className="h-4 w-4" />
-                                Back
-                            </button>
+                            <ReusableButton
+                                onClick={goToPrevStep}
+                                label="Back"
+                                variant="secondary"
+                                icon={ChevronLeft}
+                                className="w-full sm:w-auto"
+                            />
                         )}
                     </div>
                 </motion.div>
 
-                {/* Step 1: Select Payment Method */}
-                {step === 1 && (
+                {/* Step Indicators */}
+                {!depositComplete && <StepIndicator />}
+
+                {/* Step 1: Payment Method (Chapa only) */}
+                {step === 1 && !depositComplete && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
                         className="space-y-6"
                     >
                         <h2 className="text-lg font-semibold text-gray-900">Select Payment Method</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {depositMethods.map((method) => {
-                                const Icon = method.icon;
-                                return (
-                                    <button
-                                        key={method.id}
-                                        onClick={() => handleMethodSelect(method)}
-                                        className="group p-5 bg-white rounded-2xl border-2 border-gray-200 hover:border-green-500 hover:shadow-lg transition-all duration-300 text-left"
-                                    >
-                                        <div className="flex items-center gap-4 mb-3">
-                                            <div className="p-3 bg-gray-100 rounded-xl group-hover:bg-green-100 transition-colors">
-                                                <Icon className="h-6 w-6 text-gray-600 group-hover:text-green-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-semibold text-gray-900">{method.name}</h3>
-                                                <p className="text-xs text-gray-500">{method.description}</p>
-                                            </div>
+                        <div className="grid grid-cols-1 gap-4 max-w-md mx-auto">
+                            <div className="group p-6 bg-white rounded-2xl border-2 border-green-500 shadow-lg transition-all duration-300">
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="p-3 bg-green-100 rounded-xl">
+                                        <CreditCard className="h-6 w-6 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900 text-lg">Chapa</h3>
+                                        <p className="text-sm text-gray-500">Card / Bank Transfer / Mobile Money</p>
+                                    </div>
+                                    <div className="ml-auto">
+                                        <div className="px-2 py-1 bg-green-100 rounded-full">
+                                            <span className="text-xs font-medium text-green-600">Recommended</span>
                                         </div>
-                                        <div className="space-y-1 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Min/Max</span>
-                                                <span className="text-gray-700">{formatCurrency(method.minAmount)} - {formatCurrency(method.maxAmount)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Fee</span>
-                                                <span className="text-green-600">{formatCurrency(method.fee)}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-500">Processing Time</span>
-                                                <span className="text-gray-700">{method.processingTime}</span>
-                                            </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Min/Max</span>
+                                        <span className="text-gray-700">{formatCurrency(chapaMethod.minAmount)} - {formatCurrency(chapaMethod.maxAmount)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Fee</span>
+                                        <span className="text-green-600">{formatCurrency(chapaMethod.fee)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-500">Processing Time</span>
+                                        <span className="text-gray-700">{chapaMethod.processingTime}</span>
+                                    </div>
+                                </div>
+                                <div className="mt-4 pt-3 border-t border-gray-100">
+                                    <div className="flex flex-wrap gap-2">
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                            <Smartphone className="h-3 w-3" />
+                                            <span>TeleBirr</span>
                                         </div>
-                                    </button>
-                                );
-                            })}
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                            <Landmark className="h-3 w-3" />
+                                            <span>CBE Birr</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                                            <Building className="h-3 w-3" />
+                                            <span>Bank Transfer</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <ReusableButton
+                                    onClick={goToNextStep}
+                                    label="Continue with Chapa"
+                                    icon={ChevronRight}
+                                    className="mt-4 w-full"
+                                />
+                            </div>
                         </div>
                     </motion.div>
                 )}
 
-                {/* Step 2: Enter Amount */}
-                {step === 2 && selectedMethod && (
+                {/* Step 2: Enter Amount - Flexible Buttons */}
+                {step === 2 && selectedMethod && !depositComplete && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
                         className="space-y-6"
                     >
                         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
@@ -342,24 +359,48 @@ const DepositFunds: React.FC = () => {
                                 <h2 className="text-lg font-semibold text-gray-900">Enter Deposit Amount</h2>
                             </div>
 
+                            {/* Flexible Amount Buttons - 7 buttons in responsive grid */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Select Amount</label>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-                                    {amountOptions.map((amt) => (
-                                        <button
-                                            key={amt}
-                                            onClick={() => handleAmountSelect(amt)}
-                                            className="px-4 py-2 border-2 border-gray-200 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all text-gray-700 font-medium"
-                                        >
-                                            {formatCurrency(amt)}
-                                        </button>
-                                    ))}
+                                <label className="block text-sm font-medium text-gray-700 mb-3">
+                                    Select Amount
+                                </label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                                    {amountPresets.map((preset) => {
+                                        const Icon = preset.icon;
+                                        const isSelected = amount === preset.value;
+                                        return (
+                                            <motion.button
+                                                key={preset.value}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                                onClick={() => handleAmountSelect(preset.value)}
+                                                className={`relative px-3 py-3 rounded-xl font-medium transition-all duration-300 flex flex-col items-center gap-1 ${isSelected
+                                                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-600/30'
+                                                        : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-green-500 hover:bg-green-50'
+                                                    }`}
+                                            >
+                                                <Icon className={`h-4 w-4 ${isSelected ? 'text-white' : 'text-green-600'}`} />
+                                                <span className="text-sm">{preset.label}</span>
+                                                {preset.recommended && (
+                                                    <span className={`absolute -top-2 -right-2 text-[8px] px-1.5 py-0.5 rounded-full ${isSelected
+                                                            ? 'bg-yellow-400 text-gray-900'
+                                                            : 'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        Best
+                                                    </span>
+                                                )}
+                                            </motion.button>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
+                            {/* Custom Amount Input */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Or Enter Custom Amount</label>
-                                <div className="flex gap-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Or Enter Custom Amount
+                                </label>
+                                <div className="flex flex-col sm:flex-row gap-3">
                                     <div className="relative flex-1">
                                         <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">ETB</span>
                                         <input
@@ -373,15 +414,18 @@ const DepositFunds: React.FC = () => {
                                     <ReusableButton
                                         onClick={handleCustomAmount}
                                         label="Continue"
-                                        className="px-6 py-2.5"
+                                        className="w-full sm:w-auto"
                                     />
                                 </div>
                             </div>
 
+                            {/* Deposit Summary */}
                             <div className="p-4 bg-gray-50 rounded-xl">
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-600">Deposit Amount</span>
-                                    <span className="text-lg font-bold text-gray-900">{formatCurrency(amount)}</span>
+                                    <span className="text-lg font-bold text-gray-900">
+                                        {amount > 0 ? formatCurrency(amount) : 'Not selected'}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between items-center mb-2">
                                     <span className="text-gray-600">Processing Fee</span>
@@ -389,8 +433,27 @@ const DepositFunds: React.FC = () => {
                                 </div>
                                 <div className="flex justify-between items-center pt-2 border-t border-gray-200">
                                     <span className="font-semibold text-gray-900">Total to Pay</span>
-                                    <span className="text-xl font-bold text-green-600">{formatCurrency(amount + selectedMethod.fee)}</span>
+                                    <span className="text-xl font-bold text-green-600">
+                                        {amount > 0 ? formatCurrency(amount + selectedMethod.fee) : 'ETB 0'}
+                                    </span>
                                 </div>
+                            </div>
+
+                            {/* Navigation Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                <ReusableButton
+                                    onClick={goToPrevStep}
+                                    label="Back"
+                                    variant="secondary"
+                                    className="flex-1"
+                                />
+                                <ReusableButton
+                                    onClick={goToNextStep}
+                                    label="Continue to Payment"
+                                    icon={ChevronRight}
+                                    className="flex-1"
+                                    disabled={amount === 0}
+                                />
                             </div>
                         </div>
                     </motion.div>
@@ -399,43 +462,42 @@ const DepositFunds: React.FC = () => {
                 {/* Step 3: Payment Details & Confirmation */}
                 {step === 3 && selectedMethod && !depositComplete && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
                         className="space-y-6"
                     >
-                        {/* Bank Transfer Details (if applicable) */}
-                        {selectedMethod.id === 'bank_transfer' && (
-                            <div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <Building className="h-6 w-6 text-blue-600" />
-                                    <h3 className="text-lg font-semibold text-gray-900">Bank Transfer Details</h3>
+                        {/* Chapa Info */}
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                            <div className="flex items-center gap-3 mb-4">
+                                <CreditCard className="h-6 w-6 text-green-600" />
+                                <h3 className="text-lg font-semibold text-gray-900">Chapa Secure Payment</h3>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-3">
+                                You will be redirected to Chapa's secure payment page to complete your transaction.
+                                Chapa accepts:
+                            </p>
+                            <div className="flex flex-wrap gap-3">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg">
+                                    <CreditCard className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm">Cards</span>
                                 </div>
-                                <div className="space-y-3">
-                                    {Object.entries(getBankAccountDetails()).map(([key, value]) => (
-                                        <div key={key} className="flex justify-between items-center p-3 bg-white rounded-lg">
-                                            <span className="text-sm text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-sm font-medium text-gray-900">{value}</span>
-                                                <button
-                                                    onClick={() => copyToClipboard(value)}
-                                                    className="p-1 hover:bg-gray-100 rounded transition"
-                                                >
-                                                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4 text-gray-400" />}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg">
+                                    <Smartphone className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm">TeleBirr</span>
                                 </div>
-                                <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
-                                    <p className="text-sm text-yellow-800 flex items-center gap-2">
-                                        <AlertCircle className="h-4 w-4" />
-                                        Please use your reference number when making the transfer
-                                    </p>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg">
+                                    <Landmark className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm">CBE Birr</span>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg">
+                                    <Building className="h-4 w-4 text-green-600" />
+                                    <span className="text-sm">Bank Transfer</span>
                                 </div>
                             </div>
-                        )}
+                        </div>
 
-                        {/* Deposit Form using ReusableForm */}
+                        {/* Deposit Form */}
                         <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-200">
                             <div className="flex items-center gap-3 mb-6">
                                 <div className="p-2 bg-green-100 rounded-lg">
@@ -452,37 +514,13 @@ const DepositFunds: React.FC = () => {
                                 validationSchema={depositSchema}
                                 render={(formik) => (
                                     <>
-                                        {/* File Upload for Bank Transfer */}
-                                        {selectedMethod.id === 'bank_transfer' && (
-                                            <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Upload Payment Receipt</label>
-                                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-green-500 transition cursor-pointer">
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*,.pdf"
-                                                        onChange={handleFileUpload}
-                                                        className="hidden"
-                                                        id="receipt-upload"
-                                                    />
-                                                    <label htmlFor="receipt-upload" className="cursor-pointer">
-                                                        <Upload className="h-10 w-10 text-gray-400 mx-auto mb-2" />
-                                                        <p className="text-sm text-gray-600">Click to upload receipt</p>
-                                                        <p className="text-xs text-gray-400 mt-1">PNG, JPG, PDF up to 5MB</p>
-                                                    </label>
-                                                </div>
-                                                {receiptFile && (
-                                                    <p className="text-sm text-green-600 mt-2">✓ {receiptFile.name} uploaded</p>
-                                                )}
-                                            </div>
-                                        )}
-
                                         {/* Summary */}
-                                        <div className="mt-6 p-4 bg-gray-50 rounded-xl">
+                                        <div className="mt-2 p-4 bg-gray-50 rounded-xl">
                                             <h3 className="font-semibold text-gray-900 mb-3">Deposit Summary</h3>
                                             <div className="space-y-2">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Payment Method</span>
-                                                    <span className="font-medium text-gray-900">{selectedMethod.name}</span>
+                                                    <span className="font-medium text-gray-900">Chapa</span>
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Deposit Amount</span>
@@ -499,20 +537,28 @@ const DepositFunds: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Submit Button */}
-                                        <div className="mt-6">
+                                        {/* Navigation Buttons */}
+                                        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+                                            <ReusableButton
+                                                type="button"
+                                                onClick={goToPrevStep}
+                                                label="Back"
+                                                variant="secondary"
+                                                className="flex-1"
+                                            />
                                             <ReusableButton
                                                 type="submit"
-                                                label={isProcessing ? "Processing..." : "Confirm Deposit"}
+                                                label={isProcessing ? "Processing..." : "Proceed to Chapa Payment"}
                                                 disabled={isProcessing || !formik.isValid || !formik.dirty}
-                                                className="w-full py-3"
-                                                icon={isProcessing ? undefined : "Lock"}
+                                                className="flex-1"
+                                                icon={isProcessing ? Loader2 : undefined}
+                                                isLoading={isProcessing}
                                             />
                                         </div>
 
                                         <div className="mt-4 p-3 bg-gray-50 rounded-lg flex items-center gap-2 text-xs text-gray-500">
                                             <Shield className="h-4 w-4 text-green-600" />
-                                            Your transaction is secure and encrypted
+                                            Your transaction is secured by Chapa's enterprise-grade security
                                         </div>
                                     </>
                                 )}
@@ -531,9 +577,9 @@ const DepositFunds: React.FC = () => {
                         <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="h-10 w-10 text-green-600" />
                         </div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Deposit Request Submitted!</h2>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">Redirecting to Chapa</h2>
                         <p className="text-gray-600 mb-6">
-                            Your deposit request has been received and is being processed.
+                            You will be redirected to Chapa's secure payment page to complete your payment.
                         </p>
                         <div className="bg-gray-50 rounded-xl p-4 mb-6">
                             <p className="text-sm text-gray-500">Reference Number</p>
@@ -546,19 +592,23 @@ const DepositFunds: React.FC = () => {
                                 {copied ? 'Copied!' : 'Copy Reference'}
                             </button>
                         </div>
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            <ReusableButton
+                                onClick={handleChapaPayment}
+                                label="Pay with Chapa"
+                                className="flex-1"
+                                icon={CreditCard}
+                            />
                             <ReusableButton
                                 onClick={handleNewDeposit}
                                 label="Make Another Deposit"
-                                className="flex-1 py-3"
-                            />
-                            <ReusableButton
-                                onClick={() => window.location.href = '/admin/wallet/balance'}
-                                label="View Wallet"
                                 variant="secondary"
-                                className="flex-1 py-3"
+                                className="flex-1"
                             />
                         </div>
+                        <p className="text-xs text-gray-400 mt-4">
+                            After completing payment, funds will be credited to your wallet automatically
+                        </p>
                     </motion.div>
                 )}
 

@@ -40,7 +40,9 @@ import {
     ShoppingBag,
     Menu,
     X,
-    ChevronUp
+    ChevronUp,
+    Cookie,
+    Info
 } from 'lucide-react';
 import HeroBanner from '../components/UI/HeroBanner';
 import ShowCard from '../components/UI/ShowCard';
@@ -432,9 +434,41 @@ const Home: React.FC = () => {
     const [showMostPopularAll, setShowMostPopularAll] = useState(false);
     const [showFeaturedAll, setShowFeaturedAll] = useState(false);
 
+    // Cookie consent state
+    const [showCookieConsent, setShowCookieConsent] = useState(false);
+
     const loadMoreRef = useRef<HTMLDivElement>(null);
     const sortDropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
+
+    // Check if user has already consented to cookies
+    useEffect(() => {
+        const hasConsented = localStorage.getItem('cookieConsent');
+        if (!hasConsented) {
+            // Show cookie consent after a short delay
+            setTimeout(() => {
+                setShowCookieConsent(true);
+            }, 1000);
+        }
+    }, []);
+
+    // Cookie consent handlers
+    const acceptAllCookies = () => {
+        localStorage.setItem('cookieConsent', 'accepted');
+        localStorage.setItem('cookiePreferences', JSON.stringify({ functional: true, analytics: true, marketing: true }));
+        setShowCookieConsent(false);
+    };
+
+    const rejectAllCookies = () => {
+        localStorage.setItem('cookieConsent', 'rejected');
+        localStorage.setItem('cookiePreferences', JSON.stringify({ functional: false, analytics: false, marketing: false }));
+        setShowCookieConsent(false);
+    };
+
+    const customizeCookies = () => {
+        // Navigate to cookie policy page
+        window.location.href = '/cookies';
+    };
 
     // Load data immediately (no loading delay)
     useEffect(() => {
@@ -655,8 +689,8 @@ const Home: React.FC = () => {
                                                             setIsSortOpen(false);
                                                         }}
                                                         className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors flex items-center gap-3 ${sortBy === option.value
-                                                                ? 'bg-deepTeal/10 text-deepTeal'
-                                                                : 'text-gray-700 dark:text-gray-300'
+                                                            ? 'bg-deepTeal/10 text-deepTeal'
+                                                            : 'text-gray-700 dark:text-gray-300'
                                                             }`}
                                                     >
                                                         <Icon className="h-4 w-4" />
@@ -675,8 +709,8 @@ const Home: React.FC = () => {
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
                                 className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${showFilters
-                                        ? 'bg-deepTeal text-white'
-                                        : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700'
+                                    ? 'bg-deepTeal text-white'
+                                    : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700'
                                     }`}
                             >
                                 <Filter className="h-5 w-5" />
@@ -910,6 +944,58 @@ const Home: React.FC = () => {
                     >
                         <ChevronUp className="h-5 w-5" />
                     </motion.button>
+                )}
+            </AnimatePresence>
+
+            {/* COOKIE CONSENT POPUP */}
+            <AnimatePresence>
+                {showCookieConsent && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 50 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 50 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md z-50"
+                    >
+                        <div className="bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700 overflow-hidden">
+                            <div className="p-5">
+                                <div className="flex items-start gap-3 mb-3">
+                                    <div className="p-2 bg-gradient-to-br from-deepTeal to-teal-600 rounded-lg">
+                                        <Cookie className="h-5 w-5 text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="font-semibold text-gray-900 dark:text-white text-base mb-1">
+                                            We value your privacy
+                                        </h3>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                            We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-2 mt-4">
+                                    <button
+                                        onClick={acceptAllCookies}
+                                        className="flex-1 px-4 py-2 bg-deepTeal text-white rounded-lg text-sm font-medium hover:bg-deepTeal/80 transition-all duration-200 shadow-md hover:shadow-lg"
+                                    >
+                                        Accept All
+                                    </button>
+                                    <button
+                                        onClick={rejectAllCookies}
+                                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-dark-700 transition-all duration-200"
+                                    >
+                                        Reject All
+                                    </button>
+                                    <button
+                                        onClick={customizeCookies}
+                                        className="px-4 py-2 text-deepTeal rounded-lg text-sm font-medium hover:bg-deepTeal/5 transition-all duration-200"
+                                    >
+                                        Customize
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
         </div>

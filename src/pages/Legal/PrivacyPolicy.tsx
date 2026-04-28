@@ -1,33 +1,43 @@
 // src/pages/Legal/PrivacyPolicy.tsx
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     Shield, Lock, Eye, Database, Mail, Cookie, UserCheck,
     AlertCircle, CheckCircle, Globe, Server, Phone, MapPin,
     Building2, CreditCard, Clock, FileText, Users, Share2,
-    Settings, Trash2, Bell, MessageCircle, Camera
+    Settings, Trash2, Bell, MessageCircle, Camera, Menu, X,
+    ChevronRight, BookOpen, Scale
 } from 'lucide-react';
 
-const PrivacyPolicy: React.FC = () => {
-    const lastUpdated = "March 30, 2024";
+interface Section {
+    id: string;
+    title: string;
+    icon: React.ElementType;
+    content: React.ReactNode;
+}
 
-    const sections = [
+const PrivacyPolicy: React.FC = () => {
+    const [activeSection, setActiveSection] = useState('information');
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const lastUpdated = "April 15, 2024";
+
+    const sections: Section[] = [
         {
             id: 'information',
-            title: '1. Information We Collect',
+            title: 'Information We Collect',
             icon: Database,
             content: (
                 <div className="space-y-4">
                     <p>We collect information to provide better services to our users. This includes:</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                <UserCheck className="h-4 w-4 text-teal-600" />
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <UserCheck className="h-4 w-4 text-deepTeal" />
                                 Account Information
                             </h4>
-                            <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                            <ul className="text-sm space-y-1 text-gray-600">
                                 <li>• Name, email address, phone number</li>
                                 <li>• Profile information and preferences</li>
                                 <li>• Account credentials (encrypted)</li>
@@ -35,12 +45,12 @@ const PrivacyPolicy: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                <CreditCard className="h-4 w-4 text-teal-600" />
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-deepTeal" />
                                 Transaction Information
                             </h4>
-                            <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                            <ul className="text-sm space-y-1 text-gray-600">
                                 <li>• Ticket purchase history</li>
                                 <li>• Payment method details (encrypted)</li>
                                 <li>• Booking confirmations</li>
@@ -48,12 +58,12 @@ const PrivacyPolicy: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                <Eye className="h-4 w-4 text-teal-600" />
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <Eye className="h-4 w-4 text-deepTeal" />
                                 Usage Information
                             </h4>
-                            <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                            <ul className="text-sm space-y-1 text-gray-600">
                                 <li>• IP address and device information</li>
                                 <li>• Browser type and version</li>
                                 <li>• Pages visited and time spent</li>
@@ -61,12 +71,12 @@ const PrivacyPolicy: React.FC = () => {
                             </ul>
                         </div>
 
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                <MapPin className="h-4 w-4 text-teal-600" />
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-deepTeal" />
                                 Location Data
                             </h4>
-                            <ul className="text-sm space-y-1 text-gray-600 dark:text-gray-400">
+                            <ul className="text-sm space-y-1 text-gray-600">
                                 <li>• City and region</li>
                                 <li>• Theater preferences</li>
                                 <li>• Proximity to venues</li>
@@ -79,7 +89,7 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'use',
-            title: '2. How We Use Your Information',
+            title: 'How We Use Your Information',
             icon: Settings,
             content: (
                 <div className="space-y-3">
@@ -98,28 +108,28 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'sharing',
-            title: '3. Information Sharing',
+            title: 'Information Sharing',
             icon: Share2,
             content: (
                 <div className="space-y-3">
                     <p>We do not sell your personal information. We may share information in the following circumstances:</p>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">With Theater Owners</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Name, contact information, and booking details to fulfill ticket purchases</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2">With Theater Owners</h4>
+                            <p className="text-sm text-gray-600">Name, contact information, and booking details to fulfill ticket purchases</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Payment Processors</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Payment information to process transactions securely</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2">Payment Processors</h4>
+                            <p className="text-sm text-gray-600">Payment information to process transactions securely</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Service Providers</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Companies that help us operate our platform (hosting, analytics, etc.)</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2">Service Providers</h4>
+                            <p className="text-sm text-gray-600">Companies that help us operate our platform (hosting, analytics, etc.)</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2">Legal Requirements</h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">When required by law or to protect our rights</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <h4 className="font-semibold text-gray-900 mb-2">Legal Requirements</h4>
+                            <p className="text-sm text-gray-600">When required by law or to protect our rights</p>
                         </div>
                     </div>
                 </div>
@@ -127,16 +137,16 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'security',
-            title: '4. Data Security',
+            title: 'Data Security',
             icon: Shield,
             content: (
                 <div className="space-y-3">
-                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-4">
-                        <h4 className="font-semibold text-green-800 dark:text-green-300 flex items-center gap-2">
+                    <div className="p-4 bg-green-50 rounded-lg border border-green-200 mb-4">
+                        <h4 className="font-semibold text-green-800 flex items-center gap-2">
                             <Lock className="h-4 w-4" />
                             Our Security Measures
                         </h4>
-                        <ul className="list-disc pl-6 mt-2 text-sm text-green-700 dark:text-green-400 space-y-1">
+                        <ul className="list-disc pl-6 mt-2 text-sm text-green-700 space-y-1">
                             <li>256-bit SSL encryption for all data transmission</li>
                             <li>Regular security audits and penetration testing</li>
                             <li>Secure data centers with 24/7 monitoring</li>
@@ -150,7 +160,7 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'cookies',
-            title: '5. Cookies and Tracking',
+            title: 'Cookies and Tracking',
             icon: Cookie,
             content: (
                 <div className="space-y-3">
@@ -161,20 +171,17 @@ const PrivacyPolicy: React.FC = () => {
                         <li><strong>Preference Cookies:</strong> Remember your settings and preferences</li>
                         <li><strong>Marketing Cookies:</strong> Used to deliver relevant advertisements</li>
                     </ul>
-                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-600">
                             You can manage your cookie preferences in your browser settings. However, disabling certain cookies may affect site functionality.
                         </p>
-                        <Link to="/cookies" className="text-sm text-teal-600 hover:underline mt-2 inline-block">
-                            Learn more about our Cookie Policy →
-                        </Link>
                     </div>
                 </div>
             )
         },
         {
             id: 'rights',
-            title: '6. Your Rights',
+            title: 'Your Rights',
             icon: UserCheck,
             content: (
                 <div className="space-y-3">
@@ -186,8 +193,8 @@ const PrivacyPolicy: React.FC = () => {
                         <li><strong>Portability:</strong> Receive your data in a structured format</li>
                         <li><strong>Opt-out:</strong> Unsubscribe from marketing communications</li>
                     </ul>
-                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                    <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                        <p className="text-sm text-amber-800">
                             <strong>Note:</strong> We retain certain information as required by law or for legitimate business purposes, such as fraud prevention and record-keeping.
                         </p>
                     </div>
@@ -196,7 +203,7 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'children',
-            title: '7. Children\'s Privacy',
+            title: 'Children\'s Privacy',
             icon: Users,
             content: (
                 <div className="space-y-3">
@@ -207,7 +214,7 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'international',
-            title: '8. International Data Transfers',
+            title: 'International Data Transfers',
             icon: Globe,
             content: (
                 <div className="space-y-3">
@@ -218,7 +225,7 @@ const PrivacyPolicy: React.FC = () => {
         },
         {
             id: 'changes',
-            title: '9. Changes to This Policy',
+            title: 'Changes to This Policy',
             icon: Clock,
             content: (
                 <div className="space-y-3">
@@ -228,33 +235,33 @@ const PrivacyPolicy: React.FC = () => {
                         <li>Prominent notice on our website</li>
                         <li>In-app notifications</li>
                     </ul>
-                    <p>The "Last Updated" date at the top of this policy indicates when it was last revised. Your continued use of our Services after changes constitutes acceptance of the updated policy.</p>
+                    <p>The "Last Updated" date indicates when it was last revised. Your continued use of our Services after changes constitutes acceptance of the updated policy.</p>
                 </div>
             )
         },
         {
             id: 'contact',
-            title: '10. Contact Us',
+            title: 'Contact Us',
             icon: Mail,
             content: (
                 <div className="space-y-3">
                     <p>If you have questions about this Privacy Policy or our data practices, please contact us:</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <p className="font-semibold text-gray-900 dark:text-white">Email</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">privacy@theaterhub.com</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="font-semibold text-gray-900">Email</p>
+                            <p className="text-sm text-gray-600">privacy@theaterhub.com</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <p className="font-semibold text-gray-900 dark:text-white">Phone</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">+251 11 123 4567</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="font-semibold text-gray-900">Phone</p>
+                            <p className="text-sm text-gray-600">+251 11 123 4567</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <p className="font-semibold text-gray-900 dark:text-white">Address</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">Addis Ababa, Ethiopia</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="font-semibold text-gray-900">Address</p>
+                            <p className="text-sm text-gray-600">Addis Ababa, Ethiopia</p>
                         </div>
-                        <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                            <p className="font-semibold text-gray-900 dark:text-white">Data Protection Officer</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">dpo@theaterhub.com</p>
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                            <p className="font-semibold text-gray-900">Data Protection Officer</p>
+                            <p className="text-sm text-gray-600">dpo@theaterhub.com</p>
                         </div>
                     </div>
                 </div>
@@ -262,100 +269,278 @@ const PrivacyPolicy: React.FC = () => {
         }
     ];
 
+    // Smooth scroll to section
+    const scrollToSection = (sectionId: string) => {
+        setActiveSection(sectionId);
+        setIsMobileMenuOpen(false);
+        const element = document.getElementById(sectionId);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    };
+
+    // Update active section based on scroll position
+    useEffect(() => {
+        const handleScroll = () => {
+            const scrollPosition = window.scrollY + 100;
+            const currentSection = sections.find(section => {
+                const element = document.getElementById(section.id);
+                if (element) {
+                    const offsetTop = element.offsetTop;
+                    const offsetBottom = offsetTop + element.offsetHeight;
+                    return scrollPosition >= offsetTop && scrollPosition < offsetBottom;
+                }
+                return false;
+            });
+            if (currentSection) {
+                setActiveSection(currentSection.id);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // Animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2
+            }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: { type: "spring", stiffness: 100, damping: 12 }
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 pt-24 pb-16">
-            <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-center mb-12"
-                >
-                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl mb-6 shadow-lg">
-                        <Shield className="h-10 w-10 text-white" />
-                    </div>
-                    <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                        Privacy Policy
-                    </h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-400">
-                        Your privacy matters. Learn how we protect your information.
-                    </p>
-                    <p className="text-sm text-gray-500 mt-2">
-                        Last Updated: {lastUpdated}
-                    </p>
-                </motion.div>
+        <div className="min-h-screen bg-gray-50">
+            {/* Hero Section - Same as Terms page */}
+            <div className="bg-gradient-to-br from-deepTeal via-deepBlue to-deepTeal text-white relative overflow-hidden">
+                <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse"></div>
+                    <div className="absolute bottom-20 right-10 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse delay-1000"></div>
+                </div>
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24 relative">
+                    <div className="text-center max-w-3xl mx-auto">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", stiffness: 200 }}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-xl rounded-full mb-6"
+                        >
+                            <Shield className="h-5 w-5" />
+                            <span className="text-sm font-medium">Privacy & Security</span>
+                        </motion.div>
 
-                {/* Quick Navigation */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="mb-8 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700"
-                >
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Quick Navigation</p>
-                    <div className="flex flex-wrap gap-2">
-                        {sections.map((section) => (
-                            <a
-                                key={section.id}
-                                href={`#${section.id}`}
-                                className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-teal-100 dark:hover:bg-teal-900/30 hover:text-teal-600 transition-colors"
-                            >
-                                {section.title.split('.')[1] || section.title}
-                            </a>
-                        ))}
-                    </div>
-                </motion.div>
+                        <motion.h1
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6"
+                        >
+                            Privacy Policy
+                        </motion.h1>
 
-                {/* Content */}
-                <div className="space-y-6">
-                    {sections.map((section, index) => {
-                        const Icon = section.icon;
-                        return (
-                            <motion.div
-                                key={section.id}
-                                id={section.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
-                            >
-                                <div className="border-b border-gray-200 dark:border-gray-700 p-6 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
-                                            <Icon className="h-5 w-5 text-teal-600" />
-                                        </div>
-                                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                                            {section.title}
-                                        </h2>
+                        <motion.p
+                            initial={{ y: 20, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ delay: 0.1 }}
+                            className="text-xl text-white/90 mb-8"
+                        >
+                            Your privacy matters. Learn how we protect your information.
+                        </motion.p>
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="flex items-center justify-center gap-4 text-white/70 text-sm"
+                        >
+                            <span className="flex items-center gap-1">
+                                <Clock className="h-4 w-4" />
+                                Last Updated: {lastUpdated}
+                            </span>
+                            <span className="w-1 h-1 bg-white/30 rounded-full"></span>
+                            <span className="flex items-center gap-1">
+                                <Globe className="h-4 w-4" />
+                                Effective Immediately
+                            </span>
+                        </motion.div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="sticky top-0 z-40 bg-white border-b border-gray-200 md:hidden">
+                <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-gray-700"
+                >
+                    <span className="font-medium">Quick Navigation</span>
+                    {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </button>
+            </div>
+
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+                <div className="flex flex-col md:flex-row gap-8">
+                    {/* Sidebar Navigation - LEFT SIDE (Sticky) */}
+                    <div className="md:w-80 flex-shrink-0">
+                        <div className="sticky top-24">
+                            {/* Desktop Sidebar */}
+                            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="h-5 w-5 text-deepTeal" />
+                                        <h3 className="font-semibold text-gray-900">Quick Navigation</h3>
                                     </div>
                                 </div>
-                                <div className="p-6 text-gray-600 dark:text-gray-400">
-                                    {section.content}
-                                </div>
-                            </motion.div>
-                        );
-                    })}
-                </div>
+                                <nav className="p-2 max-h-[calc(100vh-120px)] overflow-y-auto">
+                                    {sections.map((section) => {
+                                        const Icon = section.icon;
+                                        const isActive = activeSection === section.id;
+                                        return (
+                                            <button
+                                                key={section.id}
+                                                onClick={() => scrollToSection(section.id)}
+                                                className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-3 mb-1 ${isActive
+                                                        ? 'bg-deepTeal/10 text-deepTeal border-l-4 border-deepTeal'
+                                                        : 'text-gray-600 hover:bg-gray-50'
+                                                    }`}
+                                            >
+                                                <Icon className="h-4 w-4 flex-shrink-0" />
+                                                <span className="text-sm font-medium">{section.title}</span>
+                                                {isActive && <ChevronRight className="h-4 w-4 ml-auto flex-shrink-0" />}
+                                            </button>
+                                        );
+                                    })}
+                                </nav>
+                            </div>
 
-                {/* Footer Note */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-12 p-6 bg-gradient-to-r from-teal-50 to-teal-100/50 dark:from-teal-900/20 dark:to-teal-800/10 rounded-xl border border-teal-200 dark:border-teal-800 text-center"
-                >
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                        By using TheaterHUB, you consent to the collection and use of your information as described in this Privacy Policy.
-                    </p>
-                    <div className="flex justify-center gap-4 mt-4">
-                        <Link to="/terms" className="text-sm text-teal-600 hover:underline">
-                            Terms of Service
-                        </Link>
-                        <Link to="/cookies" className="text-sm text-teal-600 hover:underline">
-                            Cookie Policy
-                        </Link>
+                            {/* Mobile Sidebar Drawer */}
+                            <AnimatePresence>
+                                {isMobileMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="md:hidden bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mb-4"
+                                    >
+                                        <nav className="p-2 max-h-[60vh] overflow-y-auto">
+                                            {sections.map((section) => {
+                                                const Icon = section.icon;
+                                                const isActive = activeSection === section.id;
+                                                return (
+                                                    <button
+                                                        key={section.id}
+                                                        onClick={() => scrollToSection(section.id)}
+                                                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-3 ${isActive
+                                                                ? 'bg-deepTeal/10 text-deepTeal'
+                                                                : 'text-gray-600 hover:bg-gray-50'
+                                                            }`}
+                                                    >
+                                                        <Icon className="h-4 w-4 flex-shrink-0" />
+                                                        <span className="text-sm font-medium">{section.title}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </nav>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
+                            {/* Info Card */}
+                            <div className="hidden md:block mt-6 bg-gradient-to-br from-deepTeal/5 to-teal-500/5 rounded-xl p-4 border border-deepTeal/20">
+                                <div className="flex items-center gap-3 mb-3">
+                                    <div className="p-2 bg-deepTeal/10 rounded-lg">
+                                        <Shield className="h-5 w-5 text-deepTeal" />
+                                    </div>
+                                    <h4 className="font-semibold text-gray-900">Have Questions?</h4>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-3">
+                                    If you have questions about our privacy practices, please contact our Data Protection Officer.
+                                </p>
+                                <Link
+                                    to="/contact"
+                                    className="inline-flex items-center gap-2 text-sm text-deepTeal hover:text-deepTeal/80 font-medium transition-colors"
+                                >
+                                    Contact Us
+                                    <ChevronRight className="h-4 w-4" />
+                                </Link>
+                            </div>
+                        </div>
                     </div>
-                </motion.div>
+
+                    {/* Main Content Area - RIGHT SIDE */}
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="flex-1"
+                    >
+                        {sections.map((section, index) => {
+                            const Icon = section.icon;
+                            return (
+                                <motion.div
+                                    key={section.id}
+                                    id={section.id}
+                                    variants={itemVariants}
+                                    className="mb-8 scroll-mt-24"
+                                >
+                                    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                                        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-deepTeal/10 rounded-lg">
+                                                    <Icon className="h-5 w-5 text-deepTeal" />
+                                                </div>
+                                                <h2 className="text-xl font-bold text-gray-900">
+                                                    {section.title}
+                                                </h2>
+                                            </div>
+                                        </div>
+                                        <div className="p-6">
+                                            {section.content}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+
+                        {/* Footer Note */}
+                        <motion.div
+                            variants={itemVariants}
+                            className="mt-8 p-6 bg-gray-100 rounded-2xl text-center border border-gray-200"
+                        >
+                            <div className="flex items-center justify-center gap-2 mb-3">
+                                <Shield className="h-5 w-5 text-deepTeal" />
+                                <span className="text-sm font-medium text-gray-700">Your Privacy Matters</span>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                                By using Theatre Hub Ethiopia, you consent to the collection and use of your information as described in this Privacy Policy.
+                            </p>
+                            <div className="flex justify-center gap-4 mt-4">
+                                <Link to="/terms" className="text-sm text-deepTeal hover:text-deepTeal/80 font-medium transition-colors">
+                                    Terms of Service
+                                </Link>
+                                <Link to="/cookies" className="text-sm text-deepTeal hover:text-deepTeal/80 font-medium transition-colors">
+                                    Cookie Policy
+                                </Link>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-3">
+                                © {new Date().getFullYear()} Theatre Hub Ethiopia. All rights reserved.
+                            </p>
+                        </motion.div>
+                    </motion.div>
+                </div>
             </div>
         </div>
     );
