@@ -344,9 +344,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: QrCode,
             color: "text-purple-500",
             subItems: [
-              { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode },
-              { name: "Manual Entry", to: "/scanner/validate/manual", icon: KeypadIcon },
-              { name: "Bulk Scan", to: "/scanner/validate/bulk", icon: Scan }
+              { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode }
             ]
           },
           {
@@ -355,9 +353,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: CheckCircle,
             color: "text-green-500",
             subItems: [
-              { name: "Mark as Used", to: "/scanner/checkin/mark", icon: CheckCircle },
-              { name: "Group Check-in", to: "/scanner/checkin/group", icon: Users },
-              { name: "VIP Check-in", to: "/scanner/checkin/vip", icon: Crown }
+              { name: "Customer Check-in", to: "/scanner/checkin", icon: CheckCircle }
+
             ]
           },
           {
@@ -366,9 +363,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: BarChart3,
             color: "text-emerald-500",
             subItems: [
-              { name: "Entry Count", to: "/scanner/stats/entries", icon: Users },
-              { name: "Real-time Stats", to: "/scanner/stats/realtime", icon: Activity },
-              { name: "Daily Report", to: "/scanner/stats/daily", icon: Calendar }
+              { name: "Entry Statistics", to: "/scanner/stats/entries", icon: Users }
             ]
           },
           {
@@ -377,9 +372,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: DoorOpen,
             color: "text-orange-500",
             subItems: [
-              { name: "Gate Status", to: "/scanner/gates/status", icon: Activity },
-              { name: "Assign Gate", to: "/scanner/gates/assign", icon: Users },
-              { name: "Gate Logs", to: "/scanner/gates/logs", icon: FileText }
+              { name: "Gate Management", to: "/scanner/gates", icon: Activity }
             ]
           }
         ]

@@ -3,11 +3,14 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import ScannerDashboard from './ScannerDashboard';
-
+import ScanQRCode from './ScanQRCode';
+import CustomerCheckin from './CustomerCheckin';
+import ScannerDailyReport from './ScannerDailyReport';
+import GateManagement from './GateManagement';
 // Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
-  children, 
-  allowedRoles = [] 
+const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
+  children,
+  allowedRoles = []
 }) => {
   const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
@@ -35,19 +38,17 @@ export const scannerRouteElement = (
   >
     <Route index element={<Navigate to="/scanner/dashboard" replace />} />
     <Route path="dashboard" element={<ScannerDashboard />} />
-    <Route path="validate" element={<ScannerDashboard />} />
-    <Route path="validate/scan" element={<ScannerDashboard />} />
-    <Route path="validate/manual" element={<ScannerDashboard />} />
-    <Route path="validate/bulk" element={<ScannerDashboard />} />
-    <Route path="checkin" element={<ScannerDashboard />} />
-    <Route path="checkin/mark" element={<ScannerDashboard />} />
-    <Route path="checkin/group" element={<ScannerDashboard />} />
-    <Route path="checkin/vip" element={<ScannerDashboard />} />
-    <Route path="stats" element={<ScannerDashboard />} />
-    <Route path="stats/entries" element={<ScannerDashboard />} />
+    {/* for QRcode scan at entry  */}
+    <Route path="validate/scan" element={<ScanQRCode />} />
+    {/* for custemer chechkin */}
+    <Route path="checkin" element={<CustomerCheckin />} />
+    {/* for status */}
+    <Route path="stats" element={<ScannerDailyReport />} />
+    <Route path="stats/entries" element={<ScannerDailyReport />} />
     <Route path="stats/realtime" element={<ScannerDashboard />} />
     <Route path="stats/daily" element={<ScannerDashboard />} />
-    <Route path="gates" element={<ScannerDashboard />} />
+    {/* for Gate management  */}
+    <Route path="gates" element={<GateManagement />} />
     <Route path="gates/status" element={<ScannerDashboard />} />
     <Route path="gates/assign" element={<ScannerDashboard />} />
     <Route path="gates/logs" element={<ScannerDashboard />} />

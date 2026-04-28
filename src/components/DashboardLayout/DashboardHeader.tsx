@@ -265,7 +265,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                           <Edit className="h-3 w-3 text-primary" />
                         </div>
                       </button>
-                      <Link to="/dashboard/help" className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-all duration-300 group" onClick={() => setShowProfileDropdown(false)}>
+                      <Link to="/help" className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-all duration-300 group" onClick={() => setShowProfileDropdown(false)}>
                         <HelpCircle className="h-4 w-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
                         <span>Help & Support</span>
                       </Link>
