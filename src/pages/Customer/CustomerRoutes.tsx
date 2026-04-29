@@ -7,9 +7,8 @@ import CustomerWallet from './Wallet/CustomerWallet';
 import CustomerWalletBalance from './Wallet/CustomerWalletBalance';
 import CustomerWalletAdd from './Wallet/CustomerWalletAdd';
 import CustomerWalletTransactions from './Wallet/CustomerWalletTransactions';
-import CustomerMyTickets from './Tickets/CustomerMyTickets';
 import CustomerMyTicketsDownload from './Tickets/CustomerMyTicketsDownload';
-import CustomerMyTicketsQr from './Tickets/CustomerMyTicketsQr';
+// import CustomerMyTicketsQr from './Tickets/CustomerMyTicketsQr';
 import CustomerSettings from './Settings/CustomerSettings';
 
 // Protected Route Component
@@ -47,9 +46,8 @@ export const customerRouteElement = (
     <Route path="wallet/balance" element={<CustomerWalletBalance />} />
     <Route path="wallet/add" element={<CustomerWalletAdd />} />
     <Route path="wallet/transactions" element={<CustomerWalletTransactions />} />
-    <Route path="my-tickets" element={<CustomerMyTickets />} />
     <Route path="my-tickets/download" element={<CustomerMyTicketsDownload />} />
-    <Route path="my-tickets/qr" element={<CustomerMyTicketsQr />} />
+    {/* <Route path="my-tickets/qr" element={<CustomerMyTicketsQr />} /> */}
     <Route path="settings" element={<CustomerSettings />} />
   </Route>
 );

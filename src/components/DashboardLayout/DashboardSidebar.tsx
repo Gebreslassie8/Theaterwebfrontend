@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
-  Users,
+  Users,User,
   Building,
   Settings,
   DollarSign,
@@ -14,7 +14,10 @@ import {
   UsersRound,
   UserCog,
   UserX,
-  Wallet as WalletIcon,
+  Wallet as WalletIcon,Tickets,       // multiple tickets
+  TicketCheck,   // verified ticket
+  TicketX,       // cancelled ticket
+  TicketPercent,
   Coins,
   ReceiptText,
   Percent,
@@ -26,7 +29,7 @@ import {
   CalendarDays,
   FileText,
   Heart,
-  BarChart3,
+  BarChart3,BarChart, 
   Key,
   Lock,
   ClipboardCheck,
@@ -214,78 +217,57 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         items: [
           { name: "Overview", to: "/manager/dashboard", icon: LayoutDashboard, color: "text-blue-500" },
           {
-            name: "Events Schedule",
-            to: "/manager/events",
-            icon: Calendar,
-            color: "text-purple-500",
+            name: "Events Schedule", to: "/manager/events", icon: Calendar, color: "text-purple-500",
             subItems: [
-              { name: "Daily Schedule", to: "/manager/events/daily", icon: Calendar },
-              { name: "Create Event", to: "/manager/events/create", icon: PlusCircle }
+              { name: "Event Schedule", to: "/manager/events/EventSchedule", icon: Calendar },
+              { name: "Event Management", to: "/manager/events/create", icon: PlusCircle },
             ]
           },
           {
-            name: "Halls Management",
-            to: "/manager/halls",
-            icon: Building,
+            name: "Halls", to: "/manager/halls", icon: Building, color: "text-green-500",
+            subItems: [
+              { name: "Halls Management", to: "/manager/halls", icon: Building },
+            ]
+          },
+          {
+            name: "Employee",
+            to: "/manager/employee",
+            icon: Users,
             color: "text-green-500",
             subItems: [
-              { name: "View Halls", to: "/manager/halls", icon: Building },
-              { name: "Seat Management", to: "/manager/halls/seats", icon: ChairIcon }
+              { name: "Employee Management", to: "/manager/employee", icon: Users },
             ]
           },
           {
-            name: "Inventory Management",
+            name: "Ticket management",
             to: "/manager/inventory",
-            icon: Package,
+            icon: Ticket,
             color: "text-indigo-500",
             subItems: [
-              { name: "Snacks & Concessions", to: "/manager/inventory/snacks", icon: Coffee },
-              { name: "Stock Levels", to: "/manager/inventory/stock", icon: Package }
+              { name: "BookingTicketControl", to: "/manager/inventory/BookingTicketControl", icon: Tickets },
+            ]
+          },
+          {
+            name: "Report management",
+            to: "/manager/Report",
+            icon: BarChart,
+            color: "text-indigo-500",
+            subItems: [
+              { name: "Reports", to: "/manager/Report", icon: FileText },
+            ]
+          },
+          {
+            name: "Customer management",
+            to: "/manager/Customer",
+            icon: Users,
+            color: "text-indigo-500",
+            subItems: [
+              { name: "Customer", to: "/manager/Customer", icon: User },
             ]
           }
-        ]
+        ] // <--- FIXED: missing closing bracket added here
       },
 
-      // ==================== SALESPERSON ONLY ====================
-      {
-        name: "Salesperson",
-        icon: Ticket,
-        color: "from-green-500 to-emerald-500",
-        roles: ["salesperson"],
-        items: [
-          { name: "Overview", to: "/sales/dashboard", icon: LayoutDashboard, color: "text-green-500" },
-          {
-            name: "Event Browser",
-            to: "/sales/events",
-            icon: Search,
-            color: "text-purple-500",
-            subItems: [
-              { name: "Browse Events", to: "/sales/events/browse", icon: Search },
-              { name: "View Schedule", to: "/sales/events/schedule", icon: Calendar }
-            ]
-          },
-          {
-            name: "Seat Selection",
-            to: "/sales/seats",
-            icon: ChairIcon,
-            color: "text-emerald-500",
-            subItems: [
-              { name: "Interactive Map", to: "/sales/seats/map", icon: Map },
-              { name: "Select Seats", to: "/sales/seats/select", icon: MousePointer }
-            ]
-          },
-          {
-            name: "Payment Processing",
-            to: "/sales/payments",
-            icon: CreditCard,
-            color: "text-cyan-500",
-            subItems: [
-              { name: "Cash Payments", to: "/sales/payments/cash", icon: DollarSign },
-              { name: "POS Terminal", to: "/sales/payments/pos", icon: CreditCard }
-            ]
-          }
-        ]
-      },
 
       // ==================== CUSTOMER ONLY ====================
       {
@@ -296,10 +278,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         items: [
           { name: "Overview", to: "/customer/dashboard", icon: Home, color: "text-rose-500" },
           {
-            name: "Search Events",
-            to: "/customer/search",
-            icon: Search,
-            color: "text-purple-500",
+            name: "Search Events", to: "/customer/search", icon: Search, color: "text-purple-500",
             subItems: [
               { name: "By Date", to: "/customer/search/date", icon: Calendar },
               { name: "By Location", to: "/customer/search/location", icon: MapPin },
@@ -307,20 +286,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             ]
           },
           {
-            name: "My Tickets",
-            to: "/customer/my-tickets",
-            icon: Ticket,
-            color: "text-indigo-500",
+            name: "My Tickets", to: "/customer/my-tickets", icon: Ticket, color: "text-indigo-500",
             subItems: [
-              { name: "Download E-Ticket", to: "/customer/my-tickets/download", icon: Download },
+              { name: "Paid Ticket ", to: "/customer/my-tickets/download", icon: Download },
               { name: "QR Code", to: "/customer/my-tickets/qr", icon: QrCode }
             ]
           },
           {
-            name: "My Wallet",
-            to: "/customer/wallet",
-            icon: WalletIcon,
-            color: "text-emerald-500",
+            name: "My Wallet", to: "/customer/wallet", icon: WalletIcon, color: "text-emerald-500",
             subItems: [
               { name: "Balance", to: "/customer/wallet/balance", icon: Coins },
               { name: "Add Funds", to: "/customer/wallet/add", icon: Banknote },
@@ -329,7 +302,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           }
         ]
       },
-
       // ==================== SCANNER ONLY ====================
       {
         name: "Ticket Validation",

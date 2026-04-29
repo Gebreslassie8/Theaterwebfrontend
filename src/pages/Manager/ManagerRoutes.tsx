@@ -3,17 +3,17 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import ManagerDashboard from './ManagerDashboard';
-
+import EmployeeManagement from './employee/EmployeeManagement'
 // Import all manager components
 import ManagerOverview from './ManagerOverview';
-import EventsSchedule from './events/EventsSchedule';
-import DailySchedule from './events/DailySchedule';
+import EventSchedule from './events/EventSchedule';
 import CreateEvent from './events/CreateEvent';
 import HallsManagement from './halls/HallsManagement';
-import SeatManagement from './halls/SeatManagement';
-import InventoryManagement from './inventory/InventoryManagement';
-import SnacksConcessions from './inventory/SnacksConcessions';
-import StockLevels from './inventory/StockLevels';
+import EventManagement from './events/EventManagement';
+// import InventoryManagement from  './inventory/';
+import BookingTicketControl from './inventory/BookingTicketControl';
+import Reports from './Report/Reports';
+import CustomerManagement from './Customer/CustomerManagement';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -46,13 +46,19 @@ export const managerRouteElement = (
   >
     <Route index element={<Navigate to="/manager/dashboard" replace />} />
     <Route path="dashboard" element={<ManagerOverview />} />
-    <Route path="events" element={<EventsSchedule />} />
-    <Route path="events/daily" element={<DailySchedule />} />
+    <Route path="events/EventSchedule" element={<EventSchedule />} />
     <Route path="events/create" element={<CreateEvent />} />
+    <Route path="events/manage" element={<EventManagement />} />
     <Route path="halls" element={<HallsManagement />} />
-    <Route path="halls/seats" element={<SeatManagement />} />
-    <Route path="inventory" element={<InventoryManagement />} />
-    <Route path="inventory/snacks" element={<SnacksConcessions />} />
-    <Route path="inventory/stock" element={<StockLevels />} />
+   <Route path="inventory" element={<BookingTicketControl />} />
+   <Route path="inventory/BookingTicketControl" element={<BookingTicketControl />} />
+   <Route path="Report" element={<Reports />} />
+   <Route path="Customer" element={<CustomerManagement />} />
+  <Route path="employee" element={<EmployeeManagement />} />
+
+
+
+
+
   </Route>
 );

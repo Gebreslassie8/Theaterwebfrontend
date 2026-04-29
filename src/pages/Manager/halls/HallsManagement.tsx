@@ -1,42 +1,148 @@
-// src/components/dashboard/manager/halls/HallsManagement.tsx
+// src/pages/Manager/halls/HallsManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Grid, Settings, X } from 'lucide-react';
+import { Edit, Trash2, Plus, X, Eye, Users, MapPin, Star, Tag, Layout, CreditCard, Save, Search } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
-import ReusableForm from '../../../components/Reusable/ReusableForm';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
 
-// Mock API service
+// ==================== Types ====================
+export interface SeatType {
+  id: string;
+  name: string;
+  count: number;
+}
+
+export interface Hall {
+  id: number;
+  name: string;
+  seatTypes: SeatType[];        // dynamic list of seat types and their counts
+  features: string[];
+  status: 'Active' | 'Maintenance'; // kept for API compatibility but hidden from UI
+  seatingLayout: string;
+  rows: number;
+  columns: number;
+  priceMultiplier: number;
+}
+
+// Helper: calculate total capacity from seat types
+const calculateTotalCapacity = (seatTypes: SeatType[]): number => {
+  return seatTypes.reduce((sum, st) => sum + st.count, 0);
+};
+
+// Generate unique ID for seat types
+const generateTypeId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// ==================== Mock API ====================
 const mockApi = {
-  getHalls: async () => {
+  getHalls: async (): Promise<Hall[]> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve([
-          { id: 1, name: "Hall A", capacity: 500, features: ["AC", "Dolby Sound", "VIP Seats"], status: "Active", seatingLayout: "Standard", rows: 20, columns: 25, priceMultiplier: 1.0 },
-          { id: 2, name: "Hall B", capacity: 300, features: ["AC", "Surround Sound"], status: "Active", seatingLayout: "Standard", rows: 15, columns: 20, priceMultiplier: 1.0 },
-          { id: 3, name: "Hall C", capacity: 200, features: ["Standard Sound"], status: "Maintenance", seatingLayout: "Compact", rows: 10, columns: 20, priceMultiplier: 1.0 },
-          { id: 4, name: "VIP Hall", capacity: 100, features: ["Premium Seats", "Private Lounge", "AC"], status: "Active", seatingLayout: "Premium", rows: 10, columns: 10, priceMultiplier: 2.0 },
-          { id: 5, name: "IMAX Hall", capacity: 800, features: ["IMAX Screen", "3D", "Dolby Atmos"], status: "Active", seatingLayout: "Premium", rows: 25, columns: 32, priceMultiplier: 2.5 },
-          { id: 6, name: "Kids Hall", capacity: 150, features: ["Kids Friendly", "Soft Seats", "Play Area"], status: "Active", seatingLayout: "Compact", rows: 10, columns: 15, priceMultiplier: 0.8 },
+          {
+            id: 1,
+            name: "Hall A",
+            seatTypes: [
+              { id: generateTypeId(), name: "VIP", count: 50 },
+              { id: generateTypeId(), name: "Premium", count: 100 },
+              { id: generateTypeId(), name: "Economy", count: 300 },
+              { id: generateTypeId(), name: "Standard", count: 50 },
+            ],
+            features: ["AC", "Dolby Sound", "VIP Seats"],
+            status: "Active",
+            seatingLayout: "Standard",
+            rows: 20,
+            columns: 25,
+            priceMultiplier: 1.0,
+          },
+          {
+            id: 2,
+            name: "Hall B",
+            seatTypes: [
+              { id: generateTypeId(), name: "VIP", count: 30 },
+              { id: generateTypeId(), name: "Premium", count: 60 },
+              { id: generateTypeId(), name: "Economy", count: 150 },
+              { id: generateTypeId(), name: "Standard", count: 60 },
+            ],
+            features: ["AC", "Surround Sound"],
+            status: "Active",
+            seatingLayout: "Standard",
+            rows: 15,
+            columns: 20,
+            priceMultiplier: 1.0,
+          },
+          {
+            id: 3,
+            name: "Hall C",
+            seatTypes: [
+              { id: generateTypeId(), name: "Standard", count: 200 },
+            ],
+            features: ["Standard Sound"],
+            status: "Maintenance",
+            seatingLayout: "Compact",
+            rows: 10,
+            columns: 20,
+            priceMultiplier: 1.0,
+          },
+          {
+            id: 4,
+            name: "VIP Hall",
+            seatTypes: [
+              { id: generateTypeId(), name: "VIP", count: 80 },
+              { id: generateTypeId(), name: "Premium", count: 20 },
+            ],
+            features: ["Premium Seats", "Private Lounge", "AC"],
+            status: "Active",
+            seatingLayout: "Premium",
+            rows: 10,
+            columns: 10,
+            priceMultiplier: 2.0,
+          },
+          {
+            id: 5,
+            name: "IMAX Hall",
+            seatTypes: [
+              { id: generateTypeId(), name: "IMAX Standard", count: 650 },
+              { id: generateTypeId(), name: "IMAX VIP", count: 150 },
+            ],
+            features: ["IMAX Screen", "3D", "Dolby Atmos"],
+            status: "Active",
+            seatingLayout: "Premium",
+            rows: 25,
+            columns: 32,
+            priceMultiplier: 2.5,
+          },
+          {
+            id: 6,
+            name: "Kids Hall",
+            seatTypes: [
+              { id: generateTypeId(), name: "Kids Seat", count: 150 },
+            ],
+            features: ["Kids Friendly", "Soft Seats", "Play Area"],
+            status: "Active",
+            seatingLayout: "Compact",
+            rows: 10,
+            columns: 15,
+            priceMultiplier: 0.8,
+          },
         ]);
       }, 500);
     });
   },
-  createHall: async (hallData: any) => {
+  createHall: async (hallData: Omit<Hall, 'id'>): Promise<Hall> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({ ...hallData, id: Math.floor(Math.random() * 1000) });
       }, 500);
     });
   },
-  updateHall: async (id: number, hallData: any) => {
+  updateHall: async (id: number, hallData: Omit<Hall, 'id'>): Promise<Hall> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({ ...hallData, id });
       }, 500);
     });
   },
-  deleteHall: async (id: number) => {
+  deleteHall: async (id: number): Promise<{ success: boolean }> => {
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve({ success: true });
@@ -45,49 +151,61 @@ const mockApi = {
   }
 };
 
+// ==================== Main Component ====================
 const HallsManagement: React.FC = () => {
-  const [halls, setHalls] = useState<any[]>([]);
+  const [halls, setHalls] = useState<Hall[]>([]);
+  const [filteredHalls, setFilteredHalls] = useState<Hall[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Form modal (add new hall)
   const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formSeatTypes, setFormSeatTypes] = useState<SeatType[]>([]);
+  const [formFeatures, setFormFeatures] = useState('');
+  const [formSeatingLayout, setFormSeatingLayout] = useState('Standard');
+  const [formRows, setFormRows] = useState(10);
+  const [formColumns, setFormColumns] = useState(10);
+  const [formPriceMultiplier, setFormPriceMultiplier] = useState(1.0);
+
+  // Details/Edit modal
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedHall, setSelectedHall] = useState<Hall | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editSeatTypes, setEditSeatTypes] = useState<SeatType[]>([]);
+  const [editFeatures, setEditFeatures] = useState('');
+  const [editSeatingLayout, setEditSeatingLayout] = useState('');
+  const [editRows, setEditRows] = useState(0);
+  const [editColumns, setEditColumns] = useState(0);
+  const [editPriceMultiplier, setEditPriceMultiplier] = useState(1);
+
   const [showSuccess, setShowSuccess] = useState(false);
-  const [showSeatingModal, setShowSeatingModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [editingHall, setEditingHall] = useState<any>(null);
-  const [selectedHall, setSelectedHall] = useState<any>(null);
   const [successMessage, setSuccessMessage] = useState('');
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    capacity: '',
-    features: '',
-    status: 'Active'
-  });
 
-  const [seatingData, setSeatingData] = useState({
-    rows: 0,
-    columns: 0,
-    layoutType: 'Standard'
-  });
-
-  const [settingsData, setSettingsData] = useState({
-    priceMultiplier: 1.0,
-    hasProjector: true,
-    hasSoundSystem: true,
-    hasAirConditioning: true,
-    accessibilityFeatures: ''
-  });
-
+  // Load halls
   useEffect(() => {
     loadHalls();
   }, []);
+
+  useEffect(() => {
+    let filtered = [...halls];
+    if (searchTerm.trim() !== '') {
+      filtered = filtered.filter(hall =>
+        hall.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredHalls(filtered);
+  }, [searchTerm, halls]);
 
   const loadHalls = async () => {
     setLoading(true);
     try {
       const data = await mockApi.getHalls();
-      setHalls(data as any[]);
+      setHalls(data);
+      setFilteredHalls(data);
     } catch (error) {
-      console.error('Error loading halls:', error);
+      console.error(error);
       setSuccessMessage('Failed to load halls');
       setShowSuccess(true);
     } finally {
@@ -95,572 +213,362 @@ const HallsManagement: React.FC = () => {
     }
   };
 
-  const formFields = [
-    {
-      name: 'name',
-      label: 'Hall Name',
-      type: 'text' as const,
-      placeholder: 'Enter hall name',
-      required: true,
-      value: formData.name,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, name: e.target.value })
-    },
-    {
-      name: 'capacity',
-      label: 'Capacity',
-      type: 'number' as const,
-      placeholder: 'Enter seating capacity',
-      required: true,
-      value: formData.capacity,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, capacity: e.target.value })
-    },
-    {
-      name: 'features',
-      label: 'Features',
-      type: 'textarea' as const,
-      placeholder: 'Enter features separated by commas',
-      required: true,
-      value: formData.features,
-      onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData({ ...formData, features: e.target.value })
-    },
-    {
-      name: 'status',
-      label: 'Status',
-      type: 'select' as const,
-      required: true,
-      value: formData.status,
-      onChange: (e: React.ChangeEvent<HTMLSelectElement>) => setFormData({ ...formData, status: e.target.value }),
-      options: [
-        { value: 'Active', label: 'Active' },
-        { value: 'Maintenance', label: 'Maintenance' },
-      ],
-    },
-  ];
+  // Add/remove seat type helpers for add form
+  const addFormSeatType = () => {
+    setFormSeatTypes([...formSeatTypes, { id: generateTypeId(), name: '', count: 0 }]);
+  };
+  const updateFormSeatType = (id: string, field: keyof SeatType, value: string | number) => {
+    setFormSeatTypes(prev =>
+      prev.map(st =>
+        st.id === id ? { ...st, [field]: field === 'count' ? Math.max(0, Number(value)) : value } : st
+      )
+    );
+  };
+  const removeFormSeatType = (id: string) => {
+    setFormSeatTypes(prev => prev.filter(st => st.id !== id));
+  };
 
-  // Table columns configuration for ReusableTable
-  const tableColumns = [
-    {
-      Header: 'Hall Name',
-      accessor: 'name',
-      sortable: true
-    },
-    {
-      Header: 'Capacity',
-      accessor: 'capacity',
-      sortable: true
-    },
-    {
-      Header: 'Features',
-      accessor: 'features',
-      sortable: false
-    },
-    {
-      Header: 'Status',
-      accessor: 'status',
-      sortable: true,
-      Cell: (row: any) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-          row.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {row.status}
-        </span>
+  // Add/remove seat type helpers for edit modal
+  const addEditSeatType = () => {
+    setEditSeatTypes([...editSeatTypes, { id: generateTypeId(), name: '', count: 0 }]);
+  };
+  const updateEditSeatType = (id: string, field: keyof SeatType, value: string | number) => {
+    setEditSeatTypes(prev =>
+      prev.map(st =>
+        st.id === id ? { ...st, [field]: field === 'count' ? Math.max(0, Number(value)) : value } : st
       )
-    },
-    {
-      Header: 'Layout',
-      accessor: 'seatingLayout',
-      sortable: true,
-      Cell: (row: any) => (
-        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-          {row.seatingLayout}
-        </span>
-      )
-    },
-    {
-      Header: 'Price Multiplier',
-      accessor: 'priceMultiplier',
-      sortable: true,
-      Cell: (row: any) => (
-        <span className="font-semibold text-blue-600">
-          {row.priceMultiplier}x
-        </span>
-      )
-    },
-    {
-      Header: 'Actions',
-      accessor: 'actions',
-      sortable: false,
-      Cell: (row: any) => (
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleSeatingLayout(row)}
-            className="p-1.5 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
-            title="Seating Layout"
-          >
-            <Grid className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleSettings(row)}
-            className="p-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleEditHall(row)}
-            className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-            title="Edit Hall"
-          >
-            <Edit className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => handleDeleteHall(row.id)}
-            className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      )
-    }
-  ];
+    );
+  };
+  const removeEditSeatType = (id: string) => {
+    setEditSeatTypes(prev => prev.filter(st => st.id !== id));
+  };
 
-  // Prepare data for ReusableTable
-  const tableData = halls.map(hall => ({
-    id: hall.id,
-    name: hall.name,
-    capacity: hall.capacity,
-    features: Array.isArray(hall.features) ? hall.features.join(', ') : hall.features,
-    status: hall.status,
-    seatingLayout: hall.seatingLayout,
-    priceMultiplier: hall.priceMultiplier,
-  }));
-
+  // Open add modal
   const handleAddHall = () => {
-    setEditingHall(null);
-    setFormData({
-      name: '',
-      capacity: '',
-      features: '',
-      status: 'Active'
-    });
+    setFormName('');
+    setFormSeatTypes([]);
+    setFormFeatures('');
+    setFormSeatingLayout('Standard');
+    setFormRows(10);
+    setFormColumns(10);
+    setFormPriceMultiplier(1.0);
     setShowForm(true);
   };
 
-  const handleEditHall = (hall: any) => {
-    setEditingHall(hall);
-    setFormData({
-      name: hall.name,
-      capacity: hall.capacity.toString(),
-      features: hall.features,
-      status: hall.status
-    });
-    setShowForm(true);
+  // Submit new hall
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) {
+      alert('Hall name is required');
+      return;
+    }
+    if (formSeatTypes.length === 0) {
+      alert('Please add at least one seat type');
+      return;
+    }
+    if (formSeatTypes.some(st => !st.name.trim() || st.count <= 0)) {
+      alert('All seat types must have a name and a positive count');
+      return;
+    }
+    const featuresArray = formFeatures.split(',').map(f => f.trim()).filter(f => f);
+    const newHall: Omit<Hall, 'id'> = {
+      name: formName,
+      seatTypes: formSeatTypes,
+      features: featuresArray,
+      status: 'Active', // always active, hidden from UI
+      seatingLayout: formSeatingLayout,
+      rows: formRows,
+      columns: formColumns,
+      priceMultiplier: formPriceMultiplier,
+    };
+    try {
+      const created = await mockApi.createHall(newHall);
+      setHalls([...halls, created]);
+      setSuccessMessage(`${formName} added successfully!`);
+      setShowSuccess(true);
+      setShowForm(false);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      setSuccessMessage('Failed to add hall');
+      setShowSuccess(true);
+    }
+  };
+
+  // View details
+  const handleViewDetails = (hall: Hall) => {
+    setSelectedHall(hall);
+    setIsEditing(false);
+    setShowDetailsModal(true);
+  };
+
+  // Edit from table
+  const handleEditFromTable = (hall: Hall) => {
+    setSelectedHall(hall);
+    setEditName(hall.name);
+    setEditSeatTypes(hall.seatTypes.map(st => ({ ...st })));
+    setEditFeatures(hall.features.join(', '));
+    setEditSeatingLayout(hall.seatingLayout);
+    setEditRows(hall.rows);
+    setEditColumns(hall.columns);
+    setEditPriceMultiplier(hall.priceMultiplier);
+    setIsEditing(true);
+    setShowDetailsModal(true);
+  };
+
+  const handleEditInModal = () => {
+    if (!selectedHall) return;
+    setEditName(selectedHall.name);
+    setEditSeatTypes(selectedHall.seatTypes.map(st => ({ ...st })));
+    setEditFeatures(selectedHall.features.join(', '));
+    setEditSeatingLayout(selectedHall.seatingLayout);
+    setEditRows(selectedHall.rows);
+    setEditColumns(selectedHall.columns);
+    setEditPriceMultiplier(selectedHall.priceMultiplier);
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedHall) return;
+    const featuresArray = editFeatures.split(',').map(f => f.trim()).filter(f => f);
+    const updatedHall: Omit<Hall, 'id'> = {
+      name: editName,
+      seatTypes: editSeatTypes,
+      features: featuresArray,
+      status: 'Active', // always active, hidden from UI
+      seatingLayout: editSeatingLayout,
+      rows: editRows,
+      columns: editColumns,
+      priceMultiplier: editPriceMultiplier,
+    };
+    try {
+      const saved = await mockApi.updateHall(selectedHall.id, updatedHall);
+      setHalls(halls.map(h => h.id === selectedHall.id ? saved : h));
+      setSelectedHall(saved);
+      setIsEditing(false);
+      setSuccessMessage(`${editName} updated successfully!`);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (error) {
+      setSuccessMessage('Failed to update hall');
+      setShowSuccess(true);
+    }
   };
 
   const handleDeleteHall = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this hall?')) {
+    if (window.confirm('Delete this hall?')) {
       try {
         await mockApi.deleteHall(id);
-        const deletedHall = halls.find(hall => hall.id === id);
-        setHalls(halls.filter(hall => hall.id !== id));
-        setSuccessMessage(`${deletedHall?.name} deleted successfully!`);
+        setHalls(halls.filter(h => h.id !== id));
+        setSuccessMessage('Hall deleted');
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 3000);
       } catch (error) {
-        setSuccessMessage('Failed to delete hall');
+        setSuccessMessage('Delete failed');
         setShowSuccess(true);
       }
     }
   };
 
-  const handleSeatingLayout = (hall: any) => {
-    setSelectedHall(hall);
-    setSeatingData({
-      rows: hall.rows || 0,
-      columns: hall.columns || 0,
-      layoutType: hall.seatingLayout || 'Standard'
-    });
-    setShowSeatingModal(true);
-  };
+  const handleCancelForm = () => setShowForm(false);
 
-  const handleSaveSeatingLayout = async () => {
-    try {
-      const updatedHall = {
-        ...selectedHall,
-        rows: seatingData.rows,
-        columns: seatingData.columns,
-        seatingLayout: seatingData.layoutType,
-        capacity: seatingData.rows * seatingData.columns
-      };
-      await mockApi.updateHall(selectedHall.id, updatedHall);
-      setHalls(halls.map(hall => 
-        hall.id === selectedHall.id ? updatedHall : hall
-      ));
-      setSuccessMessage(`Seating layout for ${selectedHall.name} updated successfully!`);
-      setShowSuccess(true);
-      setShowSeatingModal(false);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      setSuccessMessage('Failed to update seating layout');
-      setShowSuccess(true);
+  // Table columns – shows Hall Name, Total Seats, Actions (Status column removed)
+  const tableColumns = [
+    { Header: 'Hall Name', accessor: 'name', sortable: true },
+    {
+      Header: 'Total Seats',
+      accessor: 'totalCapacity',
+      sortable: true,
+      Cell: (row: Hall) => <span>{calculateTotalCapacity(row.seatTypes).toLocaleString()}</span>
+    },
+    {
+      Header: 'View',
+      accessor: 'view',
+      sortable: false,
+      Cell: (row: Hall) => (
+        <button onClick={() => handleViewDetails(row)} className="p-1.5 bg-white border rounded-lg text-green-600 hover:bg-green-50">
+          <Eye className="h-4 w-4" />
+        </button>
+      )
+    },
+    {
+      Header: 'Edit',
+      accessor: 'edit',
+      sortable: false,
+      Cell: (row: Hall) => (
+        <button onClick={() => handleEditFromTable(row)} className="p-1.5 bg-white border rounded-lg text-blue-600 hover:bg-blue-50">
+          <Edit className="h-4 w-4" />
+        </button>
+      )
+    },
+    {
+      Header: 'Delete',
+      accessor: 'delete',
+      sortable: false,
+      Cell: (row: Hall) => (
+        <button onClick={() => handleDeleteHall(row.id)} className="p-1.5 bg-white border rounded-lg text-red-600 hover:bg-red-50">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )
     }
-  };
+  ];
 
-  const handleSettings = (hall: any) => {
-    setSelectedHall(hall);
-    setSettingsData({
-      priceMultiplier: hall.priceMultiplier || 1.0,
-      hasProjector: hall.hasProjector !== undefined ? hall.hasProjector : true,
-      hasSoundSystem: hall.hasSoundSystem !== undefined ? hall.hasSoundSystem : true,
-      hasAirConditioning: hall.hasAirConditioning !== undefined ? hall.hasAirConditioning : true,
-      accessibilityFeatures: hall.accessibilityFeatures || ''
-    });
-    setShowSettingsModal(true);
-  };
-
-  const handleSaveSettings = async () => {
-    try {
-      const updatedHall = {
-        ...selectedHall,
-        priceMultiplier: settingsData.priceMultiplier,
-        hasProjector: settingsData.hasProjector,
-        hasSoundSystem: settingsData.hasSoundSystem,
-        hasAirConditioning: settingsData.hasAirConditioning,
-        accessibilityFeatures: settingsData.accessibilityFeatures
-      };
-      await mockApi.updateHall(selectedHall.id, updatedHall);
-      setHalls(halls.map(hall => 
-        hall.id === selectedHall.id ? updatedHall : hall
-      ));
-      setSuccessMessage(`Settings for ${selectedHall.name} updated successfully!`);
-      setShowSuccess(true);
-      setShowSettingsModal(false);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      setSuccessMessage('Failed to update settings');
-      setShowSuccess(true);
-    }
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name || !formData.capacity || !formData.features) {
-      alert('Please fill in all required fields');
-      return;
-    }
-    
-    const featuresArray = formData.features.split(',').map(f => f.trim()).filter(f => f);
-    
-    try {
-      if (editingHall) {
-        const updatedHall = {
-          ...editingHall,
-          name: formData.name,
-          capacity: parseInt(formData.capacity),
-          features: featuresArray.join(', '),
-          status: formData.status
-        };
-        await mockApi.updateHall(editingHall.id, updatedHall);
-        setHalls(halls.map(hall => 
-          hall.id === editingHall.id ? updatedHall : hall
-        ));
-        setSuccessMessage(`${formData.name} updated successfully!`);
-      } else {
-        const newHall = {
-          name: formData.name,
-          capacity: parseInt(formData.capacity),
-          features: featuresArray.join(', '),
-          status: formData.status,
-          seatingLayout: 'Standard',
-          rows: 0,
-          columns: 0,
-          priceMultiplier: 1.0,
-        };
-        const createdHall = await mockApi.createHall(newHall);
-        setHalls([...halls, createdHall]);
-        setSuccessMessage(`${formData.name} added successfully!`);
-      }
-      
-      setShowForm(false);
-      setEditingHall(null);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 3000);
-    } catch (error) {
-      setSuccessMessage('Failed to save hall');
-      setShowSuccess(true);
-    }
-  };
-
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingHall(null);
-    setFormData({
-      name: '',
-      capacity: '',
-      features: '',
-      status: 'Active'
-    });
-  };
-
-  if (loading) {
-    return (
-      <div className="p-6 flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading halls...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="p-6 text-center">Loading halls...</div>;
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Halls Management</h1>
-          <p className="text-gray-600 mt-1">Manage theater halls and seating arrangements</p>
         </div>
-        <ReusableButton
-          onClick={handleAddHall}
-          variant="primary"
-          icon={Plus}
-          className="text-white font-medium"
-        >
-          Add New Hall
-        </ReusableButton>
+        <ReusableButton onClick={handleAddHall} variant="primary" icon={Plus}>Add New Hall</ReusableButton>
       </div>
 
-      {/* Reusable Table */}
-      <ReusableTable
-        columns={tableColumns}
-        data={tableData}
-        title="All Halls"
-        showSearch={true}
-        showExport={false}
-        showPrint={false}
-        itemsPerPage={10}
-      />
+      {/* Search only – Status filter removed */}
+      <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input type="text" placeholder="Search by hall name..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full pl-11 pr-4 py-3 border-2 rounded-xl" />
+        </div>
+      </div>
 
-      {/* Add/Edit Hall Form Modal */}
+      <ReusableTable columns={tableColumns} data={filteredHalls} title="All Halls" showSearch={false} showExport={false} showPrint={false} itemsPerPage={10} />
+
+      {/* Add Hall Modal - Deep Teal Header */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editingHall ? '✏️ Edit Hall' : '➕ Add New Hall'}
-              </h2>
-              <button
-                onClick={handleCancelForm}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="h-6 w-6" />
-              </button>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-teal-700 p-6 sticky top-0 flex justify-between text-white">
+              <h2 className="text-xl font-bold">➕ Add New Hall</h2>
+              <button onClick={handleCancelForm}><X /></button>
             </div>
-            
-            <ReusableForm
-              fields={formFields}
-              onSubmit={handleFormSubmit}
-              submitLabel={editingHall ? "Update Hall" : "Create Hall"}
-              cancelLabel="Cancel"
-              onCancel={handleCancelForm}
-            />
+            <form onSubmit={handleFormSubmit} className="p-6 space-y-6">
+              <div><label>Hall Name *</label><input type="text" value={formName} onChange={e => setFormName(e.target.value)} className="w-full p-2 border rounded-lg" required /></div>
+              <div><label>Features (comma separated)</label><input type="text" value={formFeatures} onChange={e => setFormFeatures(e.target.value)} className="w-full p-2 border rounded-lg" /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label>Layout</label><select value={formSeatingLayout} onChange={e => setFormSeatingLayout(e.target.value)} className="w-full p-2 border rounded-lg"><option>Standard</option><option>Compact</option><option>Premium</option></select></div>
+                <div><label>Price Multiplier</label><input type="number" step="0.1" value={formPriceMultiplier} onChange={e => setFormPriceMultiplier(parseFloat(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+                <div><label>Rows</label><input type="number" value={formRows} onChange={e => setFormRows(parseInt(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+                <div><label>Columns</label><input type="number" value={formColumns} onChange={e => setFormColumns(parseInt(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+              </div>
+
+              {/* Dynamic Seat Types */}
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-lg font-semibold">Seat Types (Name & Count)</h3>
+                  <ReusableButton onClick={addFormSeatType} variant="primary" size="sm" icon={Plus}>Add Type</ReusableButton>
+                </div>
+                <div className="space-y-3">
+                  {formSeatTypes.map(st => (
+                    <div key={st.id} className="flex gap-3 items-center bg-gray-50 p-3 rounded-lg">
+                      <input type="text" placeholder="Seat type name" value={st.name} onChange={e => updateFormSeatType(st.id, 'name', e.target.value)} className="flex-1 p-2 border rounded" />
+                      <input type="number" placeholder="Count" value={st.count} onChange={e => updateFormSeatType(st.id, 'count', e.target.value)} className="w-28 p-2 border rounded" />
+                      <button type="button" onClick={() => removeFormSeatType(st.id)} className="text-red-600"><Trash2 className="h-5 w-5" /></button>
+                    </div>
+                  ))}
+                </div>
+                {formSeatTypes.length === 0 && <p className="text-gray-400 text-center py-2">No seat types added. Click "Add Type" to start.</p>}
+                <div className="mt-3 text-right font-semibold">
+                  Total Capacity: {calculateTotalCapacity(formSeatTypes)}
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <ReusableButton type="button" variant="outline" onClick={handleCancelForm}>Cancel</ReusableButton>
+                <ReusableButton type="submit" variant="primary">Create Hall</ReusableButton>
+              </div>
+            </form>
           </div>
         </div>
       )}
 
-      {/* Seating Layout Modal with ReusableButton white text */}
-      {showSeatingModal && selectedHall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                🪑 Seating Layout - {selectedHall.name}
-              </h2>
-              <button
-                onClick={() => setShowSeatingModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
+      {/* Details / Edit Modal – Deep Teal header for both view and edit modes */}
+      {showDetailsModal && selectedHall && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header always deep teal */}
+            <div className="bg-teal-700 p-6 sticky top-0 flex justify-between text-white">
+              <h2 className="text-xl font-bold">{isEditing ? '✏️ Edit Hall' : '📋 Hall Details'}</h2>
+              <button onClick={() => setShowDetailsModal(false)}><X /></button>
             </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Layout Type
-                </label>
-                <select
-                  value={seatingData.layoutType}
-                  onChange={(e) => setSeatingData({ ...seatingData, layoutType: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Standard">Standard</option>
-                  <option value="Premium">Premium</option>
-                  <option value="Compact">Compact</option>
-                  <option value="VIP">VIP</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Rows
-                </label>
-                <input
-                  type="number"
-                  value={seatingData.rows}
-                  onChange={(e) => setSeatingData({ ...seatingData, rows: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
-                  max="50"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Number of Columns
-                </label>
-                <input
-                  type="number"
-                  value={seatingData.columns}
-                  onChange={(e) => setSeatingData({ ...seatingData, columns: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  min="1"
-                  max="30"
-                />
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm font-medium text-blue-800">
-                  Total Seats: {seatingData.rows * seatingData.columns}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <ReusableButton
-                onClick={handleSaveSeatingLayout}
-                variant="success"
-                className="text-white font-medium"
-              >
-                Save Layout
-              </ReusableButton>
-              <ReusableButton
-                onClick={() => setShowSeatingModal(false)}
-                variant="secondary"
-                className="text-white font-medium"
-              >
-                Cancel
-              </ReusableButton>
-            </div>
-          </div>
-        </div>
-      )}
+            <div className="p-6 space-y-6">
+              {!isEditing ? (
+                // View Mode – shows all seat types with counts (Status line removed)
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><strong>Name:</strong> {selectedHall.name}</div>
+                    <div><strong>Total Capacity:</strong> {calculateTotalCapacity(selectedHall.seatTypes)}</div>
+                    <div><strong>Price Multiplier:</strong> {selectedHall.priceMultiplier}x</div>
+                    <div><strong>Layout:</strong> {selectedHall.seatingLayout} ({selectedHall.rows}×{selectedHall.columns})</div>
+                    <div><strong>Features:</strong> {selectedHall.features.join(', ')}</div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">Seat Types Breakdown</h3>
+                    <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                      {selectedHall.seatTypes.map(st => (
+                        <div key={st.id} className="flex justify-between items-center border-b last:border-0 py-2">
+                          <span className="font-medium">{st.name}</span>
+                          <span>{st.count} seats</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                // Edit Mode – dynamic list of seat types (Status field removed)
+                <div className="space-y-6">
+                  <div><label>Hall Name *</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="w-full p-2 border rounded-lg" /></div>
+                  <div><label>Features (comma separated)</label><input type="text" value={editFeatures} onChange={e => setEditFeatures(e.target.value)} className="w-full p-2 border rounded-lg" /></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><label>Layout</label><select value={editSeatingLayout} onChange={e => setEditSeatingLayout(e.target.value)} className="w-full p-2 border rounded-lg"><option>Standard</option><option>Compact</option><option>Premium</option></select></div>
+                    <div><label>Price Multiplier</label><input type="number" step="0.1" value={editPriceMultiplier} onChange={e => setEditPriceMultiplier(parseFloat(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+                    <div><label>Rows</label><input type="number" value={editRows} onChange={e => setEditRows(parseInt(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+                    <div><label>Columns</label><input type="number" value={editColumns} onChange={e => setEditColumns(parseInt(e.target.value))} className="w-full p-2 border rounded-lg" /></div>
+                  </div>
 
-      {/* Settings Modal with ReusableButton white text */}
-      {showSettingsModal && selectedHall && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                ⚙️ Hall Settings - {selectedHall.name}
-              </h2>
-              <button
-                onClick={() => setShowSettingsModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="h-6 w-6" />
-              </button>
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-lg font-semibold">Seat Types (Name & Count)</h3>
+                      <ReusableButton onClick={addEditSeatType} variant="primary" size="sm" icon={Plus}>Add Type</ReusableButton>
+                    </div>
+                    <div className="space-y-3">
+                      {editSeatTypes.map(st => (
+                        <div key={st.id} className="flex gap-3 items-center bg-gray-50 p-3 rounded-lg">
+                          <input type="text" placeholder="Seat type name" value={st.name} onChange={e => updateEditSeatType(st.id, 'name', e.target.value)} className="flex-1 p-2 border rounded" />
+                          <input type="number" placeholder="Count" value={st.count} onChange={e => updateEditSeatType(st.id, 'count', e.target.value)} className="w-28 p-2 border rounded" />
+                          <button type="button" onClick={() => removeEditSeatType(st.id)} className="text-red-600"><Trash2 className="h-5 w-5" /></button>
+                        </div>
+                      ))}
+                    </div>
+                    {editSeatTypes.length === 0 && <p className="text-gray-400 text-center py-2">No seat types. Click "Add Type" to add.</p>}
+                    <div className="mt-3 text-right font-semibold">
+                      Total Capacity: {calculateTotalCapacity(editSeatTypes)}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Price Multiplier
-                </label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={settingsData.priceMultiplier}
-                  onChange={(e) => setSettingsData({ ...settingsData, priceMultiplier: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Amenities</label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={settingsData.hasProjector}
-                    onChange={(e) => setSettingsData({ ...settingsData, hasProjector: e.target.checked })}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700">Projector</span>
-                </label>
-                
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={settingsData.hasSoundSystem}
-                    onChange={(e) => setSettingsData({ ...settingsData, hasSoundSystem: e.target.checked })}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700">Sound System</span>
-                </label>
-                
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={settingsData.hasAirConditioning}
-                    onChange={(e) => setSettingsData({ ...settingsData, hasAirConditioning: e.target.checked })}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-700">Air Conditioning</span>
-                </label>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Accessibility Features
-                </label>
-                <textarea
-                  value={settingsData.accessibilityFeatures}
-                  onChange={(e) => setSettingsData({ ...settingsData, accessibilityFeatures: e.target.value })}
-                  placeholder="e.g., Wheelchair access, Hearing assistance"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
-            </div>
-            
-            <div className="flex gap-3 mt-6">
-              <ReusableButton
-                onClick={handleSaveSettings}
-                variant="success"
-                className="text-white font-medium"
-              >
-                Save Settings
-              </ReusableButton>
-              <ReusableButton
-                onClick={() => setShowSettingsModal(false)}
-                variant="secondary"
-                className="text-white font-medium text-font"
-              >
-                Cancel
-              </ReusableButton>
+            <div className="border-t p-6 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+              {!isEditing ? (
+                <>
+                  <ReusableButton variant="secondary" onClick={() => setShowDetailsModal(false)}>Close</ReusableButton>
+                  <ReusableButton variant="primary" onClick={handleEditInModal} icon={Edit}>Edit Hall</ReusableButton>
+                </>
+              ) : (
+                <>
+                  <ReusableButton variant="secondary" onClick={handleCancelEdit}>Cancel</ReusableButton>
+                  <ReusableButton variant="success" onClick={handleSaveEdit} icon={Save}>Save Changes</ReusableButton>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Success Popup */}
-      <SuccessPopup
-        message={successMessage}
-        isVisible={showSuccess}
-        onClose={() => setShowSuccess(false)}
-      />
+      <SuccessPopup message={successMessage} isVisible={showSuccess} onClose={() => setShowSuccess(false)} />
     </div>
   );
 };
