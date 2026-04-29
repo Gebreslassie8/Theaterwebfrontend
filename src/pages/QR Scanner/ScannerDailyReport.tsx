@@ -1,319 +1,331 @@
-// src/pages/scanner/ScannerDailyReport.tsx
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+// src/pages/QR Scanner/ScannerDailyReport.tsx
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-    ArrowLeft,
-    FileText,
-    Send,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    Clock,
-    Calendar,
-    Users,
-    Ticket,
-    DollarSign,
-    TrendingUp,
-    TrendingDown,
-    Download,
-    Printer,
-    RefreshCw,
-    Eye,
-    Edit,
-    Trash2,
-    Plus,
-    Minus,
-    Upload,
-    Camera,
     QrCode,
     Scan,
-    UserCheck,
-    UserX,
-    MapPin,
-    CreditCard,
-    Smartphone,
-    Landmark,
-    Wallet,
+    CheckCircle,
+    XCircle,
+    Clock,
+    AlertTriangle,
+    Activity,
+    Calendar,
+    TrendingUp,
+    ArrowRight,
+    Users,
+    Ticket,
+    BarChart3,
+    Download,
     Filter,
+    X,
     Search,
     Info,
-    Share2,
-    Copy,
-    Mail,
-    MessageCircle,
-    Settings,
+    ArrowLeft,
+    PieChart as PieChartIcon,
+    TrendingDown,
     Award,
-    Crown,
     Star,
-    Target,
-    Percent,
-    Activity,
-    Zap,
-    Shield,
-    Bell,
-    AlertTriangle,
-    ThumbsUp,
-    ThumbsDown,
-    Flag,
-    HelpCircle
+    Crown,
+    Eye,
+    Printer,
+    FileText,
+    RefreshCw,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
+import {
+    AreaChart,
+    Area,
+    PieChart,
+    Pie,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer,
+    Cell,
+    LineChart,
+    Line,
+    BarChart,
+    Bar,
+    Legend,
+    ComposedChart
+} from 'recharts';
+import { Link as RouterLink } from 'react-router-dom';
 import ReusableButton from '../../components/Reusable/ReusableButton';
-import ReusableForm from '../../components/Reusable/ReusableForm';
+import ReusableTable from '../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../components/Reusable/SuccessPopup';
-import * as Yup from 'yup';
 
 // Types
-interface DailyReportData {
-    id: string;
-    scannerId: string;
-    scannerName: string;
-    gateNumber: string;
-    date: string;
-    submittedAt: string;
-    status: 'draft' | 'submitted' | 'approved' | 'rejected';
-
-    // Entry Statistics
-    totalScanned: number;
-    validEntries: number;
-    invalidEntries: number;
-    duplicateAttempts: number;
-    vipEntries: number;
-    groupEntries: number;
-    regularEntries: number;
-
-    // Time Statistics
-    peakHour: string;
-    peakHourCount: number;
-    averageScanTime: number;
-    slowestHour: string;
-    fastestHour: string;
-
-    // Issues & Notes
-    technicalIssues: string[];
-    customerIssues: string[];
-    suggestions: string[];
-    additionalNotes: string;
-
-    // Attachments
-    attachments?: string[];
-
-    // Approval
-    approvedBy?: string;
-    approvedAt?: string;
-    rejectionReason?: string;
-}
-
-interface ReportSummary {
-    reportsSent: number;
-    approved: number;
-    rejected: number;
-    pending: number;
-    totalScans: number;
-}
-
-// Mock Data
-const mockDailyReport: DailyReportData = {
-    id: 'RPT-001',
-    scannerId: 'SCN-001',
-    scannerName: 'John Scanner',
-    gateNumber: 'Gate A',
-    date: new Date().toISOString().split('T')[0],
-    submittedAt: new Date().toISOString(),
-    status: 'draft',
-    totalScanned: 342,
-    validEntries: 328,
-    invalidEntries: 8,
-    duplicateAttempts: 6,
-    vipEntries: 45,
-    groupEntries: 89,
-    regularEntries: 194,
-    peakHour: '7:00 PM',
-    peakHourCount: 67,
-    averageScanTime: 4.2,
-    slowestHour: '8:00 PM',
-    fastestHour: '10:00 AM',
-    technicalIssues: ['Scanner lag at 7:30 PM', 'QR code reader failed twice'],
-    customerIssues: ['2 customers had invalid tickets', '1 customer arrived late'],
-    suggestions: ['Add more staff during peak hours', 'Improve lighting at gate'],
-    additionalNotes: 'Overall smooth operation today.',
-};
-
-// Validation Schema
-const DailyReportSchema = Yup.object({
-    totalScanned: Yup.number().required('Total scanned is required').min(0, 'Must be 0 or greater'),
-    validEntries: Yup.number().required('Valid entries is required').min(0, 'Must be 0 or greater'),
-    invalidEntries: Yup.number().required('Invalid entries is required').min(0, 'Must be 0 or greater'),
-    duplicateAttempts: Yup.number().required('Duplicate attempts is required').min(0, 'Must be 0 or greater'),
-    vipEntries: Yup.number().min(0, 'Must be 0 or greater'),
-    groupEntries: Yup.number().min(0, 'Must be 0 or greater'),
-    regularEntries: Yup.number().min(0, 'Must be 0 or greater'),
-    peakHour: Yup.string(),
-    averageScanTime: Yup.number().min(0, 'Must be 0 or greater'),
-    additionalNotes: Yup.string().max(500, 'Notes cannot exceed 500 characters'),
-});
-
-// Stat Card Component
 interface StatCardProps {
     title: string;
     value: string | number;
     icon: React.ElementType;
     color: string;
-    trend?: number;
+    delay: number;
+    change?: string;
+    trend?: 'up' | 'down';
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, trend }) => {
+interface ScanRecord {
+    id: number;
+    ticketNumber: string;
+    eventName: string;
+    scanTime: Date;
+    gate: string;
+    status: 'valid' | 'invalid' | 'duplicate';
+    scannerId: string;
+    customerName: string;
+    seatInfo: string;
+}
+
+interface DailyStats {
+    date: string;
+    total: number;
+    valid: number;
+    invalid: number;
+    duplicate: number;
+    uniqueVisitors: number;
+}
+
+interface HourlyStats {
+    hour: string;
+    scans: number;
+    valid: number;
+    invalid: number;
+}
+
+interface GatePerformance {
+    gate: string;
+    scans: number;
+    valid: number;
+    invalid: number;
+    avgTimePerScan: number;
+}
+
+// Mock Data - Daily Statistics (Last 7 days)
+const dailyStatsData: DailyStats[] = [
+    { date: '2024-04-22', total: 145, valid: 142, invalid: 2, duplicate: 1, uniqueVisitors: 138 },
+    { date: '2024-04-23', total: 168, valid: 165, invalid: 2, duplicate: 1, uniqueVisitors: 160 },
+    { date: '2024-04-24', total: 189, valid: 186, invalid: 2, duplicate: 1, uniqueVisitors: 182 },
+    { date: '2024-04-25', total: 201, valid: 198, invalid: 2, duplicate: 1, uniqueVisitors: 195 },
+    { date: '2024-04-26', total: 234, valid: 230, invalid: 3, duplicate: 1, uniqueVisitors: 225 },
+    { date: '2024-04-27', total: 256, valid: 252, invalid: 3, duplicate: 1, uniqueVisitors: 248 },
+    { date: '2024-04-28', total: 289, valid: 285, invalid: 3, duplicate: 1, uniqueVisitors: 278 },
+];
+
+// Hourly Statistics (For selected date)
+const hourlyStatsData: HourlyStats[] = [
+    { hour: '10:00', scans: 12, valid: 12, invalid: 0 },
+    { hour: '11:00', scans: 18, valid: 18, invalid: 0 },
+    { hour: '12:00', scans: 25, valid: 24, invalid: 1 },
+    { hour: '13:00', scans: 32, valid: 31, invalid: 1 },
+    { hour: '14:00', scans: 28, valid: 28, invalid: 0 },
+    { hour: '15:00', scans: 35, valid: 34, invalid: 1 },
+    { hour: '16:00', scans: 42, valid: 41, invalid: 1 },
+    { hour: '17:00', scans: 38, valid: 38, invalid: 0 },
+    { hour: '18:00', scans: 45, valid: 44, invalid: 1 },
+    { hour: '19:00', scans: 52, valid: 51, invalid: 1 },
+    { hour: '20:00', scans: 48, valid: 47, invalid: 1 },
+    { hour: '21:00', scans: 35, valid: 35, invalid: 0 },
+];
+
+// Gate Performance Data
+const gatePerformanceData: GatePerformance[] = [
+    { gate: 'Gate A', scans: 456, valid: 448, invalid: 5, avgTimePerScan: 3.2 },
+    { gate: 'Gate B', scans: 389, valid: 382, invalid: 4, avgTimePerScan: 3.5 },
+    { gate: 'Gate C', scans: 412, valid: 405, invalid: 4, avgTimePerScan: 3.0 },
+    { gate: 'Gate D', scans: 234, valid: 230, invalid: 2, avgTimePerScan: 3.8 },
+];
+
+// Recent Scan Records
+const recentScans: ScanRecord[] = [
+    { id: 1, ticketNumber: 'TKT-2024-001', eventName: 'The Lion King', scanTime: new Date(2024, 3, 28, 19, 23), gate: 'Gate A', status: 'valid', scannerId: 'SCN-001', customerName: 'John Smith', seatInfo: 'A12' },
+    { id: 2, ticketNumber: 'TKT-2024-002', eventName: 'Hamilton', scanTime: new Date(2024, 3, 28, 19, 15), gate: 'Gate A', status: 'valid', scannerId: 'SCN-001', customerName: 'Sarah Johnson', seatInfo: 'B5' },
+    { id: 3, ticketNumber: 'TKT-2024-003', eventName: 'Wicked', scanTime: new Date(2024, 3, 28, 18, 55), gate: 'Gate B', status: 'invalid', scannerId: 'SCN-002', customerName: 'Michael Brown', seatInfo: 'C8' },
+    { id: 4, ticketNumber: 'TKT-2024-004', eventName: 'Phantom', scanTime: new Date(2024, 3, 28, 19, 45), gate: 'Gate A', status: 'valid', scannerId: 'SCN-001', customerName: 'Emily Davis', seatInfo: 'D3' },
+    { id: 5, ticketNumber: 'TKT-2024-005', eventName: 'Chicago', scanTime: new Date(2024, 3, 28, 18, 30), gate: 'Gate C', status: 'valid', scannerId: 'SCN-003', customerName: 'David Wilson', seatInfo: 'E7' },
+    { id: 6, ticketNumber: 'TKT-2024-006', eventName: 'Lion King', scanTime: new Date(2024, 3, 28, 19, 10), gate: 'Gate A', status: 'duplicate', scannerId: 'SCN-001', customerName: 'Lisa Anderson', seatInfo: 'F2' },
+    { id: 7, ticketNumber: 'TKT-2024-007', eventName: 'Les Misérables', scanTime: new Date(2024, 3, 28, 18, 45), gate: 'Gate B', status: 'valid', scannerId: 'SCN-002', customerName: 'Robert Taylor', seatInfo: 'G9' },
+    { id: 8, ticketNumber: 'TKT-2024-008', eventName: 'Hamilton', scanTime: new Date(2024, 3, 28, 19, 30), gate: 'Gate C', status: 'invalid', scannerId: 'SCN-003', customerName: 'Maria Garcia', seatInfo: 'H4' },
+];
+
+// Stat Card Component
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, change, trend }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ delay, type: "spring", stiffness: 100 }}
             whileHover={{ y: -2 }}
+            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="bg-white rounded-xl p-5 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
         >
-            <div className="flex items-center justify-between">
-                <div>
-                    <p className="text-sm text-gray-500 mb-1">{title}</p>
-                    <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
-                    {trend && (
-                        <div className={`flex items-center gap-1 text-xs mt-2 ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {trend > 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                            <span>{Math.abs(trend)}% from last period</span>
+            <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
+                    <Icon className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                    <p className="text-xs text-gray-500">{title}</p>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                    {change && (
+                        <div className={`flex items-center gap-1 text-xs mt-0.5 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                            {trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+                            <span>{change}</span>
                         </div>
                     )}
-                </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-110' : ''}`}>
-                    <Icon className="h-6 w-6 text-white" />
                 </div>
             </div>
         </motion.div>
     );
 };
 
+// Custom Tooltip for Charts
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white rounded-lg shadow-lg p-3 border border-gray-200">
+                <p className="text-xs font-semibold text-gray-900 mb-1">{label}</p>
+                {payload.map((entry: any, index: number) => (
+                    <p key={index} className="text-xs" style={{ color: entry.color }}>
+                        {entry.name}: {entry.value}
+                    </p>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
+// Colors for charts
+const COLORS = ['#10B981', '#EF4444', '#F59E0B', '#8B5CF6', '#3B82F6'];
+
 const ScannerDailyReport: React.FC = () => {
     const navigate = useNavigate();
-    const [report, setReport] = useState<DailyReportData>(mockDailyReport);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [showDatePicker, setShowDatePicker] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showPreview, setShowPreview] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<string>('2024-04-28');
+    const [selectedView, setSelectedView] = useState<'daily' | 'hourly' | 'gates'>('daily');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [filterStatus, setFilterStatus] = useState<string>('all');
+    const [filterGate, setFilterGate] = useState<string>('all');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
 
-    // Report summary for the scanner - Updated values
-    const [reportSummary] = useState<ReportSummary>({
-        reportsSent: 10,
-        approved: 8,
-        rejected: 2,
-        pending: 3,
-        totalScans: 4580,
-    });
+    // Calculate Summary Statistics
+    const totalScans = dailyStatsData.reduce((sum, day) => sum + day.total, 0);
+    const totalValid = dailyStatsData.reduce((sum, day) => sum + day.valid, 0);
+    const totalInvalid = dailyStatsData.reduce((sum, day) => sum + day.invalid, 0);
+    const totalDuplicate = dailyStatsData.reduce((sum, day) => sum + day.duplicate, 0);
+    const totalUniqueVisitors = dailyStatsData.reduce((sum, day) => sum + day.uniqueVisitors, 0);
+    const avgDailyScans = Math.round(totalScans / dailyStatsData.length);
+    const validityRate = ((totalValid / totalScans) * 100).toFixed(1);
 
-    const handleInputChange = (field: keyof DailyReportData, value: any) => {
-        setReport(prev => ({ ...prev, [field]: value }));
-    };
+    // Get selected date data
+    const selectedDateData = dailyStatsData.find(d => d.date === selectedDate);
 
-    const addIssue = (type: 'technical' | 'customer' | 'suggestion') => {
-        const issue = prompt(`Enter ${type} issue:`);
-        if (issue) {
-            setReport(prev => ({
-                ...prev,
-                [type === 'technical' ? 'technicalIssues' : type === 'customer' ? 'customerIssues' : 'suggestions']:
-                    [...prev[type === 'technical' ? 'technicalIssues' : type === 'customer' ? 'customerIssues' : 'suggestions'], issue]
-            }));
-        }
-    };
+    // Filter recent scans
+    const filteredScans = useMemo(() => {
+        let filtered = [...recentScans];
 
-    const removeIssue = (type: 'technical' | 'customer' | 'suggestion', index: number) => {
-        setReport(prev => ({
-            ...prev,
-            [type === 'technical' ? 'technicalIssues' : type === 'customer' ? 'customerIssues' : 'suggestions']:
-                prev[type === 'technical' ? 'technicalIssues' : type === 'customer' ? 'customerIssues' : 'suggestions'].filter((_, i) => i !== index)
-        }));
-    };
-
-    const handleSubmitReport = async () => {
-        setIsSubmitting(true);
-
-        // Validate required fields
-        if (!report.totalScanned || !report.validEntries) {
-            setPopupMessage({
-                title: 'Validation Error',
-                message: 'Please fill in all required fields',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            setIsSubmitting(false);
-            return;
+        if (searchTerm) {
+            const query = searchTerm.toLowerCase();
+            filtered = filtered.filter(scan =>
+                scan.ticketNumber.toLowerCase().includes(query) ||
+                scan.eventName.toLowerCase().includes(query) ||
+                scan.customerName.toLowerCase().includes(query)
+            );
         }
 
-        // Simulate API call
-        setTimeout(() => {
-            setReport(prev => ({
-                ...prev,
-                status: 'submitted',
-                submittedAt: new Date().toISOString()
-            }));
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(scan => scan.status === filterStatus);
+        }
 
-            setPopupMessage({
-                title: 'Report Submitted!',
-                message: 'Your daily report has been sent to the owner/manager for review.',
-                type: 'success'
-            });
-            setShowSuccessPopup(true);
-            setIsSubmitting(false);
-            setShowPreview(false);
-        }, 2000);
-    };
+        if (filterGate !== 'all') {
+            filtered = filtered.filter(scan => scan.gate === filterGate);
+        }
 
-    const handleSaveDraft = () => {
-        setReport(prev => ({ ...prev, status: 'draft' }));
+        return filtered;
+    }, [recentScans, searchTerm, filterStatus, filterGate]);
+
+    const clearFilters = () => {
+        setSearchTerm('');
+        setFilterStatus('all');
+        setFilterGate('all');
         setPopupMessage({
-            title: 'Draft Saved',
-            message: 'Your report has been saved as a draft.',
+            title: 'Filters Cleared',
+            message: 'All filters have been reset',
             type: 'success'
         });
         setShowSuccessPopup(true);
     };
 
-    const handleExportPDF = () => {
+    const exportReport = () => {
+        const reportData = {
+            generatedAt: new Date().toISOString(),
+            summary: {
+                totalScans,
+                totalValid,
+                totalInvalid,
+                totalDuplicate,
+                totalUniqueVisitors,
+                avgDailyScans,
+                validityRate: `${validityRate}%`
+            },
+            dailyStats: dailyStatsData,
+            gatePerformance: gatePerformanceData,
+            recentScans: recentScans
+        };
+
+        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `daily-report-${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+
         setPopupMessage({
-            title: 'Export Started',
-            message: 'Preparing PDF export...',
+            title: 'Report Exported',
+            message: 'Daily report has been exported successfully',
             type: 'success'
         });
         setShowSuccessPopup(true);
     };
 
-    const handlePrint = () => {
+    const printReport = () => {
         window.print();
-        setPopupMessage({
-            title: 'Print Started',
-            message: 'Preparing report for printing...',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
     };
 
-    const calculateValidationRate = () => {
-        return ((report.validEntries / report.totalScanned) * 100).toFixed(1);
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'submitted':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3" /> Submitted</span>;
-            case 'approved':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Approved</span>;
-            case 'rejected':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Rejected</span>;
-            default:
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"><FileText className="h-3 w-3" /> Draft</span>;
+    // Scan History Columns
+    const historyColumns = [
+        { Header: 'Ticket Number', accessor: 'ticketNumber', Cell: (row: ScanRecord) => <span className="font-mono text-sm">{row.ticketNumber}</span> },
+        { Header: 'Customer', accessor: 'customerName' },
+        { Header: 'Event', accessor: 'eventName' },
+        { Header: 'Seat', accessor: 'seatInfo' },
+        { Header: 'Gate', accessor: 'gate' },
+        { Header: 'Time', accessor: 'scanTime', Cell: (row: ScanRecord) => row.scanTime.toLocaleTimeString() },
+        {
+            Header: 'Status', accessor: 'status', Cell: (row: ScanRecord) => {
+                switch (row.status) {
+                    case 'valid': return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Valid</span>;
+                    case 'invalid': return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Invalid</span>;
+                    case 'duplicate': return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><AlertTriangle className="h-3 w-3" /> Duplicate</span>;
+                    default: return null;
+                }
+            }
         }
-    };
+    ];
+
+    // Summary Cards
+    const summaryCards = [
+        { title: "Total Scans", value: totalScans.toLocaleString(), icon: Scan, color: "from-teal-500 to-emerald-600", delay: 0.1, change: `+${avgDailyScans} avg/day`, trend: 'up' as const },
+        { title: "Valid Entries", value: totalValid.toLocaleString(), icon: CheckCircle, color: "from-green-500 to-emerald-600", delay: 0.15, change: `${validityRate}% rate`, trend: 'up' as const },
+        { title: "Invalid/Rejected", value: (totalInvalid + totalDuplicate).toLocaleString(), icon: XCircle, color: "from-red-500 to-pink-600", delay: 0.2, change: `${totalInvalid} invalid, ${totalDuplicate} dup`, trend: 'down' as const },
+        { title: "Unique Visitors", value: totalUniqueVisitors.toLocaleString(), icon: Users, color: "from-purple-500 to-indigo-600", delay: 0.25, change: `${((totalUniqueVisitors / totalScans) * 100).toFixed(1)}% rate`, trend: 'up' as const },
+    ];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
@@ -329,505 +341,325 @@ const ScannerDailyReport: React.FC = () => {
                                 <ArrowLeft className="h-5 w-5 text-gray-600" />
                             </button>
                             <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
-                                <FileText className="h-6 w-6 text-white" />
+                                <BarChart3 className="h-6 w-6 text-white" />
                             </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Daily Report Submission</h1>
-                                <p className="text-sm text-gray-500">Submit your daily scanning report to owners/managers</p>
+                                <h1 className="text-2xl font-bold text-gray-900">Daily Scan Report</h1>
+                                <p className="text-sm text-gray-500">Comprehensive analytics of ticket scans and entries</p>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={handleExportPDF}
-                                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                            >
-                                <Download className="h-4 w-4" />
-                                PDF
-                            </button>
-                            <button
-                                onClick={handlePrint}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                            >
-                                <Printer className="h-4 w-4" />
-                                Print
-                            </button>
-                            <button
-                                onClick={() => setShowPreview(!showPreview)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                            >
-                                <Eye className="h-4 w-4" />
-                                Preview
-                            </button>
+                        <div className="flex gap-3">
+                            <ReusableButton
+                                onClick={exportReport}
+                                icon={Download}
+                                label="Export Report"
+                                variant="secondary"
+                                className="print:hidden"
+                            />
+                            <ReusableButton
+                                onClick={printReport}
+                                icon={Printer}
+                                label="Print"
+                                variant="secondary"
+                                className="print:hidden"
+                            />
                         </div>
                     </div>
                 </div>
 
-                {/* Report Summary Stats - Admin Dashboard Style */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-                    <StatCard
-                        title="Reports Sent"
-                        value={reportSummary.reportsSent}
-                        icon={Send}
-                        color="from-teal-500 to-emerald-600"
-                        trend={12}
-                    />
-                    <StatCard
-                        title="Approved"
-                        value={reportSummary.approved}
-                        icon={CheckCircle}
-                        color="from-green-500 to-emerald-600"
-                        trend={8}
-                    />
-                    <StatCard
-                        title="Rejected"
-                        value={reportSummary.rejected}
-                        icon={XCircle}
-                        color="from-red-500 to-pink-600"
-                        trend={-5}
-                    />
-                    <StatCard
-                        title="Pending"
-                        value={reportSummary.pending}
-                        icon={Clock}
-                        color="from-yellow-500 to-orange-600"
-                    />
-                    <StatCard
-                        title="Total Scans"
-                        value={reportSummary.totalScans}
-                        icon={Scan}
-                        color="from-purple-500 to-indigo-600"
-                        trend={15}
-                    />
+                {/* Summary Cards */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8"
+                >
+                    {summaryCards.map((card, index) => (
+                        <StatCard
+                            key={index}
+                            title={card.title}
+                            value={card.value}
+                            icon={card.icon}
+                            color={card.color}
+                            delay={card.delay}
+                            change={card.change}
+                            trend={card.trend}
+                        />
+                    ))}
+                </motion.div>
+
+                {/* View Selector */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div className="flex gap-2 bg-gray-100 rounded-xl p-1">
+                        <button
+                            onClick={() => setSelectedView('daily')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedView === 'daily'
+                                    ? 'bg-white text-teal-600 shadow-md'
+                                    : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                        >
+                            Daily Statistics
+                        </button>
+                        <button
+                            onClick={() => setSelectedView('hourly')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedView === 'hourly'
+                                    ? 'bg-white text-teal-600 shadow-md'
+                                    : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                        >
+                            Hourly Analysis
+                        </button>
+                        <button
+                            onClick={() => setSelectedView('gates')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${selectedView === 'gates'
+                                    ? 'bg-white text-teal-600 shadow-md'
+                                    : 'text-gray-600 hover:text-gray-900'
+                                }`}
+                        >
+                            Gate Performance
+                        </button>
+                    </div>
+
+                    {selectedView === 'daily' && (
+                        <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">
+                                {dailyStatsData.length} Days Report ({dailyStatsData[0]?.date} - {dailyStatsData[dailyStatsData.length - 1]?.date})
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                {/* Date Selector */}
-                <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-6">
-                    <div className="flex items-center gap-3">
-                        <Calendar className="h-5 w-5 text-teal-600" />
-                        <span className="text-sm font-medium text-gray-700">Report Date:</span>
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowDatePicker(!showDatePicker)}
-                                className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-                            >
-                                <Calendar className="h-4 w-4" />
-                                {new Date(selectedDate).toLocaleDateString('en-US', {
-                                    year: 'numeric',
-                                    month: 'long',
-                                    day: 'numeric'
-                                })}
-                            </button>
-                            {showDatePicker && (
-                                <div className="absolute top-full mt-2 left-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4">
-                                    <input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={(e) => {
-                                            setSelectedDate(e.target.value);
-                                            setShowDatePicker(false);
-                                        }}
-                                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                                    />
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    {/* Daily Statistics Chart */}
+                    {selectedView === 'daily' && (
+                        <>
+                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-gray-900">Daily Scan Trends</h3>
+                                        <p className="text-sm text-gray-500">Last 7 days performance</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <span className="flex items-center gap-1"><div className="w-3 h-3 bg-teal-500 rounded"></div> Total</span>
+                                        <span className="flex items-center gap-1"><div className="w-3 h-3 bg-green-500 rounded"></div> Valid</span>
+                                        <span className="flex items-center gap-1"><div className="w-3 h-3 bg-red-500 rounded"></div> Invalid</span>
+                                    </div>
+                                </div>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <ComposedChart data={dailyStatsData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                                        <YAxis tick={{ fontSize: 11 }} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Bar dataKey="total" fill="#14B8A6" radius={[4, 4, 0, 0]} name="Total Scans" />
+                                        <Bar dataKey="valid" fill="#10B981" radius={[4, 4, 0, 0]} name="Valid" />
+                                        <Bar dataKey="invalid" fill="#EF4444" radius={[4, 4, 0, 0]} name="Invalid" />
+                                        <Line type="monotone" dataKey="uniqueVisitors" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4 }} name="Unique Visitors" />
+                                    </ComposedChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* Validity Rate Pie Chart */}
+                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Validity Rate Distribution</h3>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <PieChart>
+                                        <Pie
+                                            data={[
+                                                { name: 'Valid', value: totalValid, color: '#10B981' },
+                                                { name: 'Invalid', value: totalInvalid, color: '#EF4444' },
+                                                { name: 'Duplicate', value: totalDuplicate, color: '#F59E0B' }
+                                            ]}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={100}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(1)}%`}
+                                            labelLine={true}
+                                        >
+                                            {dailyStatsData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="text-center mt-4">
+                                    <p className="text-sm text-gray-600">
+                                        Overall validity rate: <span className="font-bold text-green-600">{validityRate}%</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Hourly Analysis Chart */}
+                    {selectedView === 'hourly' && (
+                        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 lg:col-span-2">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-semibold text-gray-900">Hourly Scan Distribution</h3>
+                                    <p className="text-sm text-gray-500">Peak hours analysis for selected date</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="date"
+                                            value={selectedDate}
+                                            onChange={(e) => setSelectedDate(e.target.value)}
+                                            className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                            <ResponsiveContainer width="100%" height={350}>
+                                <BarChart data={hourlyStatsData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                    <XAxis dataKey="hour" tick={{ fontSize: 11 }} />
+                                    <YAxis tick={{ fontSize: 11 }} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Legend />
+                                    <Bar dataKey="scans" fill="#14B8A6" name="Total Scans" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="valid" fill="#10B981" name="Valid" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="invalid" fill="#EF4444" name="Invalid" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                            {selectedDateData && (
+                                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-600">Selected Date Summary:</span>
+                                        <span className="font-semibold text-teal-600">{selectedDateData.total} Total Scans</span>
+                                        <span className="font-semibold text-green-600">{selectedDateData.valid} Valid</span>
+                                        <span className="font-semibold text-red-600">{selectedDateData.invalid} Invalid</span>
+                                    </div>
                                 </div>
                             )}
                         </div>
-                        <div className="ml-auto">
-                            {getStatusBadge(report.status)}
-                        </div>
-                    </div>
-                </div>
+                    )}
 
-                {/* Main Form */}
-                {!showPreview ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column - Main Stats */}
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Entry Statistics */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <Ticket className="h-5 w-5 text-teal-600" />
-                                    Entry Statistics
-                                </h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Total Scanned <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.totalScanned}
-                                            onChange={(e) => handleInputChange('totalScanned', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Valid Entries <span className="text-red-500">*</span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.validEntries}
-                                            onChange={(e) => handleInputChange('validEntries', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Invalid Entries
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.invalidEntries}
-                                            onChange={(e) => handleInputChange('invalidEntries', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Duplicate Attempts
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.duplicateAttempts}
-                                            onChange={(e) => handleInputChange('duplicateAttempts', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            VIP Entries
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.vipEntries}
-                                            onChange={(e) => handleInputChange('vipEntries', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Group Entries
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.groupEntries}
-                                            onChange={(e) => handleInputChange('groupEntries', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                </div>
+                    {/* Gate Performance Chart */}
+                    {selectedView === 'gates' && (
+                        <>
+                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Gate Performance Comparison</h3>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <BarChart data={gatePerformanceData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                                        <XAxis dataKey="gate" tick={{ fontSize: 12, fontWeight: 600 }} />
+                                        <YAxis tick={{ fontSize: 11 }} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Legend />
+                                        <Bar dataKey="scans" fill="#14B8A6" name="Total Scans" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="valid" fill="#10B981" name="Valid" radius={[4, 4, 0, 0]} />
+                                        <Bar dataKey="invalid" fill="#EF4444" name="Invalid" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
 
-                            {/* Time Statistics */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Gate Details</h3>
+                                <div className="space-y-4">
+                                    {gatePerformanceData.map((gate, index) => (
+                                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p className="font-semibold text-gray-900">{gate.gate}</p>
+                                                <p className="text-xs text-gray-500">Avg {gate.avgTimePerScan}s per scan</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-medium text-gray-900">{gate.scans} scans</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs text-green-600">{gate.valid} valid</span>
+                                                    <span className="text-xs text-red-600">{gate.invalid} invalid</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+
+                {/* Recent Scans Table */}
+                <div className="mt-8">
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div className="flex items-center gap-2">
                                     <Clock className="h-5 w-5 text-teal-600" />
-                                    Time Statistics
-                                </h2>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Peak Hour
-                                        </label>
+                                    <h2 className="text-lg font-semibold text-gray-900">Recent Scan Activity</h2>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                                         <input
                                             type="text"
-                                            value={report.peakHour}
-                                            onChange={(e) => handleInputChange('peakHour', e.target.value)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="e.g., 7:00 PM"
+                                            placeholder="Search by ticket, event, or customer..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-64"
                                         />
                                     </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Peak Hour Count
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={report.peakHourCount}
-                                            onChange={(e) => handleInputChange('peakHourCount', parseInt(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Average Scan Time (seconds)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.1"
-                                            value={report.averageScanTime}
-                                            onChange={(e) => handleInputChange('averageScanTime', parseFloat(e.target.value) || 0)}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            placeholder="0"
-                                        />
-                                    </div>
+                                    <select
+                                        value={filterStatus}
+                                        onChange={(e) => setFilterStatus(e.target.value)}
+                                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                                    >
+                                        <option value="all">All Status</option>
+                                        <option value="valid">Valid</option>
+                                        <option value="invalid">Invalid</option>
+                                        <option value="duplicate">Duplicate</option>
+                                    </select>
+                                    <select
+                                        value={filterGate}
+                                        onChange={(e) => setFilterGate(e.target.value)}
+                                        className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                                    >
+                                        <option value="all">All Gates</option>
+                                        <option value="Gate A">Gate A</option>
+                                        <option value="Gate B">Gate B</option>
+                                        <option value="Gate C">Gate C</option>
+                                        <option value="Gate D">Gate D</option>
+                                    </select>
+                                    {(searchTerm || filterStatus !== 'all' || filterGate !== 'all') && (
+                                        <button
+                                            onClick={clearFilters}
+                                            className="px-3 py-2 text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
+                                        >
+                                            <X className="h-4 w-4" />
+                                            Clear
+                                        </button>
+                                    )}
                                 </div>
-                            </div>
-
-                            {/* Additional Notes */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <MessageCircle className="h-5 w-5 text-teal-600" />
-                                    Additional Notes
-                                </h2>
-                                <textarea
-                                    value={report.additionalNotes}
-                                    onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
-                                    rows={4}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                    placeholder="Enter any additional notes, observations, or comments..."
-                                />
                             </div>
                         </div>
 
-                        {/* Right Column - Issues & Actions */}
-                        <div className="space-y-6">
-                            {/* Technical Issues */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                        <AlertCircle className="h-5 w-5 text-red-500" />
-                                        Technical Issues
-                                    </h2>
-                                    <button
-                                        onClick={() => addIssue('technical')}
-                                        className="p-1 text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </button>
-                                </div>
-                                {report.technicalIssues.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No technical issues reported</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {report.technicalIssues.map((issue, index) => (
-                                            <div key={index} className="flex items-center justify-between p-2 bg-red-50 rounded-lg">
-                                                <span className="text-sm text-gray-700">{issue}</span>
-                                                <button
-                                                    onClick={() => removeIssue('technical', index)}
-                                                    className="text-red-500 hover:text-red-700"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                        <ReusableTable
+                            columns={historyColumns}
+                            data={filteredScans}
+                            title=""
+                            icon={Scan}
+                            showSearch={false}
+                            showExport={false}
+                            showPrint={false}
+                            itemsPerPage={10}
+                        />
 
-                            {/* Customer Issues */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                        <Users className="h-5 w-5 text-orange-500" />
-                                        Customer Issues
-                                    </h2>
-                                    <button
-                                        onClick={() => addIssue('customer')}
-                                        className="p-1 text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </button>
-                                </div>
-                                {report.customerIssues.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No customer issues reported</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {report.customerIssues.map((issue, index) => (
-                                            <div key={index} className="flex items-center justify-between p-2 bg-orange-50 rounded-lg">
-                                                <span className="text-sm text-gray-700">{issue}</span>
-                                                <button
-                                                    onClick={() => removeIssue('customer', index)}
-                                                    className="text-orange-500 hover:text-orange-700"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Suggestions */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                        <ThumbsUp className="h-5 w-5 text-green-500" />
-                                        Suggestions for Improvement
-                                    </h2>
-                                    <button
-                                        onClick={() => addIssue('suggestion')}
-                                        className="p-1 text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                    >
-                                        <Plus className="h-4 w-4" />
-                                    </button>
-                                </div>
-                                {report.suggestions.length === 0 ? (
-                                    <p className="text-sm text-gray-500">No suggestions yet</p>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {report.suggestions.map((suggestion, index) => (
-                                            <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
-                                                <span className="text-sm text-gray-700">{suggestion}</span>
-                                                <button
-                                                    onClick={() => removeIssue('suggestion', index)}
-                                                    className="text-green-500 hover:text-green-700"
-                                                >
-                                                    <Trash2 className="h-3 w-3" />
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                                <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
-                                <div className="space-y-3">
-                                    <ReusableButton
-                                        onClick={handleSaveDraft}
-                                        icon={FileText}
-                                        label="Save as Draft"
-                                        variant="secondary"
-                                        className="w-full"
-                                    />
-                                    <ReusableButton
-                                        onClick={handleSubmitReport}
-                                        icon={Send}
-                                        label="Submit Report"
-                                        className="w-full bg-gradient-to-r from-teal-600 to-emerald-600"
-                                        loading={isSubmitting}
-                                        disabled={isSubmitting}
-                                    />
-                                </div>
-                            </div>
+                        <div className="px-6 py-3 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
+                            Showing {filteredScans.length} of {recentScans.length} scan records
                         </div>
                     </div>
-                ) : (
-                    /* Preview Mode */
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-xl font-bold text-gray-900">Report Preview</h2>
-                            <button
-                                onClick={() => setShowPreview(false)}
-                                className="text-teal-600 hover:text-teal-700"
-                            >
-                                <Edit className="h-5 w-5" />
-                            </button>
-                        </div>
+                </div>
 
-                        {/* Preview Content */}
-                        <div className="space-y-6">
-                            <div className="border-b pb-4">
-                                <h3 className="font-semibold text-gray-900 mb-2">Report Information</h3>
-                                <p className="text-sm">Date: {new Date(selectedDate).toLocaleDateString()}</p>
-                                <p className="text-sm">Status: {getStatusBadge(report.status)}</p>
-                            </div>
-
-                            <div className="border-b pb-4">
-                                <h3 className="font-semibold text-gray-900 mb-2">Entry Statistics</h3>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <p className="text-sm">Total Scanned: <span className="font-medium">{report.totalScanned}</span></p>
-                                    <p className="text-sm">Valid: <span className="text-green-600 font-medium">{report.validEntries}</span></p>
-                                    <p className="text-sm">Invalid: <span className="text-red-600 font-medium">{report.invalidEntries}</span></p>
-                                    <p className="text-sm">Duplicate: <span className="text-yellow-600 font-medium">{report.duplicateAttempts}</span></p>
-                                    <p className="text-sm">VIP: <span className="text-purple-600 font-medium">{report.vipEntries}</span></p>
-                                    <p className="text-sm">Group: <span className="text-blue-600 font-medium">{report.groupEntries}</span></p>
-                                </div>
-                                <div className="mt-2 p-2 bg-gray-50 rounded-lg">
-                                    <p className="text-sm">Validation Rate: <span className="font-bold text-teal-600">{calculateValidationRate()}%</span></p>
-                                </div>
-                            </div>
-
-                            <div className="border-b pb-4">
-                                <h3 className="font-semibold text-gray-900 mb-2">Time Statistics</h3>
-                                <p className="text-sm">Peak Hour: {report.peakHour} ({report.peakHourCount} entries)</p>
-                                <p className="text-sm">Average Scan Time: {report.averageScanTime} seconds</p>
-                            </div>
-
-                            {report.technicalIssues.length > 0 && (
-                                <div className="border-b pb-4">
-                                    <h3 className="font-semibold text-gray-900 mb-2">Technical Issues</h3>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {report.technicalIssues.map((issue, i) => (
-                                            <li key={i} className="text-sm text-gray-600">{issue}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {report.customerIssues.length > 0 && (
-                                <div className="border-b pb-4">
-                                    <h3 className="font-semibold text-gray-900 mb-2">Customer Issues</h3>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {report.customerIssues.map((issue, i) => (
-                                            <li key={i} className="text-sm text-gray-600">{issue}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {report.suggestions.length > 0 && (
-                                <div className="border-b pb-4">
-                                    <h3 className="font-semibold text-gray-900 mb-2">Suggestions</h3>
-                                    <ul className="list-disc list-inside space-y-1">
-                                        {report.suggestions.map((suggestion, i) => (
-                                            <li key={i} className="text-sm text-gray-600">{suggestion}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {report.additionalNotes && (
-                                <div className="border-b pb-4">
-                                    <h3 className="font-semibold text-gray-900 mb-2">Additional Notes</h3>
-                                    <p className="text-sm text-gray-600">{report.additionalNotes}</p>
-                                </div>
-                            )}
-
-                            <div className="flex gap-3 pt-4">
-                                <ReusableButton
-                                    onClick={() => setShowPreview(false)}
-                                    icon={Edit}
-                                    label="Edit Report"
-                                    variant="secondary"
-                                    className="flex-1"
-                                />
-                                <ReusableButton
-                                    onClick={handleSubmitReport}
-                                    icon={Send}
-                                    label="Submit Report"
-                                    className="flex-1 bg-gradient-to-r from-teal-600 to-emerald-600"
-                                    loading={isSubmitting}
-                                    disabled={isSubmitting}
-                                />
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Tips Card */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                            <p className="text-sm font-medium text-blue-800">Report Submission Tips</p>
-                            <p className="text-xs text-blue-700 mt-1">
-                                • Ensure all required fields (*) are filled before submitting<br />
-                                • Report any technical issues immediately for faster resolution<br />
-                                • Use the "Save as Draft" feature if you need to complete the report later<br />
-                                • Once submitted, reports cannot be edited - please review carefully<br />
-                                • Submitted reports will be reviewed by owners/managers within 24 hours
-                            </p>
-                        </div>
+                {/* Report Footer */}
+                <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200 print:block hidden">
+                    <div className="flex justify-between items-center text-xs text-gray-500">
+                        <span>Report Generated: {new Date().toLocaleString()}</span>
+                        <span>Theatre Hub Ethiopia - Daily Scan Report</span>
+                        <span>Page 1 of 1</span>
                     </div>
                 </div>
 

@@ -332,49 +332,34 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== SCANNER ONLY ====================
       {
-        name: "Scanner",
+        name: "Ticket Validation",
         icon: QrCode,
         color: "from-slate-500 to-gray-500",
         roles: ["scanner"],
         items: [
-          { name: "Dashboard", to: "/scanner/dashboard", icon: LayoutDashboard, color: "text-slate-500" },
-          {
-            name: "Ticket Validation",
-            to: "/scanner/validate",
-            icon: QrCode,
-            color: "text-purple-500",
-            subItems: [
-              { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode }
-            ]
-          },
-          {
-            name: "Customer Check-in",
-            to: "/scanner/checkin",
-            icon: CheckCircle,
-            color: "text-green-500",
-            subItems: [
-              { name: "Customer Check-in", to: "/scanner/checkin", icon: CheckCircle }
+          { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode },
+          { name: "Entry Analaytics", to: "/scanner/stats/entries", icon: Users },
 
-            ]
-          },
-          {
-            name: "Entry Statistics",
-            to: "/scanner/stats",
-            icon: BarChart3,
-            color: "text-emerald-500",
-            subItems: [
-              { name: "Entry Statistics", to: "/scanner/stats/entries", icon: Users }
-            ]
-          },
-          {
-            name: "Gate Management",
-            to: "/scanner/gates",
-            icon: DoorOpen,
-            color: "text-orange-500",
-            subItems: [
-              { name: "Gate Management", to: "/scanner/gates", icon: Activity }
-            ]
-          }
+          // {
+          //   name: "Customer Check-in",
+          //   to: "/scanner/checkin",
+          //   icon: CheckCircle,
+          //   color: "text-green-500",
+          //   subItems: [
+          //     { name: "Customer Check-in", to: "/scanner/checkin", icon: CheckCircle }
+
+          //   ]
+          // },
+
+          // {
+          //   name: "Gate Management",
+          //   to: "/scanner/gates",
+          //   icon: DoorOpen,
+          //   color: "text-orange-500",
+          //   subItems: [
+          //     { name: "Gate Management", to: "/scanner/gates", icon: Activity }
+          //   ]
+          // }
         ]
       }
     ];

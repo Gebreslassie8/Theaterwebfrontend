@@ -51,13 +51,16 @@ import {
     Save,
     Send,
     ArrowRight,
-    AlertTriangle
+    AlertTriangle,
+    Video,
+    VideoOff
 } from 'lucide-react';
 import ReusableButton from '../../components/Reusable/ReusableButton';
 import ReusableTable from '../../components/Reusable/ReusableTable';
 import ReusableForm from '../../components/Reusable/ReusableForm';
 import * as Yup from 'yup';
 import { Link as RouterLink } from 'react-router-dom';
+import jsQR from 'jsqr';
 
 // Types
 interface TicketData {
@@ -284,6 +287,8 @@ const validateQRCode = (qrData: string): { isValid: boolean; message: string; ti
 
 const ScanQRCode: React.FC = () => {
     const navigate = useNavigate();
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const [scanning, setScanning] = useState(false);
     const [showResult, setShowResult] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
@@ -292,27 +297,96 @@ const ScanQRCode: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [cameraActive, setCameraActive] = useState(false);
+    const [cameraError, setCameraError] = useState<string | null>(null);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [stream, setStream] = useState<MediaStream | null>(null);
+    const [isScanningActive, setIsScanningActive] = useState(false);
 
     // Initialize scanned tickets from history
     useEffect(() => {
         scannedTickets = scanHistory.map(h => h.ticketNumber);
     }, [scanHistory]);
 
-    // Camera simulation with QR code validation
+    // Cleanup camera stream on unmount
     useEffect(() => {
-        if (scanning && !cameraActive) {
-            setCameraActive(true);
-            // Simulate scanning a QR code after 3 seconds
-            const timer = setTimeout(() => {
-                // For demo, we'll scan TKT-2024-003 (a valid ticket that hasn't been scanned)
-                const mockQRData = 'TKT-2024-003';
-                handleQRScan(mockQRData);
-            }, 3000);
-            return () => clearTimeout(timer);
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [stream]);
+
+    // Start camera and QR scanning
+    const startCamera = async () => {
+        setCameraError(null);
+        setCameraActive(true);
+
+        try {
+            const mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+
+            setStream(mediaStream);
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = mediaStream;
+                videoRef.current.setAttribute('playsinline', 'true');
+                videoRef.current.play();
+                setIsScanningActive(true);
+                startQRScanning();
+            }
+        } catch (error) {
+            console.error('Camera error:', error);
+            setCameraError('Unable to access camera. Please check permissions.');
+            setCameraActive(false);
+            setScanning(false);
         }
-        return () => { };
-    }, [scanning, cameraActive]);
+    };
+
+    // Stop camera
+    const stopCamera = () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            setStream(null);
+        }
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+        setCameraActive(false);
+        setIsScanningActive(false);
+    };
+
+    // Start QR scanning loop
+    const startQRScanning = () => {
+        if (!videoRef.current || !canvasRef.current) return;
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+
+        const scanInterval = setInterval(() => {
+            if (!isScanningActive || !video.videoWidth || !video.videoHeight) return;
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            if (context) {
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code) {
+                    clearInterval(scanInterval);
+                    handleQRScan(code.data);
+                }
+            }
+        }, 500);
+
+        // Store interval ID for cleanup
+        return () => clearInterval(scanInterval);
+    };
 
     const handleQRScan = (qrData: string) => {
         const validation = validateQRCode(qrData);
@@ -363,6 +437,8 @@ const ScanQRCode: React.FC = () => {
         setShowResult(true);
         setScanning(false);
         setCameraActive(false);
+        setIsScanningActive(false);
+        stopCamera();
     };
 
     const handleManualValidate = async (values: any, { setSubmitting, resetForm }: any) => {
@@ -426,11 +502,13 @@ const ScanQRCode: React.FC = () => {
         setSubmitting(false);
     };
 
-    const startScanning = () => {
+    const startScanning = async () => {
         setScanning(true);
         setShowResult(false);
         setScanResult(null);
         setValidationError(null);
+        setCameraError(null);
+        await startCamera();
     };
 
     const resetScanner = () => {
@@ -440,6 +518,9 @@ const ScanQRCode: React.FC = () => {
         setCameraActive(false);
         setShowManualInput(false);
         setValidationError(null);
+        setCameraError(null);
+        setIsScanningActive(false);
+        stopCamera();
     };
 
     const handleMarkAsUsed = () => {
@@ -564,6 +645,14 @@ const ScanQRCode: React.FC = () => {
                     </div>
                 )}
 
+                {/* Camera Error Display */}
+                {cameraError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 max-w-2xl mx-auto">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <p className="text-sm text-red-700">{cameraError}</p>
+                    </div>
+                )}
+
                 {/* Centered Scanner Section */}
                 <div className="flex flex-col items-center justify-center">
                     {/* Action Buttons - Centered */}
@@ -627,28 +716,36 @@ const ScanQRCode: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Scanner View - Centered */}
-                    {scanning && (
+                    {/* Camera Scanner View - REAL CAMERA */}
+                    {scanning && cameraActive && (
                         <div className="w-full max-w-3xl mx-auto mb-8">
                             <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
                                 <div className="relative bg-gray-900 rounded-2xl overflow-hidden">
-                                    <div className="aspect-video flex items-center justify-center relative">
-                                        <motion.div
-                                            animate={{ scale: [1, 1.05, 1], opacity: [0.5, 1, 0.5] }}
-                                            transition={{ duration: 2, repeat: Infinity }}
-                                            className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20"
+                                    <div className="aspect-video relative">
+                                        <video
+                                            ref={videoRef}
+                                            className="w-full h-full object-cover"
+                                            autoPlay
+                                            playsInline
                                         />
-                                        <motion.div
-                                            animate={{ y: [-100, 100] }}
-                                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                            className="absolute w-full h-0.5 bg-teal-500 shadow-lg shadow-teal-500/50"
-                                        />
-                                        <div className="relative z-10 text-center">
-                                            <div className="w-32 h-32 border-2 border-teal-500 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                                                <Scan className="h-12 w-12 text-teal-500 animate-pulse" />
+                                        <canvas ref={canvasRef} className="hidden" />
+
+                                        {/* Scanning Overlay */}
+                                        <div className="absolute inset-0 pointer-events-none">
+                                            <div className="absolute inset-0 bg-black/50">
+                                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-teal-500 rounded-2xl shadow-lg">
+                                                    <div className="absolute -top-1 -left-1 w-8 h-8 border-t-2 border-l-2 border-teal-500"></div>
+                                                    <div className="absolute -top-1 -right-1 w-8 h-8 border-t-2 border-r-2 border-teal-500"></div>
+                                                    <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-2 border-l-2 border-teal-500"></div>
+                                                    <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-teal-500"></div>
+                                                </div>
                                             </div>
-                                            <p className="text-white font-medium">Scanning QR Code...</p>
-                                            <p className="text-white/60 text-sm mt-1">Position QR code in frame</p>
+                                            <motion.div
+                                                animate={{ y: [-60, 60] }}
+                                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                                className="absolute top-1/2 left-0 right-0 h-0.5 bg-teal-500 shadow-lg shadow-teal-500/50"
+                                                style={{ transform: 'translateY(-50%)' }}
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -656,14 +753,14 @@ const ScanQRCode: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                         <Activity className="h-4 w-4 text-blue-600 animate-pulse" />
                                         <div>
-                                            <p className="text-xs font-medium text-blue-800">Scanner Active</p>
-                                            <p className="text-xs text-blue-600">Camera is ready. Position QR code in the frame.</p>
+                                            <p className="text-xs font-medium text-blue-800">Camera Active</p>
+                                            <p className="text-xs text-blue-600">Position QR code in the frame to scan automatically</p>
                                         </div>
                                         <div className="ml-auto flex items-center gap-2">
-                                            <Wifi className="h-3 w-3 text-blue-600" />
+                                            <Video className="h-3 w-3 text-blue-600" />
+                                            <span className="text-xs text-blue-600">Live</span>
+                                            <Wifi className="h-3 w-3 text-blue-600 ml-2" />
                                             <span className="text-xs text-blue-600">Connected</span>
-                                            <Battery className="h-3 w-3 text-blue-600 ml-2" />
-                                            <span className="text-xs text-blue-600">87%</span>
                                         </div>
                                     </div>
                                 </div>
@@ -671,8 +768,8 @@ const ScanQRCode: React.FC = () => {
                         </div>
                     )}
 
-                    {/* Scanner Instructions - Centered */}
-                    {!scanning && !showResult && !showManualInput && (
+                    {/* Scanner Instructions - When ready but not scanning */}
+                    {!scanning && !showResult && !showManualInput && !cameraActive && (
                         <div className="w-full max-w-2xl mx-auto mb-8">
                             <div className="bg-white rounded-2xl p-12 shadow-lg border border-gray-100 text-center">
                                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -680,7 +777,7 @@ const ScanQRCode: React.FC = () => {
                                 </div>
                                 <p className="text-gray-600 text-lg font-medium mb-2">Ready to scan tickets</p>
                                 <p className="text-sm text-gray-500">
-                                    Click "Scan QR Code" to begin validating tickets
+                                    Click "Scan QR Code" to begin validating tickets using your camera
                                 </p>
                             </div>
                         </div>
@@ -800,7 +897,8 @@ const ScanQRCode: React.FC = () => {
                                 • Ticket must be in format: TKT-YYYY-XXX<br />
                                 • Ticket must exist in the system<br />
                                 • Each ticket can only be scanned ONCE<br />
-                                • Already scanned tickets will be rejected
+                                • Already scanned tickets will be rejected<br />
+                                • Make sure camera permissions are granted
                             </p>
                         </div>
                     </div>

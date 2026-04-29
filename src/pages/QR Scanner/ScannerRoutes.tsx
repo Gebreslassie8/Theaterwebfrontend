@@ -2,7 +2,6 @@
 import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
-import ScannerDashboard from './ScannerDashboard';
 import ScanQRCode from './ScanQRCode';
 import CustomerCheckin from './CustomerCheckin';
 import ScannerDailyReport from './ScannerDailyReport';
@@ -37,7 +36,6 @@ export const scannerRouteElement = (
     }
   >
     <Route index element={<Navigate to="/scanner/dashboard" replace />} />
-    <Route path="dashboard" element={<ScannerDashboard />} />
     {/* for QRcode scan at entry  */}
     <Route path="validate/scan" element={<ScanQRCode />} />
     {/* for custemer chechkin */}
@@ -45,12 +43,12 @@ export const scannerRouteElement = (
     {/* for status */}
     <Route path="stats" element={<ScannerDailyReport />} />
     <Route path="stats/entries" element={<ScannerDailyReport />} />
-    <Route path="stats/realtime" element={<ScannerDashboard />} />
-    <Route path="stats/daily" element={<ScannerDashboard />} />
+    <Route path="stats/realtime" element={<ScannerDailyReport />} />
+    <Route path="stats/daily" element={<ScannerDailyReport />} />
     {/* for Gate management  */}
     <Route path="gates" element={<GateManagement />} />
-    <Route path="gates/status" element={<ScannerDashboard />} />
-    <Route path="gates/assign" element={<ScannerDashboard />} />
-    <Route path="gates/logs" element={<ScannerDashboard />} />
+    <Route path="gates/status" element={<GateManagement />} />
+    <Route path="gates/assign" element={<GateManagement />} />
+    <Route path="gates/logs" element={<GateManagement />} />
   </Route>
 );
