@@ -24,5 +24,5 @@ dist-ssr
 *.sw?
 // to push exisitng code 
 git add .
-git commit -m "Add full frontend project"
+git commit -m ""
 git push

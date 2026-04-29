@@ -19,13 +19,6 @@ interface Author {
     role: string;
 }
 
-interface Category {
-    id: string;
-    name: string;
-    icon: any;
-    count: number;
-}
-
 interface BlogPost {
     id: string;
     title: string;
@@ -33,254 +26,155 @@ interface BlogPost {
     excerpt: string;
     featuredImage: string;
     author: Author;
-    categories: Category[];
     publishedAt: string;
     readTime: number;
     views: number;
     likes: number;
-    bookmarks: number;
     comments: number;
-    isTrending: boolean;
+    isNew: boolean;
+    category: 'latest' | 'events' | 'updates';
+    isTrending?: boolean;
     isFeatured?: boolean;
 }
 
-// Mock Data - Professional blog posts
+// Mock Data - Blog posts
 const mockAuthors: Author[] = [
-    { id: '1', name: 'Sarah Johnson', avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=007590&color=fff', role: 'Theater Critic' },
-    { id: '2', name: 'Michael Chen', avatar: 'https://ui-avatars.com/api/?name=Michael+Chen&background=007590&color=fff', role: 'Technical Director' },
-    { id: '3', name: 'Emma Rodriguez', avatar: 'https://ui-avatars.com/api/?name=Emma+Rodriguez&background=007590&color=fff', role: 'Arts Journalist' },
-    { id: '4', name: 'David Kim', avatar: 'https://ui-avatars.com/api/?name=David+Kim&background=007590&color=fff', role: 'Creative Director' },
-    { id: '5', name: 'Lisa Wong', avatar: 'https://ui-avatars.com/api/?name=Lisa+Wong&background=007590&color=fff', role: 'Stage Designer' }
+    { id: '1', name: 'Sarah Johnson', avatar: 'https://ui-avatars.com/api/?name=Sarah+Johnson&background=007590&color=fff', role: 'Theater Journalist' },
+    { id: '2', name: 'Michael Chen', avatar: 'https://ui-avatars.com/api/?name=Michael+Chen&background=007590&color=fff', role: 'Arts Correspondent' },
+    { id: '3', name: 'Emma Rodriguez', avatar: 'https://ui-avatars.com/api/?name=Emma+Rodriguez&background=007590&color=fff', role: 'Cultural Reporter' },
+    { id: '4', name: 'David Kim', avatar: 'https://ui-avatars.com/api/?name=David+Kim&background=007590&color=fff', role: 'Entertainment Writer' },
+    { id: '5', name: 'Lisa Wong', avatar: 'https://ui-avatars.com/api/?name=Lisa+Wong&background=007590&color=fff', role: 'Theater Critic' }
 ];
 
-const mockCategories: Category[] = [
-    { id: '1', name: 'News', icon: Newspaper, count: 24 },
-    { id: '2', name: 'Reviews', icon: Star, count: 18 },
-    { id: '3', name: 'Tech', icon: Zap, count: 12 },
-    { id: '4', name: 'Interviews', icon: Users, count: 8 },
-    { id: '5', name: 'Guides', icon: Lightbulb, count: 15 },
-    { id: '6', name: 'Community', icon: HeartHandshake, count: 10 }
-];
-
-// Professional blog posts
+// Blog posts with categories
 const mockBlogPosts: BlogPost[] = [
     {
         id: '1',
-        title: 'The Art of Stage Design in Modern Theater',
-        slug: 'art-of-stage-design',
-        excerpt: 'Exploring the creative process behind bringing theatrical productions to life through innovative stage design and visual storytelling.',
+        title: 'ታላቁ የኢትዮጵያ ቲያትር ፌስቲቫል በአዲስ አበባ ተከፈተ',
+        slug: 'ethiopia-theater-festival-opens',
+        excerpt: 'በአዲስ አበባ ለመጀመሪያ ጊዜ የተከፈተው ታላቁ የኢትዮጵያ ቲያትር ፌስቲቫል ከ50 በላይ የቲያትር ቡድኖችን በማሳተፍ በርካታ ዝግጅቶችን አቅርቧል።',
         featuredImage: 'https://images.unsplash.com/photo-1503095396549-8070c434c0a2?w=800&auto=format&fit=crop',
         author: mockAuthors[0],
-        categories: [mockCategories[2], mockCategories[0]],
         publishedAt: '2024-03-15T10:00:00Z',
-        readTime: 8,
-        views: 3450,
+        readTime: 5,
+        views: 2450,
         likes: 234,
-        bookmarks: 123,
         comments: 45,
-        isTrending: true,
-        isFeatured: true
+        isNew: true,
+        category: 'latest',
+        isTrending: true
     },
     {
         id: '2',
-        title: 'Interview with Award-Winning Director',
-        slug: 'director-interview',
-        excerpt: 'An exclusive conversation with a Tony Award-winning director about their creative journey and vision for modern theater.',
-        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800&auto=format&fit=crop',
-        author: mockAuthors[1],
-        categories: [mockCategories[1], mockCategories[3]],
-        publishedAt: '2024-03-12T14:30:00Z',
-        readTime: 12,
-        views: 2890,
-        likes: 456,
-        bookmarks: 234,
-        comments: 67,
-        isTrending: true,
+        title: 'የኢትዮጵያ ባህላዊ ቲያትር በዓለም አቀፍ መድረክ ተሸለመ',
+        slug: 'ethiopian-theater-wins-award',
+        excerpt: 'የኢትዮጵያ ባህላዊ ቲያትር ቡድን "ዐርብ ምሽት" በተሰኘው ተውኔታቸው በአፍሪካ ቲያትር ፌስቲቫል ላይ ምርጥ ተውኔት ሽልማት ተሸላሚ ሆኗል።',
+        featuredImage: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop',
+        author: mockAuthors[2],
+        publishedAt: '2024-03-10T09:15:00Z',
+        readTime: 6,
+        views: 3420,
+        likes: 567,
+        comments: 89,
+        isNew: true,
+        category: 'latest',
         isFeatured: true
     },
     {
         id: '3',
-        title: 'Sustainable Practices in Theater Production',
-        slug: 'sustainable-theater',
-        excerpt: 'How theaters are adopting eco-friendly practices to reduce their environmental impact while maintaining production quality.',
-        featuredImage: 'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?w=800&auto=format&fit=crop',
-        author: mockAuthors[2],
-        categories: [mockCategories[0], mockCategories[5]],
-        publishedAt: '2024-03-10T09:15:00Z',
-        readTime: 7,
-        views: 1890,
-        likes: 267,
-        bookmarks: 89,
+        title: 'አዲስ የቲያትር ትምህርት ቤት በድሬዳዋ ተከፈተ',
+        slug: 'new-theater-school-diredawa',
+        excerpt: 'በድሬዳዋ ከተማ አዲስ የቲያትር ትምህርት ቤት ተከፍቷል። ትምህርት ቤቱ በመጀመሪያ ዙር 100 ተማሪዎችን በተለያዩ የቲያትር መስኮች ያሰለጥናል።',
+        featuredImage: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop',
+        author: mockAuthors[4],
+        publishedAt: '2024-02-28T09:00:00Z',
+        readTime: 4,
+        views: 1450,
+        likes: 189,
         comments: 23,
-        isTrending: false,
-        isFeatured: false
+        isNew: false,
+        category: 'latest'
     },
     {
         id: '4',
-        title: 'Mastering Stage Lighting Techniques',
-        slug: 'stage-lighting-techniques',
-        excerpt: 'A comprehensive guide to professional stage lighting designs, equipment, and techniques for creating magical moments.',
-        featuredImage: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop',
-        author: mockAuthors[1],
-        categories: [mockCategories[4], mockCategories[2]],
-        publishedAt: '2024-03-05T11:20:00Z',
-        readTime: 20,
-        views: 3420,
-        likes: 567,
-        bookmarks: 234,
-        comments: 89,
-        isTrending: false,
-        isFeatured: false
+        title: 'ታዋቂ ተዋናይ አለማየሁ ፀጋዬ አዲስ ተውኔት አቀረበ',
+        slug: 'alemayehu-tsedaye-new-play',
+        excerpt: 'ታዋቂው ተዋናይ አለማየሁ ፀጋዬ "ህልሜ እውን ሆነ" በሚል ርዕስ አዲስ ተውኔት አቅርቧል።',
+        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800&auto=format&fit=crop',
+        author: mockAuthors[0],
+        publishedAt: '2024-03-05T14:30:00Z',
+        readTime: 4,
+        views: 1890,
+        likes: 267,
+        comments: 34,
+        isNew: false,
+        category: 'events'
     },
     {
         id: '5',
-        title: 'The Psychology of Audience Engagement',
-        slug: 'audience-engagement',
-        excerpt: 'Understanding what makes theater audiences connect with performances on an emotional and psychological level.',
-        featuredImage: 'https://images.unsplash.com/photo-1507924538820-ede3a2f080d7?w=800&auto=format&fit=crop',
-        author: mockAuthors[0],
-        categories: [mockCategories[1], mockCategories[5]],
-        publishedAt: '2024-02-28T10:00:00Z',
-        readTime: 14,
-        views: 2450,
-        likes: 345,
-        bookmarks: 156,
-        comments: 56,
-        isTrending: false,
-        isFeatured: true
+        title: 'የቲያትር ትኬት ዋጋ ቅናሽ እንዲደረግ ውሳኔ',
+        slug: 'theater-ticket-price-reduction',
+        excerpt: 'የኢትዮጵያ ባህልና ቱሪዝም ሚኒስቴር በ2017 ዓ.ም የቲያትር ትኬት ዋጋ ላይ ቅናሽ እንዲደረግ ውሳኔ አሳለፈ።',
+        featuredImage: 'https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?w=800&auto=format&fit=crop',
+        author: mockAuthors[1],
+        publishedAt: '2024-03-03T10:00:00Z',
+        readTime: 3,
+        views: 1670,
+        likes: 234,
+        comments: 45,
+        isNew: false,
+        category: 'updates'
     },
     {
         id: '6',
-        title: 'How Technology is Transforming Theater',
-        slug: 'technology-transforming-theater',
-        excerpt: 'From augmented reality to immersive sound, discover how cutting-edge technology is changing live performances forever.',
-        featuredImage: 'https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?w=800&auto=format&fit=crop',
-        author: mockAuthors[1],
-        categories: [mockCategories[2], mockCategories[0]],
-        publishedAt: '2024-02-25T14:30:00Z',
-        readTime: 11,
-        views: 2890,
-        likes: 423,
-        bookmarks: 178,
-        comments: 34,
-        isTrending: true,
-        isFeatured: false
-    },
-    {
-        id: '7',
-        title: 'The Art of Costume Design',
-        slug: 'costume-design-art',
-        excerpt: 'Exploring the creative process behind bringing characters to life through intricate costume design and fabric selection.',
-        featuredImage: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=800&auto=format&fit=crop',
-        author: mockAuthors[4],
-        categories: [mockCategories[1], mockCategories[4]],
-        publishedAt: '2024-02-20T09:00:00Z',
-        readTime: 9,
-        views: 2150,
-        likes: 345,
-        bookmarks: 156,
-        comments: 28,
-        isTrending: false,
-        isFeatured: false
-    },
-    {
-        id: '8',
-        title: 'Inclusive Casting: A New Era',
-        slug: 'inclusive-casting',
-        excerpt: 'How theaters are embracing diversity and inclusion in casting decisions to create more representative storytelling.',
-        featuredImage: 'https://images.unsplash.com/photo-1531058020387-3be344556be6?w=800&auto=format&fit=crop',
-        author: mockAuthors[0],
-        categories: [mockCategories[0], mockCategories[5]],
-        publishedAt: '2024-02-15T14:30:00Z',
-        readTime: 12,
-        views: 2980,
-        likes: 567,
-        bookmarks: 234,
-        comments: 78,
-        isTrending: true,
-        isFeatured: true
-    },
-    {
-        id: '9',
-        title: 'The Business of Broadway Economics',
-        slug: 'broadway-economics',
-        excerpt: 'An in-depth analysis of the financial landscape of professional theater and what makes a production successful.',
+        title: 'በኢትዮጵያ የቲያትር ቱሪዝም እንዲስፋፋ እቅድ',
+        slug: 'theater-tourism-ethiopia',
+        excerpt: 'የኢትዮጵያ ቱሪዝም ማህበር በአገሪቱ የቲያትር ቱሪዝም እንዲስፋፋ ከተለያዩ ቲያትር ቤቶች ጋር በመተባበር እቅድ አውጥቷል።',
         featuredImage: 'https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800&auto=format&fit=crop',
-        author: mockAuthors[1],
-        categories: [mockCategories[0], mockCategories[2]],
-        publishedAt: '2024-02-10T10:00:00Z',
-        readTime: 16,
-        views: 3240,
-        likes: 456,
-        bookmarks: 234,
-        comments: 45,
-        isTrending: true,
-        isFeatured: false
-    },
-    {
-        id: '10',
-        title: 'Reviving Classic Plays for Modern Audiences',
-        slug: 'reviving-classic-plays',
-        excerpt: 'How directors are reimagining timeless classics for today\'s viewers while preserving their original essence.',
-        featuredImage: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop',
         author: mockAuthors[2],
-        categories: [mockCategories[1], mockCategories[4]],
-        publishedAt: '2024-02-05T11:30:00Z',
-        readTime: 11,
-        views: 2450,
-        likes: 345,
-        bookmarks: 156,
-        comments: 34,
-        isTrending: false,
-        isFeatured: true
-    },
-    {
-        id: '11',
-        title: 'The Magic of Puppetry in Modern Theater',
-        slug: 'puppetry-modern-theater',
-        excerpt: 'Exploring how puppetry is being reinvented for contemporary audiences with innovative techniques and storytelling.',
-        featuredImage: 'https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop',
-        author: mockAuthors[4],
-        categories: [mockCategories[1], mockCategories[5]],
-        publishedAt: '2024-01-28T10:00:00Z',
-        readTime: 10,
-        views: 1870,
-        likes: 234,
-        bookmarks: 98,
-        comments: 23,
-        isTrending: false,
-        isFeatured: false
-    },
-    {
-        id: '12',
-        title: 'Sound Design: The Unseen Hero',
-        slug: 'sound-design-hero',
-        excerpt: 'Behind the scenes of professional sound design and how it shapes the audience\'s emotional experience.',
-        featuredImage: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop',
-        author: mockAuthors[1],
-        categories: [mockCategories[2], mockCategories[4]],
-        publishedAt: '2024-01-20T14:30:00Z',
-        readTime: 9,
+        publishedAt: '2024-02-25T11:30:00Z',
+        readTime: 5,
         views: 2340,
         likes: 345,
-        bookmarks: 123,
-        comments: 31,
-        isTrending: false,
-        isFeatured: false
+        comments: 67,
+        isNew: false,
+        category: 'updates'
     }
 ];
+
+// Transform BlogPost to BlogPostCard format for BlogShowCard
+const transformToBlogShowCardFormat = (post: BlogPost) => {
+    return {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        excerpt: post.excerpt,
+        featuredImage: post.featuredImage,
+        author: post.author,
+        categories: [], // Categories will be handled by categoryBadge
+        publishedAt: post.publishedAt,
+        readTime: post.readTime,
+        views: post.views,
+        likes: post.likes,
+        bookmarks: 0,
+        comments: post.comments,
+        isTrending: post.isTrending || false,
+        isFeatured: post.isFeatured || false,
+        isNew: post.isNew,
+        category: post.category
+    };
+};
 
 const Blog = () => {
     const [posts, setPosts] = useState<BlogPost[]>(mockBlogPosts);
     const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(mockBlogPosts);
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-    const [sortBy, setSortBy] = useState<'newest' | 'popular' | 'trending'>('newest');
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [isLoading, setIsLoading] = useState(true);
     const [showScrollTop, setShowScrollTop] = useState(false);
-    const itemsPerPage = 12;
+    const itemsPerPage = 6;
 
     useEffect(() => {
         setTimeout(() => setIsLoading(false), 800);
@@ -302,12 +196,6 @@ const Blog = () => {
     useEffect(() => {
         let filtered = [...posts];
 
-        if (selectedCategory) {
-            filtered = filtered.filter(post =>
-                post.categories.some(cat => cat.id === selectedCategory)
-            );
-        }
-
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             filtered = filtered.filter(post =>
@@ -316,19 +204,22 @@ const Blog = () => {
             );
         }
 
+        if (selectedCategory !== 'all') {
+            filtered = filtered.filter(post => post.category === selectedCategory);
+        }
+
+        // Apply sorting - only newest and oldest by date
         filtered.sort((a, b) => {
             if (sortBy === 'newest') {
                 return new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime();
-            } else if (sortBy === 'popular') {
-                return b.views - a.views;
             } else {
-                return (b.isTrending ? 1 : 0) - (a.isTrending ? 1 : 0);
+                return new Date(a.publishedAt).getTime() - new Date(b.publishedAt).getTime();
             }
         });
 
         setFilteredPosts(filtered);
         setCurrentPage(1);
-    }, [posts, selectedCategory, searchQuery, sortBy]);
+    }, [posts, searchQuery, selectedCategory, sortBy]);
 
     const totalPages = Math.ceil(filteredPosts.length / itemsPerPage);
     const paginatedPosts = filteredPosts.slice(
@@ -337,14 +228,23 @@ const Blog = () => {
     );
 
     const handleClearFilters = () => {
-        setSelectedCategory(null);
         setSearchQuery('');
+        setSelectedCategory('all');
         setSortBy('newest');
     };
 
-    const getGridClass = () => {
-        if (viewMode === 'list') return 'grid-cols-1';
-        return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+    // Get category badge color and label for BlogShowCard
+    const getCategoryBadge = (category: string) => {
+        switch (category) {
+            case 'latest':
+                return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'News' };
+            case 'events':
+                return { bg: 'bg-green-100', text: 'text-green-700', label: 'Events' };
+            case 'updates':
+                return { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Recent Updates' };
+            default:
+                return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'All Blogs' };
+        }
     };
 
     if (isLoading) {
@@ -354,8 +254,8 @@ const Blog = () => {
                     <div className="animate-pulse">
                         <div className="h-12 bg-gray-200 rounded-lg w-64 mb-8 mx-auto"></div>
                         <div className="h-8 bg-gray-200 rounded-lg w-96 mb-12 mx-auto"></div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {[1, 2, 3, 4, 5, 6].map(i => (
                                 <div key={i} className="bg-gray-200 rounded-2xl h-96"></div>
                             ))}
                         </div>
@@ -370,7 +270,7 @@ const Blog = () => {
             {/* Hero Section */}
             <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue">
                 <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
-                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
+                <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -383,127 +283,90 @@ const Blog = () => {
                             transition={{ type: "spring", delay: 0.2 }}
                             className="inline-flex items-center justify-center mb-6"
                         >
-                            <div className="bg-white/20 backdrop-blur-lg rounded-full p-4">
-                                <BookOpen className="h-8 w-8 text-white" />
+                            <div className="bg-white/20 backdrop-blur-lg rounded-full p-3">
+                                <Newspaper className="h-6 w-6 text-white" />
                             </div>
                         </motion.div>
 
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
-                            Behind the Curtain
+                        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
+                            Latest News & Updates
                         </h1>
 
-                        <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-                            Discover insights, interviews, and inspiration from the world of theater
+                        <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
+                            Stay updated with the latest stories from Ethiopia's vibrant theater scene
                         </p>
-
-                        <div className="flex flex-wrap gap-4 justify-center">
-                            <a
-                                href="#blog-content"
-                                className="group px-8 py-3 bg-white text-deepTeal rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300 flex items-center gap-2 shadow-lg hover:shadow-xl"
-                            >
-                                Explore Articles
-                                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                            </a>
-                            <Link
-                                to="/theaters"
-                                className="group px-8 py-3 border-2 border-white text-white rounded-xl font-semibold hover:bg-white/10 transition-all duration-300 flex items-center gap-2"
-                            >
-                                <Theater className="h-5 w-5" />
-                                Find Shows
-                            </Link>
-                        </div>
                     </motion.div>
                 </div>
             </section>
 
             {/* Blog Content */}
-            <div className="w-full px-4 sm:px-6 lg:px-8 py-12" id="blog-content">
-                {/* Category Filters */}
+            <div className="w-full px-4 sm:px-6 lg:px-8 py-10" id="blog-content">
+                {/* Category Filters and Sort */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                     className="mb-8"
                 >
-                    <div className="flex flex-wrap gap-3 justify-center mb-6">
-                        <button
-                            onClick={() => setSelectedCategory(null)}
-                            className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
-                                !selectedCategory
-                                    ? 'bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg'
-                                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                            }`}
-                        >
-                            <Sparkles className="h-4 w-4" />
-                            <span>All</span>
-                            <span className={`text-xs ${!selectedCategory ? 'text-white/80' : 'text-gray-400'}`}>
-                                ({filteredPosts.length})
-                            </span>
-                        </button>
-                        {mockCategories.map((category) => {
+                    {/* Category Buttons */}
+                    <div className="flex flex-wrap justify-center gap-3 mb-6">
+                        {[
+                            { id: 'all', label: 'All Blogs', icon: Newspaper },
+                            { id: 'latest', label: 'News', icon: Sparkles },
+                            { id: 'updates', label: 'Recent Updates', icon: Clock }
+                        ].map((category) => {
                             const Icon = category.icon;
                             const isActive = selectedCategory === category.id;
-                            const count = filteredPosts.filter(p => p.categories.some(c => c.id === category.id)).length;
+                            const categoryCount = category.id === 'all'
+                                ? filteredPosts.length
+                                : posts.filter(p => p.category === category.id).length;
                             return (
                                 <button
                                     key={category.id}
-                                    onClick={() => setSelectedCategory(category.id === selectedCategory ? null : category.id)}
-                                    className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
-                                        isActive
+                                    onClick={() => setSelectedCategory(category.id)}
+                                    className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${isActive
                                             ? 'bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg'
                                             : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                                    }`}
+                                        }`}
                                 >
                                     <Icon className="h-4 w-4" />
-                                    <span>{category.name}</span>
+                                    <span>{category.label}</span>
                                     <span className={`text-xs ${isActive ? 'text-white/80' : 'text-gray-400'}`}>
-                                        ({count})
+                                        ({categoryCount})
                                     </span>
                                 </button>
                             );
                         })}
                     </div>
 
-                    {/* Search and Controls */}
+                    {/* Search Bar and Sort Dropdown */}
                     <div className="flex flex-wrap justify-center items-center gap-4">
-                        <div className="relative w-64">
+                        <div className="relative w-80">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                             <input
                                 type="text"
-                                placeholder="Search articles..."
+                                placeholder="Search news..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-deepTeal focus:border-transparent"
                             />
                         </div>
-                        <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm">
-                            <SortAsc className="h-4 w-4 text-gray-500" />
+
+                        {/* Sort Dropdown - Only Newest and Oldest */}
+                        <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm">
+                            <SortDesc className="h-4 w-4 text-gray-500" />
                             <span className="text-sm text-gray-500 font-medium">Sort by:</span>
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
-                                className="text-sm text-gray-700 bg-transparent focus:outline-none"
+                                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
+                                className="text-sm text-gray-700 bg-transparent focus:outline-none cursor-pointer"
                             >
-                                <option value="newest">Newest</option>
-                                <option value="popular">Most Popular</option>
-                                <option value="trending">Trending</option>
+                                <option value="newest">Newest First</option>
+                                <option value="oldest">Oldest First</option>
                             </select>
                         </div>
-                        <div className="flex bg-gray-100 rounded-lg p-1">
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`px-3 py-1.5 rounded-md text-sm transition ${viewMode === 'grid' ? 'bg-deepTeal text-white' : 'text-gray-600'}`}
-                            >
-                                <LayoutGrid className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`px-3 py-1.5 rounded-md text-sm transition ${viewMode === 'list' ? 'bg-deepTeal text-white' : 'text-gray-600'}`}
-                            >
-                                <List className="h-4 w-4" />
-                            </button>
-                        </div>
-                        {(selectedCategory || searchQuery || sortBy !== 'newest') && (
+
+                        {(searchQuery || selectedCategory !== 'all' || sortBy !== 'newest') && (
                             <button
                                 onClick={handleClearFilters}
                                 className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
@@ -515,33 +378,62 @@ const Blog = () => {
                     </div>
                 </motion.div>
 
-                {/* Posts Grid - Using BlogShowCard */}
+                {/* Posts Grid - USING BlogShowCard COMPONENT */}
                 {paginatedPosts.length > 0 ? (
                     <>
-                        <div className={`grid gap-6 ${getGridClass()}`}>
-                            {paginatedPosts.map((post, index) => (
-                                <motion.div
-                                    key={post.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                >
-                                    <BlogShowCard post={post} />
-                                </motion.div>
-                            ))}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {paginatedPosts.map((post, index) => {
+                                const categoryBadge = getCategoryBadge(post.category);
+                                // Transform the post to match BlogShowCard's expected format
+                                const cardPost = {
+                                    ...transformToBlogShowCardFormat(post),
+                                    categoryBadge: categoryBadge
+                                };
+                                return (
+                                    <motion.div
+                                        key={post.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                    >
+                                        <BlogShowCard post={cardPost} />
+                                    </motion.div>
+                                );
+                            })}
                         </div>
 
                         {/* Pagination */}
                         {totalPages > 1 && (
                             <div className="flex justify-center items-center gap-2 mt-12">
                                 <button
-                                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                    onClick={() => {
+                                        setCurrentPage(prev => Math.max(1, prev - 1));
+                                        scrollToTop();
+                                    }}
                                     disabled={currentPage === 1}
                                     className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
                                 >
                                     <ChevronLeft className="h-5 w-5" />
                                 </button>
+
                                 <div className="flex gap-2">
+                                    {currentPage > 3 && (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    setCurrentPage(1);
+                                                    scrollToTop();
+                                                }}
+                                                className="w-9 h-9 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                                            >
+                                                1
+                                            </button>
+                                            {currentPage > 4 && (
+                                                <span className="w-9 h-9 flex items-center justify-center text-gray-400">...</span>
+                                            )}
+                                        </>
+                                    )}
+
                                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                                         let pageNum;
                                         if (totalPages <= 5) {
@@ -553,34 +445,49 @@ const Blog = () => {
                                         } else {
                                             pageNum = currentPage - 2 + i;
                                         }
+
+                                        if (pageNum > totalPages) return null;
+
                                         return (
                                             <button
                                                 key={pageNum}
-                                                onClick={() => setCurrentPage(pageNum)}
-                                                className={`w-10 h-10 rounded-lg font-medium transition ${
-                                                    currentPage === pageNum
+                                                onClick={() => {
+                                                    setCurrentPage(pageNum);
+                                                    scrollToTop();
+                                                }}
+                                                className={`w-9 h-9 rounded-lg font-medium transition ${currentPage === pageNum
                                                         ? 'bg-deepTeal text-white shadow-md'
                                                         : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                }`}
+                                                    }`}
                                             >
                                                 {pageNum}
                                             </button>
                                         );
                                     })}
-                                    {totalPages > 5 && currentPage < totalPages - 2 && (
+
+                                    {currentPage < totalPages - 2 && (
                                         <>
-                                            <span className="w-10 h-10 flex items-center justify-center">...</span>
+                                            {currentPage < totalPages - 3 && (
+                                                <span className="w-9 h-9 flex items-center justify-center text-gray-400">...</span>
+                                            )}
                                             <button
-                                                onClick={() => setCurrentPage(totalPages)}
-                                                className="w-10 h-10 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
+                                                onClick={() => {
+                                                    setCurrentPage(totalPages);
+                                                    scrollToTop();
+                                                }}
+                                                className="w-9 h-9 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                                             >
                                                 {totalPages}
                                             </button>
                                         </>
                                     )}
                                 </div>
+
                                 <button
-                                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                    onClick={() => {
+                                        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                                        scrollToTop();
+                                    }}
                                     disabled={currentPage === totalPages}
                                     className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
                                 >
@@ -596,7 +503,7 @@ const Blog = () => {
                     </>
                 ) : (
                     <div className="text-center py-16">
-                        <BookOpen className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <Newspaper className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No articles found</h3>
                         <p className="text-gray-500 mb-4">Try adjusting your search or filter</p>
                         <button onClick={handleClearFilters} className="px-4 py-2 bg-deepTeal text-white rounded-lg">Clear all filters</button>

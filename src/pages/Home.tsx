@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Calendar,
@@ -411,7 +411,7 @@ const sortOptions = [
     { value: 'rating', label: 'Rating', icon: Star },
 ];
 
-// Items per page for load more - load 6 items per click
+// Items per page for pagination
 const ITEMS_PER_PAGE = 6;
 
 // ============================================
@@ -421,31 +421,23 @@ const ITEMS_PER_PAGE = 6;
 const Home: React.FC = () => {
     const [shows, setShows] = useState<Show[]>([]);
     const [filteredShows, setFilteredShows] = useState<Show[]>([]);
-    const [displayedShows, setDisplayedShows] = useState<Show[]>([]);
+    const [currentPage, setCurrentPage] = useState(1);
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('date');
     const [showFilters, setShowFilters] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
-    const [hasMore, setHasMore] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [showMostPopularAll, setShowMostPopularAll] = useState(false);
-    const [showFeaturedAll, setShowFeaturedAll] = useState(false);
 
     // Cookie consent state
     const [showCookieConsent, setShowCookieConsent] = useState(false);
 
-    const loadMoreRef = useRef<HTMLDivElement>(null);
-    const sortDropdownRef = useRef<HTMLDivElement>(null);
     const location = useLocation();
 
     // Check if user has already consented to cookies
     useEffect(() => {
         const hasConsented = localStorage.getItem('cookieConsent');
         if (!hasConsented) {
-            // Show cookie consent after a short delay
             setTimeout(() => {
                 setShowCookieConsent(true);
             }, 1000);
@@ -466,11 +458,10 @@ const Home: React.FC = () => {
     };
 
     const customizeCookies = () => {
-        // Navigate to cookie policy page
         window.location.href = '/cookies';
     };
 
-    // Load data immediately (no loading delay)
+    // Load data
     useEffect(() => {
         const sortedShows = [...showsData].sort((a, b) => {
             const dateA = a.dates?.[0]?.date ? new Date(a.dates[0].date).getTime() : 0;
@@ -480,26 +471,6 @@ const Home: React.FC = () => {
         setShows(sortedShows);
         setFilteredShows(sortedShows);
     }, []);
-
-    // Infinite scroll observer
-    useEffect(() => {
-        if (!hasMore || isLoadingMore) return;
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                if (entries[0].isIntersecting && hasMore && !isLoadingMore) {
-                    handleLoadMore();
-                }
-            },
-            { threshold: 0.1, rootMargin: '100px' }
-        );
-
-        if (loadMoreRef.current) {
-            observer.observe(loadMoreRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, [hasMore, isLoadingMore, displayedShows.length]);
 
     // Filter and sort shows
     useEffect(() => {
@@ -539,26 +510,37 @@ const Home: React.FC = () => {
         });
 
         setFilteredShows(results);
-        setVisibleCount(ITEMS_PER_PAGE);
-        setHasMore(results.length > ITEMS_PER_PAGE);
+        setCurrentPage(1);
     }, [selectedCategory, searchQuery, sortBy, shows]);
 
-    // Update displayed shows
-    useEffect(() => {
-        const newDisplayedShows = filteredShows.slice(0, visibleCount);
-        setDisplayedShows(newDisplayedShows);
-        setHasMore(visibleCount < filteredShows.length);
-    }, [filteredShows, visibleCount]);
+    // Get current page shows
+    const getCurrentPageShows = () => {
+        const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+        const endIndex = startIndex + ITEMS_PER_PAGE;
+        return filteredShows.slice(startIndex, endIndex);
+    };
 
-    const handleLoadMore = () => {
-        if (isLoadingMore || !hasMore) return;
+    const totalPages = Math.ceil(filteredShows.length / ITEMS_PER_PAGE);
+    const currentShows = getCurrentPageShows();
 
-        setIsLoadingMore(true);
-        setTimeout(() => {
-            const newVisibleCount = Math.min(visibleCount + ITEMS_PER_PAGE, filteredShows.length);
-            setVisibleCount(newVisibleCount);
-            setIsLoadingMore(false);
-        }, 800);
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        // Scroll to top when changing page
+        window.scrollTo({ top: 600, behavior: 'smooth' });
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+            window.scrollTo({ top: 600, behavior: 'smooth' });
+        }
+    };
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+            window.scrollTo({ top: 600, behavior: 'smooth' });
+        }
     };
 
     const handleClearFilters = () => {
@@ -578,18 +560,6 @@ const Home: React.FC = () => {
         return option ? option.label : 'Sort by';
     };
 
-    // Get most viewed shows (top 4 or all if showAll)
-    const getMostViewedShows = () => {
-        const sorted = [...shows].sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
-        return showMostPopularAll ? sorted : sorted.slice(0, 4);
-    };
-
-    // Get featured shows (top 4 or all if showAll)
-    const getFeaturedShows = () => {
-        const featured = shows.filter(show => show.isFeatured);
-        return showFeaturedAll ? featured : featured.slice(0, 4);
-    };
-
     // Scroll to top button visibility
     const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -605,24 +575,40 @@ const Home: React.FC = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Handle View All click for Most Popular
-    const handleViewAllMostPopular = () => {
-        setShowMostPopularAll(true);
-        setTimeout(() => {
-            document.getElementById('most-popular-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-    };
+    // Generate page numbers to display
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisible = 5;
 
-    // Handle View All click for Featured Picks
-    const handleViewAllFeatured = () => {
-        setShowFeaturedAll(true);
-        setTimeout(() => {
-            document.getElementById('featured-section')?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+        if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) {
+                pages.push(i);
+            }
+        } else {
+            if (currentPage <= 3) {
+                for (let i = 1; i <= 4; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+            } else if (currentPage >= totalPages - 2) {
+                pages.push(1);
+                pages.push('...');
+                for (let i = totalPages - 3; i <= totalPages; i++) {
+                    pages.push(i);
+                }
+            } else {
+                pages.push(1);
+                pages.push('...');
+                for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+                    pages.push(i);
+                }
+                pages.push('...');
+                pages.push(totalPages);
+            }
+        }
+        return pages;
     };
-
-    const mostViewedShows = getMostViewedShows();
-    const featuredShows = getFeaturedShows();
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
@@ -630,21 +616,6 @@ const Home: React.FC = () => {
             <HeroBanner featuredShows={shows.filter(show => show.isFeatured)} />
 
             <div className="container mx-auto px-4 py-12">
-                {/* Welcome Section */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="mb-8 text-center"
-                >
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                        Welcome to <span className="text-deepTeal">Theatre Hub Ethiopia</span>
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                        Experience the best of Ethiopian and international theatre, musicals, and performances
-                    </p>
-                </motion.div>
-
                 {/* Search & Filter Section */}
                 <div className="mb-10">
                     <div className="max-w-5xl mx-auto">
@@ -661,7 +632,7 @@ const Home: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="relative" ref={sortDropdownRef}>
+                            <div className="relative">
                                 <button
                                     onClick={() => setIsSortOpen(!isSortOpen)}
                                     className="w-full sm:w-48 px-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors shadow-sm flex items-center justify-between gap-2"
@@ -769,88 +740,8 @@ const Home: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                {/* MOST POPULAR SECTION */}
-                {mostViewedShows.length > 0 && (
-                    <section id="most-popular-section" className="mb-12">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
-                                    <Heart className="h-5 w-5 text-white" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                    Most Popular
-                                </h2>
-                                <span className="px-3 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-full text-sm font-medium">
-                                    Fan Favorites
-                                </span>
-                            </div>
-                            {!showMostPopularAll && mostViewedShows.length >= 4 && (
-                                <button
-                                    onClick={handleViewAllMostPopular}
-                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
-                                >
-                                    View All <ChevronRight className="h-4 w-4" />
-                                </button>
-                            )}
-                            {showMostPopularAll && (
-                                <button
-                                    onClick={() => setShowMostPopularAll(false)}
-                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
-                                >
-                                    Show Less <ChevronRight className="h-4 w-4 rotate-90" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {mostViewedShows.map((show) => (
-                                <ShowCard key={show.id} show={show} compact={true} />
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* FEATURED PICKS SECTION */}
-                {featuredShows.length > 0 && (
-                    <section id="featured-section" className="mb-12">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-gradient-to-r from-amber-500 to-orange-500 rounded-lg">
-                                    <Crown className="h-5 w-5 text-white" />
-                                </div>
-                                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                                    Featured Picks
-                                </h2>
-                                <span className="px-3 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 rounded-full text-sm font-medium">
-                                    Editor's Choice
-                                </span>
-                            </div>
-                            {!showFeaturedAll && featuredShows.length >= 4 && (
-                                <button
-                                    onClick={handleViewAllFeatured}
-                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
-                                >
-                                    View All <ChevronRight className="h-4 w-4" />
-                                </button>
-                            )}
-                            {showFeaturedAll && (
-                                <button
-                                    onClick={() => setShowFeaturedAll(false)}
-                                    className="text-deepTeal hover:text-deepTeal/80 text-sm font-medium flex items-center gap-1 transition-colors"
-                                >
-                                    Show Less <ChevronRight className="h-4 w-4 rotate-90" />
-                                </button>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {featuredShows.map((show) => (
-                                <ShowCard key={show.id} show={show} compact={true} />
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* All Shows Grid */}
-                {displayedShows.length > 0 ? (
+                {/* All Shows Grid with Pagination */}
+                {currentShows.length > 0 ? (
                     <section>
                         <div className="flex items-center justify-between mb-6">
                             <div>
@@ -858,13 +749,13 @@ const Home: React.FC = () => {
                                     All Shows
                                 </h2>
                                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                                    Showing {displayedShows.length} of {filteredShows.length} shows
+                                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredShows.length)} of {filteredShows.length} shows
                                 </p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {displayedShows.map((show, index) => (
+                            {currentShows.map((show, index) => (
                                 <motion.div
                                     key={show.id}
                                     initial={{ opacity: 0, y: 20 }}
@@ -876,39 +767,57 @@ const Home: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* Infinite Scroll Loader - Skeleton Cards */}
-                        {hasMore && (
-                            <div ref={loadMoreRef} className="mt-8">
-                                {isLoadingMore && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                        {[1, 2, 3].map((i) => (
-                                            <div key={i} className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden animate-pulse">
-                                                <div className="h-56 bg-gray-200 dark:bg-dark-700"></div>
-                                                <div className="p-4">
-                                                    <div className="h-5 bg-gray-200 dark:bg-dark-700 rounded w-3/4 mb-2"></div>
-                                                    <div className="h-3 bg-gray-200 dark:bg-dark-700 rounded w-1/2 mb-3"></div>
-                                                    <div className="h-2 bg-gray-200 dark:bg-dark-700 rounded-full mb-3"></div>
-                                                    <div className="h-9 bg-gray-200 dark:bg-dark-700 rounded-lg w-full"></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex justify-center mt-10">
+                                <nav className="flex items-center gap-2 flex-wrap">
+                                    {/* Previous Button */}
+                                    <button
+                                        onClick={handlePrevPage}
+                                        disabled={currentPage === 1}
+                                        className={`px-3 py-2 rounded-lg flex items-center gap-1 transition-colors ${currentPage === 1
+                                                ? 'bg-gray-100 dark:bg-dark-800 text-gray-400 cursor-not-allowed'
+                                                : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-deepTeal'
+                                            }`}
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        <span>Prev</span>
+                                    </button>
 
-                        {/* Completion message */}
-                        {!hasMore && filteredShows.length > 0 && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="text-center mt-12 p-6 bg-gray-50 dark:bg-dark-800 rounded-xl"
-                            >
-                                <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-                                <p className="text-gray-600 dark:text-gray-400">
-                                    You've seen all {filteredShows.length} shows!
-                                </p>
-                            </motion.div>
+                                    {/* Page Numbers */}
+                                    {getPageNumbers().map((page, index) => (
+                                        page === '...' ? (
+                                            <span key={`dots-${index}`} className="px-3 py-2 text-gray-500 dark:text-gray-400">
+                                                ...
+                                            </span>
+                                        ) : (
+                                            <button
+                                                key={page}
+                                                onClick={() => handlePageChange(page as number)}
+                                                className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-colors ${currentPage === page
+                                                        ? 'bg-deepTeal text-white shadow-md'
+                                                        : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-deepTeal'
+                                                    }`}
+                                            >
+                                                {page}
+                                            </button>
+                                        )
+                                    ))}
+
+                                    {/* Next Button */}
+                                    <button
+                                        onClick={handleNextPage}
+                                        disabled={currentPage === totalPages}
+                                        className={`px-3 py-2 rounded-lg flex items-center gap-1 transition-colors ${currentPage === totalPages
+                                                ? 'bg-gray-100 dark:bg-dark-800 text-gray-400 cursor-not-allowed'
+                                                : 'bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-deepTeal'
+                                            }`}
+                                    >
+                                        <span>Next</span>
+                                        <ChevronRight className="h-4 w-4" />
+                                    </button>
+                                </nav>
+                            </div>
                         )}
                     </section>
                 ) : (

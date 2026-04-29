@@ -102,6 +102,7 @@ function App() {
   console.log('Current path:', location.pathname);
 
   return (
+
     <Routes>
       {/* Public routes - accessible to everyone */}
       <Route path="/" element={<MainLayout />}>
@@ -147,6 +148,7 @@ function App() {
       {/* Redirect any unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+
   );
 }
 

@@ -219,7 +219,7 @@ const HeroBanner: React.FC<HeroBannerProps> = ({ featuredShows }) => {
                     >
                       <span className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:translate-x-0 transition-transform duration-300" />
                       <Ticket className="h-5 w-5 mr-2 relative z-10 group-hover:rotate-12 transition-transform" />
-                      <span className="relative z-10">Explore Shows</span>
+                      <span className="relative z-10">Explore Events</span>
                     </Link>
 
                     <Link

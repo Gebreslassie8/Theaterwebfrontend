@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Youtube, Linkedin, Mail, Phone, MapPin, Clock, ChevronRight, Shield, HelpCircle, FileText, CreditCard, Truck, Star, Globe, Lock, Award, Film, Gift, CheckCircle, XCircle, Sparkles, PartyPopper, Smile, ThumbsUp } from 'lucide-react';
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState('');
@@ -11,14 +12,13 @@ const Footer = () => {
 
   const quickLinks = [
     { to: '/about', label: 'About Us', icon: Star },
-    { to: '/blog', label: 'Blog', icon: FileText },
+    { to: '/blogs', label: 'Blog', icon: FileText },
     { to: '/gallery', label: 'Gallery', icon: Film },
   ];
 
   const supportLinks = [
     { to: '/help', label: 'Help Center', icon: HelpCircle },
     { to: '/contact', label: 'Contact Us', icon: Mail },
-    { to: '/faq', label: 'FAQ', icon: HelpCircle },
 
   ];
 
@@ -29,17 +29,11 @@ const Footer = () => {
   ];
 
   const socialLinks = [
-    { icon: Facebook, href: '#', brandColor: '#1877F2', label: 'Facebook' },
-    { icon: Twitter, href: '#', brandColor: '#1DA1F2', label: 'Twitter' },
-    { icon: Instagram, href: '#', brandColor: '#E4405F', label: 'Instagram' },
-    { icon: Youtube, href: '#', brandColor: '#FF0000', label: 'YouTube' },
-    { icon: Linkedin, href: '#', brandColor: '#0A66C2', label: 'LinkedIn' }
-  ];
-
-  const chapaPaymentMethods = [
-    { name: 'Tele Birr', icon: '📱', description: 'Mobile Money' },
-    { name: 'CBE Birr', icon: '🏦', description: 'Commercial Bank' },
-    { name: 'HelloCash', icon: '💸', description: 'Cash' }
+    { icon: Facebook, href: '#', brandColor: '#1877F2', label: 'Facebook', bgHover: 'hover:bg-[#1877F2]' },
+    { icon: Twitter, href: '#', brandColor: '#1DA1F2', label: 'Twitter', bgHover: 'hover:bg-[#1DA1F2]' },
+    { icon: Instagram, href: '#', brandColor: '#E4405F', label: 'Instagram', bgHover: 'hover:bg-[#E4405F]' },
+    { icon: Youtube, href: '#', brandColor: '#FF0000', label: 'YouTube', bgHover: 'hover:bg-[#FF0000]' },
+    { icon: Linkedin, href: '#', brandColor: '#0A66C2', label: 'LinkedIn', bgHover: 'hover:bg-[#0A66C2]' }
   ];
 
   const showSuccessPopup = () => {
@@ -53,7 +47,7 @@ const Footer = () => {
     setTimeout(() => setShowPopup(false), 5000);
   };
 
-  const showErrorPopup = (errorMessage: string) => {
+  const showErrorPopup = (errorMessage) => {
     setPopupMessage({
       type: 'error',
       title: '❌ Oops! Something went wrong',
@@ -103,38 +97,71 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="bg-gray-900 text-white pt-16 pb-8">
+      <footer className="bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800 text-white pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Main Footer Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 mb-12">
 
-            {/* Column 1: Brand & Contact */}
-            <div className="space-y-5">
-              <Link to="/" className="flex items-center space-x-2 group">
-                <span className="text-4xl transform group-hover:scale-110 transition-transform">🎭</span>
-                <span className="text-2xl font-bold text-white group-hover:text-teal-400 transition-colors">
-                  TheaterHUB
-                </span>
+            {/* Column 1: Brand & Contact - Professional Ethiopian Style */}
+            <div className="space-y-6">
+              {/* Brand Section */}
+              <Link to="/" className="block group">
+                <div className="relative">
+                  {/* Animated gradient underline */}
+                  <div className="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-emerald-500 group-hover:w-full transition-all duration-500"></div>
+
+                  <h2 className="text-2xl font-bold">
+                    <span className="bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
+                      Ethiopian TheaterHUB
+                    </span>
+                    <span className="block text-xs text-teal-400/70 mt-0.5 tracking-wide">Modern entertainment platform</span>
+                  </h2>
+                </div>
               </Link>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Your premier destination for movie tickets and theater experiences. Book your seats online with ease.
-              </p>
+              {/* Contact Information Cards */}
               <div className="space-y-3">
-                <div className="flex items-start space-x-3 text-gray-400 hover:text-teal-400 transition-colors group">
-                  <MapPin className="h-5 w-5 text-teal-500 flex-shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm">123 Broadway, New York, NY 10001, USA</span>
+                {/* Location Card */}
+                <div className="group relative overflow-hidden bg-gray-800/40 hover:bg-gray-800/60 rounded-xl p-3 border border-gray-700/50 hover:border-teal-500/30 transition-all duration-300 cursor-pointer">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 to-emerald-500/0 group-hover:from-teal-500/5 group-hover:to-emerald-500/5 transition-all duration-500"></div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
+                      <MapPin className="h-4 w-4 text-teal-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-teal-400/70 font-mono tracking-wider">LOCATION</p>
+                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors">Bole Medhanealem, Addis Ababa, Ethiopia</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-3 text-gray-400 hover:text-teal-400 transition-colors group">
-                  <Phone className="h-5 w-5 text-teal-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm">+1 (555) 123-4567</span>
+
+                {/* Phone Card */}
+                <div className="group relative overflow-hidden bg-gray-800/40 hover:bg-gray-800/60 rounded-xl p-3 border border-gray-700/50 hover:border-teal-500/30 transition-all duration-300 cursor-pointer">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 to-emerald-500/0 group-hover:from-teal-500/5 group-hover:to-emerald-500/5 transition-all duration-500"></div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
+                      <Phone className="h-4 w-4 text-teal-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-teal-400/70 font-mono tracking-wider">PHONE</p>
+                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors">+251-11-558-1234</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Support: 24/7</p>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-3 text-gray-400 hover:text-teal-400 transition-colors group">
-                  <Mail className="h-5 w-5 text-teal-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm">support@theaterhub.com</span>
-                </div>
-                <div className="flex items-center space-x-3 text-gray-400 hover:text-teal-400 transition-colors group">
-                  <Clock className="h-5 w-5 text-teal-500 group-hover:scale-110 transition-transform" />
-                  <span className="text-sm">Mon-Sun: 9:00 AM - 11:00 PM</span>
+
+                {/* Email Card */}
+                <div className="group relative overflow-hidden bg-gray-800/40 hover:bg-gray-800/60 rounded-xl p-3 border border-gray-700/50 hover:border-teal-500/30 transition-all duration-300 cursor-pointer">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/0 to-emerald-500/0 group-hover:from-teal-500/5 group-hover:to-emerald-500/5 transition-all duration-500"></div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-teal-500/10 flex items-center justify-center group-hover:bg-teal-500/20 transition-colors">
+                      <Mail className="h-4 w-4 text-teal-400 group-hover:scale-110 transition-transform" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-teal-400/70 font-mono tracking-wider">EMAIL</p>
+                      <p className="text-sm text-gray-300 group-hover:text-white transition-colors break-all">info@theaterhubethiopia.com</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Response within 24h</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -143,7 +170,7 @@ const Footer = () => {
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
                 Quick Links
-                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-teal-500 rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3">
                 {quickLinks.map((link) => {
@@ -152,10 +179,10 @@ const Footer = () => {
                     <li key={link.to}>
                       <Link
                         to={link.to}
-                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-colors group"
+                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-all duration-300 group"
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                        <span>{link.label}</span>
+                        <span className="group-hover:translate-x-1 transition-transform inline-block">{link.label}</span>
                       </Link>
                     </li>
                   );
@@ -167,7 +194,7 @@ const Footer = () => {
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
                 Support
-                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-teal-500 rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3 mb-6">
                 {supportLinks.map((link) => {
@@ -176,10 +203,10 @@ const Footer = () => {
                     <li key={link.to}>
                       <Link
                         to={link.to}
-                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-colors group"
+                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-all duration-300 group"
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                        <span>{link.label}</span>
+                        <span className="group-hover:translate-x-1 transition-transform inline-block">{link.label}</span>
                       </Link>
                     </li>
                   );
@@ -188,7 +215,7 @@ const Footer = () => {
 
               <h3 className="text-lg font-bold text-white relative inline-block">
                 Legal
-                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-teal-500 rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3">
                 {legalLinks.map((link) => {
@@ -197,10 +224,10 @@ const Footer = () => {
                     <li key={link.to}>
                       <Link
                         to={link.to}
-                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-colors group"
+                        className="flex items-center space-x-2 text-gray-400 hover:text-teal-400 transition-all duration-300 group"
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
-                        <span>{link.label}</span>
+                        <span className="group-hover:translate-x-1 transition-transform inline-block">{link.label}</span>
                       </Link>
                     </li>
                   );
@@ -212,21 +239,21 @@ const Footer = () => {
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
                 Newsletter
-                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-teal-500 rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
-              <p className="text-gray-400 text-sm">
-                Subscribe to get special offers, free giveaways, and exclusive deals.
+              <p className="text-gray-400 text-sm bg-gradient-to-r from-teal-500/10 to-emerald-500/10 p-3 rounded-lg border border-teal-500/20">
+                📧 Subscribe to get exclusive offers, early bird tickets
               </p>
 
               {/* Subscription Form */}
               <form onSubmit={handleSubscribe} className="flex flex-col space-y-3">
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-teal-500" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
+                    placeholder="Your email address"
                     className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none"
                     disabled={isSubmitting}
                   />
@@ -234,7 +261,7 @@ const Footer = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-4 py-3 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all font-medium shadow-lg shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 duration-300"
+                  className="flex items-center justify-center space-x-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white px-4 py-3 rounded-xl hover:from-teal-500 hover:to-emerald-500 transition-all font-medium shadow-lg shadow-teal-600/20 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 duration-300"
                 >
                   {isSubmitting ? (
                     <>
@@ -244,15 +271,15 @@ const Footer = () => {
                   ) : (
                     <>
                       <Gift className="h-5 w-5" />
-                      <span>Subscribe & Get 10% Off</span>
+                      <span>Subscribe</span>
                     </>
                   )}
                 </button>
               </form>
 
-              {/* Social Media Icons */}
+              {/* Social Media Icons with Brand Colors */}
               <div className="pt-4">
-                <h3 className="text-lg font-bold text-white mb-4">Follow Us</h3>
+                <h3 className="text-lg font-bold text-white mb-4">Connect With Us</h3>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map((social, index) => {
                     const Icon = social.icon;
@@ -260,9 +287,9 @@ const Footer = () => {
                       <a
                         key={index}
                         href={social.href}
-                        className="bg-gray-800 p-3 rounded-xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 group"
+                        className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 bg-gray-800 ${social.bgHover} group`}
                         style={{
-                          hover: { backgroundColor: social.brandColor }
+                          backgroundColor: '#1F2937'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = social.brandColor;
@@ -271,6 +298,8 @@ const Footer = () => {
                           e.currentTarget.style.backgroundColor = '#1F2937';
                         }}
                         aria-label={social.label}
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
                         <Icon className="h-5 w-5 text-gray-400 group-hover:text-white transition-colors" />
                       </a>
@@ -281,33 +310,11 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Payment Methods & Trust Badges */}
-          <div className="border-t border-gray-800 pt-8 mb-8">
-            <div className="flex flex-wrap items-center justify-between gap-6">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-400">We Accept:</span>
-                <div className="flex flex-wrap gap-3">
-                  {chapaPaymentMethods.map((method) => (
-                    <div key={method.name} className="group relative">
-                      <div className="bg-gray-800 px-4 py-2 rounded-lg text-sm text-gray-400 border border-gray-700 hover:border-teal-500 hover:text-teal-400 transition-all cursor-help flex items-center gap-2">
-                        <span className="text-lg">{method.icon}</span>
-                        <span>{method.name}</span>
-                      </div>
-                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-700 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        {method.description}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Bottom Bar */}
           <div className="border-t border-gray-800 pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-400 text-center md:text-left">
-                © {currentYear} TheaterHUB. All rights reserved.
+                <span>© {currentYear} Ethiopian TheaterHUB System</span>
               </div>
               <div className="flex items-center flex-wrap justify-center gap-6">
                 <Link to="/terms" className="text-sm text-gray-400 hover:text-teal-400 transition-colors">
@@ -319,7 +326,9 @@ const Footer = () => {
                 <Link to="/cookies" className="text-sm text-gray-400 hover:text-teal-400 transition-colors">
                   Cookies
                 </Link>
-
+                <Link to="/accessibility" className="text-sm text-gray-400 hover:text-teal-400 transition-colors">
+                  Accessibility
+                </Link>
               </div>
             </div>
           </div>
@@ -360,7 +369,7 @@ const Footer = () => {
                 <div className="bg-white/20 rounded-lg p-3 mb-4">
                   <div className="flex items-center justify-center space-x-2 text-white text-sm">
                     <Sparkles className="h-4 w-4" />
-                    <span>🎁 You've earned a 10% discount code: <strong className="font-mono">WELCOME10</strong></span>
+                    <span>🎁 You've successfully subscribed: <strong className="font-mono">WELCOME</strong></span>
                   </div>
                 </div>
               )}
@@ -379,7 +388,6 @@ const Footer = () => {
         </div>
       )}
 
-      {/* FIXED: Removed the jsx attribute from style tag */}
       <style>{`
         @keyframes fadeIn {
           from {
