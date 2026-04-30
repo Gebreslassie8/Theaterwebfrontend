@@ -3,8 +3,17 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import SalesDashboard from './SalesDashboard';
+import BrowseEvents from './BrowseEvents';
+import SellTickets from './SellTickets';
+import IssueTicket from './IssueTicket';
+import ViewSales from './ViewSales';
+import RefundTicket from './RefundTicket';
+import CustomerList from './CustomerList';
+import AddCustomer from './AddCustomer';
+import DailySalesReport from './DailySalesReport';
+import MonthlySalesReport from './MonthlySalesReport';
 
-// Protected Route Component
+// Protected Route Component (copied from manager routes)
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
   children, 
   allowedRoles = [] 
@@ -23,7 +32,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   return <>{children}</>;
 };
 
-// Create the sales route element
+// Create the sales route element (matches manager structure)
 export const salesRouteElement = (
   <Route
     path="/sales"
@@ -35,14 +44,22 @@ export const salesRouteElement = (
   >
     <Route index element={<Navigate to="/sales/dashboard" replace />} />
     <Route path="dashboard" element={<SalesDashboard />} />
-    <Route path="events" element={<SalesDashboard />} />
-    <Route path="events/browse" element={<SalesDashboard />} />
-    <Route path="events/schedule" element={<SalesDashboard />} />
-    <Route path="seats" element={<SalesDashboard />} />
-    <Route path="seats/map" element={<SalesDashboard />} />
-    <Route path="seats/select" element={<SalesDashboard />} />
-    <Route path="payments" element={<SalesDashboard />} />
-    <Route path="payments/cash" element={<SalesDashboard />} />
-    <Route path="payments/pos" element={<SalesDashboard />} />
+    
+    {/* Event Schedule */}
+    <Route path="events/browse" element={<BrowseEvents />} />
+    <Route path="events/sales/sell" element={<SellTickets />} />
+    
+    {/* Ticket Sales */}
+    <Route path="tickets/issue" element={<IssueTicket />} />
+    <Route path="tickets/sales" element={<ViewSales />} />
+    <Route path="tickets/refund" element={<RefundTicket />} />
+    
+    {/* Customer Management */}
+    <Route path="customers/list" element={<CustomerList />} />
+    <Route path="customers/add" element={<AddCustomer />} />
+    
+    {/* Reports */}
+    <Route path="reports/daily" element={<DailySalesReport />} />
+    <Route path="reports/monthly" element={<MonthlySalesReport />} />
   </Route>
 );

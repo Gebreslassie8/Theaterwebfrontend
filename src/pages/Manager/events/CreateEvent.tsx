@@ -901,33 +901,7 @@ const CreateEvent: React.FC = () => {
             />
           ))}
         </div>
-        <div className="max-w-7xl mx-auto px-6 py-8 relative z-10">
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.3 }} className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-xl rounded-full mb-4">
-            <Shield className="h-4 w-4" />
-            <span className="text-sm font-medium">Event Manager • Admin Dashboard</span>
-          </motion.div>
-          <motion.h1 className="text-4xl font-bold mb-2" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.4 }}>Welcome back, Administrator!</motion.h1>
-          <motion.p className="text-white/80 text-lg" initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}>Here's what's happening with your events today</motion.p>
-          <motion.div className="flex items-center gap-6 mt-6 flex-wrap" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}>
-            <QuickStatBadge icon={Calendar} label="Date" value={new Date().toLocaleDateString()} />
-            <QuickStatBadge icon={MapPin} label="Location" value="Addis Ababa" />
-            <QuickStatBadge icon={Activity} label="System Status" value="Healthy" status="online" />
-            <QuickStatBadge icon={Users} label="Total Events" value={events.length.toString()} />
-          </motion.div>
-          <div className="flex justify-between items-center mt-8">
-            <div className="flex gap-2">
-              {(['day', 'week', 'month', 'year', 'all'] as const).map((range) => (
-                <button key={range} onClick={() => setDateRange(range)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${dateRange === range ? 'bg-teal-600 text-white shadow-lg shadow-teal-600/30' : 'bg-white/20 text-white hover:bg-white/30'}`}>
-                  {range.charAt(0).toUpperCase() + range.slice(1)}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-              <button onClick={exportToCSV} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"><Download className="h-5 w-5 text-white" /></button>
-              <button className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"><Filter className="h-5 w-5 text-white" /></button>
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">

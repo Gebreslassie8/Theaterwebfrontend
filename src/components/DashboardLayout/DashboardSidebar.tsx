@@ -265,9 +265,60 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               { name: "Customer", to: "/manager/Customer", icon: User },
             ]
           }
-        ] // <--- FIXED: missing closing bracket added here
+        ]
       },
 
+      // ==================== SALESPERSON ONLY ====================
+{
+  name: "Sales",
+  icon: Ticket,
+  color: "from-teal-500 to-green-500",
+  roles: ["salesperson"],
+  items: [
+    { name: "Dashboard", to: "/sales/dashboard", icon: LayoutDashboard, color: "text-teal-500" },
+    {
+      name: "Event Schedule",
+      to: "/sales/events/browse",
+      icon: Calendar,
+      color: "text-purple-500",
+      subItems: [
+        { name: "Browse Events", to: "/sales/events/browse", icon: Calendar },
+        { name: "Sell Tickets", to: "/sales/events/sales/sell", icon: Ticket }
+      ]
+    },
+    {
+      name: "Ticket Sales",
+      to: "/sales/tickets/issue",
+      icon: Tickets,
+      color: "text-indigo-500",
+      subItems: [
+        { name: "Issue Ticket", to: "/sales/tickets/issue", icon: PlusCircle },
+        { name: "View Sales", to: "/sales/tickets/sales", icon: BarChart3 },
+        { name: "Refund/Cancel", to: "/sales/tickets/refund", icon: TicketX }
+      ]
+    },
+    {
+      name: "Customer Management",
+      to: "/sales/customers/list",
+      icon: Users,
+      color: "text-orange-500",
+      subItems: [
+        { name: "Customer List", to: "/sales/customers/list", icon: Users },
+        { name: "Add Customer", to: "/sales/customers/add", icon: UserPlus }
+      ]
+    },
+    {
+      name: "Reports",
+      to: "/sales/reports/daily",
+      icon: FileText,
+      color: "text-pink-500",
+      subItems: [
+        { name: "Daily Sales", to: "/sales/reports/daily", icon: TrendingUp },
+        { name: "Monthly Report", to: "/sales/reports/monthly", icon: BarChart }
+      ]
+    }
+  ]
+},
 
       // ==================== CUSTOMER ONLY ====================
       {
@@ -310,28 +361,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         roles: ["scanner"],
         items: [
           { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode },
-          { name: "Entry Analaytics", to: "/scanner/stats/entries", icon: Users },
-
-          // {
-          //   name: "Customer Check-in",
-          //   to: "/scanner/checkin",
-          //   icon: CheckCircle,
-          //   color: "text-green-500",
-          //   subItems: [
-          //     { name: "Customer Check-in", to: "/scanner/checkin", icon: CheckCircle }
-
-          //   ]
-          // },
-
-          // {
-          //   name: "Gate Management",
-          //   to: "/scanner/gates",
-          //   icon: DoorOpen,
-          //   color: "text-orange-500",
-          //   subItems: [
-          //     { name: "Gate Management", to: "/scanner/gates", icon: Activity }
-          //   ]
-          // }
+          { name: "Entry Analytics", to: "/scanner/stats/entries", icon: Users },
         ]
       }
     ];
