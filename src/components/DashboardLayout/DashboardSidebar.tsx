@@ -296,7 +296,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== THEATER MANAGER ONLY ====================
       {
-        name: "Theater Manager",
         icon: Users,
         color: "from-blue-500 to-cyan-500",
         roles: ["manager"],
@@ -378,7 +377,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== SALESPERSON ONLY ====================
       {
-        name: "Sales",
         icon: Ticket,
         color: "from-teal-500 to-green-500",
         roles: ["salesperson"],
@@ -472,9 +470,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== CUSTOMER ONLY ====================
       {
-        name: "Customer",
         icon: Users,
-        color: "from-rose-500 to-pink-500",
         roles: ["customer"],
         items: [
           {

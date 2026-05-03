@@ -3,12 +3,7 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import CustomerDashboard from './Dashboard/CustomerDashboard';
-// import CustomerWallet from './Wallet/CustomerWallet';
-// import CustomerWalletBalance from './Wallet/CustomerWalletBalance';
-// import CustomerWalletAdd from './Wallet/CustomerWalletAdd';
-// import CustomerWalletTransactions from './Wallet/CustomerWalletTransactions';
 import CustomerMyTicketsDownload from './Tickets/CustomerMyTicketsDownload';
-// import CustomerMyTicketsQr from './Tickets/CustomerMyTicketsQr';
 import CustomerSettings from './Settings/CustomerSettings';
 
 // Protected Route Component
