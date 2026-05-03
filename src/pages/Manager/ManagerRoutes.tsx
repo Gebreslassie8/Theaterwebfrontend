@@ -2,7 +2,6 @@
 import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
-import ManagerDashboard from './ManagerDashboard';
 import EmployeeManagement from './employee/EmployeeManagement'
 // Import all manager components
 import ManagerOverview from './ManagerOverview';

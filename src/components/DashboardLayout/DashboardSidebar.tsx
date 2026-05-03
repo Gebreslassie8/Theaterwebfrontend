@@ -307,22 +307,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-blue-500",
           },
           {
-            name: "Events Schedule",
-            to: "/manager/events",
-            icon: Calendar,
-            color: "text-purple-500",
-            subItems: [
-              {
-                name: "Event Schedule",
-                to: "/manager/events/EventSchedule",
-                icon: Calendar,
-              },
-              {
-                name: "Event Management",
-                to: "/manager/events/create",
-                icon: PlusCircle,
-              },
-            ],
+            name: "Event Management",
+            to: "/manager/events/create",
+            icon: PlusCircle,
           },
           {
             name: "Halls",
@@ -347,19 +334,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 name: "Employee Management",
                 to: "/manager/employee",
                 icon: Users,
-              },
-            ],
-          },
-          {
-            name: "Ticket management",
-            to: "/manager/inventory",
-            icon: Ticket,
-            color: "text-indigo-500",
-            subItems: [
-              {
-                name: "BookingTicketControl",
-                to: "/manager/inventory/BookingTicketControl",
-                icon: Tickets,
               },
             ],
           },
@@ -463,9 +437,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     };
     return roleNames[role] || "User";
   };
-
-
-  
 
   function getRoleIcon(role: string): React.ElementType {
     const icons: Record<string, React.ElementType> = {
