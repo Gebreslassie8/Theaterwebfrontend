@@ -385,14 +385,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         items: [
           {
             name: "Dashboard",
-            to: "/sales/dashboard",
-            icon: LayoutDashboard,
-            color: "text-teal-500",
-          },
-          {
-            name: "Event Schedule",
             to: "/sales/events/browse",
-            icon: Calendar,
+            icon: LayoutDashboard,
             color: "text-purple-500",
             subItems: [
               {
