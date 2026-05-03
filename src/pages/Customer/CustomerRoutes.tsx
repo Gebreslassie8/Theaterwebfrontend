@@ -3,10 +3,10 @@ import React from 'react';
 import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import CustomerDashboard from './Dashboard/CustomerDashboard';
-import CustomerWallet from './Wallet/CustomerWallet';
-import CustomerWalletBalance from './Wallet/CustomerWalletBalance';
-import CustomerWalletAdd from './Wallet/CustomerWalletAdd';
-import CustomerWalletTransactions from './Wallet/CustomerWalletTransactions';
+// import CustomerWallet from './Wallet/CustomerWallet';
+// import CustomerWalletBalance from './Wallet/CustomerWalletBalance';
+// import CustomerWalletAdd from './Wallet/CustomerWalletAdd';
+// import CustomerWalletTransactions from './Wallet/CustomerWalletTransactions';
 import CustomerMyTicketsDownload from './Tickets/CustomerMyTicketsDownload';
 // import CustomerMyTicketsQr from './Tickets/CustomerMyTicketsQr';
 import CustomerSettings from './Settings/CustomerSettings';
@@ -42,12 +42,7 @@ export const customerRouteElement = (
   >
     <Route index element={<Navigate to="/customer/dashboard" replace />} />
     <Route path="dashboard" element={<CustomerDashboard />} />
-    <Route path="wallet" element={<CustomerWallet />} />
-    <Route path="wallet/balance" element={<CustomerWalletBalance />} />
-    <Route path="wallet/add" element={<CustomerWalletAdd />} />
-    <Route path="wallet/transactions" element={<CustomerWalletTransactions />} />
-    <Route path="my-tickets/download" element={<CustomerMyTicketsDownload />} />
-    {/* <Route path="my-tickets/qr" element={<CustomerMyTicketsQr />} /> */}
+    <Route path="my-tickets" element={<CustomerMyTicketsDownload />} />
     <Route path="settings" element={<CustomerSettings />} />
   </Route>
 );

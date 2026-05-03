@@ -9,8 +9,8 @@ interface User {
   id?: string | number;
   name?: string;
   email?: string;
-  role: string;           // "admin" | "theater_owner" | "manager" | etc.
-  [key: string]: any;     // allow extra fields
+  role: string;           
+  [key: string]: any;     
 }
 
 interface DashboardLayoutProps {

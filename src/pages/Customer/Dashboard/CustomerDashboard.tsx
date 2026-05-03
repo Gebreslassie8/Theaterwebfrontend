@@ -12,25 +12,13 @@ import {
     DollarSign,
     Award,
     Gift,
-    Download,
     QrCode,
-    Share2,
-    Bookmark,
     ChevronRight,
     TrendingUp,
     Wallet,
     CheckCircle,
     XCircle,
-    Headphones,
-    Search,
-    Filter,
-    X,
-    Plus,
-    Minus,
-    CreditCard,
-    Smartphone,
-    Eye,
-    EyeOff
+    Headphones
 } from 'lucide-react';
 import {
     AreaChart, Area, PieChart as RePieChart, Pie,
@@ -390,6 +378,10 @@ const BookingModal: React.FC<{
             </div>
         );
     }
+
+
+
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 overflow-y-auto backdrop-blur-sm">
