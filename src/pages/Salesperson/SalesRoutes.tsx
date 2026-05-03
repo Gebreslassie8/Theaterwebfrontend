@@ -36,8 +36,8 @@ export const salesRouteElement = (
       </ProtectedRoute>
     }
   >
-    <Route index element={<Navigate to="/sales/dashboard" replace />} />
-    <Route path="dashboard" element={<SalesDashboard />} />
+    {/* <Route index element={<Navigate to="/sales/dashboard" replace />} />
+    <Route path="dashboard" element={<SalesDashboard />} /> */}
     
     {/* Event Schedule */}
     <Route path="events/browse" element={<BrowseEvents />} />
