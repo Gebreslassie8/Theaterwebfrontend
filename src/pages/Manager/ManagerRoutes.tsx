@@ -11,7 +11,6 @@ import HallsManagement from './halls/HallsManagement';
 // import InventoryManagement from  './inventory/';
 import BookingTicketControl from './Tickets/BookingTicketControl';
 import Reports from './Report/Reports';
-import CustomerManagement from './Customer/CustomerManagement';
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -50,7 +49,6 @@ export const managerRouteElement = (
    <Route path="Tickets" element={<BookingTicketControl />} />
    <Route path="Tickets/BookingTicketControl" element={<BookingTicketControl />} />
    <Route path="Report" element={<Reports />} />
-   <Route path="Customer" element={<CustomerManagement />} />
   <Route path="employee" element={<EmployeeManagement />} />
 
 
