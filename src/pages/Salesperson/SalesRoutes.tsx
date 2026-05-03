@@ -4,7 +4,7 @@ import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import BrowseEvents from "./BrowseEvents";
 import SellTickets from "./SellTickets";
-import Reportanalysis from "./Reportanalysis";
+import Report from "./Report";
 
 // Loading component
 const LoadingSpinner: React.FC = () => (
@@ -99,10 +99,10 @@ export const salesRouteElement = (
     <Route path="events/sell" element={<SellTickets />} />
     {/* Alternative path for sell tickets (keeping your original) */}
     <Route path="events/sales/sell" element={<SellTickets />} />
-    <Route path="reports/monthly" element={<Reportanalysis />} />
-    <Route path="reports/daily" element={<Reportanalysis />} />{" "}
-    {/* Optional: daily reports */}
-    {/* Catch any unknown sales routes and redirect to browse events */}
+    <Route path="Salesperson/Report" element={<Report />} />
+    <Route path="reports/Report" element={<Report />} />
+    
+
     <Route path="*" element={<Navigate to="/sales/events/browse" replace />} />
   </Route>
 );
