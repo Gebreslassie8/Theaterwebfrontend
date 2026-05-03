@@ -1,6 +1,7 @@
 // src/components/DashboardLayout/DashboardLayout.tsx
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+
 import DashboardSidebar from "./DashboardSidebar";
 import DashboardHeader from "./DashboardHeader";
 
@@ -29,7 +30,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
     const checkAuth = async () => {
       try {
         const userDataStr = localStorage.getItem("user") || sessionStorage.getItem("user");
-
         if (!userDataStr) {
           navigate("/login", { replace: true });
           return;

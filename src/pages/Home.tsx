@@ -399,6 +399,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
+      {/* here We display The Hero Part from database */}
       <HeroBanner
         featuredShows={events
           .filter((event) => event.isFeatured)
@@ -428,6 +429,7 @@ const Home: React.FC = () => {
                 />
               </div>
 
+              {/*  */}
               <div className="relative">
                 <button
                   onClick={() => setIsSortOpen(!isSortOpen)}
@@ -476,6 +478,7 @@ const Home: React.FC = () => {
                 </AnimatePresence>
               </div>
 
+              {/* The following help us  to lost down options  filters */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${
@@ -580,6 +583,7 @@ const Home: React.FC = () => {
             {totalPages > 1 && (
               <div className="flex justify-center mt-10">
                 <nav className="flex items-center gap-2 flex-wrap">
+                  {/* this preveiew bettens in the pagenations  */}
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}

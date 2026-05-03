@@ -1,27 +1,37 @@
-import React, { useEffect, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout';
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import MainLayout from "./layouts/MainLayout";
 import Login from "./components/auth/Login";
 import ForgotPassword from "./components/auth/Forgotpassword";
-import HomePage from './pages/Home';
+import HomePage from "./pages/Home";
 import Blogs from "./pages/Blog";
 import Gallery from "./pages/Gallery";
 import About from "./pages/About";
 import Help from "./pages/Help";
 import Contact from "./pages/Contact";
-import TheaterRegistration from './pages/TheaterRegistration';
-import CustomerRegistration from './pages/CustomerRegistration';
-import TermsOfService from './pages/Legal/TermsOfService';
-import PrivacyPolicy from './pages/Legal/PrivacyPolicy';
-import CookiePolicy from './pages/Legal/CookiePolicy';
+import TheaterRegistration from "./pages/TheaterRegistration";
+import CustomerRegistration from "./pages/CustomerRegistration";
+import TermsOfService from "./pages/Legal/TermsOfService";
+import PrivacyPolicy from "./pages/Legal/PrivacyPolicy";
+import CookiePolicy from "./pages/Legal/CookiePolicy";
 
 // Import all route elements
-import { adminRouteElement } from './pages/Admin/AdminRoutes';
-import { ownerRouteElement } from './pages/Owner/OwnerRoutes';
-import { managerRouteElement } from './pages/Manager/ManagerRoutes';
-import { salesRouteElement } from './pages/Salesperson/SalesRoutes';
-import { scannerRouteElement } from './pages/QR Scanner/ScannerRoutes';
-import { customerRouteElement } from './pages/Customer/CustomerRoutes';
+import { adminRouteElement } from "./pages/Admin/AdminRoutes";
+import { ownerRouteElement } from "./pages/Owner/OwnerRoutes";
+import { managerRouteElement } from "./pages/Manager/ManagerRoutes";
+import { salesRouteElement } from "./pages/Salesperson/SalesRoutes";
+import { scannerRouteElement } from "./pages/QR Scanner/ScannerRoutes";
+import { customerRouteElement } from "./pages/Customer/CustomerRoutes";
+
+// Loading component
+const LoadingSpinner: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    </div>
+  </div>
+);
 
 // Protected Route Component
 interface ProtectedRouteProps {
@@ -29,21 +39,46 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles = [] }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  children,
+  allowedRoles = [],
+}) => {
   const location = useLocation();
-  const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
 
-  console.log('ProtectedRoute - Path:', location.pathname, 'User:', user?.role);
+  useEffect(() => {
+    try {
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (userStr) {
+        const parsedUser = JSON.parse(userStr);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  if (isChecking) {
+    return <LoadingSpinner />;
+  }
 
   if (!user) {
-    console.log('No user found, redirecting to login');
+    console.log("No user found, redirecting to login from:", location.pathname);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    console.log(`Role ${user.role} not allowed for path ${location.pathname}, redirecting to home`);
-    return <Navigate to="/" replace />;
+    console.log(
+      `Role ${user.role} not allowed for ${location.pathname}, redirecting to dashboard`,
+    );
+    const dashboardPath = getDashboardPath(user.role);
+    return <Navigate to={dashboardPath} replace />;
   }
 
   return <>{children}</>;
@@ -51,11 +86,30 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
 
 // Public Route Component - prevents logged-in users from accessing login page
 const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
-  const user = userStr ? JSON.parse(userStr) : null;
+  const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (userStr) {
+        const parsedUser = JSON.parse(userStr);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  if (isChecking) {
+    return <LoadingSpinner />;
+  }
 
   if (user) {
-    console.log('User already logged in, redirecting from login to dashboard');
+    console.log("User already logged in, redirecting from public route");
     const dashboardPath = getDashboardPath(user.role);
     return <Navigate to={dashboardPath} replace />;
   }
@@ -66,44 +120,65 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 // Helper function to get dashboard path based on role
 const getDashboardPath = (role: string): string => {
   switch (role) {
-    case 'admin':
-      return '/admin/dashboard';
-    case 'theater_owner':
-      return '/owner/dashboard';
-    case 'manager':
-      return '/manager/dashboard';
-    case 'salesperson':
-      return '/sales/dashboard';
-    case 'scanner':
-      return '/scanner/dashboard';
-    case 'customer':
-      return '/customer/dashboard';
+    case "admin":
+      return "/admin/dashboard";
+    case "theater_owner":
+      return "/owner/dashboard";
+    case "manager":
+      return "/manager/dashboard";
+    case "salesperson":
+      return "/sales/events/browse"; // Changed from /sales/dashboard to match your routes
+    case "scanner":
+      return "/scanner/dashboard";
+    case "customer":
+      return "/customer/dashboard";
     default:
-      return '/';
+      return "/";
   }
 };
 
-// Suppress React Router future flag warnings (optional - only for console cleanliness)
-const originalWarn = console.warn;
-console.warn = (...args) => {
-  if (
-    typeof args[0] === 'string' &&
-    (args[0].includes('React Router Future Flag Warning') ||
-      args[0].includes('v7_startTransition') ||
-      args[0].includes('v7_relativeSplatPath'))
-  ) {
-    return;
+// Root redirect component
+const RootRedirect: React.FC = () => {
+  const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (userStr) {
+        const parsedUser = JSON.parse(userStr);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  if (isChecking) {
+    return <LoadingSpinner />;
   }
-  originalWarn(...args);
+
+  if (user) {
+    const dashboardPath = getDashboardPath(user.role);
+    return <Navigate to={dashboardPath} replace />;
+  }
+
+  return <Navigate to="/" replace />;
 };
 
 function App() {
   const location = useLocation();
-  console.log('Current path:', location.pathname);
+
+  // Debug logging (remove in production)
+  useEffect(() => {
+    console.log("📍 App - Current path:", location.pathname);
+  }, [location.pathname]);
 
   return (
-
-    <Routes>
+    <Routes location={location}>
       {/* Public routes - accessible to everyone */}
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
@@ -145,10 +220,12 @@ function App() {
       {scannerRouteElement}
       {customerRouteElement}
 
+      {/* Redirect root based on auth status */}
+      <Route path="/redirect" element={<RootRedirect />} />
+
       {/* Redirect any unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-
   );
 }
 
