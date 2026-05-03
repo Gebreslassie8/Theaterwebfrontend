@@ -1,11 +1,9 @@
-// BookingModal.jsx - Professional seat arrangement with Chapa payment only
+// frontend\src\components\Booking\BookingModal.tsx
+
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Calendar,
-  Clock,
-  MapPin,
   Ticket,
   CreditCard,
   Phone,
@@ -15,25 +13,12 @@ import {
   AlertCircle,
   ChevronRight,
   ChevronLeft,
-  Shield,
-  Smartphone,
-  Banknote,
-  Landmark,
   Download,
   Printer,
-  Eye,
-  EyeOff,
-  Star,
   Award,
-  Gift,
   Crown,
-  TrendingUp,
   Users,
-  Info,
-  Sparkles,
   QrCode,
-  Coffee,
-  Music,
   Share2,
   Copy,
   Check,
