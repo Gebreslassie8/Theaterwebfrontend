@@ -1,32 +1,86 @@
 // src/pages/Salesperson/SalesRoutes.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import BrowseEvents from "./BrowseEvents";
 import SellTickets from "./SellTickets";
 import Reportanalysis from "./Reportanalysis";
 
-// Protected Route Component (copied from manager routes)
+// Loading component
+const LoadingSpinner: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col items-center gap-3">
+      <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+      <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+    </div>
+  </div>
+);
+
+// Protected Route Component with loading state
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRoles?: string[];
 }> = ({ children, allowedRoles = [] }) => {
-  const userStr =
-    localStorage.getItem("user") || sessionStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
+  const [isChecking, setIsChecking] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+      if (userStr) {
+        const parsedUser = JSON.parse(userStr);
+        setUser(parsedUser);
+      }
+    } catch (error) {
+      console.error("Failed to parse user data:", error);
+      localStorage.removeItem("user");
+      sessionStorage.removeItem("user");
+    } finally {
+      setIsChecking(false);
+    }
+  }, []);
+
+  // Helper function to get dashboard path based on role
+  const getDashboardPath = (role: string): string => {
+    switch (role) {
+      case "admin":
+        return "/admin/dashboard";
+      case "theater_owner":
+        return "/owner/dashboard";
+      case "manager":
+        return "/manager/dashboard";
+      case "salesperson":
+        return "/sales/events/browse";
+      case "scanner":
+        return "/scanner/dashboard";
+      case "customer":
+        return "/customer/dashboard";
+      default:
+        return "/";
+    }
+  };
+
+  if (isChecking) {
+    return <LoadingSpinner />;
+  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    console.log(
+      `Role ${user.role} not allowed for sales routes, redirecting to dashboard`,
+    );
+    const dashboardPath = getDashboardPath(user.role);
+    return <Navigate to={dashboardPath} replace />;
   }
 
   return <>{children}</>;
 };
 
-// Create the sales route element (matches manager structure)
+// Create the sales route element
 export const salesRouteElement = (
   <Route
     path="/sales"
@@ -38,8 +92,17 @@ export const salesRouteElement = (
       </ProtectedRoute>
     }
   >
+    {/* Index route - redirect to browse events by default */}
+    <Route index element={<Navigate to="/sales/events/browse" replace />} />
+    {/* Defined routes */}
     <Route path="events/browse" element={<BrowseEvents />} />
+    <Route path="events/sell" element={<SellTickets />} />
+    {/* Alternative path for sell tickets (keeping your original) */}
     <Route path="events/sales/sell" element={<SellTickets />} />
     <Route path="reports/monthly" element={<Reportanalysis />} />
+    <Route path="reports/daily" element={<Reportanalysis />} />{" "}
+    {/* Optional: daily reports */}
+    {/* Catch any unknown sales routes and redirect to browse events */}
+    <Route path="*" element={<Navigate to="/sales/events/browse" replace />} />
   </Route>
 );
