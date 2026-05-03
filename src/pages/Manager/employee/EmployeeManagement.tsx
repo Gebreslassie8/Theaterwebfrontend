@@ -72,7 +72,7 @@ const defaultEmployees: Employee[] = [
     notes: 'Top performer',
   },
   {
-    id: 'emp-2',
+    id: 'emp-2', 
     name: 'Jane Smith',
     username: 'jane.smith',
     password: 'jane123',

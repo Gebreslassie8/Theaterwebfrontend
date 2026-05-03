@@ -92,15 +92,11 @@ export const salesRouteElement = (
       </ProtectedRoute>
     }
   >
-    {/* Index route - redirect to browse events by default */}
     <Route index element={<Navigate to="/sales/events/browse" replace />} />
-    {/* Defined routes */}
-    <Route path="events/browse" element={<BrowseEvents />} />
-    <Route path="events/sell" element={<SellTickets />} />
-    {/* Alternative path for sell tickets (keeping your original) */}
+    <Route path="Salesperson/browse" element={<BrowseEvents />} />
+    {/* <Route path="events/sell" element={<SellTickets />} /> */}
     <Route path="events/sales/sell" element={<SellTickets />} />
     <Route path="Salesperson/Report" element={<Report />} />
-    <Route path="reports/Report" element={<Report />} />
     
 
     <Route path="*" element={<Navigate to="/sales/events/browse" replace />} />
