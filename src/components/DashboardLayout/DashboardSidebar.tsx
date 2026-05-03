@@ -312,39 +312,22 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: PlusCircle,
           },
           {
-            name: "Halls",
+            name: "Halls Management",
             to: "/manager/halls",
             icon: Building,
             color: "text-green-500",
-            subItems: [
-              {
-                name: "Halls Management",
-                to: "/manager/halls",
-                icon: Building,
-              },
-            ],
           },
           {
-            name: "Employee",
+            name: "Employee Management",
             to: "/manager/employee",
             icon: Users,
             color: "text-green-500",
-            subItems: [
-              {
-                name: "Employee Management",
-                to: "/manager/employee",
-                icon: Users,
-              },
-            ],
           },
           {
             name: "Report management",
             to: "/manager/Report",
             icon: BarChart,
             color: "text-indigo-500",
-            subItems: [
-              { name: "Reports", to: "/manager/Report", icon: FileText },
-            ],
           },
         ],
       },
