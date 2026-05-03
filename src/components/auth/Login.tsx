@@ -159,7 +159,7 @@ const roles = [
     icon: Shield,
     description: "Ticket sales",
     gradient: "from-green-500 to-emerald-500",
-    route: "/sales/dashboard",
+    route: "/sales/events/browse",
     homeRoute: "/sales",
     color: "green",
     demoCredentials: "sales@theaterhub.com / sales123",
