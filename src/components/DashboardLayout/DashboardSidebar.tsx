@@ -400,48 +400,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             ],
           },
           {
-            name: "Ticket Sales",
-            to: "/sales/tickets/issue",
-            icon: Tickets,
-            color: "text-indigo-500",
-            subItems: [
-              {
-                name: "Issue Ticket",
-                to: "/sales/tickets/issue",
-                icon: PlusCircle,
-              },
-              {
-                name: "View Sales",
-                to: "/sales/tickets/sales",
-                icon: BarChart3,
-              },
-              {
-                name: "Refund/Cancel",
-                to: "/sales/tickets/refund",
-                icon: TicketX,
-              },
-            ],
-          },
-
-          {
-            name: "Customer Management",
-            to: "/sales/customers/list",
-            icon: Users,
-            color: "text-orange-500",
-            subItems: [
-              {
-                name: "Customer List",
-                to: "/sales/customers/list",
-                icon: Users,
-              },
-              {
-                name: "Add Customer",
-                to: "/sales/customers/add",
-                icon: UserPlus,
-              },
-            ],
-          },
-          {
             name: "Reports",
             to: "/sales/reports/daily",
             icon: FileText,

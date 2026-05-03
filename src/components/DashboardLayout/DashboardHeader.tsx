@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import {
   Menu,
-  Bell,
   User,
   ChevronDown,
   LogOut,
   HelpCircle,
-  Sparkles,
-  X,
   Edit,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
@@ -15,14 +12,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import ThemeToggle from "../UI/ThemeToggle";
 import ProfileSettingsModal from "../modals/ProfileSettingsModal";
 
-// Types
-interface Notification {
-  id: number;
-  title: string;
-  time: string;
-  read: boolean;
-}
-
+// not understanded by bire
 interface UserData {
   id?: number;
   name?: string;
@@ -32,12 +22,15 @@ interface UserData {
   [key: string]: any;
 }
 
+// not understanded by bire
 interface DashboardHeaderProps {
   onMenuClick: () => void;
   user: UserData | null;
   onUserUpdate: (updatedUser: UserData) => void;
   className?: string;
 }
+
+
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onMenuClick,
@@ -47,13 +40,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const [showProfileDropdown, setShowProfileDropdown] =
     useState<boolean>(false);
-  const [showNotifications, setShowNotifications] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(user);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
+
+
+  // evetig after this comment is function
+
+
+  // perform log out
   const handleLogout = async (): Promise<void> => {
     try {
       console.log("Logging out...");
@@ -72,12 +70,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
-  const notifications: Notification[] = [
-    { id: 1, title: "New booking received", time: "5 min ago", read: false },
-    { id: 2, title: "Show approved", time: "1 hour ago", read: true },
-    { id: 3, title: "Payment processed", time: "2 hours ago", read: true },
-  ];
-
+  // not understanded by bire
   const getRoleGradient = (role?: string): string => {
     const gradients: Record<string, string> = {
       admin: "from-deepTeal to-pink-500",
@@ -88,6 +81,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return gradients[role || ""] || "from-deepTeal to-pink-500";
   };
 
+  // not understanded by bire
   const getRoleLabel = (role?: string): string => {
     const labels: Record<string, string> = {
       admin: "Administrator",
@@ -98,11 +92,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return labels[role || ""] || "User";
   };
 
+  // to on and off user setting/profile
   const handleProfileClick = (): void => {
     setShowProfileDropdown(false);
     setShowProfileModal(true);
   };
 
+  // to update user profile
   const handleUserUpdate = (updatedUser: UserData): void => {
     setCurrentUser(updatedUser);
     if (onUserUpdate) {
@@ -111,6 +107,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setShowProfileModal(false);
   };
 
+  // // not understanded by bire
   const getUserInitials = (): string => {
     const displayUser = currentUser || user;
     if (displayUser?.name) {
@@ -122,9 +119,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
     return "U";
   };
-
   const displayUser = currentUser || user;
 
+  // eveting after this comment is diapled
   return (
     <>
       <header
@@ -159,73 +156,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 <div className="relative">
                   <ThemeToggle />
                 </div>
-              </div>
-
-              {/* Notifications */}
-              <div className="relative">
-                {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden animate-in slide-in-from-top-5 duration-300">
-                    <div className="p-4 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-r from-primary/5 to-purple-500/5 dark:from-primary/10 dark:to-purple-500/10">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Bell className="h-5 w-5 text-primary mr-2" />
-                          <h3 className="font-bold text-gray-900 dark:text-white">
-                            Notifications
-                          </h3>
-                        </div>
-                        <button
-                          onClick={() => setShowNotifications(false)}
-                          className="p-1 hover:bg-gray-100 dark:hover:bg-dark-700 rounded-lg transition-colors"
-                        >
-                          <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                        </button>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        You have {notifications.filter((n) => !n.read).length}{" "}
-                        unread
-                      </p>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto">
-                      {notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          className={`px-4 py-3 hover:bg-gray-50 dark:hover:bg-dark-700 border-b border-gray-100 dark:border-dark-700 last:border-b-0 transition-all duration-300 group relative ${!n.read ? "bg-blue-50 dark:bg-blue-900/10" : ""}`}
-                        >
-                          {!n.read && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-500 to-cyan-500" />
-                          )}
-                          <div className="flex items-start space-x-3">
-                            <div
-                              className={`p-2 rounded-lg ${!n.read ? "bg-blue-100 dark:bg-blue-900/30" : "bg-gray-100 dark:bg-dark-700"}`}
-                            >
-                              <Bell
-                                className={`h-4 w-4 ${!n.read ? "text-blue-500" : "text-gray-500 dark:text-gray-400"}`}
-                              />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                {n.title}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center">
-                                <Sparkles className="h-3 w-3 mr-1" /> {n.time}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="p-3 border-t border-gray-200 dark:border-dark-700 text-center">
-                      <Link
-                        to="/dashboard/notifications"
-                        className="text-sm font-medium relative inline-flex items-center group"
-                        onClick={() => setShowNotifications(false)}
-                      >
-                        <span>View all notifications</span>
-                        <div className="ml-2 h-3 w-3 border-2 border-primary rounded-full border-t-transparent animate-spin" />
-                      </Link>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Profile */}
