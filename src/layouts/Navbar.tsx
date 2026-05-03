@@ -97,7 +97,7 @@ const Navbar: React.FC = () => {
                             />
                         </div>
                         <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-teal-600 to-teal-500 bg-clip-text text-transparent">
-                            TheaterHUB
+                            TheaterHUBs
                         </span>
                     </Link>
 

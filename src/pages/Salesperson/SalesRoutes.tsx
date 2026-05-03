@@ -4,7 +4,7 @@ import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import BrowseEvents from "./BrowseEvents";
 import SellTickets from "./SellTickets";
-import Reportanalysis from "./Reportanalysis";
+import Report from "./Report";
 
 // Protected Route Component (copied from manager routes)
 const ProtectedRoute: React.FC<{
@@ -40,6 +40,6 @@ export const salesRouteElement = (
   >
     <Route path="events/browse" element={<BrowseEvents />} />
     <Route path="events/sales/sell" element={<SellTickets />} />
-    <Route path="reports/monthly" element={<Reportanalysis />} />
+    <Route path="Salesperson/Report" element={<Report />} />
   </Route>
 );
