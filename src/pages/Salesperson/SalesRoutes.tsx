@@ -5,13 +5,7 @@ import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import SalesDashboard from './SalesDashboard';
 import BrowseEvents from './BrowseEvents';
 import SellTickets from './SellTickets';
-import IssueTicket from './IssueTicket';
-import ViewSales from './ViewSales';
-import RefundTicket from './RefundTicket';
-import CustomerList from './CustomerList';
-import AddCustomer from './AddCustomer';
-import DailySalesReport from './DailySalesReport';
-import MonthlySalesReport from './MonthlySalesReport';
+import Reportanalysis from './Reportanalysis';
 
 // Protected Route Component (copied from manager routes)
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
@@ -49,17 +43,7 @@ export const salesRouteElement = (
     <Route path="events/browse" element={<BrowseEvents />} />
     <Route path="events/sales/sell" element={<SellTickets />} />
     
-    {/* Ticket Sales */}
-    <Route path="tickets/issue" element={<IssueTicket />} />
-    <Route path="tickets/sales" element={<ViewSales />} />
-    <Route path="tickets/refund" element={<RefundTicket />} />
-    
-    {/* Customer Management */}
-    <Route path="customers/list" element={<CustomerList />} />
-    <Route path="customers/add" element={<AddCustomer />} />
-    
-    {/* Reports */}
-    <Route path="reports/daily" element={<DailySalesReport />} />
-    <Route path="reports/monthly" element={<MonthlySalesReport />} />
+
+    <Route path="reports/monthly" element={<Reportanalysis />} />
   </Route>
 );

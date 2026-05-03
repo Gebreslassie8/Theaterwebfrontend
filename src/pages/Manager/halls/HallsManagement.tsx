@@ -1,7 +1,6 @@
 // src/pages/Manager/halls/HallsManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, X, Eye, Users, MapPin, Star, Tag, Layout, CreditCard, Save, Search } from 'lucide-react';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
+import { Edit, Trash2, Plus, X, Eye, Users, MapPin, Star, Tag, Layout, CreditCard, Save, Search, Building, TrendingUp, CheckCircle } from 'lucide-react';import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
 
@@ -416,15 +415,77 @@ const HallsManagement: React.FC = () => {
     }
   ];
 
+  // Statistics for cards
+  const totalHalls = halls.length;
+  const totalSeats = halls.reduce((sum, hall) => sum + calculateTotalCapacity(hall.seatTypes), 0);
+  const averageCapacity = totalHalls > 0 ? Math.round(totalSeats / totalHalls) : 0;
+  const activeHalls = halls.filter(h => h.status === 'Active').length;
+
   if (loading) return <div className="p-6 text-center">Loading halls...</div>;
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Halls Management</h1>
+          <p className="text-gray-600 mt-1">Manage cinema halls, seat types, and capacities</p>
         </div>
         <ReusableButton onClick={handleAddHall} variant="primary" icon={Plus}>Add New Hall</ReusableButton>
+      </div>
+
+      {/* Statistics Cards - FinancialReports style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {/* Total Halls */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <Building className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Halls</p>
+              <p className="text-xl font-bold text-gray-900">{totalHalls}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Seats */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Seats</p>
+              <p className="text-xl font-bold text-gray-900">{totalSeats.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Average Capacity */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Avg. Capacity / Hall</p>
+              <p className="text-xl font-bold text-gray-900">{averageCapacity.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Halls */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+              <CheckCircle className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Active Halls</p>
+              <p className="text-xl font-bold text-gray-900">{activeHalls}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search only – Status filter removed */}

@@ -150,6 +150,12 @@ const CustomerManagement: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Statistics for cards
+  const totalCustomers = customers.length;
+  const activeCustomers = customers.filter(c => c.status === 'active').length;
+  const blockedCustomers = customers.filter(c => c.status === 'blocked').length;
+  const openComplaints = complaints.filter(c => c.status !== 'resolved').length;
+
   // ========== Customer actions ==========
   const handleBlockCustomer = (customerId: string) => {
     setCustomers(prev => prev.map(c => 
@@ -231,39 +237,34 @@ const CustomerManagement: React.FC = () => {
       Header: 'Actions',
       accessor: 'actions',
       sortable: false,
-      Cell: (row: Customer) => {
-        // DEBUG: ensure row is a full customer
-        // console.log('Actions row:', row);
-        return (
-          <div className="flex gap-2">
-            <button 
-              onClick={() => {
-                // Explicitly set selected customer and open modal
-                setSelectedCustomer(row);
-                setShowCustomerModal(true);
-              }} 
-              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" 
-              title="View Details"
-            >
-              <Eye size={16} />
-            </button>
-            <button 
-              onClick={() => handleBlockCustomer(row.id)} 
-              className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" 
-              title={row.status === 'blocked' ? 'Unblock' : 'Block'}
-            >
-              {row.status === 'blocked' ? <CheckCircle size={16} /> : <Ban size={16} />}
-            </button>
-            <button 
-              onClick={() => { setSelectedCustomer(row); setShowNewComplaintModal(true); }} 
-              className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg" 
-              title="Add Complaint"
-            >
-              <MessageSquare size={16} />
-            </button>
-          </div>
-        );
-      }
+      Cell: (row: Customer) => (
+        <div className="flex gap-2">
+          <button 
+            onClick={() => {
+              setSelectedCustomer(row);
+              setShowCustomerModal(true);
+            }} 
+            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg" 
+            title="View Details"
+          >
+            <Eye size={16} />
+          </button>
+          <button 
+            onClick={() => handleBlockCustomer(row.id)} 
+            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg" 
+            title={row.status === 'blocked' ? 'Unblock' : 'Block'}
+          >
+            {row.status === 'blocked' ? <CheckCircle size={16} /> : <Ban size={16} />}
+          </button>
+          <button 
+            onClick={() => { setSelectedCustomer(row); setShowNewComplaintModal(true); }} 
+            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded-lg" 
+            title="Add Complaint"
+          >
+            <MessageSquare size={16} />
+          </button>
+        </div>
+      )
     },
   ];
 
@@ -330,6 +331,61 @@ const CustomerManagement: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      {/* Statistics Cards - FinancialReports style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {/* Total Customers */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Customers</p>
+              <p className="text-xl font-bold text-gray-900">{totalCustomers}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Active Customers */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+              <CheckCircle className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Active</p>
+              <p className="text-xl font-bold text-gray-900">{activeCustomers}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Blocked Customers */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md">
+              <Ban className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Blocked</p>
+              <p className="text-xl font-bold text-gray-900">{blockedCustomers}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Open Complaints */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+              <MessageSquare className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Open Complaints</p>
+              <p className="text-xl font-bold text-gray-900">{openComplaints}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tab Navigation */}
       <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 w-fit shadow-sm">
         <button
@@ -498,7 +554,7 @@ const CustomerManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Complaint Details Modal (same as before, omitted for brevity) */}
+      {/* Complaint Details Modal */}
       {showComplaintModal && selectedComplaint && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-md w-full">

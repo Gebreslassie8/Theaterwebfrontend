@@ -301,35 +301,58 @@ const Reports: React.FC = () => {
         <p className="text-gray-600 mt-2">Real‑time insights from your event data</p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <DollarSign className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{formatCurrency(summary.totalRevenue)}</span>
+      {/* Summary Cards - FinancialReports style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {/* Total Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <DollarSign className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Revenue (active events)</p>
+              <p className="text-xl font-bold text-gray-900">{formatCurrency(summary.totalRevenue)}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Total Revenue (all active events)</p>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <Ticket className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{formatNumber(summary.totalTickets)}</span>
+
+        {/* Total Tickets Sold */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+              <Ticket className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Tickets Sold</p>
+              <p className="text-xl font-bold text-gray-900">{formatNumber(summary.totalTickets)}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Total Tickets Sold</p>
         </div>
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <Activity className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{summary.avgOccupancy}%</span>
+
+        {/* Average Occupancy Rate */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+              <Activity className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Average Occupancy Rate</p>
+              <p className="text-xl font-bold text-gray-900">{summary.avgOccupancy}%</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Average Occupancy Rate</p>
         </div>
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <Award className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold truncate">{summary.bestShow}</span>
+
+        {/* Best Selling Show */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+              <Award className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Best Selling Show</p>
+              <p className="text-xl font-bold text-gray-900 truncate max-w-[200px]">{summary.bestShow}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Best Selling Show</p>
         </div>
       </div>
 
@@ -440,7 +463,7 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Additional Insights */}
+      {/* Additional Insights - already white cards, keep as is */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl shadow-lg p-5">
           <div className="flex items-center gap-3 mb-3">

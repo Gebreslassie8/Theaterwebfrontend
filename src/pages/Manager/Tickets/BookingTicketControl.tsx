@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   DollarSign, Ticket, TrendingUp, Activity, 
-  Eye, CheckCircle, XCircle, Ban, Clock, Download, Search 
+  Eye, CheckCircle, XCircle, Ban, Clock, Download, Search,
+  AlertCircle  // added missing import
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -474,35 +475,58 @@ const BookingTicketControl: React.FC = () => {
         <p className="text-gray-600 mt-2">Manage customer bookings, approve/cancel tickets, and monitor sales</p>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <DollarSign className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">${stats.totalRevenue.toLocaleString()}</span>
+      {/* Statistics Cards - FinancialReports style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        {/* Total Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <DollarSign className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Revenue (Approved)</p>
+              <p className="text-xl font-bold text-gray-900">${stats.totalRevenue.toLocaleString()}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Total Revenue (Approved)</p>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <Ticket className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{stats.totalTicketsSold}</span>
+
+        {/* Tickets Sold */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+              <Ticket className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Tickets Sold (Approved)</p>
+              <p className="text-xl font-bold text-gray-900">{stats.totalTicketsSold.toLocaleString()}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Tickets Sold (Approved)</p>
         </div>
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <TrendingUp className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{stats.occupancyRate}%</span>
+
+        {/* Approval Rate */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Approval Rate</p>
+              <p className="text-xl font-bold text-gray-900">{stats.occupancyRate}%</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Approval Rate</p>
         </div>
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex justify-between items-start">
-            <Activity className="h-8 w-8 opacity-90" />
-            <span className="text-2xl font-bold">{stats.pendingApprovals}</span>
+
+        {/* Pending Approvals */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+              <Activity className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Pending Approvals</p>
+              <p className="text-xl font-bold text-gray-900">{stats.pendingApprovals}</p>
+            </div>
           </div>
-          <p className="text-sm opacity-90 mt-2">Pending Approvals</p>
         </div>
       </div>
 

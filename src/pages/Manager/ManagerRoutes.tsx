@@ -9,9 +9,8 @@ import ManagerOverview from './ManagerOverview';
 import EventSchedule from './events/EventSchedule';
 import CreateEvent from './events/CreateEvent';
 import HallsManagement from './halls/HallsManagement';
-import EventManagement from './events/EventManagement';
 // import InventoryManagement from  './inventory/';
-import BookingTicketControl from './inventory/BookingTicketControl';
+import BookingTicketControl from './Tickets/BookingTicketControl';
 import Reports from './Report/Reports';
 import CustomerManagement from './Customer/CustomerManagement';
 
@@ -48,10 +47,9 @@ export const managerRouteElement = (
     <Route path="dashboard" element={<ManagerOverview />} />
     <Route path="events/EventSchedule" element={<EventSchedule />} />
     <Route path="events/create" element={<CreateEvent />} />
-    <Route path="events/manage" element={<EventManagement />} />
     <Route path="halls" element={<HallsManagement />} />
-   <Route path="inventory" element={<BookingTicketControl />} />
-   <Route path="inventory/BookingTicketControl" element={<BookingTicketControl />} />
+   <Route path="Tickets" element={<BookingTicketControl />} />
+   <Route path="Tickets/BookingTicketControl" element={<BookingTicketControl />} />
    <Route path="Report" element={<Reports />} />
    <Route path="Customer" element={<CustomerManagement />} />
   <Route path="employee" element={<EmployeeManagement />} />

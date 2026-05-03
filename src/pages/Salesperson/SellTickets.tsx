@@ -1,584 +1,532 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Calendar, Download, TrendingUp, Search, Trash2, Eye, Copy, Share2, 
+  Download as DownloadIcon, Printer, DollarSign, Ticket, Users, 
+  CreditCard, Clock, Activity
+} from 'lucide-react';
+import { QRCodeCanvas } from 'qrcode.react';
+import Colors from '../../components/Reusable/Colors';
+import ReusableTable from '../../components/Reusable/ReusableTable';
+import ReusableButton from '../../components/Reusable/ReusableButton';
+import SuccessPopup from '../../components/Reusable/SuccessPopup';
 
-// --- Type Definitions ---
-interface Customer {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-}
-
-interface Show {
-  id: string;
-  title: string;
-  datetime: string;
-  venue: string;
-  ticketPrice: number;
-}
-
-interface Seat {
-  id: string;
-  row: string;
-  number: number;
-  status: 'available' | 'reserved' | 'sold';
-  price: number; // price can vary per seat
-}
-
-interface Booking {
-  id: string;
-  customerId: string;
-  showId: string;
-  seats: Seat[];
-  totalAmount: number;
-  discountPercent: number;
-  discountAmount: number;
-  finalAmount: number;
-  bookingReference: string;
+export interface TicketData {
+  seatId: number;
+  seatLabel: string;
   qrData: string;
 }
 
-// Mock API functions (replace with real fetch calls)
-const mockFetchCustomers = async (searchTerm: string): Promise<Customer[]> => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  const allCustomers: Customer[] = [
-    { id: 'c1', name: 'John Doe', email: 'john@example.com', phone: '1234567890' },
-    { id: 'c2', name: 'Jane Smith', email: 'jane@example.com', phone: '0987654321' },
-    { id: 'c3', name: 'Alice Johnson', email: 'alice@example.com', phone: '5551234567' },
-  ];
-  if (!searchTerm) return [];
-  return allCustomers.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()) || c.email.toLowerCase().includes(searchTerm.toLowerCase()));
-};
+export interface SaleRecord {
+  id: string;
+  customerName: string;
+  customerPhone?: string;
+  showTitle: string;
+  showDate: string;
+  showTime: string;
+  seats: string[];
+  tickets?: TicketData[];
+  seatType: string;
+  totalAmount: number;
+  paymentMethod: 'cash' | 'card';
+  saleDate: string;
+  salesperson: string;
+}
 
-const mockCreateCustomer = async (customerData: Omit<Customer, 'id'>): Promise<Customer> => {
-  await new Promise(resolve => setTimeout(resolve, 700));
-  return {
-    id: `c${Date.now()}`,
-    ...customerData,
-  };
-};
+const STORAGE_KEY = 'theatre_sales_history';
 
-const mockFetchShows = async (): Promise<Show[]> => {
-  await new Promise(resolve => setTimeout(resolve, 300));
+export const loadSalesHistory = (): SaleRecord[] => {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored) {
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
   return [
-    { id: 's1', title: 'The Phantom of the Opera', datetime: '2025-05-15T19:00:00', venue: 'Main Hall', ticketPrice: 45.0 },
-    { id: 's2', title: 'Hamilton', datetime: '2025-05-16T20:00:00', venue: 'Central Theatre', ticketPrice: 85.0 },
-    { id: 's3', title: 'Wicked', datetime: '2025-05-17T18:30:00', venue: 'Lyric Stage', ticketPrice: 60.0 },
+    {
+      id: '3',
+      customerName: 'Robert Johnson',
+      customerPhone: '555-9012',
+      showTitle: 'Les Misérables',
+      showDate: '2026-05-11',
+      showTime: '20:00',
+      seats: ['B2', 'B3', 'B4'],
+      tickets: [
+        { seatId: 4, seatLabel: 'B2', qrData: 'https://theatre.com/ticket/4-B2' },
+        { seatId: 5, seatLabel: 'B3', qrData: 'https://theatre.com/ticket/5-B3' },
+        { seatId: 6, seatLabel: 'B4', qrData: 'https://theatre.com/ticket/6-B4' },
+      ],
+      seatType: 'Regular',
+      totalAmount: 150,
+      paymentMethod: 'cash',
+      saleDate: new Date('2026-05-08T09:15:00').toISOString(),
+      salesperson: 'Alice Johnson',
+    },
+    {
+      id: '2',
+      customerName: 'Jane Smith',
+      customerPhone: '555-5678',
+      showTitle: 'Hamilton',
+      showDate: '2026-05-10',
+      showTime: '19:30',
+      seats: ['C5'],
+      tickets: [{ seatId: 3, seatLabel: 'C5', qrData: 'https://theatre.com/ticket/3-C5' }],
+      seatType: 'VIP',
+      totalAmount: 75,
+      paymentMethod: 'cash',
+      saleDate: new Date('2026-05-09T14:20:00').toISOString(),
+      salesperson: 'Bob Williams',
+    },
+    {
+      id: '1',
+      customerName: 'John Doe',
+      customerPhone: '555-1234',
+      showTitle: 'The Lion King',
+      showDate: '2026-05-10',
+      showTime: '14:00',
+      seats: ['A12', 'A13'],
+      tickets: [
+        { seatId: 1, seatLabel: 'A12', qrData: 'https://theatre.com/ticket/1-A12' },
+        { seatId: 2, seatLabel: 'A13', qrData: 'https://theatre.com/ticket/2-A13' },
+      ],
+      seatType: 'Regular',
+      totalAmount: 100,
+      paymentMethod: 'cash',
+      saleDate: new Date('2026-05-09T10:30:00').toISOString(),
+      salesperson: 'Alice Johnson',
+    },
   ];
 };
 
-const mockFetchSeats = async (showId: string): Promise<Seat[]> => {
-  await new Promise(resolve => setTimeout(resolve, 400));
-  // Generate mock seats: rows A-D, numbers 1-8
-  const rows = ['A', 'B', 'C', 'D'];
-  const seats: Seat[] = [];
-  rows.forEach(row => {
-    for (let i = 1; i <= 8; i++) {
-      const seatId = `${row}${i}`;
-      let status: Seat['status'] = 'available';
-      // Mock some taken seats
-      if ((row === 'A' && i <= 2) || (row === 'C' && i === 5)) status = 'reserved';
-      if ((row === 'B' && i === 3)) status = 'sold';
-      seats.push({
-        id: seatId,
-        row,
-        number: i,
-        status,
-        price: row === 'A' ? 75 : row === 'B' ? 65 : row === 'C' ? 55 : 45,
-      });
-    }
-  });
-  return seats;
+export const saveSaleRecord = (sale: SaleRecord): void => {
+  const existing = loadSalesHistory();
+  existing.push(sale);
+  existing.sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existing));
 };
 
-const mockCreateBooking = async (bookingData: {
-  customerId: string;
-  showId: string;
-  seatIds: string[];
-  discountPercent: number;
-}): Promise<Booking> => {
-  await new Promise(resolve => setTimeout(resolve, 800));
-  const mockSeats: Seat[] = bookingData.seatIds.map((sid, idx) => ({
-    id: sid,
-    row: sid[0],
-    number: parseInt(sid.slice(1)),
-    status: 'reserved',
-    price: 50 + idx * 5,
-  }));
-  const total = mockSeats.reduce((sum, s) => sum + s.price, 0);
-  const discountAmount = (total * bookingData.discountPercent) / 100;
-  const finalAmount = total - discountAmount;
-  const bookingRef = `TKT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const qrData = JSON.stringify({
-    bookingRef,
-    showId: bookingData.showId,
-    seats: bookingData.seatIds,
-    customerId: bookingData.customerId,
-    finalAmount,
-  });
-  return {
-    id: `b${Date.now()}`,
-    customerId: bookingData.customerId,
-    showId: bookingData.showId,
-    seats: mockSeats,
-    totalAmount: total,
-    discountPercent: bookingData.discountPercent,
-    discountAmount,
-    finalAmount,
-    bookingReference: bookingRef,
-    qrData,
-  };
+// QR Modal helpers
+const copyQR = async (canvasRef: React.RefObject<HTMLCanvasElement>) => {
+  if (!canvasRef.current) return;
+  try {
+    const canvas = canvasRef.current;
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(b => resolve(b!)));
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    alert('QR code copied!');
+  } catch { alert('Copy failed'); }
 };
 
-// Helper to get user discount permission (mock)
-const fetchDiscountPermission = async (): Promise<boolean> => {
-  await new Promise(resolve => setTimeout(resolve, 200));
-  // Simulate that manager has allowed discounts for this salesperson
-  return true;
+const shareQR = async (canvasRef: React.RefObject<HTMLCanvasElement>, seat: string) => {
+  if (!canvasRef.current) return;
+  try {
+    const canvas = canvasRef.current;
+    const blob = await new Promise<Blob>(resolve => canvas.toBlob(b => resolve(b!)));
+    const file = new File([blob], `ticket-${seat}.png`, { type: 'image/png' });
+    if (navigator.share && navigator.canShare?.({ files: [file] }))
+      await navigator.share({ title: `Ticket ${seat}`, files: [file] });
+    else alert('Sharing not supported');
+  } catch (err) { console.error(err); }
 };
 
-const SellTickets: React.FC = () => {
-  // --- State Variables ---
-  const [searchTerm, setSearchTerm] = useState('');
-  const [customerSearchResults, setCustomerSearchResults] = useState<Customer[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newCustomer, setNewCustomer] = useState({ name: '', email: '', phone: '' });
-  const [shows, setShows] = useState<Show[]>([]);
-  const [selectedShow, setSelectedShow] = useState<Show | null>(null);
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [selectedSeatIds, setSelectedSeatIds] = useState<string[]>([]);
-  const [discountPercent, setDiscountPercent] = useState<number>(0);
-  const [discountAllowed, setDiscountAllowed] = useState<boolean>(false);
-  const [loading, setLoading] = useState<{ customers?: boolean; shows?: boolean; seats?: boolean; booking?: boolean }>({});
-  const [error, setError] = useState<string | null>(null);
-  const [bookingConfirmed, setBookingConfirmed] = useState<Booking | null>(null);
-  const [showDiscountLabel, setShowDiscountLabel] = useState(false);
+const downloadQR = (canvasRef: React.RefObject<HTMLCanvasElement>, seat: string) => {
+  if (!canvasRef.current) return;
+  const link = document.createElement('a');
+  link.download = `ticket-${seat}.png`;
+  link.href = canvasRef.current.toDataURL();
+  link.click();
+};
 
-  // Refs for print section
-  const ticketRef = useRef<HTMLDivElement>(null);
+const printQR = (canvasRef: React.RefObject<HTMLCanvasElement>, ticket: TicketData, sale: SaleRecord) => {
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <html>
+      <head><title>Ticket ${ticket.seatLabel}</title></head>
+      <body style="font-family:sans-serif;text-align:center;padding:20px;">
+        <h2>${sale.showTitle}</h2>
+        <p>Seat: ${ticket.seatLabel}</p>
+        <p>Customer: ${sale.customerName}</p>
+        <p>Show Date: ${new Date(sale.showDate).toLocaleDateString()} at ${sale.showTime}</p>
+        <p>Price: $${sale.totalAmount / sale.seats.length}</p>
+        <img src="${canvasRef.current?.toDataURL()}" />
+        <script>window.onload = () => { window.print(); window.close(); }<\/script>
+      </body>
+    </html>
+  `);
+  printWindow.document.close();
+};
 
-  // --- Effects ---
-  useEffect(() => {
-    loadShows();
-    loadDiscountPermission();
-  }, []);
+interface TicketViewModalProps {
+  sale: SaleRecord | null;
+  onClose: () => void;
+}
 
-  const loadShows = async () => {
-    setLoading(prev => ({ ...prev, shows: true }));
-    try {
-      const showsData = await mockFetchShows();
-      setShows(showsData);
-    } catch (err) {
-      setError('Failed to load shows');
-    } finally {
-      setLoading(prev => ({ ...prev, shows: false }));
-    }
-  };
+const TicketViewModal: React.FC<TicketViewModalProps> = ({ sale, onClose }) => {
+  if (!sale) return null;
 
-  const loadDiscountPermission = async () => {
-    const allowed = await fetchDiscountPermission();
-    setDiscountAllowed(allowed);
-    setShowDiscountLabel(allowed);
-  };
+  let tickets = sale.tickets;
+  if (!tickets || tickets.length === 0) {
+    tickets = sale.seats.map((seatLabel, idx) => ({
+      seatId: idx,
+      seatLabel,
+      qrData: `https://theatre.com/legacy/${sale.id}/${seatLabel}`,
+    }));
+  }
 
-  const handleSearchCustomer = async () => {
-    if (!searchTerm.trim()) {
-      setCustomerSearchResults([]);
-      return;
-    }
-    setLoading(prev => ({ ...prev, customers: true }));
-    try {
-      const results = await mockFetchCustomers(searchTerm);
-      setCustomerSearchResults(results);
-    } catch (err) {
-      setError('Customer search failed');
-    } finally {
-      setLoading(prev => ({ ...prev, customers: false }));
-    }
-  };
-
-  const handleSelectCustomer = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCustomerSearchResults([]);
-    setSearchTerm('');
-    setShowCreateForm(false);
-  };
-
-  const handleCreateCustomer = async () => {
-    if (!newCustomer.name || !newCustomer.email) {
-      setError('Name and email are required');
-      return;
-    }
-    try {
-      const created = await mockCreateCustomer(newCustomer);
-      setSelectedCustomer(created);
-      setShowCreateForm(false);
-      setNewCustomer({ name: '', email: '', phone: '' });
-      setError(null);
-    } catch (err) {
-      setError('Failed to create customer');
-    }
-  };
-
-  // When show changes, load seats
-  useEffect(() => {
-    if (selectedShow) {
-      loadSeatsForShow(selectedShow.id);
-      setSelectedSeatIds([]); // reset seat selection
-      setBookingConfirmed(null); // clear previous booking
-    } else {
-      setSeats([]);
-    }
-  }, [selectedShow]);
-
-  const loadSeatsForShow = async (showId: string) => {
-    setLoading(prev => ({ ...prev, seats: true }));
-    try {
-      const seatsData = await mockFetchSeats(showId);
-      setSeats(seatsData);
-    } catch (err) {
-      setError('Failed to load seat map');
-    } finally {
-      setLoading(prev => ({ ...prev, seats: false }));
-    }
-  };
-
-  const toggleSeatSelection = (seatId: string) => {
-    const seat = seats.find(s => s.id === seatId);
-    if (!seat || seat.status !== 'available') return;
-
-    setSelectedSeatIds(prev =>
-      prev.includes(seatId) ? prev.filter(id => id !== seatId) : [...prev, seatId]
-    );
-  };
-
-  const calculateTotal = () => {
-    const selectedSeats = seats.filter(s => selectedSeatIds.includes(s.id));
-    const subtotal = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
-    const discountAmount = (subtotal * discountPercent) / 100;
-    return { subtotal, discountAmount, final: subtotal - discountAmount };
-  };
-
-  const handleReserveAndConfirm = async () => {
-    // Validation
-    if (!selectedCustomer) {
-      setError('Please select or create a customer');
-      return;
-    }
-    if (!selectedShow) {
-      setError('Please select a show');
-      return;
-    }
-    if (selectedSeatIds.length === 0) {
-      setError('Please select at least one seat');
-      return;
-    }
-    if (discountPercent < 0 || discountPercent > 100) {
-      setError('Discount must be between 0 and 100');
-      return;
-    }
-    if (discountPercent > 0 && !discountAllowed) {
-      setError('Discounts are not allowed by manager');
-      return;
-    }
-
-    setLoading(prev => ({ ...prev, booking: true }));
-    try {
-      const booking = await mockCreateBooking({
-        customerId: selectedCustomer.id,
-        showId: selectedShow.id,
-        seatIds: selectedSeatIds,
-        discountPercent,
-      });
-      setBookingConfirmed(booking);
-      setError(null);
-    } catch (err) {
-      setError('Booking confirmation failed');
-    } finally {
-      setLoading(prev => ({ ...prev, booking: false }));
-    }
-  };
-
-  const handlePrintTicket = () => {
-    if (ticketRef.current) {
-      const printWindow = window.open('', '_blank');
-      if (printWindow) {
-        printWindow.document.write(`
-          <html>
-            <head><title>Theatre Ticket</title><style>body { font-family: sans-serif; padding: 20px; }</style></head>
-            <body>${ticketRef.current.innerHTML}</body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-      } else {
-        window.print();
-      }
-    }
-  };
-
-  const handleResetBooking = () => {
-    setBookingConfirmed(null);
-    setSelectedSeatIds([]);
-    setDiscountPercent(0);
-  };
-
-  // Seat map rendering
-  const renderSeatMap = () => {
-    const rows = Array.from(new Set(seats.map(s => s.row))).sort();
-    return (
-      <div className="border rounded-lg p-4 bg-gray-50">
-        <h3 className="font-semibold text-lg mb-3">Seat Map</h3>
-        <div className="space-y-2">
-          {rows.map(row => (
-            <div key={row} className="flex items-center gap-2">
-              <span className="w-6 font-bold">{row}</span>
-              <div className="flex flex-wrap gap-2">
-                {seats.filter(s => s.row === row).map(seat => {
-                  let bgColor = 'bg-gray-200';
-                  let cursor = 'cursor-not-allowed';
-                  let isSelected = selectedSeatIds.includes(seat.id);
-                  if (seat.status === 'available') {
-                    bgColor = isSelected ? 'bg-green-500 hover:bg-green-600' : 'bg-white hover:bg-gray-100';
-                    cursor = 'cursor-pointer';
-                  } else if (seat.status === 'reserved') bgColor = 'bg-yellow-200';
-                  else if (seat.status === 'sold') bgColor = 'bg-red-200';
-                  return (
-                    <button
-                      key={seat.id}
-                      onClick={() => toggleSeatSelection(seat.id)}
-                      disabled={seat.status !== 'available'}
-                      className={`w-10 h-10 border rounded-md text-sm font-medium transition ${bgColor} ${cursor} border-gray-300`}
-                      title={`${seat.row}${seat.number} - $${seat.price} (${seat.status})`}
-                    >
-                      {seat.number}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-4 mt-3 text-xs">
-          <span><span className="inline-block w-4 h-4 bg-white border mr-1"></span> Available</span>
-          <span><span className="inline-block w-4 h-4 bg-green-500 mr-1"></span> Selected</span>
-          <span><span className="inline-block w-4 h-4 bg-yellow-200 mr-1"></span> Reserved</span>
-          <span><span className="inline-block w-4 h-4 bg-red-200 mr-1"></span> Sold</span>
-        </div>
-      </div>
-    );
-  };
-
-  const { subtotal, discountAmount, final: finalTotal } = calculateTotal();
+  const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
+  const formatDateTime = (iso: string) => new Date(iso).toLocaleString();
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">🎭 Sell Tickets</h1>
-
-      {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md flex justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-red-800 font-bold">×</button>
+    <div style={modalStyles.overlay} onClick={onClose}>
+      <div style={modalStyles.modal} onClick={e => e.stopPropagation()}>
+        <div style={modalStyles.header}>
+          <h2>🎟️ Ticket Details</h2>
+          <button onClick={onClose} style={modalStyles.closeBtn}>×</button>
         </div>
-      )}
+        <div style={modalStyles.info}>
+          <p><strong>Customer:</strong> {sale.customerName} {sale.customerPhone && `(${sale.customerPhone})`}</p>
+          <p><strong>Sale Date:</strong> {formatDateTime(sale.saleDate)}</p>
+          <p><strong>Show:</strong> {sale.showTitle}</p>
+          <p><strong>Show Date & Time:</strong> {formatDate(sale.showDate)} at {sale.showTime}</p>
+          <p><strong>Seats:</strong> {sale.seats.join(', ')}</p>
+          <p><strong>Total Amount:</strong> ${sale.totalAmount}</p>
+        </div>
+        <div style={modalStyles.ticketsContainer}>
+          {tickets.map(ticket => (
+            <TicketCard key={ticket.seatLabel} ticket={ticket} sale={sale} />
+          ))}
+        </div>
+        <div style={modalStyles.footer}>
+          <ReusableButton variant="primary" onClick={onClose}>Close</ReusableButton>
+        </div>
+      </div>
+    </div>
+  );
+};
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column: Customer & Show Selection */}
-        <div className="space-y-6">
-          {/* Customer Section */}
-          <div className="border rounded-lg p-4 shadow-sm">
-            <h2 className="text-xl font-semibold mb-3">👤 Customer</h2>
-            {selectedCustomer ? (
-              <div className="bg-green-50 p-3 rounded-md flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{selectedCustomer.name}</p>
-                  <p className="text-sm text-gray-600">{selectedCustomer.email} | {selectedCustomer.phone}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedCustomer(null)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Change
-                </button>
+const TicketCard: React.FC<{ ticket: TicketData; sale: SaleRecord }> = ({ ticket, sale }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  return (
+    <div style={modalStyles.ticketCard}>
+      <div style={modalStyles.seatLabel}>Seat {ticket.seatLabel}</div>
+      <QRCodeCanvas value={ticket.qrData} size={120} level="H" includeMargin ref={canvasRef} />
+      <div style={modalStyles.buttonGroup}>
+        <button onClick={() => copyQR(canvasRef)} title="Copy QR code" style={iconButtonStyle}>
+          <Copy size={18} />
+        </button>
+        <button onClick={() => shareQR(canvasRef, ticket.seatLabel)} title="Share QR code" style={iconButtonStyle}>
+          <Share2 size={18} />
+        </button>
+        <button onClick={() => downloadQR(canvasRef, ticket.seatLabel)} title="Download QR code" style={iconButtonStyle}>
+          <DownloadIcon size={18} />
+        </button>
+        <button onClick={() => printQR(canvasRef, ticket, sale)} title="Print ticket" style={iconButtonStyle}>
+          <Printer size={18} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const iconButtonStyle: React.CSSProperties = {
+  background: 'none',
+  border: 'none',
+  cursor: 'pointer',
+  color: Colors.primary || '#0d9488',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '6px',
+  borderRadius: '6px',
+  transition: 'background-color 0.2s',
+};
+
+const modalStyles: { [key: string]: React.CSSProperties } = {
+  overlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 2000,
+  },
+  modal: {
+    backgroundColor: 'white',
+    borderRadius: '1rem',
+    maxWidth: '90vw',
+    width: '700px',
+    maxHeight: '85vh',
+    overflowY: 'auto',
+    padding: '1.5rem',
+    boxShadow: '0 20px 25px -5px rgba(0,0,0,0.2)',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '1rem',
+    borderBottom: '1px solid #e5e7eb',
+    paddingBottom: '0.5rem',
+  },
+  closeBtn: { background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' },
+  info: {
+    marginBottom: '1rem',
+    fontSize: '0.9rem',
+    backgroundColor: '#f3f4f6',
+    padding: '0.75rem',
+    borderRadius: '0.5rem',
+  },
+  ticketsContainer: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gap: '1rem',
+    marginBottom: '1rem',
+  },
+  ticketCard: {
+    border: '1px solid #e5e7eb',
+    borderRadius: '0.75rem',
+    padding: '1rem',
+    textAlign: 'center',
+    backgroundColor: '#fafafa',
+  },
+  seatLabel: { fontWeight: 'bold', marginBottom: 8 },
+  buttonGroup: { display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '8px', flexWrap: 'wrap' },
+  footer: { marginTop: '1rem', textAlign: 'center' },
+};
+
+// Main SellTickets Component
+const SellTickets: React.FC = () => {
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [filteredSales, setFilteredSales] = useState<SaleRecord[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [searchTerm, setSearchTerm] = useState('');
+  const [successPopup, setSuccessPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
+  const [selectedSale, setSelectedSale] = useState<SaleRecord | null>(null);
+
+  useEffect(() => { loadData(); }, []);
+  useEffect(() => { applyFilters(); }, [sales, selectedDate, searchTerm]);
+
+  const loadData = () => {
+    const allSales = loadSalesHistory();
+    const sorted = [...allSales].sort((a, b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
+    setSales(sorted);
+  };
+
+  const applyFilters = () => {
+    let filtered = [...sales];
+    if (selectedDate) filtered = filtered.filter(s => s.saleDate.slice(0, 10) === selectedDate);
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.customerName.toLowerCase().includes(term) ||
+        (s.customerPhone && s.customerPhone.includes(term)) ||
+        s.showTitle.toLowerCase().includes(term) ||
+        s.seats.some(seat => seat.toLowerCase().includes(term)) ||
+        s.seatType.toLowerCase().includes(term) ||
+        s.id.includes(term)
+      );
+    }
+    setFilteredSales(filtered);
+  };
+
+  const formatDateTime = (iso: string) => new Date(iso).toLocaleString();
+
+  // Statistics for cards
+  const totalRevenue = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
+  const totalTransactions = filteredSales.length;
+  const totalTicketsSold = filteredSales.reduce((sum, s) => sum + s.seats.length, 0);
+  const avgTicketPrice = totalTicketsSold > 0 ? totalRevenue / totalTicketsSold : 0;
+
+  const columns = [
+    { Header: 'Sale Date', accessor: 'saleDate', Cell: (row: SaleRecord) => formatDateTime(row.saleDate) },
+    { Header: 'Show', accessor: 'showTitle' },
+    { Header: 'Customer', accessor: 'customerName' },
+    { Header: 'Phone', accessor: 'customerPhone', Cell: (row: SaleRecord) => row.customerPhone || '-' },
+    {
+      Header: 'View',
+      accessor: 'id',
+      Cell: (row: SaleRecord) => (
+        <button
+          onClick={() => setSelectedSale(row)}
+          title="View QR Codes & Details"
+          style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: Colors.primary || '#0d9488',
+            display: 'inline-flex',
+            alignItems: 'center',
+            padding: '4px',
+          }}
+        >
+          <Eye size={18} />
+        </button>
+      ),
+    },
+  ];
+
+  const handleExport = () => {
+    if (filteredSales.length === 0) {
+      setSuccessPopup({ open: true, message: 'No data to export.' });
+      return;
+    }
+    const fullColumns = ['Sale Date', 'Customer', 'Phone', 'Show', 'Show Date', 'Time', 'Seats', 'Amount', 'Payment Method', 'ID'];
+    const rows = filteredSales.map(sale => {
+      return [
+        formatDateTime(sale.saleDate),
+        sale.customerName,
+        sale.customerPhone || '',
+        sale.showTitle,
+        new Date(sale.showDate).toLocaleDateString(),
+        sale.showTime,
+        sale.seats.join(';'),
+        sale.totalAmount,
+        sale.paymentMethod,
+        sale.id,
+      ].map(val => {
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"')))
+          return `"${val.replace(/"/g, '""')}"`;
+        return val;
+      }).join(',');
+    }).join('\n');
+    const blob = new Blob([`${fullColumns.join(',')}\n${rows}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sales_${selectedDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    setSuccessPopup({ open: true, message: 'CSV exported!' });
+  };
+
+  const handleClearHistory = () => {
+    if (window.confirm('Delete all sales history? This cannot be undone.')) {
+      localStorage.removeItem(STORAGE_KEY);
+      loadData();
+      setSuccessPopup({ open: true, message: 'History cleared.' });
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              Ticket Sales History
+            </h1>
+            <p className="text-gray-600 mt-1">Manage and view all completed ticket sales</p>
+          </div>
+          <div className="flex gap-2">
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={e => setSelectedDate(e.target.value)}
+                className="pl-10 pr-3 py-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500"
+              />
+            </div>
+            <ReusableButton variant="secondary" onClick={handleExport} icon={Download}>Export CSV</ReusableButton>
+            <ReusableButton variant="danger" onClick={handleClearHistory} icon={Trash2}>Clear History</ReusableButton>
+          </div>
+        </div>
+
+        {/* FinancialReports-style Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+          {/* Total Revenue */}
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md">
+                <DollarSign className="h-6 w-6 text-white" />
               </div>
-            ) : (
-              <>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name or email"
-                    className="flex-1 border rounded-md px-3 py-2"
-                  />
-                  <button
-                    onClick={handleSearchCustomer}
-                    disabled={loading.customers}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    Search
-                  </button>
-                </div>
-                {customerSearchResults.length > 0 && (
-                  <div className="border rounded-md mb-3 max-h-48 overflow-y-auto">
-                    {customerSearchResults.map(cust => (
-                      <div key={cust.id} className="p-2 hover:bg-gray-100 cursor-pointer border-b" onClick={() => handleSelectCustomer(cust)}>
-                        <p className="font-medium">{cust.name}</p>
-                        <p className="text-sm text-gray-600">{cust.email}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  onClick={() => setShowCreateForm(!showCreateForm)}
-                  className="text-blue-600 text-sm hover:underline"
-                >
-                  + Create new customer
-                </button>
-                {showCreateForm && (
-                  <div className="mt-3 border-t pt-3">
-                    <input type="text" placeholder="Full Name" value={newCustomer.name} onChange={e => setNewCustomer({ ...newCustomer, name: e.target.value })} className="w-full border rounded-md px-3 py-2 mb-2" />
-                    <input type="email" placeholder="Email" value={newCustomer.email} onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })} className="w-full border rounded-md px-3 py-2 mb-2" />
-                    <input type="tel" placeholder="Phone" value={newCustomer.phone} onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })} className="w-full border rounded-md px-3 py-2 mb-2" />
-                    <button onClick={handleCreateCustomer} className="bg-green-600 text-white px-4 py-2 rounded-md">Save Customer</button>
-                  </div>
-                )}
-              </>
-            )}
+              <div>
+                <p className="text-xs text-gray-500">Total Revenue</p>
+                <p className="text-xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Show Selection */}
-          <div className="border rounded-lg p-4 shadow-sm">
-            <h2 className="text-xl font-semibold mb-3">🎬 Select Show</h2>
-            {loading.shows ? (
-              <div>Loading shows...</div>
-            ) : (
-              <select
-                value={selectedShow?.id || ''}
-                onChange={(e) => {
-                  const show = shows.find(s => s.id === e.target.value);
-                  setSelectedShow(show || null);
-                }}
-                className="w-full border rounded-md px-3 py-2"
-              >
-                <option value="">-- Choose a show --</option>
-                {shows.map(show => (
-                  <option key={show.id} value={show.id}>
-                    {show.title} - {new Date(show.datetime).toLocaleString()} ({show.venue})
-                  </option>
-                ))}
-              </select>
-            )}
+          {/* Total Transactions */}
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+                <CreditCard className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Transactions</p>
+                <p className="text-xl font-bold text-gray-900">{totalTransactions}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Seat Map */}
-          {selectedShow && (
-            <div className="border rounded-lg p-4 shadow-sm">
-              {loading.seats ? <div>Loading seat map...</div> : renderSeatMap()}
-            </div>
-          )}
-        </div>
-
-        {/* Right Column: Booking Summary & Discount */}
-        <div className="space-y-6">
-          <div className="border rounded-lg p-4 shadow-sm">
-            <h2 className="text-xl font-semibold mb-3">🧾 Booking Summary</h2>
-            {selectedShow && (
-              <div className="mb-3 p-2 bg-gray-100 rounded">
-                <p className="font-medium">{selectedShow.title}</p>
-                <p className="text-sm">{new Date(selectedShow.datetime).toLocaleString()} | {selectedShow.venue}</p>
+          {/* Tickets Sold */}
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+                <Ticket className="h-6 w-6 text-white" />
               </div>
-            )}
-            <div className="mb-3">
-              <p className="font-medium">Selected Seats:</p>
-              {selectedSeatIds.length === 0 ? (
-                <p className="text-gray-500 text-sm">None selected</p>
-              ) : (
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {selectedSeatIds.map(id => {
-                    const seat = seats.find(s => s.id === id);
-                    return (
-                      <span key={id} className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-sm">
-                        {seat?.row}{seat?.number} (${seat?.price})
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-            <div className="border-t pt-3 space-y-1">
-              <div className="flex justify-between">
-                <span>Subtotal:</span>
-                <span>${subtotal.toFixed(2)}</span>
-              </div>
-              {discountAllowed && (
-                <div className="flex items-center justify-between gap-2">
-                  <label className="flex items-center gap-1">
-                    <span>Discount %:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="1"
-                      value={discountPercent}
-                      onChange={(e) => setDiscountPercent(Number(e.target.value))}
-                      className="w-20 border rounded px-2 py-1"
-                    />
-                  </label>
-                  {discountPercent > 0 && <span className="text-green-600">-${discountAmount.toFixed(2)}</span>}
-                </div>
-              )}
-              {!discountAllowed && showDiscountLabel && (
-                <div className="text-sm text-gray-500 italic">Discounts are currently disabled by manager.</div>
-              )}
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Final Total:</span>
-                <span>${finalTotal.toFixed(2)}</span>
+              <div>
+                <p className="text-xs text-gray-500">Tickets Sold</p>
+                <p className="text-xl font-bold text-gray-900">{totalTicketsSold.toLocaleString()}</p>
               </div>
             </div>
-            <button
-              onClick={handleReserveAndConfirm}
-              disabled={loading.booking || !selectedCustomer || !selectedShow || selectedSeatIds.length === 0}
-              className="w-full mt-4 bg-purple-600 text-white py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
-            >
-              {loading.booking ? 'Processing...' : 'Reserve & Confirm Booking'}
-            </button>
           </div>
 
-          {/* Ticket / Receipt Display after confirmation */}
-          {bookingConfirmed && (
-            <div className="border rounded-lg p-4 shadow-sm bg-white">
-              <div ref={ticketRef} className="p-4 border-2 border-dashed border-gray-300 rounded-lg">
-                <h3 className="text-2xl font-bold text-center mb-2">🎟️ THEATRE TICKET</h3>
-                <div className="text-center mb-4">
-                  <p className="text-sm">Booking Reference: <strong>{bookingConfirmed.bookingReference}</strong></p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
-                  <div><span className="font-semibold">Customer:</span> {selectedCustomer?.name}</div>
-                  <div><span className="font-semibold">Show:</span> {selectedShow?.title}</div>
-                  <div><span className="font-semibold">Date/Time:</span> {selectedShow && new Date(selectedShow.datetime).toLocaleString()}</div>
-                  <div><span className="font-semibold">Venue:</span> {selectedShow?.venue}</div>
-                  <div className="col-span-2"><span className="font-semibold">Seats:</span> {bookingConfirmed.seats.map(s => `${s.row}${s.number}`).join(', ')}</div>
-                  <div><span className="font-semibold">Total Paid:</span> ${bookingConfirmed.finalAmount.toFixed(2)}</div>
-                  {bookingConfirmed.discountPercent > 0 && <div><span className="font-semibold">Discount:</span> {bookingConfirmed.discountPercent}%</div>}
-                </div>
-                <div className="flex justify-center my-3">
-                  <QRCodeSVG value={bookingConfirmed.qrData} size={128} />
-                </div>
-                <p className="text-center text-xs text-gray-500 mt-2">Scan QR code for entry validation</p>
+          {/* Average Ticket Price */}
+          <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
+                <TrendingUp className="h-6 w-6 text-white" />
               </div>
-              <div className="flex gap-3 mt-4">
-                <button onClick={handlePrintTicket} className="flex-1 bg-gray-800 text-white py-2 rounded-md hover:bg-gray-900">
-                  🖨️ Print Ticket
-                </button>
-                <button onClick={handleResetBooking} className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700">
-                  ➕ New Booking
-                </button>
+              <div>
+                <p className="text-xs text-gray-500">Avg. Ticket Price</p>
+                <p className="text-xl font-bold text-gray-900">${avgTicketPrice.toFixed(2)}</p>
               </div>
             </div>
-          )}
+          </div>
         </div>
+
+        {/* Search Bar */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              placeholder="Search by customer name, phone, show title, or seat..."
+              className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+
+        {/* Sales Table */}
+        <ReusableTable
+          columns={columns}
+          data={filteredSales}
+          title={`Sales - ${new Date(selectedDate).toLocaleDateString()}`}
+          showSearch={false}
+          itemsPerPage={10}
+        />
+
+        {/* QR Ticket Modal */}
+        {selectedSale && <TicketViewModal sale={selectedSale} onClose={() => setSelectedSale(null)} />}
+
+        {/* Success Popup */}
+        <SuccessPopup
+          isOpen={successPopup.open}
+          onClose={() => setSuccessPopup({ open: false, message: '' })}
+          type="success"
+          title="Done"
+          message={successPopup.message}
+          duration={2000}
+        />
       </div>
     </div>
   );

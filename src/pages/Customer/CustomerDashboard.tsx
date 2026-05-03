@@ -308,16 +308,6 @@ const CustomerDashboard: React.FC = () => {
                     <div className="relative z-10">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                             <div>
-                                <motion.div
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: "spring", stiffness: 200, delay: 0.3 }}
-                                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-xl rounded-full mb-3 sm:mb-4"
-                                >
-                                    <Star className="h-3 w-3 sm:h-4 sm:w-4" />
-                                    <span className="text-xs sm:text-sm font-medium">✨ {loyaltyPoints.tier} Member</span>
-                                </motion.div>
-
                                 <motion.h1
                                     className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2"
                                     initial={{ x: -20, opacity: 0 }}

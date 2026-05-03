@@ -419,11 +419,46 @@ const EventSchedule: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white rounded-xl shadow p-4 flex items-center gap-3"><Calendar className="h-8 w-8 text-blue-500" /><div><p className="text-sm text-gray-500">Total Schedules</p><p className="text-2xl font-bold">{totalEvents}</p></div></div>
-        <div className="bg-white rounded-xl shadow p-4 flex items-center gap-3"><Ticket className="h-8 w-8 text-green-500" /><div><p className="text-sm text-gray-500">Tickets Sold</p><p className="text-2xl font-bold">{totalTicketsSold.toLocaleString()}</p></div></div>
-        <div className="bg-white rounded-xl shadow p-4 flex items-center gap-3"><DollarSign className="h-8 w-8 text-purple-500" /><div><p className="text-sm text-gray-500">Revenue</p><p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p></div></div>
+      {/* Statistics Cards - FinancialReports style */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+        {/* Total Schedules */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <Calendar className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Schedules</p>
+              <p className="text-xl font-bold text-gray-900">{totalEvents}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tickets Sold */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
+              <Ticket className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Tickets Sold</p>
+              <p className="text-xl font-bold text-gray-900">{totalTicketsSold.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Revenue */}
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
+              <DollarSign className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Revenue</p>
+              <p className="text-xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Filters (list view only) */}
