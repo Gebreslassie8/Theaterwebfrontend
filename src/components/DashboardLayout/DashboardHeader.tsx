@@ -5,7 +5,6 @@ import {
   User,
   ChevronDown,
   LogOut,
-  Settings,
   HelpCircle,
   Sparkles,
   X,

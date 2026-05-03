@@ -13,7 +13,6 @@ import {
   ArrowRight,
   Shield,
   HelpCircle,
-  UserPlus,
   LogIn,
   Smartphone,
 } from "lucide-react";

@@ -360,7 +360,7 @@ const Home: React.FC = () => {
   };
 
   // Get unique genres for filter
-  const uniqueGenres = ["All", ...new Set(events.map((event) => event.genre))];
+  // const uniqueGenres = ["All", ...new Set(events.map((event) => event.genre))];
 
   // Loading state
   if (loading) {
