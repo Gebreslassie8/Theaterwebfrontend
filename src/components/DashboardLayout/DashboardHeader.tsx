@@ -150,25 +150,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
               {/* Notifications */}
               <div className="relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2.5 rounded-xl transition-all duration-300 group"
-                  onMouseEnter={() => setHoveredItem('bell')}
-                  onMouseLeave={() => setHoveredItem(null)}
-                >
-                  <div className={`absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-500 ${showNotifications ? 'opacity-30' : ''}`} />
-                  <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${hoveredItem === 'bell' || showNotifications ? 'bg-blue-500/10 dark:bg-blue-900/20 scale-105' : 'bg-white dark:bg-dark-700'}`} />
-                  <Bell className={`relative h-5 w-5 transition-all duration-300 ${hoveredItem === 'bell' || showNotifications ? 'text-blue-500 rotate-12 scale-110' : 'text-gray-600 dark:text-gray-400'}`} />
-                  {notifications.some((n) => !n.read) && (
-                    <div className="absolute top-1.5 right-1.5">
-                      <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border border-white dark:border-dark-800"></span>
-                      </span>
-                    </div>
-                  )}
-                </button>
-
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden animate-in slide-in-from-top-5 duration-300">
                     <div className="p-4 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-r from-primary/5 to-purple-500/5 dark:from-primary/10 dark:to-purple-500/10">
