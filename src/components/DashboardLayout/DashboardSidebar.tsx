@@ -255,15 +255,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             subItems: [
               { name: "Reports", to: "/manager/Report", icon: FileText },
             ]
-          },
-          {
-            name: "Customer management",
-            to: "/manager/Customer",
-            icon: Users,
-            color: "text-indigo-500",
-            subItems: [
-              { name: "Customer", to: "/manager/Customer", icon: User },
-            ]
           }
         ]
       },
