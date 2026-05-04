@@ -4,7 +4,13 @@ import { Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
 import OwnerDashboard from './OwnerDashboard';
 import WalletBalance from '../../components/wallet/WalletBalance';
-
+import FinancialAnalytics from './financial/FinancialAnalytics';
+import Eventmanagement from './events/ManageEvent';
+import EventsSchedule from './events/EventSchedule';
+import HallsManagement from './halls/HallsManagement';
+import BookingManagement from './Bookings';
+import EmployeeManagement from './employes/EmployeeManagement';
+import ViewReports from './financial/ViewReports';
 // Protected Route Component
 const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({
   children,
@@ -35,35 +41,20 @@ export const ownerRouteElement = (
     }
   >
     <Route index element={<Navigate to="/owner/dashboard" replace />} />
-
-    {/* <Route path="wallet" element={<OwnerDashboard />} /> */}
-    <Route path="wallet/balance" element={<WalletBalance />} />
-    <Route path="booking" element={<OwnerDashboard />} />
-    <Route path="financial" element={<OwnerDashboard />} />
-    <Route path="financial/revenue" element={<OwnerDashboard />} />
-    <Route path="financial/daily" element={<OwnerDashboard />} />
-    <Route path="financial/monthly" element={<OwnerDashboard />} />
-    <Route path="financial/tax" element={<OwnerDashboard />} />
-    <Route path="wallet" element={<OwnerDashboard />} />
-    <Route path="wallet/balance" element={<OwnerDashboard />} />
-    <Route path="wallet/transactions" element={<OwnerDashboard />} />
-    <Route path="wallet/deposit" element={<OwnerDashboard />} />
-    <Route path="wallet/withdraw" element={<OwnerDashboard />} />
-    <Route path="wallet/payment-methods" element={<OwnerDashboard />} />
-    <Route path="wallet/bank-accounts" element={<OwnerDashboard />} />
-    <Route path="events" element={<OwnerDashboard />} />
-    <Route path="events/create" element={<OwnerDashboard />} />
-    <Route path="events/update" element={<OwnerDashboard />} />
-    <Route path="halls" element={<OwnerDashboard />} />
-    <Route path="halls/manage" element={<OwnerDashboard />} />
-    <Route path="halls/seating" element={<OwnerDashboard />} />
-    <Route path="halls/vip" element={<OwnerDashboard />} />
+    
+    {/* Dashboard Overview */}
     <Route path="dashboard" element={<OwnerDashboard />} />
-    <Route path="financial" element={<OwnerDashboard />} />
-    <Route path="financial/revenue" element={<OwnerDashboard />} />
-    <Route path="financial/daily" element={<OwnerDashboard />} />
-    <Route path="financial/monthly" element={<OwnerDashboard />} />
-    <Route path="financial/tax" element={<OwnerDashboard />} />
+    <Route path="wallet/balance" element={<WalletBalance />} />
+    <Route path="financial" element={<FinancialAnalytics />} />
+    {/* Placeholder routes - uncomment when components are created */}
+    <Route path="events/manage_event" element={<Eventmanagement />} />
+    <Route path="events/schedule" element={<EventsSchedule />} /> 
+    <Route path="halls/manage" element={<HallsManagement />} /> 
+    <Route path="bookingS" element={<BookingManagement />} /> 
+    <Route path="employes/employee" element={<EmployeeManagement/>} /> 
+    <Route path="financial/report" element={<ViewReports/>} /> 
+
+
 
   </Route>
 );
