@@ -1,20 +1,21 @@
 // src/pages/Customer/Dashboard/CustomerDashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import supabase from '../../../config/supabaseClient';
 import {
-  Calendar, Ticket, Star, Heart, Clock, MapPin, DollarSign, Award, Gift,
-  QrCode, ChevronRight, TrendingUp, Wallet, CheckCircle, XCircle, Headphones
+  Calendar, Ticket, Star, Heart, MapPin, DollarSign, Award, Gift,
+  QrCode, ChevronRight, TrendingUp, Wallet, CheckCircle, Headphones
 } from 'lucide-react';
 import {
   AreaChart, Area, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts';
 import EventCard from '../../../components/UI/EventCard';
-import BookingModal from '../../../components/Booking/BookingModal'; // same modal used in EventCard
 
-// ==================== Types ====================
+import BookingModal from '../../../components/Booking/BookingModal';
+
+// Types 
 interface User {
   id?: string | number;
   name?: string;
@@ -79,7 +80,7 @@ interface WatchlistItem {
   reminderDate?: string;
 }
 
-// ==================== Helper: Transform Supabase Event ====================
+// Helper: Transform Supabase Event
 const transformSupabaseEvent = (dbEvent: any): Event => {
   // Generate sample dates (temporary – replace with real dates from DB)
   const sampleDates: ShowDate[] = [
@@ -127,7 +128,7 @@ const transformSupabaseEvent = (dbEvent: any): Event => {
 const CustomerDashboard: React.FC = () => {
   const { user } = useOutletContext<OutletContext>();
   const [activeTab, setActiveTab] = useState<string>('overview');
-  const [showBalance, setShowBalance] = useState<boolean>(true);
+  // const [showBalance, setShowBalance] = useState<boolean>(true);
 
   // Events state
   const [events, setEvents] = useState<Event[]>([]);
@@ -233,7 +234,7 @@ const CustomerDashboard: React.FC = () => {
     }
   };
 
-  // ---------- Watchlist Helpers ----------
+  // Watchlist Helpers ----------
   const handleToggleWatchlist = (eventId: string) => {
     if (watchlist.some(w => w.eventId === eventId)) {
       setWatchlist(watchlist.filter(w => w.eventId !== eventId));
@@ -252,7 +253,7 @@ const CustomerDashboard: React.FC = () => {
     }
   };
 
-  // ---------- Dynamic Stats (derived from bookings) ----------
+  // Dynamic Stats (derived from bookings) ----------
   const stats = {
     ticketsBooked: bookings.reduce((sum, b) => sum + b.seats, 0),
     upcomingShows: bookings.filter(b => new Date(b.date) > new Date()).length,
@@ -393,7 +394,6 @@ const CustomerDashboard: React.FC = () => {
               <StatCard title="Upcoming Shows" value={stats.upcomingShows} icon={Calendar} change="+2" trend="up" color="from-green-500 to-green-600" delay={0.1} dateRange="month" />
               <StatCard title="Points Earned" value={loyaltyPoints.thisMonth} icon={Star} change="+150" trend="up" color="from-yellow-500 to-yellow-600" delay={0.2} dateRange="month" />
               <StatCard title="Total Spent" value={`$${stats.totalSpent}`} icon={DollarSign} change="+$45" trend="up" color="from-cyan-500 to-cyan-600" delay={0.3} dateRange="month" />
-              <StatCard title="Wallet Balance" value={showBalance ? '$45.50' : '****'} icon={Wallet} change="+$20" trend="up" color="from-purple-500 to-purple-600" delay={0.4} dateRange="month" />
             </motion.div>
 
             {/* Upcoming Shows from Bookings */}
