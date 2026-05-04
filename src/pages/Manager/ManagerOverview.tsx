@@ -185,9 +185,6 @@ const ManagerOverview: React.FC = () => {
   const dashboardCards = useMemo(() => [
     { title: 'Tickets Sold', value: stats.totalTicketsSold, icon: Ticket, color: 'from-blue-500 to-cyan-600', delay: 0.1, link: '/manager/tickets', notification: false },
     { title: 'Total Revenue', value: `$${(stats.totalRevenue / 1000).toFixed(1)}K`, icon: DollarSign, color: 'from-teal-500 to-teal-600', delay: 0.15, link: '/manager/revenue', notification: false },
-    { title: 'Hall Occupancy', value: `${stats.averageOccupancy}%`, icon: Building, color: 'from-orange-500 to-red-600', delay: 0.2, link: '/manager/halls', notification: false },
-    { title: 'Customer Satisfaction', value: `${stats.customerSatisfaction}/5`, icon: Star, color: 'from-purple-500 to-pink-600', delay: 0.25, link: '/manager/feedback', notification: false },
-    { title: 'Upcoming Shows', value: stats.upcomingShows, icon: Calendar, color: 'from-green-500 to-emerald-600', delay: 0.3, link: '/manager/shows', notification: true, notificationCount: stats.upcomingShows }
   ], []);
 
   return (
@@ -215,13 +212,10 @@ const ManagerOverview: React.FC = () => {
           <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers.toLocaleString()}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Active Promotions</p>
+          <p className="text-sm text-gray-500">Avilable Event</p>
           <p className="text-2xl font-bold text-purple-600">{stats.activePromotions}</p>
         </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Avg. Occupancy</p>
-          <p className="text-2xl font-bold text-orange-600">{stats.averageOccupancy}%</p>
-        </div>
+
       </motion.div>
 
       {/* Charts Section */}
