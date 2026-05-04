@@ -361,18 +361,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/sales/Salesperson/Report",
             icon: FileText,
             color: "text-pink-500",
-            // subItems: [
-            //   {
-            //     name: "Daily Sales",
-            //     to: "/sales/reports/daily",
-            //     icon: TrendingUp,
-            //   },
-            //   {
-            //     name: "Monthly Report",
-            //     to: "/sales/reports/monthly",
-            //     icon: BarChart,
-            //   },
-            // ],
+            
           },
         ],
       },

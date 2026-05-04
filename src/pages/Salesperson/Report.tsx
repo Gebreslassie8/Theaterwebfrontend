@@ -1,25 +1,19 @@
 // src/pages/Salesperson/Report.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import {
   TrendingUp,
   DollarSign,
-  Download,
-  Filter,
-  BarChart3,
-  PieChart as PieChartIcon,
-  Activity,
   Ticket,
   Users,
-  ArrowUpRight,
-  ArrowDownRight,
-  Search,
+  Download,
+  CheckCircle,
+  Clock,
 } from 'lucide-react';
 import {
-  BarChart,
-  Bar,
   LineChart,
   Line,
+  BarChart,
+  Bar,
   PieChart,
   Pie,
   Cell,
@@ -29,19 +23,94 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ComposedChart,
 } from 'recharts';
-import ReusableButton from '../../components/Reusable/ReusableButton';
-import ReusableTable from '../../components/Reusable/ReusableTable';
-import SuccessPopup from '../../components/Reusable/SuccessPopup';
-// Import mock data directly
-import { defaultMockSalesRecords, SaleRecord } from './mockdata/mockdatayReportOfSlaes';
+import Colors from '../../components/Reusable/Colors';
+import ReusableshowFilterforall from '../../components/Reusable/ReusableshowFilterforall';
 
-// ===================== Helper Functions =====================
+// ===================== Types =====================
+interface Seat {
+  seatId: string;
+  seatLabel: string;
+  qrData: string;
+}
+
+interface SaleRecord {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  showTitle: string;
+  showDate: string;
+  showTime: string;
+  seats: string;
+  tickets: Seat[];
+  seatType: string;
+  totalAmount: number;
+  paymentMethod: string;
+  saleDate: string;
+  salesperson: string;
+}
+
+type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type PaymentStatus = 'all' | 'completed' | 'pending' | 'refunded';
+
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'July', 'August', 'September', 'October', 'November', 'December'
 ];
+
+// ===================== Helper Functions =====================
+const getStartOfDay = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const getEndOfDay = (date: Date): Date => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const groupSalesByPeriod = (sales: SaleRecord[], period: Period): { label: string; amount: number; tickets: number }[] => {
+  const groups: { [key: string]: { amount: number; tickets: number } } = {};
+
+  sales.forEach(sale => {
+    const saleDate = new Date(sale.saleDate);
+    let key: string;
+
+    switch (period) {
+      case 'daily':
+        key = saleDate.toLocaleDateString('en-CA');
+        break;
+      case 'weekly':
+        const weekStart = new Date(saleDate);
+        weekStart.setDate(saleDate.getDate() - saleDate.getDay());
+        key = `Week of ${weekStart.toLocaleDateString('en-CA')}`;
+        break;
+      case 'monthly':
+        key = `${saleDate.getFullYear()}-${String(saleDate.getMonth() + 1).padStart(2, '0')}`;
+        break;
+      case 'yearly':
+        key = saleDate.getFullYear().toString();
+        break;
+      default:
+        key = saleDate.toLocaleDateString('en-CA');
+    }
+
+    if (!groups[key]) {
+      groups[key] = { amount: 0, tickets: 0 };
+    }
+    groups[key].amount += sale.totalAmount;
+    groups[key].tickets += sale.tickets.length;
+  });
+
+  return Object.entries(groups).map(([label, data]) => ({ label, amount: data.amount, tickets: data.tickets }));
+};
+
+const getUniqueSalespersons = (sales: SaleRecord[]): string[] => {
+  const names = new Set(sales.map(s => s.salesperson));
+  return Array.from(names).sort();
+};
 
 const getAvailableYears = (sales: SaleRecord[]): number[] => {
   const years = new Set<number>();
@@ -53,263 +122,147 @@ const getAvailableYears = (sales: SaleRecord[]): number[] => {
 };
 
 const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'ETB',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('en-US').format(value);
-};
-
-const groupSalesByDay = (
-  sales: SaleRecord[],
-  year: number,
-  month: number
-): { day: number; amount: number; tickets: number }[] => {
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const groups: { [day: number]: { amount: number; tickets: number } } = {};
-  for (let i = 1; i <= daysInMonth; i++) groups[i] = { amount: 0, tickets: 0 };
-  sales.forEach(sale => {
-    const saleDate = new Date(sale.saleDate);
-    if (saleDate.getFullYear() === year && saleDate.getMonth() === month) {
-      const day = saleDate.getDate();
-      groups[day].amount += sale.totalAmount;
-      groups[day].tickets += sale.tickets.length;
-    }
-  });
-  return Object.entries(groups).map(([day, data]) => ({
-    day: parseInt(day),
-    amount: data.amount,
-    tickets: data.tickets,
-  }));
-};
-
-const groupSalesByMonth = (
-  sales: SaleRecord[],
-  year: number
-): { month: string; amount: number; tickets: number }[] => {
-  const groups: { [month: number]: { amount: number; tickets: number } } = {};
-  for (let i = 0; i < 12; i++) groups[i] = { amount: 0, tickets: 0 };
-  sales.forEach(sale => {
-    const saleDate = new Date(sale.saleDate);
-    if (saleDate.getFullYear() === year) {
-      const month = saleDate.getMonth();
-      groups[month].amount += sale.totalAmount;
-      groups[month].tickets += sale.tickets.length;
-    }
-  });
-  return MONTHS.map((monthName, idx) => ({
-    month: monthName,
-    amount: groups[idx].amount,
-    tickets: groups[idx].tickets,
-  }));
-};
-
-const groupSalesByDayOfWeek = (
-  sales: SaleRecord[],
-  year: number,
-  month: number
-): { name: string; revenue: number }[] => {
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const groups: { [key: string]: number } = {
-    Mon: 0, Tue: 0, Wed: 0, Thu: 0, Fri: 0, Sat: 0, Sun: 0,
-  };
-  sales.forEach(sale => {
-    const saleDate = new Date(sale.saleDate);
-    if (saleDate.getFullYear() === year && saleDate.getMonth() === month) {
-      const dayIndex = saleDate.getDay();
-      let dayName = daysOfWeek[dayIndex === 0 ? 6 : dayIndex - 1];
-      groups[dayName] += sale.totalAmount;
-    }
-  });
-  return daysOfWeek.map(day => ({
-    name: day,
-    revenue: groups[day],
-  }));
-};
-
-// ===================== StatCard Component =====================
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  color: string;
-  delay?: number;
-  change?: string;
-  trend?: 'up' | 'down';
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay = 0, change, trend }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, type: 'spring', stiffness: 100 }}
-      whileHover={{ y: -2 }}
-      className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
-    >
-      <div
-        className="relative overflow-hidden cursor-pointer transition-all duration-300"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex items-center gap-3">
-          <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
-            <Icon className="h-6 w-6 text-white" />
-          </div>
-          <div className="flex-1">
-            <p className="text-xs text-gray-500">{title}</p>
-            <p className="text-xl font-bold text-gray-900">{value}</p>
-            {change && (
-              <div className={`flex items-center gap-1 text-xs mt-0.5 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {trend === 'up' ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
-                <span>{change}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 },
-  },
-};
-
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { type: 'spring' as const, stiffness: 100, damping: 12 },
-  },
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 };
 
 // ===================== Main Component =====================
 const Report: React.FC = () => {
-  // Directly use the imported mock data (may be empty array)
-  const [sales] = useState<SaleRecord[]>(defaultMockSalesRecords);
-  const [selectedYear, setSelectedYear] = useState<string>('');
-  const [selectedMonth, setSelectedMonth] = useState<string>('');
-  const [selectedDay, setSelectedDay] = useState<string>('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showExportPopup, setShowExportPopup] = useState(false);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Set default filters based on the earliest/latest date in mock data (if any)
+  // Filter states – DO NOT REMOVE
+  const [period, setPeriod] = useState<Period>('daily');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedSalesperson, setSelectedSalesperson] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<PaymentStatus>('all');
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedDay, setSelectedDay] = useState<string>('all');
+  const [useDateRange, setUseDateRange] = useState(false);
+
+  // Load sales from localStorage
   useEffect(() => {
-    if (sales.length > 0) {
-      const today = new Date();
-      // Check if any sale exists in current year/month, otherwise use the first available year/month
-      const currentYear = today.getFullYear();
-      const currentMonth = today.getMonth();
-      const hasCurrentYear = sales.some(sale => new Date(sale.saleDate).getFullYear() === currentYear);
-      if (hasCurrentYear) {
-        setSelectedYear(currentYear.toString());
-        const hasCurrentMonth = sales.some(sale => 
-          new Date(sale.saleDate).getFullYear() === currentYear && 
-          new Date(sale.saleDate).getMonth() === currentMonth
-        );
-        setSelectedMonth(hasCurrentMonth ? MONTHS[currentMonth] : MONTHS[0]);
-      } else {
-        // Use the most recent year and month from data
-        const sorted = [...sales].sort((a,b) => new Date(b.saleDate).getTime() - new Date(a.saleDate).getTime());
-        const latestDate = new Date(sorted[0].saleDate);
-        setSelectedYear(latestDate.getFullYear().toString());
-        setSelectedMonth(MONTHS[latestDate.getMonth()]);
+    const loadSales = () => {
+      try {
+        const stored = localStorage.getItem('theater_sales_records');
+        if (stored) {
+          setSales(JSON.parse(stored));
+        } else {
+          const demoRecords: SaleRecord[] = [
+            {
+              id: 'demo1',
+              customerName: 'John Doe',
+              customerPhone: '555-1234',
+              showTitle: 'The Lion King',
+              showDate: '2026-05-10',
+              showTime: '14:00',
+              seats: 'A1, A2',
+              tickets: [{ seatId: 'A1', seatLabel: 'A1', qrData: 'qr1' }, { seatId: 'A2', seatLabel: 'A2', qrData: 'qr2' }],
+              seatType: 'Standard',
+              totalAmount: 120,
+              paymentMethod: 'cash',
+              saleDate: new Date().toISOString(),
+              salesperson: 'Alice',
+            },
+            {
+              id: 'demo2',
+              customerName: 'Jane Smith',
+              customerPhone: '555-5678',
+              showTitle: 'Hamilton',
+              showDate: '2026-05-11',
+              showTime: '19:30',
+              seats: 'B5',
+              tickets: [{ seatId: 'B5', seatLabel: 'B5', qrData: 'qr3' }],
+              seatType: 'Standard',
+              totalAmount: 65,
+              paymentMethod: 'card',
+              saleDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+              salesperson: 'Bob',
+            },
+            {
+              id: 'demo3',
+              customerName: 'Sam Wilson',
+              customerPhone: '555-9012',
+              showTitle: 'Wicked',
+              showDate: '2026-05-12',
+              showTime: '20:00',
+              seats: 'C10, C11',
+              tickets: [{ seatId: 'C10', seatLabel: 'C10', qrData: 'qr4' }, { seatId: 'C11', seatLabel: 'C11', qrData: 'qr5' }],
+              seatType: 'Standard',
+              totalAmount: 150,
+              paymentMethod: 'cash',
+              saleDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+              salesperson: 'Alice',
+            },
+          ];
+          localStorage.setItem('theater_sales_records', JSON.stringify(demoRecords));
+          setSales(demoRecords);
+        }
+      } catch (err) {
+        console.error('Failed to load sales records:', err);
+      } finally {
+        setLoading(false);
       }
-      // Default day to "all"
-      setSelectedDay('all');
-    } else {
-      // No data: reset filters
-      setSelectedYear('');
-      setSelectedMonth('');
-      setSelectedDay('all');
-    }
-  }, [sales]);
+    };
+    loadSales();
+  }, []);
 
-  const availableYears = useMemo(() => getAvailableYears(sales).map(y => y.toString()), [sales]);
+  const availableYears = useMemo(() => ['all', ...getAvailableYears(sales).map(y => y.toString())], [sales]);
 
-  // Filter sales based on year/month/day and search
   const filteredSales = useMemo(() => {
     let result = [...sales];
-    if (selectedYear) {
-      result = result.filter(sale => new Date(sale.saleDate).getFullYear().toString() === selectedYear);
-    }
-    if (selectedMonth && selectedMonth !== 'all') {
-      const monthIndex = MONTHS.indexOf(selectedMonth);
-      if (monthIndex !== -1) {
-        result = result.filter(sale => new Date(sale.saleDate).getMonth() === monthIndex);
-      }
-    }
-    if (selectedDay && selectedDay !== 'all' && selectedYear && selectedMonth) {
-      const dayNum = parseInt(selectedDay);
-      result = result.filter(sale => new Date(sale.saleDate).getDate() === dayNum);
-    }
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(sale =>
-        sale.customerName.toLowerCase().includes(term) ||
-        sale.showTitle.toLowerCase().includes(term) ||
-        sale.salesperson.toLowerCase().includes(term)
-      );
-    }
-    return result;
-  }, [sales, selectedYear, selectedMonth, selectedDay, searchTerm]);
 
-  // Totals
+    if (useDateRange) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      start.setHours(0, 0, 0, 0);
+      end.setHours(23, 59, 59, 999);
+      result = result.filter(sale => {
+        const saleDate = new Date(sale.saleDate);
+        return saleDate >= start && saleDate <= end;
+      });
+    } else {
+      result = result.filter(sale => {
+        const saleDate = new Date(sale.saleDate);
+        const year = saleDate.getFullYear().toString();
+        const month = MONTHS[saleDate.getMonth()];
+        const day = saleDate.getDate().toString();
+
+        if (selectedYear !== 'all' && year !== selectedYear) return false;
+        if (selectedMonth !== 'all' && month !== selectedMonth) return false;
+        if (selectedDay !== 'all' && day !== selectedDay) return false;
+        return true;
+      });
+    }
+
+    if (selectedSalesperson !== 'all') {
+      result = result.filter(sale => sale.salesperson === selectedSalesperson);
+    }
+
+    // Status filter placeholder
+    if (selectedStatus !== 'all') {
+      // Add status field logic if needed
+    }
+
+    return result;
+  }, [sales, startDate, endDate, selectedSalesperson, selectedStatus, useDateRange, selectedYear, selectedMonth, selectedDay]);
+
+  const chartData = useMemo(() => groupSalesByPeriod(filteredSales, period), [filteredSales, period]);
+  const salespersons = useMemo(() => ['all', ...getUniqueSalespersons(sales)], [sales]);
+
   const totals = useMemo(() => {
     const totalTickets = filteredSales.reduce((sum, s) => sum + s.tickets.length, 0);
     const totalRevenue = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
     const totalTransactions = filteredSales.length;
     const averageTicket = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
-    const growth = 15.8; // mock – could be calculated from previous period
-    return { totalTickets, totalRevenue, totalTransactions, averageTicket, growth };
+    return { totalTickets, totalRevenue, totalTransactions, averageTicket };
   }, [filteredSales]);
 
-  // Chart data based on filters
-  const composedChartData = useMemo(() => {
-    if (!selectedYear) return [];
-    if (selectedMonth && selectedMonth !== 'all') {
-      const yearNum = parseInt(selectedYear);
-      const monthIndex = MONTHS.indexOf(selectedMonth);
-      const dailyData = groupSalesByDay(filteredSales, yearNum, monthIndex);
-      return dailyData.map(d => ({
-        label: `Day ${d.day}`,
-        revenue: d.amount,
-        tickets: d.tickets,
-      }));
-    } else {
-      const yearNum = parseInt(selectedYear);
-      const monthlyData = groupSalesByMonth(filteredSales, yearNum);
-      return monthlyData.map(m => ({
-        label: m.month.slice(0, 3),
-        revenue: m.amount,
-        tickets: m.tickets,
-      }));
-    }
-  }, [filteredSales, selectedYear, selectedMonth]);
-
-  // Weekly revenue bar chart data
-  const weeklyRevenueData = useMemo(() => {
-    if (!selectedYear || !selectedMonth || selectedMonth === 'all') return [];
-    const yearNum = parseInt(selectedYear);
-    const monthIndex = MONTHS.indexOf(selectedMonth);
-    return groupSalesByDayOfWeek(filteredSales, yearNum, monthIndex);
-  }, [filteredSales, selectedYear, selectedMonth]);
-
-  // Pie chart data: revenue by salesperson
   const salespersonPieData = useMemo(() => {
     const map = new Map<string, number>();
     filteredSales.forEach(sale => {
@@ -318,7 +271,7 @@ const Report: React.FC = () => {
     return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
   }, [filteredSales]);
 
-  const COLORS = ['#14b8a6', '#22c55e', '#f59e0b', '#8b5cf6', '#ef4444', '#ec489a'];
+  const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'];
 
   const exportToCSV = () => {
     const headers = ['ID', 'Customer', 'Phone', 'Show', 'Date', 'Time', 'Seats', 'Amount', 'Payment', 'Salesperson', 'Sale Date'];
@@ -343,241 +296,205 @@ const Report: React.FC = () => {
     a.download = `sales_report_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    setShowExportPopup(true);
   };
 
-  // No loading state because we read directly from import (synchronous)
-  // Transaction table columns
-  const transactionColumns = [
-    { Header: 'Date', accessor: 'date', Cell: (row: SaleRecord) => new Date(row.saleDate).toLocaleDateString() },
-    { Header: 'Show', accessor: 'showTitle' },
-    { Header: 'Customer', accessor: 'customerName' },
-    { Header: 'Seats', accessor: 'seats' },
-    { Header: 'Amount', accessor: 'totalAmount', Cell: (row: SaleRecord) => formatCurrency(row.totalAmount) },
-    { Header: 'Payment', accessor: 'paymentMethod' },
-    { Header: 'Salesperson', accessor: 'salesperson' },
-  ];
+  // Build filter values object for the reusable component
+  const filterValues = {
+    useDateRange,
+    startDate,
+    endDate,
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    selectedSalesperson,
+    selectedStatus,
+  };
 
-  const dashboardCards = [
-    { title: 'Total Revenue', value: formatCurrency(totals.totalRevenue), icon: DollarSign, color: 'from-emerald-500 to-teal-600', change: `+${totals.growth}%`, trend: 'up' as const },
-    { title: 'Tickets Sold', value: formatNumber(totals.totalTickets), icon: Ticket, color: 'from-blue-500 to-cyan-500', change: '+12% vs last month', trend: 'up' as const },
-    { title: 'Average Ticket', value: formatCurrency(totals.averageTicket), icon: TrendingUp, color: 'from-purple-500 to-pink-500', change: '+5% vs last month', trend: 'up' as const },
-    { title: 'Transactions', value: formatNumber(totals.totalTransactions), icon: Users, color: 'from-orange-500 to-red-500', change: '+8% vs last month', trend: 'up' as const },
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-deepTeal mx-auto mb-4" />
+          <p className="text-gray-600">Loading sales report...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-8 p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 shadow-lg">
-              <TrendingUp className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Sales Report</h1>
-              <p className="text-sm text-gray-500">View and analyze ticket sales performance</p>
-            </div>
+        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Report</h1>
+            <p className="text-gray-500 mt-1">View and analyze ticket sales performance</p>
           </div>
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition shadow-md"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
         </div>
 
-        {/* Filters Panel */}
-        <motion.div variants={itemVariants} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-          <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
-            <Filter className="h-5 w-5 text-teal-600" />
-            <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-              <select
-                value={selectedYear}
-                onChange={e => setSelectedYear(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-              >
-                {availableYears.map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-              <select
-                value={selectedMonth}
-                onChange={e => setSelectedMonth(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-              >
-                {MONTHS.map(month => (
-                  <option key={month} value={month}>{month}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Day (optional)</label>
-              <select
-                value={selectedDay}
-                onChange={e => setSelectedDay(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500"
-              >
-                <option value="all">Any Day</option>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                  <option key={day} value={day.toString()}>{day}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Customer, show, salesperson..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
-                />
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        {/* Reusable Filter Component */}
+        <ReusableshowFilterforall
+          filterValues={filterValues}
+          onUseDateRangeChange={(val) => setUseDateRange(val)}
+          onStartDateChange={(date) => setStartDate(date)}
+          onEndDateChange={(date) => setEndDate(date)}
+          onSelectedYearChange={(year) => setSelectedYear(year)}
+          onSelectedMonthChange={(month) => setSelectedMonth(month)}
+          onSelectedDayChange={(day) => setSelectedDay(day)}
+          onSelectedSalespersonChange={(person) => setSelectedSalesperson(person)}
+          onSelectedStatusChange={(status) => setSelectedStatus(status as PaymentStatus)}
+          salespersonOptions={salespersons}
+          statusOptions={['all', 'completed', 'pending', 'refunded']}
+          availableYears={availableYears}
+          monthsList={MONTHS}
+          showSalesperson={true}
+          showStatus={false}
+          showDateRangeToggle={true}
+          showYearMonthDay={true}
+        />
 
         {/* Stats Cards */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-          {dashboardCards.map((card, idx) => (
-            <StatCard key={idx} title={card.title} value={card.value} icon={card.icon} color={card.color} delay={idx * 0.05} change={card.change} trend={card.trend} />
-          ))}
-        </motion.div>
-
-        {/* Main Composed Chart */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-teal-600" />
-            Revenue & Tickets Trend {selectedMonth && selectedMonth !== 'all' ? `- ${selectedMonth} ${selectedYear}` : selectedYear ? `- ${selectedYear}` : ''}
-          </h2>
-          <div className="h-80">
-            {composedChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={composedChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="label" angle={-45} textAnchor="end" height={60} interval={0} stroke="#9ca3af" />
-                  <YAxis yAxisId="left" tickFormatter={v => formatCurrency(v)} stroke="#9ca3af" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#9ca3af" />
-                  <Tooltip formatter={(value: any, name: string) => [
-                    name === 'revenue' ? formatCurrency(value) : `${value} tickets`,
-                    name === 'revenue' ? 'Revenue' : 'Tickets'
-                  ]} />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="revenue" name="Revenue" fill="#14b8a6" radius={[8, 8, 0, 0]} />
-                  <Line yAxisId="right" type="monotone" dataKey="tickets" name="Tickets Sold" stroke="#f59e0b" strokeWidth={2} />
-                </ComposedChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                No sales data available for selected filters
-              </div>
-            )}
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <StatCard icon={Ticket} label="Tickets Sold" value={totals.totalTickets} color="from-blue-500 to-blue-600" />
+          <StatCard icon={DollarSign} label="Total Revenue" value={formatCurrency(totals.totalRevenue)} color="from-green-500 to-green-600" />
+          <StatCard icon={TrendingUp} label="Average Ticket" value={formatCurrency(totals.averageTicket)} color="from-purple-500 to-purple-600" />
+          <StatCard icon={Users} label="Transactions" value={totals.totalTransactions} color="from-orange-500 to-orange-600" />
         </div>
 
-        {/* Two charts row */}
+        {/* Chart Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Weekly Revenue */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-teal-600" />
-              Weekly Revenue {selectedMonth && selectedMonth !== 'all' ? `- ${selectedMonth} ${selectedYear}` : ''}
-            </h2>
-            <div className="h-80">
-              {weeklyRevenueData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={weeklyRevenueData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                    <XAxis dataKey="name" stroke="#9ca3af" />
-                    <YAxis tickFormatter={v => formatCurrency(v)} stroke="#9ca3af" />
-                    <Tooltip formatter={(value: any) => formatCurrency(value)} />
-                    <Bar dataKey="revenue" name="Revenue" fill="#14b8a6" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  Select a month to view weekly revenue breakdown
-                </div>
-              )}
-            </div>
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Sales Trend ({period})</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="label" />
+                <YAxis yAxisId="left" />
+                <YAxis yAxisId="right" orientation="right" />
+                <Tooltip formatter={(value, name) => [name === 'amount' ? formatCurrency(value as number) : value, name === 'amount' ? 'Revenue' : 'Tickets']} />
+                <Legend />
+                <Line yAxisId="left" type="monotone" dataKey="amount" stroke={Colors.primary || '#0d9488'} name="Revenue ($)" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#f59e0b" name="Tickets Sold" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
-
-          {/* Revenue by Salesperson */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-teal-600" />
-              Revenue by Salesperson
-            </h2>
-            <div className="h-80">
-              {salespersonPieData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={salespersonPieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
-                    >
-                      {salespersonPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={value => formatCurrency(value as number)} />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-400">
-                  No sales data available for selected filters
-                </div>
-              )}
-            </div>
+          <div className="bg-white rounded-xl shadow-md p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue by Salesperson</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={salespersonPieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                >
+                  {salespersonPieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Transaction Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Bar Chart */}
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">Tickets Sold per Period</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={chartData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" />
+              <YAxis />
+              <Tooltip formatter={(value) => [`${value} tickets`, 'Tickets']} />
+              <Legend />
+              <Bar dataKey="tickets" fill={Colors.primary || '#0d9488'} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Detailed Table */}
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <h3 className="text-lg font-semibold text-gray-800">Transaction Details</h3>
             <p className="text-sm text-gray-500">Showing {filteredSales.length} transactions</p>
           </div>
-          <ReusableTable
-            columns={transactionColumns}
-            data={filteredSales}
-            showSearch={false}
-            showExport={false}
-            showPrint={false}
-            itemsPerPage={10}
-          />
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Show</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seats</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salesperson</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredSales.map(sale => (
+                  <tr key={sale.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 whitespace-nowrap">{new Date(sale.saleDate).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium">{sale.showTitle}</div>
+                      <div className="text-xs text-gray-500">{sale.showDate} {sale.showTime}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div>{sale.customerName}</div>
+                      <div className="text-xs text-gray-500">{sale.customerPhone}</div>
+                    </td>
+                    <td className="px-4 py-3">{sale.seats}</td>
+                    <td className="px-4 py-3 font-medium">{formatCurrency(sale.totalAmount)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        sale.paymentMethod === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {sale.paymentMethod === 'cash' ? <CheckCircle className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        {sale.paymentMethod}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{sale.salesperson}</td>
+                  </tr>
+                ))}
+                {filteredSales.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                      No sales records found for the selected filters.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        {/* Export Button */}
-        <div className="mt-6 flex justify-end">
-          <ReusableButton onClick={exportToCSV} icon={Download} label="Export CSV" variant="primary" size="sm" />
-        </div>
-
-        {/* Export Success Popup */}
-        <SuccessPopup
-          isOpen={showExportPopup}
-          onClose={() => setShowExportPopup(false)}
-          type="success"
-          title="Export Successful"
-          message="Sales report exported successfully."
-          duration={3000}
-          position="top-right"
-        />
       </div>
-    </motion.div>
+    </div>
   );
 };
+
+const StatCard: React.FC<{ icon: React.ElementType; label: string; value: string | number; color: string }> = ({ icon: Icon, label, value, color }) => (
+  <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
+    <div>
+      <p className="text-sm text-gray-500">{label}</p>
+      <p className="text-2xl font-bold text-gray-900">{value}</p>
+    </div>
+    <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
+      <Icon className="h-6 w-6 text-white" />
+    </div>
+  </div>
+);
 
 export default Report;

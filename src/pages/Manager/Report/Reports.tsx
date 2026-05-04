@@ -1,10 +1,11 @@
 // src/pages/Manager/inventory/Reports.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  LineChart, Line, PieChart, Pie, Cell
+  LineChart, Line
 } from 'recharts';
 import { TrendingUp, TrendingDown, Calendar, DollarSign, Ticket, Activity, Award } from 'lucide-react';
+import ReusableshowFilterforall from '../../../components/Reusable/ReusableshowFilterforall';
 
 // ==================== Types ====================
 interface TimeSlot {
@@ -63,9 +64,14 @@ interface OccupancyData {
   occupancyRate: number;
 }
 
-// ==================== Helper: generate fallback mock data ====================
+// Month names for dropdown
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+// Helper: generate fallback mock data (used when no events exist)
 const generateMockReports = () => {
-  // 1. Revenue data (last 7 days)
   const dailyRevenue: RevenueData[] = [
     { date: '2024-07-08', revenue: 2850, tickets: 42 },
     { date: '2024-07-09', revenue: 3120, tickets: 48 },
@@ -83,8 +89,6 @@ const generateMockReports = () => {
     { date: 'Jun 2024', revenue: 68700, tickets: 1050 },
     { date: 'Jul 2024', revenue: 73400, tickets: 1120 },
   ];
-
-  // 2. Popular shows
   const popularShows: ShowPopularity[] = [
     { name: 'Summer Music Festival', ticketsSold: 1245, revenue: 186750 },
     { name: 'Comedy Night', ticketsSold: 892, revenue: 66900 },
@@ -92,8 +96,6 @@ const generateMockReports = () => {
     { name: 'Traditional Theater Play', ticketsSold: 678, revenue: 61020 },
     { name: 'Rock Concert', ticketsSold: 634, revenue: 126800 },
   ];
-
-  // 3. Occupancy over months
   const occupancyData: OccupancyData[] = [
     { month: 'Feb', occupancyRate: 68 },
     { month: 'Mar', occupancyRate: 72 },
@@ -102,8 +104,6 @@ const generateMockReports = () => {
     { month: 'Jun', occupancyRate: 82 },
     { month: 'Jul', occupancyRate: 86 },
   ];
-
-  // 4. Summary
   const totalRevenue = popularShows.reduce((s, show) => s + show.revenue, 0);
   const totalTickets = popularShows.reduce((s, show) => s + show.ticketsSold, 0);
   const avgOccupancy = Math.round(occupancyData.reduce((s, o) => s + o.occupancyRate, 0) / occupancyData.length);
@@ -111,7 +111,6 @@ const generateMockReports = () => {
   const bestDay = 'Saturday';
   const revenueGrowth = 15.2;
   const avgTicketPrice = totalRevenue / totalTickets;
-
   return {
     revenueData: { daily: dailyRevenue, monthly: monthlyRevenue },
     popularShows,
@@ -120,9 +119,78 @@ const generateMockReports = () => {
   };
 };
 
-// ==================== Main Component ====================
+// Helper: get month name from date (short)
+const getMonthNameShort = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleString('default', { month: 'short' });
+};
+
+// Helper: get day name
+const getDayName = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return d.toLocaleString('default', { weekday: 'long' });
+};
+
+// Helper: format currency
+const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
+
 const Reports: React.FC = () => {
+  // ==================== Filter State ====================
+  const [useDateRange, setUseDateRange] = useState(false);
+  const [startDate, setStartDate] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
+  const [selectedYear, setSelectedYear] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedDay, setSelectedDay] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all'); // event status filter
+  // Salesperson not used here; we'll set showSalesperson={false}
+  const [selectedSalesperson] = useState<string>('all'); // dummy, not used
+
+  // ==================== Data & UI State ====================
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
+  const [allEvents, setAllEvents] = useState<EventData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Derived filtered events based on all filter criteria
+  const filteredEvents = useMemo(() => {
+    let events = [...allEvents];
+
+    // Apply status filter
+    if (selectedStatus !== 'all') {
+      events = events.filter(e => e.status === selectedStatus);
+    }
+
+    // Apply date filter (based on first time slot's date)
+    events = events.filter(event => {
+      if (!event.timeSlots.length) return false;
+      const eventDateStr = event.timeSlots[0].date;
+      const eventDate = new Date(eventDateStr);
+
+      if (useDateRange) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        start.setHours(0,0,0,0);
+        end.setHours(23,59,59,999);
+        return eventDate >= start && eventDate <= end;
+      } else {
+        const year = eventDate.getFullYear().toString();
+        const month = MONTHS[eventDate.getMonth()];
+        const day = eventDate.getDate().toString();
+        if (selectedYear !== 'all' && year !== selectedYear) return false;
+        if (selectedMonth !== 'all' && month !== selectedMonth) return false;
+        if (selectedDay !== 'all' && day !== selectedDay) return false;
+        return true;
+      }
+    });
+
+    return events;
+  }, [allEvents, useDateRange, startDate, endDate, selectedYear, selectedMonth, selectedDay, selectedStatus]);
+
+  // ==================== Compute Statistics from filteredEvents ====================
   const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [popularShows, setPopularShows] = useState<ShowPopularity[]>([]);
   const [occupancyData, setOccupancyData] = useState<OccupancyData[]>([]);
@@ -136,42 +204,35 @@ const Reports: React.FC = () => {
     avgTicketPrice: 0,
   });
 
-  // Helper: format date to YYYY-MM-DD
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toISOString().split('T')[0];
-  };
-
-  // Helper: get month name from date
-  const getMonthName = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleString('default', { month: 'short' });
-  };
-
-  // Helper: get day name
-  const getDayName = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleString('default', { weekday: 'long' });
-  };
-
-  // Load events and compute statistics (with fallback)
+  // Load events from localStorage once
   useEffect(() => {
-    const savedEvents = localStorage.getItem('theater_events');
-    let events: EventData[] = savedEvents ? JSON.parse(savedEvents) : [];
+    const loadEvents = () => {
+      try {
+        const stored = localStorage.getItem('theater_events');
+        if (stored) {
+          setAllEvents(JSON.parse(stored));
+        } else {
+          setAllEvents([]);
+        }
+      } catch (err) {
+        console.error('Failed to load events:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadEvents();
+  }, []);
 
-    // If no events or too few, use fallback mock data
-    if (events.length === 0) {
-      const mock = generateMockReports();
-      setRevenueData(view === 'daily' ? mock.revenueData.daily : mock.revenueData.monthly);
-      setPopularShows(mock.popularShows);
-      setOccupancyData(mock.occupancyData);
-      setSummary(mock.summary);
-      return;
+  // Recompute all chart data whenever filteredEvents or view changes
+  useEffect(() => {
+    // If no events or after filtering none, use mock fallback
+    let activeEvents = filteredEvents.filter(e => e.status !== 'cancelled' && e.totalRevenue > 0);
+    let useMock = false;
+    if (activeEvents.length === 0) {
+      useMock = true;
     }
 
-    // Only consider active events (excluding cancelled, and with revenue > 0 for meaningful stats)
-    const activeEvents = events.filter(e => e.status !== 'cancelled' && e.totalRevenue > 0);
-    if (activeEvents.length === 0) {
+    if (useMock) {
       const mock = generateMockReports();
       setRevenueData(view === 'daily' ? mock.revenueData.daily : mock.revenueData.monthly);
       setPopularShows(mock.popularShows);
@@ -184,9 +245,13 @@ const Reports: React.FC = () => {
     const revenueMap = new Map<string, { revenue: number; tickets: number }>();
     activeEvents.forEach(event => {
       if (!event.timeSlots.length) return;
-      const firstSlot = event.timeSlots[0];
-      const eventDate = firstSlot.date;
-      const key = view === 'daily' ? eventDate : getMonthName(eventDate) + ' ' + new Date(eventDate).getFullYear();
+      const eventDateStr = event.timeSlots[0].date;
+      let key: string;
+      if (view === 'daily') {
+        key = eventDateStr;
+      } else {
+        key = getMonthNameShort(eventDateStr) + ' ' + new Date(eventDateStr).getFullYear();
+      }
       const current = revenueMap.get(key) || { revenue: 0, tickets: 0 };
       current.revenue += event.totalRevenue;
       current.tickets += event.totalBookedSeats;
@@ -219,10 +284,10 @@ const Reports: React.FC = () => {
 
     // ----- 3. Occupancy rate per month -----
     const occupancyMap = new Map<string, { totalCap: number; totalBooked: number }>();
-    events.forEach(event => {
+    activeEvents.forEach(event => {
       if (!event.timeSlots.length) return;
-      const firstSlot = event.timeSlots[0];
-      const month = getMonthName(firstSlot.date);
+      const eventDateStr = event.timeSlots[0].date;
+      const month = getMonthNameShort(eventDateStr);
       const totalCapacity = event.seatCategories.reduce((sum, cat) => sum + cat.capacity, 0);
       const totalBooked = event.totalBookedSeats;
       const current = occupancyMap.get(month) || { totalCap: 0, totalBooked: 0 };
@@ -249,7 +314,7 @@ const Reports: React.FC = () => {
 
     // Best day of week (based on event time slots)
     const daySales = new Map<string, { tickets: number; revenue: number }>();
-    events.forEach(event => {
+    activeEvents.forEach(event => {
       event.timeSlots.forEach(slot => {
         const day = getDayName(slot.date);
         const current = daySales.get(day) || { tickets: 0, revenue: 0 };
@@ -286,10 +351,45 @@ const Reports: React.FC = () => {
       revenueGrowth,
       avgTicketPrice,
     });
-  }, [view]);
+  }, [filteredEvents, view]);
 
-  const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
-  const formatNumber = (value: number) => value.toLocaleString();
+  // Prepare available years from all events (not just filtered) for dropdown
+  const availableYears = useMemo(() => {
+    const years = new Set<string>();
+    allEvents.forEach(event => {
+      if (event.timeSlots.length) {
+        const year = new Date(event.timeSlots[0].date).getFullYear().toString();
+        years.add(year);
+      }
+    });
+    return ['all', ...Array.from(years).sort((a,b) => parseInt(b) - parseInt(a))];
+  }, [allEvents]);
+
+  // Options for status filter
+  const statusOptions = ['all', 'upcoming', 'ongoing', 'completed', 'cancelled'];
+
+  // Filter values object for reusable component
+  const filterValues = {
+    useDateRange,
+    startDate,
+    endDate,
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    selectedSalesperson, // not used but required by component
+    selectedStatus,
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -301,22 +401,40 @@ const Reports: React.FC = () => {
         <p className="text-gray-600 mt-2">Real‑time insights from your event data</p>
       </div>
 
-      {/* Summary Cards - FinancialReports style */}
+      {/* Reusable Filter Panel */}
+      <ReusableshowFilterforall
+        filterValues={filterValues}
+        onUseDateRangeChange={setUseDateRange}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+        onSelectedYearChange={setSelectedYear}
+        onSelectedMonthChange={setSelectedMonth}
+        onSelectedDayChange={setSelectedDay}
+        onSelectedSalespersonChange={() => {}} // no-op
+        onSelectedStatusChange={setSelectedStatus}
+        salespersonOptions={['all']} // not shown because showSalesperson=false
+        statusOptions={statusOptions}
+        availableYears={availableYears}
+        monthsList={MONTHS}
+        showSalesperson={false}
+        showStatus={true}
+        showDateRangeToggle={true}
+        showYearMonthDay={true}
+      />
+
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-        {/* Total Revenue */}
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
               <DollarSign className="h-6 w-6 text-white" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Revenue (active events)</p>
+              <p className="text-xs text-gray-500">Total Revenue (filtered)</p>
               <p className="text-xl font-bold text-gray-900">{formatCurrency(summary.totalRevenue)}</p>
             </div>
           </div>
         </div>
-
-        {/* Total Tickets Sold */}
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center shadow-md">
@@ -324,12 +442,10 @@ const Reports: React.FC = () => {
             </div>
             <div>
               <p className="text-xs text-gray-500">Total Tickets Sold</p>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(summary.totalTickets)}</p>
+              <p className="text-xl font-bold text-gray-900">{summary.totalTickets.toLocaleString()}</p>
             </div>
           </div>
         </div>
-
-        {/* Average Occupancy Rate */}
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-md">
@@ -341,8 +457,6 @@ const Reports: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Best Selling Show */}
         <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md">
@@ -356,12 +470,12 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Revenue Chart */}
+      {/* Revenue Chart with view toggle */}
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div>
             <h2 className="text-xl font-bold text-gray-800">Revenue Overview</h2>
-            <p className="text-gray-500 text-sm">Based on actual event bookings</p>
+            <p className="text-gray-500 text-sm">Based on filtered event bookings</p>
           </div>
           <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
             <button
@@ -396,7 +510,7 @@ const Reports: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="text-center py-12 text-gray-500">No revenue data available</div>
+          <div className="text-center py-12 text-gray-500">No revenue data for selected filters</div>
         )}
       </div>
 
@@ -411,7 +525,7 @@ const Reports: React.FC = () => {
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-gray-700">{show.name}</span>
-                    <span className="text-gray-600">{formatNumber(show.ticketsSold)} tickets</span>
+                    <span className="text-gray-600">{show.ticketsSold.toLocaleString()} tickets</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -424,7 +538,7 @@ const Reports: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">No show data available</div>
+            <div className="text-center py-12 text-gray-500">No show data for selected filters</div>
           )}
         </div>
 
@@ -442,7 +556,7 @@ const Reports: React.FC = () => {
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="text-center py-12 text-gray-500">No occupancy data available</div>
+            <div className="text-center py-12 text-gray-500">No occupancy data for selected filters</div>
           )}
           {occupancyData.length >= 2 && (
             <div className="mt-4 bg-orange-50 rounded-xl p-4 border border-orange-200">
@@ -463,7 +577,7 @@ const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Additional Insights - already white cards, keep as is */}
+      {/* Additional Insights */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-2xl shadow-lg p-5">
           <div className="flex items-center gap-3 mb-3">
