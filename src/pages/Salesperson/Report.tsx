@@ -1,16 +1,12 @@
 // src/pages/Salesperson/Report.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Calendar,
   TrendingUp,
   DollarSign,
   Ticket,
   Users,
-  Filter,
   Download,
-  ChevronDown,
   CheckCircle,
-  XCircle,
   Clock,
 } from 'lucide-react';
 import {
@@ -29,6 +25,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import Colors from '../../components/Reusable/Colors';
+import ReusableshowFilterforall from '../../components/Reusable/ReusableshowFilterforall';
 
 // ===================== Types =====================
 interface Seat {
@@ -49,14 +46,13 @@ interface SaleRecord {
   seatType: string;
   totalAmount: number;
   paymentMethod: string;
-  saleDate: string; // ISO string
+  saleDate: string;
   salesperson: string;
 }
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
 type PaymentStatus = 'all' | 'completed' | 'pending' | 'refunded';
 
-// Month names
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
@@ -75,7 +71,6 @@ const getEndOfDay = (date: Date): Date => {
   return d;
 };
 
-// Group sales by period (daily/weekly/monthly/yearly)
 const groupSalesByPeriod = (sales: SaleRecord[], period: Period): { label: string; amount: number; tickets: number }[] => {
   const groups: { [key: string]: { amount: number; tickets: number } } = {};
 
@@ -85,7 +80,7 @@ const groupSalesByPeriod = (sales: SaleRecord[], period: Period): { label: strin
 
     switch (period) {
       case 'daily':
-        key = saleDate.toLocaleDateString('en-CA'); // YYYY-MM-DD
+        key = saleDate.toLocaleDateString('en-CA');
         break;
       case 'weekly':
         const weekStart = new Date(saleDate);
@@ -112,34 +107,30 @@ const groupSalesByPeriod = (sales: SaleRecord[], period: Period): { label: strin
   return Object.entries(groups).map(([label, data]) => ({ label, amount: data.amount, tickets: data.tickets }));
 };
 
-// Get unique salespersons from records
 const getUniqueSalespersons = (sales: SaleRecord[]): string[] => {
   const names = new Set(sales.map(s => s.salesperson));
   return Array.from(names).sort();
 };
 
-// Get available years from sales data (for dropdown)
 const getAvailableYears = (sales: SaleRecord[]): number[] => {
   const years = new Set<number>();
   sales.forEach(sale => {
     const year = new Date(sale.saleDate).getFullYear();
     years.add(year);
   });
-  return Array.from(years).sort((a, b) => b - a); // newest first
+  return Array.from(years).sort((a, b) => b - a);
 };
 
-// Format currency
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
 };
 
 // ===================== Main Component =====================
 const Report: React.FC = () => {
-  // State for sales data
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter states
+  // Filter states – DO NOT REMOVE
   const [period, setPeriod] = useState<Period>('daily');
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -149,15 +140,10 @@ const Report: React.FC = () => {
   const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<PaymentStatus>('all');
-  
-  // NEW: Year, Month, Day filters
   const [selectedYear, setSelectedYear] = useState<string>('all');
-  const [selectedMonth, setSelectedMonth] = useState<string>('all'); // 'all' or month name
-  const [selectedDay, setSelectedDay] = useState<string>('all'); // 'all' or '1'..'31'
-
-  // UI state
-  const [showFilters, setShowFilters] = useState(false);
-  const [useDateRange, setUseDateRange] = useState(false); // toggle between date range picker and year/month/day
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [selectedDay, setSelectedDay] = useState<string>('all');
+  const [useDateRange, setUseDateRange] = useState(false);
 
   // Load sales from localStorage
   useEffect(() => {
@@ -167,7 +153,6 @@ const Report: React.FC = () => {
         if (stored) {
           setSales(JSON.parse(stored));
         } else {
-          // Demo data
           const demoRecords: SaleRecord[] = [
             {
               id: 'demo1',
@@ -227,15 +212,12 @@ const Report: React.FC = () => {
     loadSales();
   }, []);
 
-  // Available years for dropdown
   const availableYears = useMemo(() => ['all', ...getAvailableYears(sales).map(y => y.toString())], [sales]);
 
-  // Filter sales based on all criteria
   const filteredSales = useMemo(() => {
     let result = [...sales];
 
     if (useDateRange) {
-      // Date range filter
       const start = new Date(startDate);
       const end = new Date(endDate);
       start.setHours(0, 0, 0, 0);
@@ -245,7 +227,6 @@ const Report: React.FC = () => {
         return saleDate >= start && saleDate <= end;
       });
     } else {
-      // Year/Month/Day filter
       result = result.filter(sale => {
         const saleDate = new Date(sale.saleDate);
         const year = saleDate.getFullYear().toString();
@@ -259,26 +240,21 @@ const Report: React.FC = () => {
       });
     }
 
-    // Salesperson filter
     if (selectedSalesperson !== 'all') {
       result = result.filter(sale => sale.salesperson === selectedSalesperson);
     }
 
-    // Status filter (demo; assume all completed)
+    // Status filter placeholder
     if (selectedStatus !== 'all') {
-      // Placeholder – add status field to records if needed
+      // Add status field logic if needed
     }
 
     return result;
   }, [sales, startDate, endDate, selectedSalesperson, selectedStatus, useDateRange, selectedYear, selectedMonth, selectedDay]);
 
-  // Aggregated data for charts
   const chartData = useMemo(() => groupSalesByPeriod(filteredSales, period), [filteredSales, period]);
-
-  // Unique salespersons for dropdown
   const salespersons = useMemo(() => ['all', ...getUniqueSalespersons(sales)], [sales]);
 
-  // Totals
   const totals = useMemo(() => {
     const totalTickets = filteredSales.reduce((sum, s) => sum + s.tickets.length, 0);
     const totalRevenue = filteredSales.reduce((sum, s) => sum + s.totalAmount, 0);
@@ -287,7 +263,6 @@ const Report: React.FC = () => {
     return { totalTickets, totalRevenue, totalTransactions, averageTicket };
   }, [filteredSales]);
 
-  // Pie data for salesperson distribution
   const salespersonPieData = useMemo(() => {
     const map = new Map<string, number>();
     filteredSales.forEach(sale => {
@@ -298,7 +273,6 @@ const Report: React.FC = () => {
 
   const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'];
 
-  // Export to CSV
   const exportToCSV = () => {
     const headers = ['ID', 'Customer', 'Phone', 'Show', 'Date', 'Time', 'Seats', 'Amount', 'Payment', 'Salesperson', 'Sale Date'];
     const rows = filteredSales.map(s => [
@@ -322,6 +296,18 @@ const Report: React.FC = () => {
     a.download = `sales_report_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Build filter values object for the reusable component
+  const filterValues = {
+    useDateRange,
+    startDate,
+    endDate,
+    selectedYear,
+    selectedMonth,
+    selectedDay,
+    selectedSalesperson,
+    selectedStatus,
   };
 
   if (loading) {
@@ -353,117 +339,26 @@ const Report: React.FC = () => {
           </button>
         </div>
 
-        {/* Filter Panel */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-gray-700 font-medium mb-3"
-          >
-            <Filter className="h-4 w-4" />
-            Filters
-            <ChevronDown className={`h-4 w-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-          </button>
-          {showFilters && (
-            <div className="space-y-4">
-              {/* Toggle between date range and year/month/day */}
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={!useDateRange}
-                    onChange={() => setUseDateRange(false)}
-                  />
-                  <span className="text-sm">Filter by Year/Month/Day</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    checked={useDateRange}
-                    onChange={() => setUseDateRange(true)}
-                  />
-                  <span className="text-sm">Filter by Date Range</span>
-                </label>
-              </div>
-
-              {/* Year/Month/Day Filter */}
-              {!useDateRange && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                    <select
-                      value={selectedYear}
-                      onChange={e => setSelectedYear(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    >
-                      {availableYears.map(year => (
-                        <option key={year} value={year}>
-                          {year === 'all' ? 'All Years' : year}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                    <select
-                      value={selectedMonth}
-                      onChange={e => setSelectedMonth(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    >
-                      <option value="all">All Months</option>
-                      {MONTHS.map(month => (
-                        <option key={month} value={month}>{month}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Day (optional)</label>
-                    <select
-                      value={selectedDay}
-                      onChange={e => setSelectedDay(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    >
-                      <option value="all">Any Day</option>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
-                        <option key={day} value={day.toString()}>{day}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
-
-              {/* Date Range Filter */}
-              {useDateRange && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={e => setStartDate(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={e => setEndDate(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Common Filters */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                 
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {/* Reusable Filter Component */}
+        <ReusableshowFilterforall
+          filterValues={filterValues}
+          onUseDateRangeChange={(val) => setUseDateRange(val)}
+          onStartDateChange={(date) => setStartDate(date)}
+          onEndDateChange={(date) => setEndDate(date)}
+          onSelectedYearChange={(year) => setSelectedYear(year)}
+          onSelectedMonthChange={(month) => setSelectedMonth(month)}
+          onSelectedDayChange={(day) => setSelectedDay(day)}
+          onSelectedSalespersonChange={(person) => setSelectedSalesperson(person)}
+          onSelectedStatusChange={(status) => setSelectedStatus(status as PaymentStatus)}
+          salespersonOptions={salespersons}
+          statusOptions={['all', 'completed', 'pending', 'refunded']}
+          availableYears={availableYears}
+          monthsList={MONTHS}
+          showSalesperson={true}
+          showStatus={false}
+          showDateRangeToggle={true}
+          showYearMonthDay={true}
+        />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -515,7 +410,7 @@ const Report: React.FC = () => {
           </div>
         </div>
 
-        {/* Bar Chart for tickets per period */}
+        {/* Bar Chart */}
         <div className="bg-white rounded-xl shadow-md p-4 mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Tickets Sold per Period</h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -530,7 +425,7 @@ const Report: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Detailed Transactions Table */}
+        {/* Detailed Table */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <h3 className="text-lg font-semibold text-gray-800">Transaction Details</h3>
@@ -590,7 +485,6 @@ const Report: React.FC = () => {
   );
 };
 
-// ===================== Helper Component =====================
 const StatCard: React.FC<{ icon: React.ElementType; label: string; value: string | number; color: string }> = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
     <div>
