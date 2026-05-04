@@ -23,7 +23,7 @@ import {
     Mail,
     UserX,
     Clock,
-    DollarSign,
+    CoinsIcon,
     Briefcase
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
@@ -462,7 +462,7 @@ const EmployeeManagement: React.FC = () => {
         { title: 'Active Employees', value: stats.activeEmployees, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/manager/employees?status=active' },
         { title: 'Inactive', value: stats.inactiveEmployees, icon: UserX, color: 'from-red-500 to-rose-600', delay: 0.2, link: '/manager/employees?status=inactive' },
         { title: 'On Leave', value: stats.onLeaveEmployees, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.22, link: '/manager/employees?status=onleave' },
-        { title: 'Total Payroll', value: `Br ${stats.totalPayroll.toLocaleString()}`, icon: DollarSign, color: 'from-purple-500 to-pink-600', delay: 0.25 },
+        { title: 'Total Payroll', value: `Br ${stats.totalPayroll.toLocaleString()}`, icon: CoinsIcon, color: 'from-purple-500 to-pink-600', delay: 0.25 },
     ];
 
     return (
