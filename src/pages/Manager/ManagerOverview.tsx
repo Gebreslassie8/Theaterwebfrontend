@@ -1,617 +1,424 @@
-// src/pages/Manager/components/ManagerOverview.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Users, Building, DollarSign, Calendar, Ticket, Star,
-  Package, TrendingUp, ArrowRight, Eye, Edit, Film
-} from 'lucide-react';
-import {
-  AreaChart, Area, PieChart as RePieChart, Pie,
-  XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, BarChart, Bar
-} from 'recharts';
 import { Link } from 'react-router-dom';
-import ReusableshowFilterforall from '../../components/Reusable/ReusableshowFilterforall';
+import {
+    Building,
+    Ticket,
+    Activity,
+    TrendingUp,
+    Users,
+    Star,
+    Eye,
+    Edit,
+    CheckCircle,
+    RotateCcw,
+    Film,
+    Calendar,
+    DollarSign
+} from 'lucide-react';
+
+// Same imports as OwnerDashboard – but we'll re-export recharts behind them
+// (if your custom components are broken, this ensures visibility)
+import { AreaChart } from '../../components/Overview/AreaChart';
+import { Card, StatCard, MetricCard } from '../../components/Overview/Card';
+import { DonutChart } from '../../components/Overview/PieChart';
+import { BarChart } from '../../components/Overview/BarChart';
 
 // ==================== Types ====================
-interface TimeSlot {
-  id: string;
-  date: string;
-  startTime: string;
-  endTime: string;
+interface HallOccupancyData {
+    name: string;
+    occupancy: number;
+    capacity: number;
+    color: string;
 }
 
-interface SeatCategory {
-  id: string;
-  name: string;
-  price: number;
-  capacity: number;
-  booked?: number;
-  commissionPercent: number;
+interface ShowData {
+    id: string;
+    name: string;
+    sales: number;
+    capacity: number;
+    revenue: number;
+    status: 'selling' | 'almost full' | 'sold out' | 'upcoming' | 'completed';
+    time: string;
+    date: string;
+    hall: string;
 }
 
-interface EventData {
-  id: string;
-  name: string;
-  description: string;
-  timeSlots: TimeSlot[];
-  hall: string;
-  seatCategories: SeatCategory[];
-  category: string;
-  ageRestriction: string;
-  contactEmail: string;
-  contactPhone: string;
-  website: string;
-  organizer: string;
-  imageUrl?: string;
-  createdAt: string;
-  status: 'upcoming' | 'ongoing' | 'completed' | 'cancelled';
-  totalBookedSeats: number;
-  totalRevenue: number;
-  totalManagerEarnings: number;
-  contractDate?: string;
-  contractReference?: string;
+interface Transaction {
+    id: string;
+    customer: string;
+    amount: number;
+    tickets: number;
+    time: string;
+    status: 'completed' | 'refunded' | 'pending';
 }
 
-// Month names for dropdown
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
+interface ManagerStats {
+    totalRevenue: number;
+    ticketsSold: number;
+    ticketsToday: number;
+    occupancyRate: number;
+    activeShows: number;
+    totalHalls: number;
+    activeHalls: number;
+    totalCustomers: number;
+    upcomingShows: number;
+    completedShows: number;
+}
+
+interface RevenueData {
+    period: string;
+    revenue: number;
+    tickets: number;
+}
+
+// ==================== Mock Data (with visible values) ====================
+const managerStats: ManagerStats = {
+    totalRevenue: 158750,
+    ticketsSold: 12580,
+    ticketsToday: 156,
+    occupancyRate: 78,
+    activeShows: 8,
+    totalHalls: 6,
+    activeHalls: 5,
+    totalCustomers: 7548,
+    upcomingShows: 12,
+    completedShows: 45
+};
+
+const hallOccupancyData: HallOccupancyData[] = [
+    { name: 'Grand Hall', occupancy: 85, capacity: 300, color: '#14b8a6' },
+    { name: 'West End Theater', occupancy: 92, capacity: 250, color: '#f59e0b' },
+    { name: 'Disney Theater', occupancy: 68, capacity: 280, color: '#3b82f6' },
+    { name: 'Emerald Theatre', occupancy: 45, capacity: 200, color: '#ef4444' },
+    { name: 'Opera House', occupancy: 78, capacity: 350, color: '#8b5cf6' },
+    { name: 'Broadway Hall', occupancy: 55, capacity: 220, color: '#06b6d4' },
 ];
 
-// Helper: format currency
-const formatCurrency = (value: number) => `$${value.toLocaleString()}`;
+const showsData: ShowData[] = [
+    { id: '1', name: 'The Lion King', sales: 89, capacity: 120, revenue: 4005, status: 'selling', time: '7:00 PM', date: '2026-04-20', hall: 'Grand Hall' },
+    { id: '2', name: 'Hamilton', sales: 95, capacity: 120, revenue: 6175, status: 'almost full', time: '8:30 PM', date: '2026-04-21', hall: 'West End Theater' },
+    { id: '3', name: 'Wicked', sales: 110, capacity: 120, revenue: 6050, status: 'sold out', time: '6:00 PM', date: '2026-04-19', hall: 'Disney Theater' },
+    { id: '4', name: 'Phantom of Opera', sales: 67, capacity: 120, revenue: 4020, status: 'selling', time: '9:00 PM', date: '2026-04-22', hall: 'Emerald Theatre' },
+    { id: '5', name: 'Chicago', sales: 78, capacity: 120, revenue: 3900, status: 'selling', time: '7:30 PM', date: '2026-04-23', hall: 'Opera House' },
+    { id: '6', name: 'Les Misérables', sales: 45, capacity: 120, revenue: 2700, status: 'upcoming', time: '8:00 PM', date: '2026-05-01', hall: 'Broadway Hall' },
+];
+
+const transactions: Transaction[] = [
+    { id: '#TR-2026-001', customer: 'John Doe', amount: 90, tickets: 2, time: '5 min ago', status: 'completed' },
+    { id: '#TR-2026-002', customer: 'Jane Smith', amount: 135, tickets: 3, time: '15 min ago', status: 'completed' },
+    { id: '#TR-2026-003', customer: 'Bob Johnson', amount: 45, tickets: 1, time: '25 min ago', status: 'completed' },
+    { id: '#TR-2026-004', customer: 'Alice Brown', amount: 180, tickets: 4, time: '35 min ago', status: 'completed' },
+    { id: '#TR-2026-005', customer: 'Charlie Wilson', amount: 90, tickets: 2, time: '45 min ago', status: 'refunded' },
+    { id: '#TR-2026-006', customer: 'Emma Davis', amount: 225, tickets: 5, time: '1 hour ago', status: 'completed' },
+];
+
+const dailyRevenueData: RevenueData[] = [
+    { period: 'Mon', revenue: 32450, tickets: 156 },
+    { period: 'Tue', revenue: 28900, tickets: 142 },
+    { period: 'Wed', revenue: 35600, tickets: 178 },
+    { period: 'Thu', revenue: 41200, tickets: 195 },
+    { period: 'Fri', revenue: 52300, tickets: 245 },
+    { period: 'Sat', revenue: 67800, tickets: 312 },
+    { period: 'Sun', revenue: 58900, tickets: 278 },
+];
+
+const monthlyRevenueData: RevenueData[] = [
+    { period: 'Jan', revenue: 125000, tickets: 5850 },
+    { period: 'Feb', revenue: 118000, tickets: 5420 },
+    { period: 'Mar', revenue: 142000, tickets: 6780 },
+    { period: 'Apr', revenue: 158000, tickets: 7450 },
+    { period: 'May', revenue: 172000, tickets: 8150 },
+    { period: 'Jun', revenue: 189000, tickets: 8920 },
+    { period: 'Jul', revenue: 195000, tickets: 9250 },
+    { period: 'Aug', revenue: 182000, tickets: 8680 },
+    { period: 'Sep', revenue: 201000, tickets: 9560 },
+    { period: 'Oct', revenue: 215000, tickets: 10200 },
+    { period: 'Nov', revenue: 235000, tickets: 11150 },
+    { period: 'Dec', revenue: 268000, tickets: 12800 },
+];
+
+const weeklyBookingData: RevenueData[] = [
+    { period: 'Mon', revenue: 10150, tickets: 145 },
+    { period: 'Tue', revenue: 8400, tickets: 120 },
+    { period: 'Wed', revenue: 9450, tickets: 135 },
+    { period: 'Thu', revenue: 11200, tickets: 160 },
+    { period: 'Fri', revenue: 16100, tickets: 230 },
+    { period: 'Sat', revenue: 21700, tickets: 310 },
+    { period: 'Sun', revenue: 15750, tickets: 225 },
+];
+
+const seatDistributionData = [
+    { name: 'Standard', value: 4850, color: '#14b8a6' },
+    { name: 'Premium', value: 2850, color: '#f59e0b' },
+    { name: 'VIP', value: 1250, color: '#8b5cf6' },
+    { name: 'Wheelchair', value: 380, color: '#3b82f6' },
+];
+
+// ==================== Helper Functions ====================
+const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) return `ETB ${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `ETB ${(amount / 1000).toFixed(0)}K`;
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+};
+
+const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+        case 'selling': return { bg: 'bg-green-100', text: 'text-green-700', label: 'Selling' };
+        case 'almost full': return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Almost Full' };
+        case 'sold out': return { bg: 'bg-red-100', text: 'text-red-700', label: 'Sold Out' };
+        case 'upcoming': return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Upcoming' };
+        case 'completed': return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Completed' };
+        default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
+    }
+};
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } }
+};
+const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 12 } }
+};
 
 const ManagerOverview: React.FC = () => {
-  // ==================== Filter State ====================
-  const [useDateRange, setUseDateRange] = useState(false);
-  const [startDate, setStartDate] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState<string>(() => new Date().toISOString().split('T')[0]);
-  const [selectedYear, setSelectedYear] = useState<string>('all');
-  const [selectedMonth, setSelectedMonth] = useState<string>('all');
-  const [selectedDay, setSelectedDay] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [selectedSalesperson] = useState<string>('all'); // not used, but required by component
+    const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'monthly'>('monthly');
+    const [selectedRevenueType, setSelectedRevenueType] = useState<'revenue' | 'tickets'>('revenue');
 
-  // ==================== Data State ====================
-  const [allEvents, setAllEvents] = useState<EventData[]>([]);
-  const [loading, setLoading] = useState(true);
+    const getRevenueData = () => selectedPeriod === 'daily' ? dailyRevenueData : monthlyRevenueData;
+    const currentData = getRevenueData();
+    const totalRevenue = currentData.reduce((sum, item) => sum + item.revenue, 0);
+    const totalTickets = currentData.reduce((sum, item) => sum + item.tickets, 0);
 
-  // Load events from localStorage
-  useEffect(() => {
-    const loadEvents = () => {
-      try {
-        const stored = localStorage.getItem('theater_events');
-        if (stored) {
-          setAllEvents(JSON.parse(stored));
-        }
-      } catch (err) {
-        console.error('Failed to load events:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadEvents();
-  }, []);
-
-  // Filter events based on date and status
-  const filteredEvents = useMemo(() => {
-    let events = [...allEvents];
-
-    // Apply status filter
-    if (selectedStatus !== 'all') {
-      events = events.filter(e => e.status === selectedStatus);
-    }
-
-    // Apply date filter (based on first time slot's date)
-    events = events.filter(event => {
-      if (!event.timeSlots.length) return false;
-      const eventDateStr = event.timeSlots[0].date;
-      const eventDate = new Date(eventDateStr);
-
-      if (useDateRange) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        start.setHours(0,0,0,0);
-        end.setHours(23,59,59,999);
-        return eventDate >= start && eventDate <= end;
-      } else {
-        const year = eventDate.getFullYear().toString();
-        const month = MONTHS[eventDate.getMonth()];
-        const day = eventDate.getDate().toString();
-        if (selectedYear !== 'all' && year !== selectedYear) return false;
-        if (selectedMonth !== 'all' && month !== selectedMonth) return false;
-        if (selectedDay !== 'all' && day !== selectedDay) return false;
-        return true;
-      }
-    });
-
-    return events;
-  }, [allEvents, useDateRange, startDate, endDate, selectedYear, selectedMonth, selectedDay, selectedStatus]);
-
-  // ==================== Derived Statistics ====================
-  // Total tickets, revenue, occupancy, customers, etc.
-  const stats = useMemo(() => {
-    const totalTicketsSold = filteredEvents.reduce((sum, e) => sum + e.totalBookedSeats, 0);
-    const totalRevenue = filteredEvents.reduce((sum, e) => sum + e.totalRevenue, 0);
-    // Average occupancy: average of (totalBooked / totalCapacity) per event
-    let occupancySum = 0;
-    let eventsWithCapacity = 0;
-    filteredEvents.forEach(event => {
-      const totalCapacity = event.seatCategories.reduce((sum, cat) => sum + cat.capacity, 0);
-      if (totalCapacity > 0) {
-        occupancySum += (event.totalBookedSeats / totalCapacity) * 100;
-        eventsWithCapacity++;
-      }
-    });
-    const averageOccupancy = eventsWithCapacity > 0 ? Math.round(occupancySum / eventsWithCapacity) : 0;
-    // Count unique customers (if available; fallback to total tickets * 0.6)
-    const totalCustomers = Math.round(totalTicketsSold * 0.6); // approximation
-    // Active halls (distinct halls with at least one event)
-    const activeHalls = new Set(filteredEvents.map(e => e.hall)).size;
-    const totalHalls = 6; // assuming 6 halls total
-    const upcomingShows = filteredEvents.filter(e => e.status === 'upcoming').length;
-    const activePromotions = 3; // placeholder (could be from promotions storage)
-    const customerSatisfaction = 4.6; // placeholder (could be from reviews)
-
-    return {
-      totalTicketsSold,
-      totalRevenue,
-      averageOccupancy,
-      customerSatisfaction,
-      activeHalls,
-      totalHalls,
-      upcomingShows,
-      totalCustomers,
-      activePromotions
-    };
-  }, [filteredEvents]);
-
-  // Revenue data for area chart (monthly aggregated)
-  const revenueData = useMemo(() => {
-    const map = new Map<string, { revenue: number; tickets: number; occupancySum: number; count: number }>();
-    filteredEvents.forEach(event => {
-      if (!event.timeSlots.length) return;
-      const eventDate = new Date(event.timeSlots[0].date);
-      const month = eventDate.toLocaleString('default', { month: 'short' });
-      const totalCapacity = event.seatCategories.reduce((sum, cat) => sum + cat.capacity, 0);
-      const occupancy = totalCapacity > 0 ? (event.totalBookedSeats / totalCapacity) * 100 : 0;
-      const curr = map.get(month) || { revenue: 0, tickets: 0, occupancySum: 0, count: 0 };
-      curr.revenue += event.totalRevenue;
-      curr.tickets += event.totalBookedSeats;
-      curr.occupancySum += occupancy;
-      curr.count++;
-      map.set(month, curr);
-    });
-    // Convert to array and sort by month order
-    const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return Array.from(map.entries())
-      .map(([month, data]) => ({
-        month,
-        revenue: data.revenue,
-        tickets: data.tickets,
-        occupancy: data.count > 0 ? Math.round(data.occupancySum / data.count) : 0
-      }))
-      .sort((a, b) => monthOrder.indexOf(a.month) - monthOrder.indexOf(b.month));
-  }, [filteredEvents]);
-
-  // Seat distribution: sum seat categories from all events (capacity vs booked)
-  const seatDistribution = useMemo(() => {
-    const categories = new Map<string, { value: number; revenue: number; color: string }>();
-    filteredEvents.forEach(event => {
-      event.seatCategories.forEach(cat => {
-        const name = cat.name;
-        const booked = cat.booked || 0;
-        const revenue = booked * cat.price;
-        const curr = categories.get(name) || { value: 0, revenue: 0, color: '#0D9488' };
-        curr.value += booked;
-        curr.revenue += revenue;
-        // assign colors based on name
-        if (name === 'Standard') curr.color = '#0D9488';
-        else if (name === 'Premium') curr.color = '#3B82F6';
-        else if (name === 'VIP') curr.color = '#8B5CF6';
-        else if (name === 'Wheelchair') curr.color = '#10B981';
-        else curr.color = '#F59E0B';
-        categories.set(name, curr);
-      });
-    });
-    return Array.from(categories.entries()).map(([name, data]) => ({
-      name,
-      value: data.value,
-      revenue: data.revenue,
-      color: data.color
-    }));
-  }, [filteredEvents]);
-
-  // Weekly booking trends: aggregate by day of week from timeSlots
-  const bookingTrends = useMemo(() => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const map = new Map<string, { bookings: number; revenue: number }>();
-    days.forEach(day => map.set(day, { bookings: 0, revenue: 0 }));
-    filteredEvents.forEach(event => {
-      event.timeSlots.forEach(slot => {
-        const date = new Date(slot.date);
-        const dayName = date.toLocaleString('default', { weekday: 'short' }); // e.g., 'Mon'
-        const curr = map.get(dayName) || { bookings: 0, revenue: 0 };
-        curr.bookings += event.totalBookedSeats;
-        curr.revenue += event.totalRevenue;
-        map.set(dayName, curr);
-      });
-    });
-    // Return in order Sun..Sat
-    return days.map(day => ({
-      date: day,
-      bookings: map.get(day)?.bookings || 0,
-      revenue: map.get(day)?.revenue || 0
-    }));
-  }, [filteredEvents]);
-
-  // Top performing shows (by tickets sold)
-  const topShows = useMemo(() => {
-    return filteredEvents
-      .map(e => ({
-        name: e.name,
-        tickets: e.totalBookedSeats,
-        revenue: e.totalRevenue,
-        rating: 4.5 // placeholder, could be from review system
-      }))
-      .sort((a, b) => b.tickets - a.tickets)
-      .slice(0, 5);
-  }, [filteredEvents]);
-
-  // Recent activities: we can generate from recent events or use mock
-  const recentActivities = useMemo(() => {
-    // Generate from events sorted by createdAt
-    const activities = filteredEvents
-      .sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 5)
-      .map(event => ({
-        id: event.id,
-        action: event.status === 'upcoming' ? 'New show scheduled' : 'Show updated',
-        user: event.name,
-        time: new Date(event.createdAt).toLocaleString(),
-        icon: Film,
-        status: 'success' as const
-      }));
-    if (activities.length === 0) {
-      // fallback mock activities
-      return [
-        { id: 1, action: 'New show scheduled', user: 'Movie Premiere', time: '10 min ago', icon: Film, status: 'success' },
-        { id: 2, action: 'Ticket booking completed', user: 'John Doe', time: '25 min ago', icon: Ticket, status: 'success' },
-        { id: 3, action: 'Hall maintenance scheduled', user: 'Hall C', time: '1 hour ago', icon: Building, status: 'warning' },
-      ];
-    }
-    return activities;
-  }, [filteredEvents]);
-
-  // Available years for dropdown
-  const availableYears = useMemo(() => {
-    const years = new Set<string>();
-    allEvents.forEach(event => {
-      if (event.timeSlots.length) {
-        const year = new Date(event.timeSlots[0].date).getFullYear().toString();
-        years.add(year);
-      }
-    });
-    return ['all', ...Array.from(years).sort((a,b) => parseInt(b) - parseInt(a))];
-  }, [allEvents]);
-
-  // Status options for filter
-  const statusOptions = ['all', 'upcoming', 'ongoing', 'completed', 'cancelled'];
-
-  // Filter values object for reusable component
-  const filterValues = {
-    useDateRange,
-    startDate,
-    endDate,
-    selectedYear,
-    selectedMonth,
-    selectedDay,
-    selectedSalesperson,
-    selectedStatus,
-  };
-
-  // Card definitions for top row
-  const dashboardCards = useMemo(() => [
-    { title: 'Tickets Sold', value: stats.totalTicketsSold.toLocaleString(), icon: Ticket, color: 'from-blue-500 to-cyan-600', delay: 0.1, link: '/manager/tickets', notification: false },
-    { title: 'Total Revenue', value: formatCurrency(stats.totalRevenue), icon: DollarSign, color: 'from-teal-500 to-teal-600', delay: 0.15, link: '/manager/revenue', notification: false },
-  ], [stats]);
-
-  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading overview...</p>
-        </div>
-      </div>
+        <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-6 p-4 md:p-6 bg-gray-50 min-h-screen">
+            {/* Header */}
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Manager Dashboard</h1>
+                    <p className="text-sm text-gray-500 mt-1">Welcome back! Here's what's happening with your events today.</p>
+                </div>
+            </motion.div>
+
+            {/* Primary Stats */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <StatCard title="Tickets Today" value={managerStats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/tickets" />
+                <StatCard title="Occupancy Rate" value={`${managerStats.occupancyRate}%`} icon={Activity} color="from-purple-500 to-pink-600" link="/manager/halls" />
+                <StatCard title="Active Shows" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/shows" />
+                <StatCard title="Total Revenue" value={formatCurrency(managerStats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/financial" />
+            </motion.div>
+
+            {/* Secondary Stats */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <MetricCard title="Total Tickets Sold" value={managerStats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
+                <MetricCard title="Total Halls" value={`${managerStats.activeHalls}/${managerStats.totalHalls}`} icon={<Building className="h-5 w-5 text-white" />} />
+                <MetricCard title="Total Customers" value={managerStats.totalCustomers.toLocaleString()} icon={<Users className="h-5 w-5 text-white" />} />
+                <MetricCard title="Completed Shows" value={managerStats.completedShows} icon={<CheckCircle className="h-5 w-5 text-white" />} />
+            </motion.div>
+
+            {/* Hall Occupancy - DonutChart */}
+            <motion.div variants={itemVariants}>
+                <Card title="Hall Occupancy" subtitle="Current occupancy rates across all halls" showMoreLink="/manager/halls" showMoreText="Manage Halls">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DonutChart data={hallOccupancyData.map(h => ({ name: h.name, value: h.occupancy, color: h.color }))} height={280} showLabels={true} />
+                        <div className="space-y-3">
+                            {hallOccupancyData.map((hall, idx) => (
+                                <div key={idx}>
+                                    <div className="flex justify-between text-sm mb-1">
+                                        <span className="text-gray-700">{hall.name}</span>
+                                        <span className="text-gray-500">{hall.occupancy}% occupancy</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${hall.occupancy}%`, backgroundColor: hall.color }} />
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">Capacity: {hall.capacity} seats</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </Card>
+            </motion.div>
+
+            {/* Revenue Chart - AreaChart */}
+            <motion.div variants={itemVariants}>
+                <Card
+                    title="Revenue & Tickets Overview"
+                    subtitle={`${selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} performance - Total: ${formatCurrency(totalRevenue)} | Tickets: ${totalTickets.toLocaleString()}`}
+                    headerAction={
+                        <div className="flex gap-2">
+                            <div className="flex bg-gray-100 rounded-lg p-1">
+                                {['Daily', 'Monthly'].map(period => (
+                                    <button key={period} onClick={() => setSelectedPeriod(period.toLowerCase() as any)} className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${selectedPeriod === period.toLowerCase() ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
+                                        {period}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex bg-gray-100 rounded-lg p-1">
+                                <button onClick={() => setSelectedRevenueType('revenue')} className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${selectedRevenueType === 'revenue' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>Revenue</button>
+                                <button onClick={() => setSelectedRevenueType('tickets')} className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${selectedRevenueType === 'tickets' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>Tickets</button>
+                            </div>
+                        </div>
+                    }
+                >
+                    <AreaChart
+                        data={currentData}
+                        areas={[{ dataKey: selectedRevenueType === 'revenue' ? 'revenue' : 'tickets', name: selectedRevenueType === 'revenue' ? 'Revenue' : 'Tickets', color: '#14b8a6', gradient: true }]}
+                        xAxisKey="period"
+                        yAxisLabel={selectedRevenueType === 'revenue' ? 'Revenue (ETB)' : 'Tickets Sold'}
+                        height={350}
+                        showGrid={true}
+                        showLegend={true}
+                    />
+                </Card>
+            </motion.div>
+
+            {/* Weekly Booking Trends - BarChart */}
+            <motion.div variants={itemVariants}>
+                <Card title="Weekly Booking Trends" subtitle="Daily booking patterns and revenue" showMoreLink="/manager/analytics" showMoreText="View Analytics">
+                    <BarChart
+                        data={weeklyBookingData}
+                        bars={[
+                            { dataKey: 'tickets', name: 'Tickets Sold', color: '#14b8a6' },
+                            { dataKey: 'revenue', name: 'Revenue (ETB)', color: '#f59e0b' }
+                        ]}
+                        xAxisKey="period"
+                        height={350}
+                        showGrid={true}
+                        showLegend={true}
+                    />
+                </Card>
+            </motion.div>
+
+            {/* Seat Distribution - DonutChart */}
+            <motion.div variants={itemVariants}>
+                <Card title="Seat Distribution" subtitle="Distribution of seats across categories">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <DonutChart data={seatDistributionData} height={280} showLabels={true} />
+                        <div className="space-y-3">
+                            {seatDistributionData.map((seat, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seat.color }} />
+                                        <span className="text-sm font-medium text-gray-700">{seat.name}</span>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-semibold text-gray-900">{seat.value.toLocaleString()} seats</p>
+                                        <p className="text-xs text-gray-500">{((seat.value / 9330) * 100).toFixed(1)}% of total</p>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="mt-4 p-3 bg-teal-50 rounded-lg">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium text-teal-700">Total Seats</span>
+                                    <span className="text-lg font-bold text-teal-800">9,330</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </motion.div>
+
+            {/* Shows Table */}
+            <motion.div variants={itemVariants}>
+                <Card title="Current Shows Performance" subtitle="Real-time performance metrics for active shows" showMoreLink="/manager/shows" showMoreText="View All Shows">
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[900px]">
+                            <thead className="border-b border-gray-200">
+                                <tr>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Show Name</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Hall</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Date & Time</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Sales</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Revenue</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
+                                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {showsData.map(show => {
+                                    const badge = getStatusBadgeClass(show.status);
+                                    return (
+                                        <tr key={show.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                            <td className="py-3 px-4 text-sm font-medium text-gray-900">{show.name}</td>
+                                            <td className="py-3 px-4 text-sm text-gray-500">{show.hall}</td>
+                                            <td className="py-3 px-4 text-sm text-gray-500">{show.date} at {show.time}</td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-sm text-gray-700">{show.sales}/{show.capacity}</span>
+                                                    <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                                                        <div className="h-1.5 rounded-full bg-teal-500" style={{ width: `${(show.sales / show.capacity) * 100}%` }} />
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="py-3 px-4 text-sm font-semibold text-emerald-600">{formatCurrency(show.revenue)}</td>
+                                            <td className="py-3 px-4">
+                                                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${badge.bg} ${badge.text}`}>{badge.label}</span>
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <div className="flex items-center gap-2">
+                                                    <button className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"><Eye className="h-4 w-4 text-blue-600" /></button>
+                                                    <button className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition"><Edit className="h-4 w-4 text-teal-600" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </Card>
+            </motion.div>
+
+            {/* Recent Transactions */}
+            <motion.div variants={itemVariants}>
+                <Card title="Recent Bookings & Transactions" subtitle="Latest customer activities and ticket purchases" showMoreLink="/manager/bookings" showMoreText="View All Bookings">
+                    <div className="space-y-3">
+                        {transactions.map((tx, idx) => (
+                            <motion.div key={tx.id} initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: idx * 0.05 }} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-2 rounded-lg ${tx.status === 'completed' ? 'bg-green-100' : 'bg-red-100'}`}>
+                                        {tx.status === 'completed' ? <CheckCircle className="h-5 w-5 text-green-600" /> : <RotateCcw className="h-5 w-5 text-red-600" />}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">{tx.customer}</p>
+                                        <p className="text-xs text-gray-500">{tx.id} • {tx.tickets} tickets</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-gray-900">{formatCurrency(tx.amount)}</p>
+                                    <p className="text-xs text-gray-400">{tx.time}</p>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </Card>
+            </motion.div>
+
+            {/* Upcoming Schedule */}
+            <motion.div variants={itemVariants}>
+                <Card title="Upcoming Schedule" subtitle={`${managerStats.upcomingShows} shows scheduled in the next 30 days`} showMoreLink="/manager/schedule" showMoreText="View Full Schedule">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {showsData.filter(s => s.status === 'upcoming' || s.status === 'selling').slice(0, 3).map(show => (
+                            <div key={show.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                <div className="p-2 rounded-lg bg-teal-100"><Calendar className="h-5 w-5 text-teal-600" /></div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">{show.name}</p>
+                                    <p className="text-xs text-gray-500">{show.date} at {show.time}</p>
+                                    <p className="text-xs text-teal-600">{show.hall}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm font-semibold text-gray-900">{show.sales}/{show.capacity}</p>
+                                    <p className="text-xs text-gray-500">seats sold</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+            </motion.div>
+        </motion.div>
     );
-  }
-
-  return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      className="space-y-8 p-6"
-    >
-      {/* Reusable Filter Panel */}
-      <ReusableshowFilterforall
-        filterValues={filterValues}
-        onUseDateRangeChange={setUseDateRange}
-        onStartDateChange={setStartDate}
-        onEndDateChange={setEndDate}
-        onSelectedYearChange={setSelectedYear}
-        onSelectedMonthChange={setSelectedMonth}
-        onSelectedDayChange={setSelectedDay}
-        onSelectedSalespersonChange={() => {}}
-        onSelectedStatusChange={setSelectedStatus}
-        salespersonOptions={['all']}
-        statusOptions={statusOptions}
-        availableYears={availableYears}
-        monthsList={MONTHS}
-        showSalesperson={false}
-        showStatus={true}
-        showDateRangeToggle={true}
-        showYearMonthDay={true}
-      />
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-        {dashboardCards.map((card, idx) => (
-          <motion.div
-            key={idx}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: card.delay, type: "spring", stiffness: 100 }}
-            whileHover={{ y: -2 }}
-            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
-          >
-            <Link to={card.link} className="block">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}>
-                  <card.icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-500">{card.title}</p>
-                  <p className="text-xl font-bold text-gray-900">{card.value}</p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-gray-400" />
-              </div>
-            </Link>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Secondary Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Active Halls</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.activeHalls}/{stats.totalHalls}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Total Customers</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.totalCustomers.toLocaleString()}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Available Events</p>
-          <p className="text-2xl font-bold text-purple-600">{stats.activePromotions}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-          <p className="text-sm text-gray-500">Avg Occupancy</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.averageOccupancy}%</p>
-        </div>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Revenue & Tickets AreaChart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Revenue & Tickets Overview</h3>
-              <p className="text-sm text-gray-500">Monthly performance metrics</p>
-            </div>
-            <Link to="/manager/reports" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
-              View Reports <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          {revenueData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={revenueData}>
-                <defs>
-                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0D9488" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#0D9488" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="ticketsGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
-                <XAxis dataKey="month" stroke="#6B7280" />
-                <YAxis yAxisId="left" stroke="#6B7280" />
-                <YAxis yAxisId="right" orientation="right" stroke="#6B7280" />
-                <Tooltip formatter={(value: any) => typeof value === 'number' ? value.toLocaleString() : value} />
-                <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#0D9488" strokeWidth={2} fill="url(#revenueGradient)" name="Revenue ($)" />
-                <Area yAxisId="right" type="monotone" dataKey="tickets" stroke="#3B82F6" strokeWidth={2} fill="url(#ticketsGradient)" name="Tickets Sold" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center py-12 text-gray-500">No data for selected filters</div>
-          )}
-        </div>
-
-        {/* Seat Distribution PieChart */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Seat Distribution</h3>
-          {seatDistribution.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
-                <RePieChart>
-                  <Pie
-                    data={seatDistribution}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                  >
-                    {seatDistribution.map((entry, idx) => (
-                      <Cell key={`cell-${idx}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </RePieChart>
-              </ResponsiveContainer>
-              <div className="mt-4 space-y-2">
-                {seatDistribution.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                      <span className="text-sm text-gray-600">{item.name}</span>
-                    </div>
-                    <div className="flex gap-4">
-                      <span className="text-sm font-semibold text-gray-900">{item.value} seats</span>
-                      <span className="text-sm text-green-600">{formatCurrency(item.revenue)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-12 text-gray-500">No seat data</div>
-          )}
-        </div>
-      </div>
-
-      {/* Weekly Booking Trends */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Booking Trends</h3>
-            <p className="text-sm text-gray-500">Daily bookings and revenue</p>
-          </div>
-          <Link to="/manager/analytics" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
-            View Analytics <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        {bookingTrends.some(day => day.bookings > 0) ? (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={bookingTrends}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
-              <XAxis dataKey="date" stroke="#6B7280" />
-              <YAxis yAxisId="left" stroke="#6B7280" />
-              <YAxis yAxisId="right" orientation="right" stroke="#6B7280" />
-              <Tooltip formatter={(value: any) => typeof value === 'number' ? value.toLocaleString() : value} />
-              <Bar yAxisId="left" dataKey="bookings" fill="#0D9488" name="Bookings" />
-              <Bar yAxisId="right" dataKey="revenue" fill="#F59E0B" name="Revenue ($)" />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="text-center py-12 text-gray-500">No booking data for selected filters</div>
-        )}
-      </div>
-
-      {/* Top Performing Shows */}
-      <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Top Performing Shows</h3>
-          <Link to="/manager/shows" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
-            View All <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        {topShows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Show Name</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Tickets Sold</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Revenue</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Rating</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-600">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {topShows.map((show, idx) => (
-                  <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">{show.name}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{show.tickets.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-sm text-gray-900">{formatCurrency(show.revenue)}</td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-gray-900">{show.rating}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <Eye className="h-4 w-4 text-gray-600" />
-                        </button>
-                        <button className="p-1 hover:bg-gray-100 rounded transition-colors">
-                          <Edit className="h-4 w-4 text-gray-600" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">No shows match the selected filters</div>
-        )}
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-            <Link to="/manager/activity" className="text-sm text-teal-600 hover:text-teal-700 transition-colors flex items-center gap-1">
-              View All <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-          <div className="space-y-3">
-            {recentActivities.map((activity, idx) => (
-              <motion.div
-                key={activity.id}
-                initial={{ x: -20, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ delay: idx * 0.1 }}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    activity.status === 'success' ? 'bg-green-100' :
-                    activity.status === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
-                  }`}>
-                    <activity.icon className={`h-5 w-5 ${
-                      activity.status === 'success' ? 'text-green-600' :
-                      activity.status === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                    }`} />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-xs text-gray-500">{activity.user}</p>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500">{activity.time}</span>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
 };
 
 export default ManagerOverview;
