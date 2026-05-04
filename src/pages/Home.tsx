@@ -1,4 +1,61 @@
 // src/pages/Home.tsx
+
+/***
+ * 
+ * create table public.events (
+  id uuid not null default extensions.uuid_generate_v4 (),
+  theater_id uuid not null,
+  title text not null,
+  description text null,
+  genre text null,
+  category text null,
+  duration_minutes integer null,
+  director text null,
+  "cast" text[] null default '{}'::text[],
+  poster_url text null,
+  price_min numeric(10, 2) null,
+  price_max numeric(10, 2) null,
+  status text null default 'coming-soon'::text,
+  is_featured boolean null default false,
+  rating numeric(3, 2) null,
+  review_count integer null default 0,
+  view_count integer null default 0,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint events_pkey primary key (id),
+  constraint events_theater_id_fkey foreign KEY (theater_id) references theaters (id) on delete CASCADE,
+  constraint events_rating_check check (
+    (
+      (rating >= (0)::numeric)
+      and (rating <= (5)::numeric)
+    )
+  ),
+  constraint events_status_check check (
+    (
+      status = any (
+        array[
+          'coming-soon'::text,
+          'now-showing'::text,
+          'ended'::text
+        ]
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_events_theater_id on public.events using btree (theater_id) TABLESPACE pg_default;
+
+create index IF not exists idx_events_status on public.events using btree (status) TABLESPACE pg_default;
+
+create index IF not exists idx_events_is_featured on public.events using btree (is_featured) TABLESPACE pg_default;
+
+create index IF not exists idx_events_created_at on public.events using btree (created_at) TABLESPACE pg_default;
+
+create trigger handle_events_updated_at BEFORE
+update on events for EACH row
+execute FUNCTION handle_updated_at ();
+ * */
+
 import supabase from "../config/supabaseClient";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,25 +86,31 @@ export interface ShowDate {
   price?: number;
 }
 
+export interface PosterUrls {
+  poster: string;
+  gallery: string[];
+}
+
 export interface Event {
   id: string;
   title: string;
   description: string;
   genre: string;
   duration: number;
-  venue: string;
-  director?: string;
-  cast?: string[];
+  theater_id: string;
+  venue?: string;
+  poster_url: PosterUrls;
   images: {
     poster: string;
     gallery: string[];
   };
+  cast?: string[];
   dates: ShowDate[];
   priceRange: {
     min: number;
     max: number;
   };
-  status: "sold out" | "on market";
+  status: string;
   isFeatured: boolean;
   rating?: number;
   reviews?: number;
@@ -59,21 +122,20 @@ interface SupabaseEvent {
   title: string;
   description: string | null;
   genre: string | null;
-  category: string | null;
   duration_minutes: number | null;
-  director: string | null;
-  cast: string[] | null;
+  theater_id: string;
   poster_url: string | null;
+  cast: string[] | null;
   price_min: number | null;
   price_max: number | null;
-  status: "coming-soon" | "now-showing" | "ended";
-  is_featured: boolean;
+  status: string | null;
+  is_featured: boolean | null;
   rating: number | null;
   review_count: number | null;
   view_count: number | null;
-  theater_id: string;
-  created_at: string;
-  updated_at: string;
+  theaters?: {
+    legal_business_name: string;
+  };
 }
 
 // Sort options
@@ -108,19 +170,25 @@ const transformSupabaseEvent = (event: SupabaseEvent): Event => {
     },
   ];
 
+  const posterUrl =
+    event.poster_url ||
+    "https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop";
+
   return {
     id: event.id,
     title: event.title,
     description: event.description || "No description available",
     genre: event.genre || "General",
     duration: event.duration_minutes || 120,
-    venue: `Theater ${event.theater_id.substring(0, 8)}`,
-    director: event.director || undefined,
+    theater_id: event.theater_id,
+    venue: event.theaters?.legal_business_name || "Unknown Theater",
     cast: event.cast || [],
+    poster_url: {
+      poster: posterUrl,
+      gallery: [],
+    },
     images: {
-      poster:
-        event.poster_url ||
-        "https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop",
+      poster: posterUrl,
       gallery: [],
     },
     dates: sampleDates,
@@ -128,8 +196,8 @@ const transformSupabaseEvent = (event: SupabaseEvent): Event => {
       min: event.price_min || 0,
       max: event.price_max || 0,
     },
-    status: event.status === "now-showing" ? "on market" : "sold out",
-    isFeatured: event.is_featured,
+    status: event.status || "coming-soon",
+    isFeatured: event.is_featured || false,
     rating: event.rating || undefined,
     reviews: event.review_count || undefined,
     viewCount: event.view_count || undefined,
@@ -150,38 +218,6 @@ const Home: React.FC = () => {
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Cookie consent
-  useEffect(() => {
-    const hasConsented = localStorage.getItem("cookieConsent");
-    if (!hasConsented) {
-      setTimeout(() => {
-        setShowCookieConsent(true);
-      }, 1000);
-    }
-  }, []);
-
-  const acceptAllCookies = () => {
-    localStorage.setItem("cookieConsent", "accepted");
-    localStorage.setItem(
-      "cookiePreferences",
-      JSON.stringify({ functional: true, analytics: true, marketing: true }),
-    );
-    setShowCookieConsent(false);
-  };
-
-  const rejectAllCookies = () => {
-    localStorage.setItem("cookieConsent", "rejected");
-    localStorage.setItem(
-      "cookiePreferences",
-      JSON.stringify({ functional: false, analytics: false, marketing: false }),
-    );
-    setShowCookieConsent(false);
-  };
-
-  const customizeCookies = () => {
-    window.location.href = "/cookies";
-  };
-
   // Fetch data from Supabase
   useEffect(() => {
     const fetchEvents = async () => {
@@ -191,7 +227,14 @@ const Home: React.FC = () => {
 
         const { data: supabaseEvents, error: supabaseError } = await supabase
           .from("events")
-          .select("*")
+          .select(
+            `
+            *,
+            theaters:theater_id (
+              legal_business_name
+            )
+            `,
+          )
           .order("created_at", { ascending: false });
 
         if (supabaseError) {
@@ -219,44 +262,85 @@ const Home: React.FC = () => {
     fetchEvents();
   }, []);
 
-  // Filter and sort events
+  const acceptAllCookies = () => {
+    localStorage.setItem("cookieConsent", "accepted");
+    localStorage.setItem(
+      "cookiePreferences",
+      JSON.stringify({ functional: true, analytics: true, marketing: true }),
+    );
+    setShowCookieConsent(false);
+  };
+
+  const rejectAllCookies = () => {
+    localStorage.setItem("cookieConsent", "rejected");
+    localStorage.setItem(
+      "cookiePreferences",
+      JSON.stringify({ functional: false, analytics: false, marketing: false }),
+    );
+    setShowCookieConsent(false);
+  };
+
+  const customizeCookies = () => {
+    window.location.href = "/cookies";
+  };
+
   useEffect(() => {
     let results = [...events];
 
+    // CATEGORY FILTER
     if (selectedCategory !== "All") {
       results = results.filter((event) => event.genre === selectedCategory);
     }
 
+    // SEARCH FILTER
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      results = results.filter(
-        (event) =>
-          event.title.toLowerCase().includes(query) ||
-          event.description.toLowerCase().includes(query) ||
-          event.venue.toLowerCase().includes(query) ||
-          event.cast?.some((actor) => actor.toLowerCase().includes(query)),
-      );
+
+      results = results.filter((event) => {
+        const title = event.title?.toLowerCase() || "";
+        const description = event.description?.toLowerCase() || "";
+        const venue = event.venue?.toLowerCase() || "";
+
+        const castMatch =
+          event.cast?.some((actor) => actor.toLowerCase().includes(query)) ||
+          false;
+
+        return (
+          title.includes(query) ||
+          description.includes(query) ||
+          venue.includes(query) ||
+          castMatch
+        );
+      });
     }
 
+    // SORTING
     results.sort((a, b) => {
       switch (sortBy) {
         case "date": {
           const dateA = a.dates?.[0]?.date
             ? new Date(a.dates[0].date).getTime()
             : 0;
+
           const dateB = b.dates?.[0]?.date
             ? new Date(b.dates[0].date).getTime()
             : 0;
+
           return dateB - dateA;
         }
+
         case "price-low":
-          return (a.priceRange?.min || 0) - (b.priceRange?.min || 0);
+          return (a.priceRange?.min ?? 0) - (b.priceRange?.min ?? 0);
+
         case "price-high":
-          return (b.priceRange?.max || 0) - (a.priceRange?.max || 0);
+          return (b.priceRange?.max ?? 0) - (a.priceRange?.max ?? 0);
+
         case "rating":
-          return (b.rating || 0) - (a.rating || 0);
+          return (b.rating ?? 0) - (a.rating ?? 0);
+
         case "name":
-          return (a.title || "").localeCompare(b.title || "");
+          return (a.title ?? "").localeCompare(b.title ?? "");
+
         default:
           return 0;
       }
@@ -359,8 +443,15 @@ const Home: React.FC = () => {
     return pages;
   };
 
-  // Get unique genres for filter
-  // const uniqueGenres = ["All", ...new Set(events.map((event) => event.genre))];
+  // Cookie consent
+  useEffect(() => {
+    const hasConsented = localStorage.getItem("cookieConsent");
+    if (!hasConsented) {
+      setTimeout(() => {
+        setShowCookieConsent(true);
+      }, 1000);
+    }
+  }, []);
 
   // Loading state
   if (loading) {
@@ -399,14 +490,14 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
-      {/* here We display The Hero Part from database */}
+      {/* Hero Section from database */}
       <HeroBanner
         featuredShows={events
           .filter((event) => event.isFeatured)
           .map((event) => ({
             id: event.id,
             title: event.title,
-            image: event.images.poster,
+            image: event.poster_url.poster,
             genre: event.genre,
             rating: event.rating || 0,
           }))}
@@ -429,7 +520,7 @@ const Home: React.FC = () => {
                 />
               </div>
 
-              {/*  */}
+              {/* Sort Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setIsSortOpen(!isSortOpen)}
@@ -478,7 +569,7 @@ const Home: React.FC = () => {
                 </AnimatePresence>
               </div>
 
-              {/* The following help us  to lost down options  filters */}
+              {/* Filters Toggle Button */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${
@@ -583,7 +674,6 @@ const Home: React.FC = () => {
             {totalPages > 1 && (
               <div className="flex justify-center mt-10">
                 <nav className="flex items-center gap-2 flex-wrap">
-                  {/* this preveiew bettens in the pagenations  */}
                   <button
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
