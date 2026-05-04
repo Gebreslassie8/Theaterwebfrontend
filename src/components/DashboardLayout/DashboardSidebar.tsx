@@ -212,88 +212,57 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       },
 
       // ==================== THEATER OWNER ONLY ====================
-      {
+        {
         roles: ["theater_owner"],
         items: [
-          {
-            name: "Dashboard",
-            to: "/owner/dashboard",
-            icon: LayoutDashboard,
-            color: "text-amber-500",
+          { name: "Dashboard", 
+            to: "/owner/dashboard", 
+            icon: LayoutDashboard, 
+            color: "text-amber-500"
+           },
+          { name: "Manage Employees ",
+             to: "/owner/employes/employee",
+              icon: Users, 
+              color: "text-blue-500"
+             },
+          { name: "Wallet Balance",
+             to: "/owner/wallet/balance", 
+             icon: Coins, 
+             color: "text-emerald-500" 
+            },
+          { name: "Events Management", 
+            to: "/owner/events/manage_event", 
+            icon: Calendar, 
+            color: "text-orange-500" 
           },
-
-          {
-            name: "Financial",
-            to: "/owner/financial",
-            icon: DollarSign,
-            color: "text-emerald-500",
-          },
-
-          {
-            name: "Wallet Balance",
-            to: "/owner/wallet/balance",
-            icon: Coins,
-            color: "text-emerald-500",
-          },
-
-          {
-            name: "Events Management",
-            to: "/owner/events",
-            icon: Calendar,
-            color: "text-orange-500",
-          },
-
-          {
-            name: "Event Schedule",
-            to: "/owner/events/schedule",
-            icon: Clock,
-            color: "text-orange-500",
-          },
-
-          {
-            name: "Bookings Control",
-            to: "/owner/bookings",
-            icon: Ticket,
-            color: "text-emerald-500",
-          },
-
-          {
-            name: "Manage Halls",
+          { name: "Event Schedule",
+             to: "/owner/events/schedule", 
+             icon: Clock, 
+             color: "text-orange-500" 
+            },
+          { name: "Manage Halls", 
             to: "/owner/halls/manage",
-            icon: Building,
-            color: "text-pink-500",
+             icon: Building, 
+             color: "text-pink-500"
+             },
+          { name: "Bookings Control",
+             to: "/owner/bookings", 
+            icon: Ticket, 
+            color: "text-emerald-500" 
           },
-
-          {
-            name: "Manage Seating Layouts",
-            to: "/owner/halls/seating",
-            icon: GridIcon,
-            color: "text-pink-500",
-          },
-
-          {
-            name: "Manage VIP Sections",
-            to: "/owner/halls/vip",
-            icon: Crown,
-            color: "text-pink-500",
-          },
-
-          {
-            name: "Reports",
-            to: "/owner/reports",
-            icon: FileText,
-            color: "text-purple-500",
-          },
-
-          {
-            name: "Staff Management",
-            to: "/owner/staff",
-            icon: Users,
-            color: "text-blue-500",
-          },
-        ],
+          { name: "Financial Analaytics", 
+            to: "/owner/financial", 
+            icon: DollarSign, 
+            color: "text-emerald-500"
+           },
+          { name: "View Reports", 
+            to: "/owner/financial/report", 
+            icon: FileText, 
+            color: "text-purple-500" 
+          }
+        ]
       },
-
+          
       // ==================== THEATER MANAGER ONLY ====================
       {
         icon: Users,
@@ -366,6 +335,15 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         ],
       },
 
+      
+      // ==================== Scanner ONLY ====================
+      {
+       roles: ["scanner"],
+        items: [
+          { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode },
+          { name: "Entry Analaytics", to: "/scanner/stats/entries", icon: Users },
+             ],  
+        },
       // ==================== CUSTOMER ONLY ====================
       {
         icon: Users,

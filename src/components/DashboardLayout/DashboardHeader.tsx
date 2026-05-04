@@ -12,7 +12,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import ThemeToggle from "../UI/ThemeToggle";
 import ProfileSettingsModal from "../modals/ProfileSettingsModal";
 
-// not understanded by bire
 interface UserData {
   id?: number;
   name?: string;
@@ -22,7 +21,6 @@ interface UserData {
   [key: string]: any;
 }
 
-// not understanded by bire
 interface DashboardHeaderProps {
   onMenuClick: () => void;
   user: UserData | null;
@@ -30,28 +28,20 @@ interface DashboardHeaderProps {
   className?: string;
 }
 
-
-
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onMenuClick,
   user,
   onUserUpdate,
   className = "",
 }) => {
-  const [showProfileDropdown, setShowProfileDropdown] =
-    useState<boolean>(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(user);
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-
-
-  // evetig after this comment is function
-
-
-  // perform log out
+  // Perform log out
   const handleLogout = async (): Promise<void> => {
     try {
       console.log("Logging out...");
@@ -70,7 +60,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
   };
 
-  // not understanded by bire
   const getRoleGradient = (role?: string): string => {
     const gradients: Record<string, string> = {
       admin: "from-deepTeal to-pink-500",
@@ -81,7 +70,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return gradients[role || ""] || "from-deepTeal to-pink-500";
   };
 
-  // not understanded by bire
   const getRoleLabel = (role?: string): string => {
     const labels: Record<string, string> = {
       admin: "Administrator",
@@ -92,13 +80,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     return labels[role || ""] || "User";
   };
 
-  // to on and off user setting/profile
   const handleProfileClick = (): void => {
     setShowProfileDropdown(false);
     setShowProfileModal(true);
   };
 
-  // to update user profile
   const handleUserUpdate = (updatedUser: UserData): void => {
     setCurrentUser(updatedUser);
     if (onUserUpdate) {
@@ -107,7 +93,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     setShowProfileModal(false);
   };
 
-  // // not understanded by bire
   const getUserInitials = (): string => {
     const displayUser = currentUser || user;
     if (displayUser?.name) {
@@ -119,9 +104,9 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     }
     return "U";
   };
+
   const displayUser = currentUser || user;
 
-  // eveting after this comment is diapled
   return (
     <>
       <header
@@ -131,7 +116,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <div className="flex items-center justify-between h-16">
             {/* Left: Menu Button */}
             <div className="flex items-center">
-              {/* Menu Button */}
               <div className="relative group lg:hidden">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-500 rounded-lg opacity-0 group-hover:opacity-20 blur transition duration-500" />
                 <button
@@ -186,7 +170,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                         {getUserInitials()}
                       </span>
                     )}
-                    <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-dark-800 animate-pulse" />
                   </div>
                   <div className="hidden lg:block text-left relative z-10">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -258,7 +241,6 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       >
                         <LogOut className="h-4 w-4 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                         <span>Sign out</span>
-                        <div className="ml-auto h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
                       </button>
                     </div>
                   </div>
