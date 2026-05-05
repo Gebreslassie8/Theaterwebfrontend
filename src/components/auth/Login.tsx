@@ -340,36 +340,6 @@ const Login = () => {
                 </motion.p>
               </div>
 
-              {/* Demo Credentials Info */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="mb-6 p-3 bg-deepTeal/10 dark:bg-deepTeal/20 rounded-xl border border-deepTeal/20"
-              >
-                <p className="text-xs font-semibold text-deepTeal dark:text-skyTeal mb-2 text-center">
-                  Test Credentials:
-                </p>
-                <div className="space-y-1 text-xs">
-                  <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Admin:</span> admin@gmail.com
-                    / admin_123
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Customer:</span>{" "}
-                    cust@gmail.com / cust_123
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Sales:</span> sales@gmail.com
-                    / sales_123
-                  </p>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Username login:</span>{" "}
-                    @admin_123 / admin_123
-                  </p>
-                </div>
-              </motion.div>
-
               {/* Login Error */}
               {loginError && (
                 <motion.div
