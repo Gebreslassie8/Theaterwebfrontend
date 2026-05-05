@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import * as yup from "yup";
+import supabase from "@/config/supabaseClient";
 import {
   Mail,
   Lock,
@@ -14,7 +15,7 @@ import {
   Shield,
   HelpCircle,
   LogIn,
-  Smartphone,
+  User,
 } from "lucide-react";
 
 // Validation schemas using Yup
@@ -23,112 +24,35 @@ const loginSchemas = {
     email: yup
       .string()
       .required("Email is required")
-      .email("Please enter a valid email address")
-      .matches(
-        /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-        "Email must be in format: name@domain.com",
-      ),
+      .email("Please enter a valid email address"),
     password: yup
       .string()
       .required("Password is required")
-      .min(6, "Password must be at least 6 characters")
-      .max(32, "Password cannot exceed 32 characters"),
+      .min(6, "Password must be at least 6 characters"),
   }),
-  phone: yup.object({
-    phone: yup
+  username: yup.object({
+    username: yup
       .string()
-      .required("Phone number is required")
-      .matches(
-        /^[\+]?[0-9]{10,15}$/,
-        "Phone must be 10-15 digits (e.g., 251911234567)",
-      )
-      .test(
-        "ethiopian-phone",
-        "Enter a valid Ethiopian phone number",
-        (value) => {
-          if (!value) return false;
-          const cleaned = value.replace(/\D/g, "");
-          return cleaned.length >= 10 && cleaned.length <= 12;
-        },
-      ),
+      .required("Username is required")
+      .min(3, "Username must be at least 3 characters"),
     password: yup
       .string()
       .required("Password is required")
-      .min(6, "Password must be at least 6 characters")
-      .max(32, "Password cannot exceed 32 characters"),
+      .min(6, "Password must be at least 6 characters"),
   }),
 };
 
-// Mock Users Data
-const mockUsers = [
-  {
-    id: "1",
-    email: "admin@theaterhub.com",
-    phone: "+251911234567",
-    password: "admin123",
-    name: "Admin User",
-    role: "admin",
-    avatar: "A",
-  },
-  {
-    id: "2",
-    email: "owner@theaterhub.com",
-    phone: "+251911234568",
-    password: "owner123",
-    name: "Theater Owner",
-    role: "theater_owner",
-    avatar: "O",
-  },
-  {
-    id: "3",
-    email: "manager@theaterhub.com",
-    phone: "+251911234569",
-    password: "manager123",
-    name: "Theater Manager",
-    role: "manager",
-    avatar: "M",
-  },
-  {
-    id: "4",
-    email: "sales@theaterhub.com",
-    phone: "+251911234570",
-    password: "sales123",
-    name: "Salesperson",
-    role: "salesperson",
-    avatar: "S",
-  },
-  {
-    id: "5",
-    email: "scanner@theaterhub.com",
-    phone: "+251911234571",
-    password: "scanner123",
-    name: "QR Scanner",
-    role: "scanner",
-    avatar: "Q",
-  },
-  {
-    id: "6",
-    email: "customer@theaterhub.com",
-    phone: "+251911234572",
-    password: "customer123",
-    name: "Regular Customer",
-    role: "customer",
-    avatar: "C",
-  },
-];
-
-// Role definitions
+// Role definitions with their routes
 const roles = [
   {
-    id: "admin",
-    name: "Administrator",
+    id: "super_admin",
+    name: "Super Admin",
     icon: Shield,
     description: "Full system access",
     gradient: "from-red-500 to-pink-600",
     route: "/admin/dashboard",
     homeRoute: "/admin",
     color: "red",
-    demoCredentials: "admin@theaterhub.com / admin123",
   },
   {
     id: "theater_owner",
@@ -139,10 +63,9 @@ const roles = [
     route: "/owner/dashboard",
     homeRoute: "/owner",
     color: "amber",
-    demoCredentials: "owner@theaterhub.com / owner123",
   },
   {
-    id: "manager",
+    id: "theater_manager",
     name: "Theater Manager",
     icon: Shield,
     description: "Daily operations",
@@ -150,10 +73,9 @@ const roles = [
     route: "/manager/dashboard",
     homeRoute: "/manager",
     color: "blue",
-    demoCredentials: "manager@theaterhub.com / manager123",
   },
   {
-    id: "salesperson",
+    id: "sales_person",
     name: "Salesperson",
     icon: Shield,
     description: "Ticket sales",
@@ -161,10 +83,9 @@ const roles = [
     route: "/sales/events/browse",
     homeRoute: "/sales",
     color: "green",
-    demoCredentials: "sales@theaterhub.com / sales123",
   },
   {
-    id: "scanner",
+    id: "qr_scanner",
     name: "QR Scanner",
     icon: Shield,
     description: "Validate tickets",
@@ -172,7 +93,6 @@ const roles = [
     route: "/scanner/dashboard",
     homeRoute: "/scanner",
     color: "gray",
-    demoCredentials: "scanner@theaterhub.com / scanner123",
   },
   {
     id: "customer",
@@ -183,7 +103,6 @@ const roles = [
     route: "/customer/dashboard",
     homeRoute: "/",
     color: "indigo",
-    demoCredentials: "customer@theaterhub.com / customer123",
   },
 ];
 
@@ -194,7 +113,7 @@ const Login = () => {
 
   // Form States
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
 
@@ -223,7 +142,7 @@ const Login = () => {
     try {
       const schema = loginSchemas[authMethod as keyof typeof loginSchemas];
       const data =
-        authMethod === "email" ? { email, password } : { phone, password };
+        authMethod === "email" ? { email, password } : { username, password };
 
       await schema.validate(data, { abortEarly: false });
 
@@ -253,7 +172,7 @@ const Login = () => {
     }
   };
 
-  // Handle login with mock data
+  // Handle login using only public.users table
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
@@ -263,60 +182,87 @@ const Login = () => {
 
     setIsLoading(true);
 
-    // Simulate API delay
-    setTimeout(() => {
-      try {
-        const loginValue = authMethod === "email" ? email : phone;
+    try {
+      let query;
 
-        // Find user in mock data
-        let user = null;
-        if (authMethod === "email") {
-          user = mockUsers.find(
-            (u) => u.email === loginValue && u.password === password,
-          );
-        } else {
-          user = mockUsers.find(
-            (u) => u.phone === loginValue && u.password === password,
-          );
-        }
-
-        if (user) {
-          const userData = {
-            id: user.id,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            name: user.name,
-            token: `mock-token-${user.id}-${Date.now()}`,
-            loggedIn: true,
-            loginTime: new Date().toISOString(),
-            lastActive: new Date().toISOString(),
-          };
-
-          if (rememberMe) {
-            localStorage.setItem("user", JSON.stringify(userData));
-            localStorage.setItem("token", userData.token);
-          } else {
-            sessionStorage.setItem("user", JSON.stringify(userData));
-            sessionStorage.setItem("token", userData.token);
-          }
-
-          const roleData = roles.find((r) => r.id === user.role);
-          if (roleData) {
-            navigate(roleData.route);
-          } else {
-            navigate("/");
-          }
-        } else {
-          setLoginError("Invalid email/phone or password");
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        setLoginError("Login failed. Please try again.");
-      } finally {
-        setIsLoading(false);
+      if (authMethod === "email") {
+        // Query by email
+        query = supabase
+          .from("users")
+          .select("*")
+          .eq("email", email)
+          .eq("password", password);
+      } else {
+        // Query by username
+        query = supabase
+          .from("users")
+          .select("*")
+          .eq("username", username)
+          .eq("password", password);
       }
-    }, 800); // Simulate network delay
+
+      const { data: userRecord, error } = await query.single();
+
+      if (error || !userRecord) {
+        console.error("Login error:", error);
+        setLoginError("Invalid email/username or password");
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user is active
+      if (userRecord.status !== "active") {
+        setLoginError(
+          "Your account is inactive or suspended. Please contact support.",
+        );
+        setIsLoading(false);
+        return;
+      }
+
+      // Update last_login timestamp
+      await supabase
+        .from("users")
+        .update({ last_login: new Date().toISOString() })
+        .eq("id", userRecord.id);
+
+      // Prepare user data for storage
+      const userData = {
+        id: userRecord.id,
+        email: userRecord.email,
+        username: userRecord.username,
+        phone: userRecord.phone,
+        role: userRecord.role,
+        name: userRecord.full_name,
+        token: `user-${userRecord.id}-${Date.now()}`,
+        loggedIn: true,
+        loginTime: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+      };
+
+      // Store user data based on remember me
+      if (rememberMe) {
+        localStorage.setItem("user", JSON.stringify(userData));
+        localStorage.setItem("token", userData.token);
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(userData));
+        sessionStorage.setItem("token", userData.token);
+      }
+
+      // Navigate based on role
+      const roleData = roles.find((r) => r.id === userRecord.role);
+      if (roleData) {
+        console.log("Redirecting to:", roleData.route);
+        navigate(roleData.route);
+      } else {
+        console.log("No role found, redirecting to customer dashboard");
+        navigate("/customer/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setLoginError("Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleBlur = async (field: string) => {
@@ -402,19 +348,25 @@ const Login = () => {
                 className="mb-6 p-3 bg-deepTeal/10 dark:bg-deepTeal/20 rounded-xl border border-deepTeal/20"
               >
                 <p className="text-xs font-semibold text-deepTeal dark:text-skyTeal mb-2 text-center">
-                  Demo Credentials:
+                  Test Credentials:
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {roles.map((role) => (
-                    <div key={role.id} className="flex items-center gap-1">
-                      <div
-                        className={`w-2 h-2 rounded-full bg-${role.color}-500`}
-                      ></div>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {role.demoCredentials}
-                      </span>
-                    </div>
-                  ))}
+                <div className="space-y-1 text-xs">
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Admin:</span> admin@gmail.com
+                    / admin_123
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Customer:</span>{" "}
+                    cust@gmail.com / cust_123
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Sales:</span> sales@gmail.com
+                    / sales_123
+                  </p>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Username login:</span>{" "}
+                    @admin_123 / admin_123
+                  </p>
                 </div>
               </motion.div>
 
@@ -457,25 +409,25 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setAuthMethod("phone");
+                    setAuthMethod("username");
                     setErrors({});
                     setTouched({});
                     setLoginError("");
                   }}
                   className={`flex-1 py-2 sm:py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 ${
-                    authMethod === "phone"
+                    authMethod === "username"
                       ? "bg-white dark:bg-dark text-deepTeal shadow-lg"
                       : "text-gray-500 dark:text-gray-400 hover:text-deepTeal"
                   }`}
                 >
-                  <Smartphone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Phone</span>
+                  <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span>Username</span>
                 </button>
               </motion.div>
 
               {/* Login Form */}
               <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-                {/* Email/Phone Field */}
+                {/* Email/Username Field */}
                 <motion.div
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -534,56 +486,51 @@ const Login = () => {
                   ) : (
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-1.5">
-                        Phone Number <span className="text-error">*</span>
+                        Username <span className="text-error">*</span>
                       </label>
                       <div className="relative group">
-                        <Smartphone
+                        <User
                           className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 transition-colors duration-300 ${
-                            focusedField === "phone"
+                            focusedField === "username"
                               ? "text-deepTeal"
                               : "text-gray-400"
                           }`}
                         />
                         <input
-                          type="tel"
-                          value={phone}
+                          type="text"
+                          value={username}
                           onChange={async (e) => {
-                            setPhone(e.target.value);
+                            setUsername(e.target.value);
                             setLoginError("");
-                            if (errors.phone || touched.phone) {
-                              await validateForm("phone");
+                            if (errors.username || touched.username) {
+                              await validateForm("username");
                             }
                           }}
-                          onFocus={() => setFocusedField("phone")}
+                          onFocus={() => setFocusedField("username")}
                           onBlur={() => {
                             setFocusedField(null);
-                            handleBlur("phone");
+                            handleBlur("username");
                           }}
                           className={`w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-dark border-2 rounded-xl outline-none transition-all duration-300 ${
-                            errors.phone
+                            errors.username
                               ? "border-error focus:ring-4 focus:ring-error-bg"
-                              : focusedField === "phone"
+                              : focusedField === "username"
                                 ? "border-deepTeal ring-4 ring-deepTeal/20"
                                 : "border-gray-200 dark:border-gray-700 hover:border-deepTeal"
                           } dark:text-white`}
-                          placeholder="+251911234567"
+                          placeholder="@username"
                           disabled={isLoading}
                         />
                       </div>
-                      {errors.phone && (
+                      {errors.username && (
                         <motion.p
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="text-[10px] sm:text-xs text-error mt-1 flex items-center gap-1"
                         >
                           <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
-                          {errors.phone}
+                          {errors.username}
                         </motion.p>
-                      )}
-                      {!errors.phone && phone && (
-                        <p className="text-[10px] sm:text-xs text-gray-400 mt-1">
-                          Format: 251911234567 or +251911234567
-                        </p>
                       )}
                     </div>
                   )}
@@ -644,6 +591,16 @@ const Login = () => {
                       )}
                     </button>
                   </div>
+                  {errors.password && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-[10px] sm:text-xs text-error mt-1 flex items-center gap-1"
+                    >
+                      <AlertCircle className="h-2.5 w-2.5 sm:h-3 sm:w-3" />{" "}
+                      {errors.password}
+                    </motion.p>
+                  )}
                 </motion.div>
 
                 {/* Remember Me & Forgot Password */}

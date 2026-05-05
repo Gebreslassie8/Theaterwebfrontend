@@ -44,15 +44,15 @@ const ProtectedRoute: React.FC<{
   // Helper function to get dashboard path based on role
   const getDashboardPath = (role: string): string => {
     switch (role) {
-      case "admin":
+      case "super_admin":
         return "/admin/dashboard";
       case "theater_owner":
         return "/owner/dashboard";
-      case "manager":
+      case "theater_manager":
         return "/manager/dashboard";
-      case "salesperson":
+      case "sales_person":
         return "/sales/events/browse";
-      case "scanner":
+      case "qr_scanner":
         return "/scanner/dashboard";
       case "customer":
         return "/customer/dashboard";
@@ -80,25 +80,36 @@ const ProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
-// Create the sales route element
-export const salesRouteElement = (
-  <Route
-    path="/sales"
-    element={
-      <ProtectedRoute
-        allowedRoles={["salesperson", "manager", "theater_owner", "admin"]}
-      >
-        <DashboardLayout />
-      </ProtectedRoute>
-    }
-  >
-    <Route index element={<Navigate to="/sales/events/browse" replace />} />
-    <Route path="Salesperson/browse" element={<BrowseEvents />} />
-    {/* <Route path="events/sell" element={<SellTickets />} /> */}
-    <Route path="events/sales/sell" element={<SellTickets />} />
-    <Route path="Salesperson/Report" element={<Report />} />
-    
+// Export as a function that returns the Route element (matching admin pattern)
+export const getSalesRoutes = () => {
+  return (
+    <Route
+      key="sales-routes"
+      path="/sales/*"
+      element={
+        <ProtectedRoute
+          allowedRoles={[
+            "sales_person",
+            "theater_manager",
+            "theater_owner",
+            "super_admin",
+          ]}
+        >
+          <DashboardLayout />
+        </ProtectedRoute>
+      }
+    >
+      <Route index element={<Navigate to="/sales/events/browse" replace />} />
+      <Route path="events/browse" element={<BrowseEvents />} />
+      <Route path="events/sales/sell" element={<SellTickets />} />
+      <Route path="Salesperson/Report" element={<Report />} />
+      <Route
+        path="*"
+        element={<Navigate to="/sales/events/browse" replace />}
+      />
+    </Route>
+  );
+};
 
-    <Route path="*" element={<Navigate to="/sales/events/browse" replace />} />
-  </Route>
-);
+// For backward compatibility, keep the original export if needed
+export const salesRouteElement = getSalesRoutes();

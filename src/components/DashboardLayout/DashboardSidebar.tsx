@@ -77,7 +77,7 @@ type ExpandedItemsState = Record<string, boolean>;
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   isOpen,
   onClose,
-  userRole = "admin",
+  userRole = "super_admin", // Changed from "admin" to "super_admin" to match database
 }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<ExpandedItemsState>({});
@@ -104,9 +104,9 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const getNavigationForRole = (role: string): NavigationGroup[] => {
     const allNavigationGroups: NavigationGroup[] = [
-      // ==================== ADMIN ONLY ====================
+      // ==================== SUPER ADMIN ONLY ====================
       {
-        roles: ["admin"],
+        roles: ["super_admin"], // Changed from "admin" to "super_admin"
         items: [
           {
             name: "Overview",
@@ -125,7 +125,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/admin/theaters/theaters",
             icon: Building,
           },
-
           {
             name: "Manage Wallet Balance",
             to: "/admin/wallet/balance",
@@ -150,7 +149,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: TrendingUp,
             color: "text-green-500",
           },
-
           {
             name: "Content Management",
             icon: FileText,
@@ -212,62 +210,69 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
       },
 
       // ==================== THEATER OWNER ONLY ====================
-        {
-        roles: ["theater_owner"],
+      {
+        roles: ["theater_owner"], // Matches database
         items: [
-          { name: "Dashboard", 
-            to: "/owner/dashboard", 
-            icon: LayoutDashboard, 
-            color: "text-amber-500"
-           },
-          { name: "Manage Employees ",
-             to: "/owner/employes/employee",
-              icon: Users, 
-              color: "text-blue-500"
-             },
-          { name: "Wallet Balance",
-             to: "/owner/wallet/balance", 
-             icon: Coins, 
-             color: "text-emerald-500" 
-            },
-          { name: "Events Management", 
-            to: "/owner/events/manage_event", 
-            icon: Calendar, 
-            color: "text-orange-500" 
+          {
+            name: "Dashboard",
+            to: "/owner/dashboard",
+            icon: LayoutDashboard,
+            color: "text-amber-500",
           },
-          { name: "Event Schedule",
-             to: "/owner/events/schedule", 
-             icon: Clock, 
-             color: "text-orange-500" 
-            },
-          { name: "Manage Halls", 
+          {
+            name: "Manage Employees",
+            to: "/owner/employes/employee",
+            icon: Users,
+            color: "text-blue-500",
+          },
+          {
+            name: "Wallet Balance",
+            to: "/owner/wallet/balance",
+            icon: Coins,
+            color: "text-emerald-500",
+          },
+          {
+            name: "Events Management",
+            to: "/owner/events/manage_event",
+            icon: Calendar,
+            color: "text-orange-500",
+          },
+          {
+            name: "Event Schedule",
+            to: "/owner/events/schedule",
+            icon: Clock,
+            color: "text-orange-500",
+          },
+          {
+            name: "Manage Halls",
             to: "/owner/halls/manage",
-             icon: Building, 
-             color: "text-pink-500"
-             },
-          { name: "Bookings Control",
-             to: "/owner/bookings", 
-            icon: Ticket, 
-            color: "text-emerald-500" 
+            icon: Building,
+            color: "text-pink-500",
           },
-          { name: "Financial Analaytics", 
-            to: "/owner/financial", 
-            icon: DollarSign, 
-            color: "text-emerald-500"
-           },
-          { name: "View Reports", 
-            to: "/owner/financial/report", 
-            icon: FileText, 
-            color: "text-purple-500" 
-          }
-        ]
+          {
+            name: "Bookings Control",
+            to: "/owner/bookings",
+            icon: Ticket,
+            color: "text-emerald-500",
+          },
+          {
+            name: "Financial Analytics",
+            to: "/owner/financial",
+            icon: DollarSign,
+            color: "text-emerald-500",
+          },
+          {
+            name: "View Reports",
+            to: "/owner/financial/report",
+            icon: FileText,
+            color: "text-purple-500",
+          },
+        ],
       },
-          
+
       // ==================== THEATER MANAGER ONLY ====================
       {
-        icon: Users,
-        color: "from-blue-500 to-cyan-500",
-        roles: ["manager"],
+        roles: ["theater_manager"], // Changed from "manager" to "theater_manager" to match database
         items: [
           {
             name: "Overview",
@@ -303,9 +308,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== SALESPERSON ONLY ====================
       {
-        icon: Ticket,
-        color: "from-teal-500 to-green-500",
-        roles: ["salesperson"],
+        roles: ["sales_person"], // Changed from "salesperson" to "sales_person" to match database
         items: [
           {
             name: "Dashboard",
@@ -330,24 +333,30 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/sales/Salesperson/Report",
             icon: FileText,
             color: "text-pink-500",
-            
           },
         ],
       },
 
-      
-      // ==================== Scanner ONLY ====================
+      // ==================== QR SCANNER ONLY ====================
       {
-       roles: ["scanner"],
+        roles: ["qr_scanner"], // Changed from "scanner" to "qr_scanner" to match database
         items: [
-          { name: "Scan QR Code", to: "/scanner/validate/scan", icon: QrCode },
-          { name: "Entry Analaytics", to: "/scanner/stats/entries", icon: Users },
-             ],  
-        },
+          {
+            name: "Scan QR Code",
+            to: "/scanner/validate/scan",
+            icon: QrCode,
+          },
+          {
+            name: "Entry Analytics",
+            to: "/scanner/stats/entries",
+            icon: Users,
+          },
+        ],
+      },
+
       // ==================== CUSTOMER ONLY ====================
       {
-        icon: Users,
-        roles: ["customer"],
+        roles: ["customer"], // Matches database
         items: [
           {
             name: "Overview",
@@ -378,24 +387,24 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const getRoleDisplayName = (role: string): string => {
     const roleNames: Record<string, string> = {
-      admin: "System Administrator",
+      super_admin: "System Administrator", // Changed from "admin"
       theater_owner: "Theater Owner",
-      manager: "Theater Manager",
-      salesperson: "Sales Associate",
+      theater_manager: "Theater Manager", // Changed from "manager"
+      sales_person: "Sales Associate", // Changed from "salesperson"
       customer: "Customer",
-      scanner: "Gate Scanner",
+      qr_scanner: "Gate Scanner", // Changed from "scanner"
     };
     return roleNames[role] || "User";
   };
 
   function getRoleIcon(role: string): React.ElementType {
     const icons: Record<string, React.ElementType> = {
-      admin: Settings,
+      super_admin: Settings, // Changed from "admin"
       theater_owner: Crown,
-      manager: Users,
-      salesperson: Ticket,
+      theater_manager: Users, // Changed from "manager"
+      sales_person: Ticket, // Changed from "salesperson"
       customer: Users,
-      scanner: QrCode,
+      qr_scanner: QrCode, // Changed from "scanner"
     };
     return icons[role] || Settings;
   }

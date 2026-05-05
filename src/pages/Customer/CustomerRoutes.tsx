@@ -1,17 +1,18 @@
 // src/pages/Customer/CustomerRoutes.tsx
-import React from 'react';
-import { Route, Navigate } from 'react-router-dom';
-import DashboardLayout from '../../components/DashboardLayout/DashboardLayout';
-import CustomerDashboard from './Dashboard/CustomerDashboard';
-import CustomerMyTicketsDownload from './Tickets/CustomerMyTicketsDownload';
-import CustomerSettings from './Settings/CustomerSettings';
+import React from "react";
+import { Route, Navigate } from "react-router-dom";
+import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
+import CustomerDashboard from "./Dashboard/CustomerDashboard";
+import CustomerMyTicketsDownload from "./Tickets/CustomerMyTicketsDownload";
+import CustomerSettings from "./Settings/CustomerSettings";
 
 // Protected Route Component
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: string[] }> = ({ 
-  children, 
-  allowedRoles = [] 
-}) => {
-  const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+const ProtectedRoute: React.FC<{
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}> = ({ children, allowedRoles = [] }) => {
+  const userStr =
+    localStorage.getItem("user") || sessionStorage.getItem("user");
   const user = userStr ? JSON.parse(userStr) : null;
 
   if (!user) {
@@ -25,19 +26,25 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRoles?: strin
   return <>{children}</>;
 };
 
-// Create the customer route element (matching manager pattern)
-export const customerRouteElement = (
-  <Route
-    path="/customer"
-    element={
-      <ProtectedRoute allowedRoles={['customer']}>
-        <DashboardLayout />
-      </ProtectedRoute>
-    }
-  >
-    <Route index element={<Navigate to="/customer/dashboard" replace />} />
-    <Route path="dashboard" element={<CustomerDashboard />} />
-    <Route path="my-tickets" element={<CustomerMyTicketsDownload />} />
-    <Route path="settings" element={<CustomerSettings />} />
-  </Route>
-);
+// Export as a function that returns the Route element (matching admin pattern)
+export const getCustomerRoutes = () => {
+  return (
+    <Route
+      key="customer-routes"
+      path="/customer/*"
+      element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+          <DashboardLayout />
+        </ProtectedRoute>
+      }
+    >
+      <Route index element={<Navigate to="/customer/dashboard" replace />} />
+      <Route path="dashboard" element={<CustomerDashboard />} />
+      <Route path="my-tickets" element={<CustomerMyTicketsDownload />} />
+      <Route path="settings" element={<CustomerSettings />} />
+    </Route>
+  );
+};
+
+// For backward compatibility, keep the original export if needed
+export const customerRouteElement = getCustomerRoutes();
