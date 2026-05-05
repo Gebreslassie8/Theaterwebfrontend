@@ -285,6 +285,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/manager/events/create",
             icon: PlusCircle,
           },
+            
           {
             name: "Halls Management",
             to: "/manager/halls",
