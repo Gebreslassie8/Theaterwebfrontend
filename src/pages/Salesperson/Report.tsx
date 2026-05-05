@@ -1,4 +1,3 @@
-// src/pages/Salesperson/Report.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   TrendingUp,
@@ -9,23 +8,14 @@ import {
   CheckCircle,
   Clock,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
 import Colors from '../../components/Reusable/Colors';
 import ReusableshowFilterforall from '../../components/Reusable/ReusableshowFilterforall';
+
+// Import only the four required components
+import { AreaChart } from '../../components/Overview/AreaChart';
+import { BarChart } from '../../components/Overview/BarChart';
+import { Card, StatCard } from '../../components/Overview/Card';
+import { DonutChart } from '../../components/Overview/PieChart';
 
 // ===================== Types =====================
 interface Seat {
@@ -129,8 +119,6 @@ const formatCurrency = (value: number): string => {
 const Report: React.FC = () => {
   const [sales, setSales] = useState<SaleRecord[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filter states – DO NOT REMOVE
   const [period, setPeriod] = useState<Period>('daily');
   const [startDate, setStartDate] = useState<string>(() => {
     const d = new Date();
@@ -145,7 +133,6 @@ const Report: React.FC = () => {
   const [selectedDay, setSelectedDay] = useState<string>('all');
   const [useDateRange, setUseDateRange] = useState(false);
 
-  // Load sales from localStorage
   useEffect(() => {
     const loadSales = () => {
       try {
@@ -268,7 +255,7 @@ const Report: React.FC = () => {
     filteredSales.forEach(sale => {
       map.set(sale.salesperson, (map.get(sale.salesperson) || 0) + sale.totalAmount);
     });
-    return Array.from(map.entries()).map(([name, value]) => ({ name, value }));
+    return Array.from(map.entries()).map(([name, value]) => ({ name, value, color: '' }));
   }, [filteredSales]);
 
   const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec489a'];
@@ -298,7 +285,6 @@ const Report: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Build filter values object for the reusable component
   const filterValues = {
     useDateRange,
     startDate,
@@ -330,13 +316,7 @@ const Report: React.FC = () => {
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Sales Report</h1>
             <p className="text-gray-500 mt-1">View and analyze ticket sales performance</p>
           </div>
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition shadow-md"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </button>
+        
         </div>
 
         {/* Reusable Filter Component */}
@@ -360,69 +340,84 @@ const Report: React.FC = () => {
           showYearMonthDay={true}
         />
 
-        {/* Stats Cards */}
+        {/* Stats Cards - using StatCard from Card component */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard icon={Ticket} label="Tickets Sold" value={totals.totalTickets} color="from-blue-500 to-blue-600" />
-          <StatCard icon={DollarSign} label="Total Revenue" value={formatCurrency(totals.totalRevenue)} color="from-green-500 to-green-600" />
-          <StatCard icon={TrendingUp} label="Average Ticket" value={formatCurrency(totals.averageTicket)} color="from-purple-500 to-purple-600" />
-          <StatCard icon={Users} label="Transactions" value={totals.totalTransactions} color="from-orange-500 to-orange-600" />
+          <StatCard
+            title="Tickets Sold"
+            value={totals.totalTickets}
+            icon={Ticket}
+            color="from-blue-500 to-blue-600"
+            link="/salesperson/reports"  // optional link (no link needed)
+          />
+          <StatCard
+            title="Total Revenue"
+            value={formatCurrency(totals.totalRevenue)}
+            icon={DollarSign}
+            color="from-green-500 to-green-600"
+            link="/salesperson/reports"
+          />
+          <StatCard
+            title="Average Ticket"
+            value={formatCurrency(totals.averageTicket)}
+            icon={TrendingUp}
+            color="from-purple-500 to-purple-600"
+            link="/salesperson/reports"
+          />
+          <StatCard
+            title="Transactions"
+            value={totals.totalTransactions}
+            icon={Users}
+            color="from-orange-500 to-orange-600"
+            link="/salesperson/reports"
+          />
         </div>
 
-        {/* Chart Section */}
+        {/* Chart Section: AreaChart (Sales Trend) + DonutChart (Revenue by Salesperson) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Sales Trend ({period})</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="label" />
-                <YAxis yAxisId="left" />
-                <YAxis yAxisId="right" orientation="right" />
-                <Tooltip formatter={(value, name) => [name === 'amount' ? formatCurrency(value as number) : value, name === 'amount' ? 'Revenue' : 'Tickets']} />
-                <Legend />
-                <Line yAxisId="left" type="monotone" dataKey="amount" stroke={Colors.primary || '#0d9488'} name="Revenue ($)" strokeWidth={2} />
-                <Line yAxisId="right" type="monotone" dataKey="tickets" stroke="#f59e0b" name="Tickets Sold" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="bg-white rounded-xl shadow-md p-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue by Salesperson</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={salespersonPieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                >
-                  {salespersonPieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <Card title={`Sales Trend (${period})`} subtitle="Revenue and tickets over time">
+            <AreaChart
+              data={chartData}
+              areas={[
+                { dataKey: 'amount', name: 'Revenue ($)', color: Colors.primary || '#0d9488', gradient: true },
+                { dataKey: 'tickets', name: 'Tickets Sold', color: '#f59e0b', gradient: true }
+              ]}
+              xAxisKey="label"
+              yAxisLabel="Amount / Tickets"
+              height={300}
+              showGrid
+              showLegend
+            />
+          </Card>
+
+          <Card title="Revenue by Salesperson" subtitle="Distribution of revenue among sales staff">
+            {salespersonPieData.length > 0 ? (
+              <DonutChart
+                data={salespersonPieData.map((item, idx) => ({
+                  name: item.name,
+                  value: item.value,
+                  color: COLORS[idx % COLORS.length]
+                }))}
+                height={280}
+                showLabels
+              />
+            ) : (
+              <div className="text-center py-12 text-gray-500">No data available</div>
+            )}
+          </Card>
         </div>
 
-        {/* Bar Chart */}
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Tickets Sold per Period</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" />
-              <YAxis />
-              <Tooltip formatter={(value) => [`${value} tickets`, 'Tickets']} />
-              <Legend />
-              <Bar dataKey="tickets" fill={Colors.primary || '#0d9488'} />
-            </BarChart>
-          </ResponsiveContainer>
+        {/* BarChart: Tickets Sold per Period */}
+        <div className="mb-6">
+          <Card title="Tickets Sold per Period" subtitle={`Number of tickets sold by ${period}`}>
+            <BarChart
+              data={chartData}
+              bars={[{ dataKey: 'tickets', name: 'Tickets Sold', color: Colors.primary || '#0d9488' }]}
+              xAxisKey="label"
+              height={300}
+              showGrid
+              showLegend
+            />
+          </Card>
         </div>
 
         {/* Detailed Table */}
@@ -484,17 +479,5 @@ const Report: React.FC = () => {
     </div>
   );
 };
-
-const StatCard: React.FC<{ icon: React.ElementType; label: string; value: string | number; color: string }> = ({ icon: Icon, label, value, color }) => (
-  <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between">
-    <div>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value}</p>
-    </div>
-    <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${color} flex items-center justify-center shadow-lg`}>
-      <Icon className="h-6 w-6 text-white" />
-    </div>
-  </div>
-);
 
 export default Report;
