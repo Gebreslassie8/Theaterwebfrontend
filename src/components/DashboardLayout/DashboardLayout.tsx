@@ -10,8 +10,19 @@ interface User {
   id?: string | number;
   name?: string;
   email?: string;
-  role: string;           
-  [key: string]: any;     
+  role: string;
+  profileImage?: string | null;
+  [key: string]: any;
+}
+
+// UserData interface matching DashboardHeader expectations
+interface UserData {
+  id?: number;
+  name?: string;
+  email?: string;
+  role?: string;
+  profileImage?: string | null;
+  [key: string]: any;
 }
 
 interface DashboardLayoutProps {
@@ -29,7 +40,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const userDataStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+        const userDataStr =
+          localStorage.getItem("user") || sessionStorage.getItem("user");
         if (!userDataStr) {
           navigate("/login", { replace: true });
           return;
@@ -67,11 +79,50 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
     };
   }, [sidebarOpen]);
 
+  // Convert User to UserData format for DashboardHeader
+  const convertToUserData = (user: User | null): UserData | null => {
+    if (!user) return null;
+
+    // Convert id to number if possible
+    let numericId: number | undefined;
+    if (user.id !== undefined) {
+      if (typeof user.id === "number") {
+        numericId = user.id;
+      } else if (typeof user.id === "string") {
+        const parsed = parseInt(user.id);
+        if (!isNaN(parsed)) {
+          numericId = parsed;
+        }
+      }
+    }
+
+    return {
+      id: numericId,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profileImage: user.profileImage || null,
+    };
+  };
+
   // Callback for updating user data (profile update, etc.)
-  const handleUserUpdate = (updatedUser: User) => {
+  const handleUserUpdate = (updatedUserData: UserData) => {
+    if (!user) return;
+
+    // Convert UserData back to User format without duplicate role property
+    const updatedUser: User = {
+      id: updatedUserData.id ?? user.id,
+      name: updatedUserData.name ?? user.name,
+      email: updatedUserData.email ?? user.email,
+      role: updatedUserData.role || user.role,
+      profileImage: updatedUserData.profileImage ?? user.profileImage,
+    };
+
     setUser(updatedUser);
 
-    const storage = localStorage.getItem("user") ? localStorage : sessionStorage;
+    const storage = localStorage.getItem("user")
+      ? localStorage
+      : sessionStorage;
     storage.setItem("user", JSON.stringify(updatedUser));
   };
 
@@ -92,6 +143,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
     return null;
   }
 
+  const userDataForHeader = convertToUserData(user);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Desktop Sidebar – always visible on lg+ */}
@@ -106,7 +159,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
       {/* Header – fixed, shifts right on desktop */}
       <DashboardHeader
         onMenuClick={() => setSidebarOpen(true)}
-        user={user}
+        user={userDataForHeader}
         onUserUpdate={handleUserUpdate}
         className="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700"
       />
@@ -124,8 +177,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = () => {
 
         {/* Sidebar drawer */}
         <div
-          className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out shadow-2xl ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
+          className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out shadow-2xl ${
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
         >
           <DashboardSidebar
             isOpen={sidebarOpen}

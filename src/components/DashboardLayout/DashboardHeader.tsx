@@ -34,7 +34,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onUserUpdate,
   className = "",
 }) => {
-  const [showProfileDropdown, setShowProfileDropdown] = useState<boolean>(false);
+  const [showProfileDropdown, setShowProfileDropdown] =
+    useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(user);
@@ -72,10 +73,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const getRoleLabel = (role?: string): string => {
     const labels: Record<string, string> = {
-      admin: "Administrator",
-      venue_manager: "Venue Manager",
-      theater_owner: "Theater Owner",
-      user: "Customer",
+      super_admin: "Admin",
+      theater_manager: "Manager",
+      theater_owner: "Owner",
+      sales_person: "sales",
+      qr_scanner: "Scanner",
+      Customer: "Customer",
     };
     return labels[role || ""] || "User";
   };
