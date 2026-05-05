@@ -250,7 +250,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-pink-500",
           },
           {
-            name: "Bookings Control",
+            name: "Bookings Information",
             to: "/owner/bookings",
             icon: Ticket,
             color: "text-emerald-500",

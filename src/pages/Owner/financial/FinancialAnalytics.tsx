@@ -10,7 +10,8 @@ import {
     Users,
     RefreshCw,
     Smartphone,
-    Building as BuildingIcon
+    Building as BuildingIcon,
+    Search
 } from 'lucide-react';
 // Import Overview components
 import { Card, StatCard, ChartCard } from '../../../components/Overview/Card';
@@ -94,15 +95,47 @@ const topShows: ShowPerformance[] = [
 
 const paymentMethods: PaymentMethod[] = [
     { method: 'Mobile Money', amount: 780000, percentage: 30.2, color: Colors.skyTeal, icon: <Smartphone className="h-4 w-4" /> },
-    { method: 'Cash', amount: 350000, percentage: 13.6, color: Colors.deepBlue, icon: <DollarSign className="h-4 w-4" /> },
+    { method: 'Cash', amount: 350000, percentage: 13.6, color: Colors.deepBlue, icon: <Wallet className="h-4 w-4" /> },
     { method: 'Bank Transfer', amount: 198000, percentage: 7.7, color: Colors.deepAqua, icon: <BuildingIcon className="h-4 w-4" /> },
 ];
 
 type PeriodType = 'daily' | 'monthly' | 'yearly';
 
+// Simple Show Filter Component
+const SimpleShowFilter: React.FC<{
+    shows: { id: string; name: string }[];
+    selectedShow: string;
+    onShowSelect: (showId: string) => void;
+}> = ({ shows, selectedShow, onShowSelect }) => {
+    return (
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h3 className="text-sm font-medium text-gray-700">Filter by Show</h3>
+                    <p className="text-xs text-gray-500 mt-1">Select a show to view specific analytics</p>
+                </div>
+                <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <select
+                        value={selectedShow}
+                        onChange={(e) => onShowSelect(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                    >
+                        <option value="">All Shows</option>
+                        {shows.map(show => (
+                            <option key={show.id} value={show.id}>{show.name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const FinancialAnalytics: React.FC = () => {
     const [period, setPeriod] = useState<PeriodType>('monthly');
     const [isExporting, setIsExporting] = useState(false);
+    const [selectedShow, setSelectedShow] = useState<string>('');
 
     const getData = (): RevenueData[] => {
         switch (period) {
@@ -121,21 +154,6 @@ const FinancialAnalytics: React.FC = () => {
         const avgTicketPrice = totalTickets > 0 ? totalRevenue / totalTickets : 0;
         return { totalRevenue, totalTickets, avgTicketPrice };
     }, [chartData]);
-
-    const formatCurrency = (amount: number) => {
-        if (amount >= 1000000) {
-            return `ETB ${(amount / 1000000).toFixed(1)}M`;
-        }
-        if (amount >= 1000) {
-            return `ETB ${(amount / 1000).toFixed(0)}K`;
-        }
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'ETB',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(amount);
-    };
 
     const formatFullCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
@@ -170,7 +188,8 @@ const FinancialAnalytics: React.FC = () => {
                 topShows: topShows,
                 paymentMethods: paymentMethods,
                 todaysRevenue: todaysRevenue,
-                todaysTickets: todaysTickets
+                todaysTickets: todaysTickets,
+                selectedShow: selectedShow
             };
             const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -185,6 +204,17 @@ const FinancialAnalytics: React.FC = () => {
             alert('Report exported successfully!');
         }, 1500);
     };
+
+    // Filter shows based on selection
+    const filteredShows = useMemo(() => {
+        if (!selectedShow) return topShows;
+        return topShows.filter(show => show.id === selectedShow);
+    }, [selectedShow]);
+
+    // Prepare shows data for the filter
+    const showsForFilter = useMemo(() => {
+        return topShows.map(show => ({ id: show.id, name: show.name }));
+    }, []);
 
     return (
         <div className="space-y-6 p-4 md:p-6">
@@ -225,14 +255,26 @@ const FinancialAnalytics: React.FC = () => {
                 </div>
             </div>
 
+            {/* Show Filter - Using custom simple component */}
+            <SimpleShowFilter 
+                shows={showsForFilter}
+                selectedShow={selectedShow}
+                onShowSelect={setSelectedShow}
+            />
+
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard 
-                    title="Today's Revenue" 
-                    value={formatFullCurrency(todaysRevenue)} 
-                    icon={DollarSign} 
-                    color="from-emerald-500 to-teal-600"
-                />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white shadow-lg">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-emerald-100 text-sm font-medium">Today's Revenue</p>
+                            <p className="text-3xl font-bold mt-2">ETB {todaysRevenue.toLocaleString()}</p>
+                        </div>
+                        <div className="p-3 bg-white/20 rounded-lg">
+                            <TrendingUp className="h-6 w-6" />
+                        </div>
+                    </div>
+                </div>
                 <StatCard 
                     title="Total Revenue" 
                     value={formatFullCurrency(totals.totalRevenue)} 
@@ -244,12 +286,6 @@ const FinancialAnalytics: React.FC = () => {
                     value={formatNumber(totals.totalTickets)} 
                     icon={Ticket} 
                     color="from-purple-500 to-pink-600"
-                />
-                <StatCard 
-                    title="Avg Ticket Price" 
-                    value={formatFullCurrency(totals.avgTicketPrice)} 
-                    icon={Wallet} 
-                    color="from-orange-500 to-red-600"
                 />
             </div>
 
@@ -275,10 +311,10 @@ const FinancialAnalytics: React.FC = () => {
                 />
             </ChartCard>
 
-            {/* Top Performing Shows */}
+            {/* Top Performing Shows - Filtered */}
             <Card 
                 title="Top Performing Shows"
-                subtitle="Best performing shows by revenue and occupancy"
+                subtitle={selectedShow ? "Filtered show performance" : "Best performing shows by revenue and occupancy"}
                 showMoreLink="/owner/events"
                 showMoreText="View All Shows"
             >
@@ -293,7 +329,7 @@ const FinancialAnalytics: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {topShows.map((show) => (
+                            {filteredShows.map((show) => (
                                 <tr key={show.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                                     <td className="py-3 px-3">
                                         <p className="text-sm font-medium text-gray-900">{show.name}</p>
@@ -307,9 +343,16 @@ const FinancialAnalytics: React.FC = () => {
                                                 <div className="bg-teal-500 h-1.5 rounded-full" style={{ width: `${show.occupancy}%` }} />
                                             </div>
                                         </div>
-                                     </td>
-                                 </tr>
+                                    </td>
+                                </tr>
                             ))}
+                            {filteredShows.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="text-center py-8 text-gray-500">
+                                        No shows found
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

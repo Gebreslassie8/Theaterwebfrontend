@@ -8,7 +8,7 @@ import FinancialAnalytics from "./financial/FinancialAnalytics";
 import Eventmanagement from "./events/ManageEvent";
 import EventsSchedule from "../../components/EventForm/Schedule/EventSchedule";
 import HallsManagement from "./halls/HallsManagement";
-import BookingManagement from "./Bookings";
+import BookingManagement from "./Booking/OwnerBookingInfo";
 import EmployeeManagement from "./employes/EmployeeManagement";
 import ViewReports from "./financial/ViewReports";
 
