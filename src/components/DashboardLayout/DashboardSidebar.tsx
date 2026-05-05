@@ -237,12 +237,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Calendar,
             color: "text-orange-500",
           },
-          {
-            name: "Event Schedule",
-            to: "/owner/events/schedule",
-            icon: Clock,
-            color: "text-orange-500",
-          },
+       
           {
             name: "Manage Halls",
             to: "/owner/halls/manage",
