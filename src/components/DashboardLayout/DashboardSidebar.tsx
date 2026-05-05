@@ -262,6 +262,35 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-emerald-500",
           },
           {
+            name: "Content Management",
+            icon: FileText,
+            color: "text-purple-500",
+            to: "/admin/content",
+            subItems: [
+              {
+                name: "Blog Posts",
+                to: "/admin/content/blogs",
+                icon: FileText,
+              },
+              {
+                name: "Contact Messages",
+                to: "/admin/content/contacts",
+                icon: Mail,
+              },
+              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
+              {
+                name: "Help Center",
+                to: "/admin/content/help",
+                icon: HelpCircle,
+              },
+              {
+                name: "Customer Registrations",
+                to: "/admin/content/customers",
+                icon: Users,
+              },
+            ],
+          },
+          {
             name: "View Reports",
             to: "/owner/financial/report",
             icon: FileText,
@@ -303,8 +332,38 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/manager/Report",
             icon: BarChart,
             color: "text-indigo-500",
+          },{
+            name: "Content Management",
+            icon: FileText,
+            color: "text-purple-500",
+            to: "/admin/content",
+            subItems: [
+              {
+                name: "Blog Posts",
+                to: "/admin/content/blogs",
+                icon: FileText,
+              },
+              {
+                name: "Contact Messages",
+                to: "/admin/content/contacts",
+                icon: Mail,
+              },
+              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
+              {
+                name: "Help Center",
+                to: "/admin/content/help",
+                icon: HelpCircle,
+              },
+              {
+                name: "Customer Registrations",
+                to: "/admin/content/customers",
+                icon: Users,
+              },
+            ],
           },
+
         ],
+        
       },
 
       // ==================== SALESPERSON ONLY ====================
