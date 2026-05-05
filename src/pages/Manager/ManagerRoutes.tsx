@@ -10,7 +10,7 @@ import CreateEvent from "./events/CreateEvent";
 import HallsManagement from "./halls/HallsManagement";
 import BookingTicketControl from "./Tickets/BookingTicketControl";
 import Reports from "./Report/Reports";
-
+import TicketSalesDetails from "./Report/TicketSalesDetails";
 // Protected Route Component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -50,6 +50,8 @@ export const getManagerRoutes = () => {
       <Route path="events/EventSchedule" element={<EventSchedule />} />
       <Route path="events/create" element={<CreateEvent />} />
       <Route path="halls" element={<HallsManagement />} />
+            <Route path="detail" element={<TicketSalesDetails />} />
+
       <Route path="Tickets" element={<BookingTicketControl />} />
       <Route
         path="Tickets/BookingTicketControl"
