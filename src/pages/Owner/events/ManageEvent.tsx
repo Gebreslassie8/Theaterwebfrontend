@@ -38,12 +38,18 @@ const ManageEvent: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+  
+  // Separate states for different actions
+  const [selectedEventForView, setSelectedEventForView] = useState<EventData | null>(null);
+  const [selectedEventForEdit, setSelectedEventForEdit] = useState<EventData | null>(null);
+  const [selectedEventForDelete, setSelectedEventForDelete] = useState<EventData | null>(null);
+  const [selectedEventForReactivate, setSelectedEventForReactivate] = useState<EventData | null>(null);
+  const [eventToCancel, setEventToCancel] = useState<EventData | null>(null);
+  
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [cancelReason, setCancelReason] = useState('');
   const [showReasonModal, setShowReasonModal] = useState(false);
-  const [eventToCancel, setEventToCancel] = useState<EventData | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('theater_events');
@@ -76,7 +82,10 @@ const ManageEvent: React.FC = () => {
     setShowDeleteModal(false);
     setShowCancelModal(false);
     setShowReasonModal(false);
-    setSelectedEvent(null);
+    setSelectedEventForView(null);
+    setSelectedEventForEdit(null);
+    setSelectedEventForDelete(null);
+    setSelectedEventForReactivate(null);
     setEventToCancel(null);
     setCancelReason('');
   };
@@ -112,9 +121,9 @@ const ManageEvent: React.FC = () => {
   };
 
   const handleUpdateEvent = (formData: any) => {
-    if (!selectedEvent) return;
+    if (!selectedEventForEdit) return;
     const selectedHall = halls.find(h => h.id === formData.hall);
-    const updated = events.map(e => e.id === selectedEvent.id ? {
+    const updated = events.map(e => e.id === selectedEventForEdit.id ? {
       ...e,
       name: formData.name,
       description: formData.description,
@@ -138,10 +147,10 @@ const ManageEvent: React.FC = () => {
   };
 
   const handleDeleteEvent = () => {
-    if (selectedEvent) {
-      setEvents(events.filter(e => e.id !== selectedEvent.id));
+    if (selectedEventForDelete) {
+      setEvents(events.filter(e => e.id !== selectedEventForDelete.id));
       closeAllModals();
-      setSuccessMessage(`🗑️ Event "${selectedEvent.name}" deleted successfully!`);
+      setSuccessMessage(`🗑️ Event "${selectedEventForDelete.name}" deleted successfully!`);
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     }
@@ -158,23 +167,23 @@ const ManageEvent: React.FC = () => {
   };
 
   const handleReactivateEvent = () => {
-    if (selectedEvent) {
-      setEvents(events.map(e => e.id === selectedEvent.id ? { ...e, status: 'upcoming' } : e));
-      setShowCancelModal(false);
-      setSelectedEvent(null);
-      setSuccessMessage(`✅ Event "${selectedEvent.name}" has been reactivated!`);
+    if (selectedEventForReactivate) {
+      setEvents(events.map(e => e.id === selectedEventForReactivate.id ? { ...e, status: 'upcoming' } : e));
+      closeAllModals();
+      setSuccessMessage(`✅ Event "${selectedEventForReactivate.name}" has been reactivated!`);
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     }
   };
 
+  // Separate handlers for each action
   const openViewModal = (event: EventData) => {
-    setSelectedEvent(event);
+    setSelectedEventForView(event);
     setShowViewModal(true);
   };
 
   const openEditModal = (event: EventData) => {
-    setSelectedEvent(event);
+    setSelectedEventForEdit(event);
     setShowUpdateModal(true);
   };
 
@@ -185,12 +194,12 @@ const ManageEvent: React.FC = () => {
   };
 
   const openReactivateModal = (event: EventData) => {
-    setSelectedEvent(event);
+    setSelectedEventForReactivate(event);
     setShowCancelModal(true);
   };
 
   const openDeleteModal = (event: EventData) => {
-    setSelectedEvent(event);
+    setSelectedEventForDelete(event);
     setShowDeleteModal(true);
   };
 
@@ -224,14 +233,24 @@ const ManageEvent: React.FC = () => {
 
   const Actions = (row: EventData) => (
     <div className="flex gap-2">
-      <button onClick={() => openViewModal(row)} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100"><Eye className="h-4 w-4 text-blue-600" /></button>
-      <button onClick={() => openEditModal(row)} className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100"><Edit className="h-4 w-4 text-teal-600" /></button>
+      <button onClick={() => openViewModal(row)} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition" title="View Details">
+        <Eye className="h-4 w-4 text-blue-600" />
+      </button>
+      <button onClick={() => openEditModal(row)} className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition" title="Edit Event">
+        <Edit className="h-4 w-4 text-teal-600" />
+      </button>
       {row.status === 'cancelled' ? (
-        <button onClick={() => openReactivateModal(row)} className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100"><RefreshCw className="h-4 w-4 text-green-600" /></button>
+        <button onClick={() => openReactivateModal(row)} className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition" title="Reactivate Event">
+          <RefreshCw className="h-4 w-4 text-green-600" />
+        </button>
       ) : row.status !== 'completed' && (
-        <button onClick={() => openCancelModal(row)} className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100"><Ban className="h-4 w-4 text-orange-600" /></button>
+        <button onClick={() => openCancelModal(row)} className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition" title="Cancel Event">
+          <Ban className="h-4 w-4 text-orange-600" />
+        </button>
       )}
-      <button onClick={() => openDeleteModal(row)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100"><Trash2 className="h-4 w-4 text-red-600" /></button>
+      <button onClick={() => openDeleteModal(row)} className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition" title="Delete Event">
+        <Trash2 className="h-4 w-4 text-red-600" />
+      </button>
     </div>
   );
 
@@ -312,14 +331,28 @@ const ManageEvent: React.FC = () => {
           itemsPerPage={10} 
         />
 
-        {/* Modals */}
+        {/* Modals - Each with its own selected event */}
         {showCreateModal && <CreateEventForm onSubmit={handleCreateEvent} onCancel={() => closeAllModals()} />}
-        {showUpdateModal && selectedEvent && <UpdateEventForm event={selectedEvent} onSubmit={handleUpdateEvent} onCancel={() => closeAllModals()} />}
-        {showViewModal && selectedEvent && <ViewEventModal event={selectedEvent} isOpen={showViewModal} onClose={() => closeAllModals()} />}
+        
+        {showUpdateModal && selectedEventForEdit && (
+          <UpdateEventForm 
+            event={selectedEventForEdit} 
+            onSubmit={handleUpdateEvent} 
+            onCancel={() => closeAllModals()} 
+          />
+        )}
+        
+        {showViewModal && selectedEventForView && (
+          <ViewEventModal 
+            event={selectedEventForView} 
+            isOpen={showViewModal} 
+            onClose={() => closeAllModals()} 
+          />
+        )}
         
         {/* Delete Modal */}
         <DeleteConfirmModal
-          employee={selectedEvent ? { id: selectedEvent.id, name: selectedEvent.name } : null}
+          employee={selectedEventForDelete ? { id: selectedEventForDelete.id, name: selectedEventForDelete.name } : null}
           onConfirm={handleDeleteEvent}
           onCancel={() => closeAllModals()}
         />
@@ -364,7 +397,7 @@ const ManageEvent: React.FC = () => {
         )}
 
         {/* Reactivate/Restore Modal */}
-        {showCancelModal && selectedEvent && (
+        {showCancelModal && selectedEventForReactivate && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
               <div className="flex items-center gap-3 mb-4">
@@ -374,7 +407,7 @@ const ManageEvent: React.FC = () => {
                 <h3 className="text-xl font-bold text-gray-900">Reactivate Event</h3>
               </div>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to reactivate <strong>{selectedEvent.name}</strong>?
+                Are you sure you want to reactivate <strong>{selectedEventForReactivate.name}</strong>?
               </p>
               <div className="flex gap-3">
                 <button onClick={() => closeAllModals()} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">

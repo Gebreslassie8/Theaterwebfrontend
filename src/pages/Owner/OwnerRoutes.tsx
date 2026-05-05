@@ -6,7 +6,7 @@ import OwnerDashboard from "./OwnerDashboard";
 import WalletBalance from "../../components/wallet/WalletBalance";
 import FinancialAnalytics from "./financial/FinancialAnalytics";
 import Eventmanagement from "./events/ManageEvent";
-import EventsSchedule from "../../components/EventForm/EventSchedule";
+import EventsSchedule from "../../components/EventForm/Schedule/EventSchedule";
 import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Bookings";
 import EmployeeManagement from "./employes/EmployeeManagement";
@@ -51,7 +51,7 @@ export const getOwnerRoutes = () => {
       <Route path="wallet/balance" element={<WalletBalance />} />
       <Route path="financial" element={<FinancialAnalytics />} />
       <Route path="events/manage_event" element={<Eventmanagement />} />
-      <Route path="events/schedule" element={<EventsSchedule />} />
+       <Route path="events/schedule" element={<EventsSchedule />} />
       <Route path="halls/manage" element={<HallsManagement />} />
       <Route path="bookings" element={<BookingManagement />} />
       <Route path="employes/employee" element={<EmployeeManagement />} />
