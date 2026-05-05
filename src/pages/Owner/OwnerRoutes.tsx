@@ -6,7 +6,7 @@ import OwnerDashboard from "./OwnerDashboard";
 import WalletBalance from "../../components/wallet/WalletBalance";
 import FinancialAnalytics from "./financial/FinancialAnalytics";
 import Eventmanagement from "./events/ManageEvent";
-import EventsSchedule from "./events/EventSchedule";
+import EventsSchedule from "../../components/EventForm/EventSchedule";
 import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Bookings";
 import EmployeeManagement from "./employes/EmployeeManagement";

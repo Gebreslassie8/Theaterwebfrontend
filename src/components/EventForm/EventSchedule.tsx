@@ -42,8 +42,8 @@ import {
     Tooltip,
     ResponsiveContainer, Cell
 } from 'recharts';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types
 interface StatCardProps {
