@@ -1,3 +1,5 @@
+// C:\Users\HP\Desktop\TheaterHUB\frontend\src\main.tsx
+
 // Frontend/src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -9,9 +11,12 @@ import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      {" "}
-      {/* Only ONE Router at the top level */}
+    <BrowserRouter
+      future={{
+        v7_startTransition: true, // Wrap state updates in React.startTransition
+        v7_relativeSplatPath: true, // Fix relative path matching for splat routes
+      }}
+    >
       <ThemeProvider>
         <AuthProvider>
           <App />
