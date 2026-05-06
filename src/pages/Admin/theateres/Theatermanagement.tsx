@@ -7,7 +7,8 @@ import {
     CheckCircle, XCircle, Clock, AlertCircle, Search, TrendingUp,
     Activity, MapPin, Mail, Star, LayoutGrid, UserPlus,
     Users, ArrowRight, Theater, Crown, Shield, UserCheck,
-    Check, X, ThumbsUp, ThumbsDown, AlertTriangle, FileText, CreditCard
+    Check, X, ThumbsUp, ThumbsDown, AlertTriangle, FileText, CreditCard,
+    FileWarning, Info
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -55,6 +56,9 @@ interface Theater {
     submittedDate?: string;
     rejectionReason?: string;
     rejectionNotes?: string;
+    deactivationReason?: string;
+    deactivationNotes?: string;
+    deactivatedAt?: string;
 }
 
 // Complete mock data with all fields
@@ -274,6 +278,7 @@ const TheaterManagement: React.FC = () => {
     const [theaterToDeactivate, setTheaterToDeactivate] = useState<any | null>(null);
     const [theaterToReactivate, setTheaterToReactivate] = useState<any | null>(null);
     const [deactivationReason, setDeactivationReason] = useState('');
+    const [deactivationNotes, setDeactivationNotes] = useState('');
     const [rejectReason, setRejectReason] = useState('');
     const [rejectNotes, setRejectNotes] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -292,8 +297,8 @@ const TheaterManagement: React.FC = () => {
     const dashboardCards = [
         { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1,  notification: false },
         { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15,  notification: true, notificationCount: stats.pendingTheaters },
-        { title: 'Active Theaters', value: stats.activeTheaters, icon: Theater, color: 'from-green-500 to-emerald-600', delay: 0.2,  notification: true, notificationCount: stats.activeTheaters },
-        { title: 'Inactive Theaters', value: stats.inactiveTheaters, icon: Ban, color: 'from-red-500 to-rose-600', delay: 0.25,  notification: true, notificationCount: stats.inactiveTheaters }
+        { title: 'Active Theaters', value: stats.activeTheaters, icon: Theater, color: 'from-green-500 to-emerald-600', delay: 0.2,notification: false},
+        { title: 'Inactive Theaters', value: stats.inactiveTheaters, icon: Ban, color: 'from-red-500 to-rose-600', delay: 0.25,notification: false }
     ];
 
     const filteredTheaters = theaters.filter(theater => {
@@ -336,7 +341,6 @@ const TheaterManagement: React.FC = () => {
     const handleApproveTheater = async () => {
         if (pendingTheaterAction) {
             setIsSubmitting(true);
-            // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
             setTheaters(theaters.map(theater =>
                 theater.id === pendingTheaterAction.id ? { ...theater, status: 'Active' } : theater
@@ -356,7 +360,6 @@ const TheaterManagement: React.FC = () => {
     const handleRejectTheater = async () => {
         if (pendingTheaterAction && rejectReason) {
             setIsSubmitting(true);
-            // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 500));
             setTheaters(theaters.filter(theater => theater.id !== pendingTheaterAction.id));
             setShowRejectForm(false);
@@ -378,14 +381,28 @@ const TheaterManagement: React.FC = () => {
     };
 
     const handleDeactivateTheater = () => {
-        if (theaterToDeactivate) {
+        if (theaterToDeactivate && deactivationReason) {
             setTheaters(theaters.map(theater =>
-                theater.id === theaterToDeactivate.id ? { ...theater, status: 'Inactive' } : theater
+                theater.id === theaterToDeactivate.id ? { 
+                    ...theater, 
+                    status: 'Inactive',
+                    deactivationReason: deactivationReason,
+                    deactivationNotes: deactivationNotes,
+                    deactivatedAt: new Date().toISOString()
+                } : theater
             ));
             setShowDeactivateConfirm(false);
             setTheaterToDeactivate(null);
             setDeactivationReason('');
-            setPopupMessage({ title: 'Deactivated!', message: `${theaterToDeactivate.name} has been deactivated`, type: 'warning' });
+            setDeactivationNotes('');
+            setPopupMessage({ 
+                title: 'Deactivated!', 
+                message: `${theaterToDeactivate.name} has been deactivated. Reason: ${deactivationReason}`, 
+                type: 'warning' 
+            });
+            setShowSuccessPopup(true);
+        } else if (!deactivationReason) {
+            setPopupMessage({ title: 'Error!', message: 'Please select a deactivation reason.', type: 'error' });
             setShowSuccessPopup(true);
         }
     };
@@ -393,7 +410,14 @@ const TheaterManagement: React.FC = () => {
     const handleReactivateTheater = () => {
         if (theaterToReactivate) {
             setTheaters(theaters.map(theater =>
-                theater.id === theaterToReactivate.id ? { ...theater, status: 'Active', lastActive: new Date().toISOString().split('T')[0] } : theater
+                theater.id === theaterToReactivate.id ? { 
+                    ...theater, 
+                    status: 'Active', 
+                    lastActive: new Date().toISOString().split('T')[0],
+                    deactivationReason: undefined,
+                    deactivationNotes: undefined,
+                    deactivatedAt: undefined
+                } : theater
             ));
             setShowReactivateConfirm(false);
             setTheaterToReactivate(null);
@@ -635,23 +659,22 @@ const TheaterManagement: React.FC = () => {
                         onUpdate={handleUpdateTheater}
                     />
                 )}
-               // In TheaterManagement.tsx, update the ViewTheater component usage:
 
-{showViewModal && viewingTheater && (
-    <ViewTheater
-        theater={viewingTheater}
-        isOpen={showViewModal}
-        onClose={() => { 
-            setShowViewModal(false); 
-            setViewingTheater(null); 
-        }}
-        onEdit={(theater) => {
-            setShowViewModal(false);
-            setSelectedTheater(theater);
-            setShowUpdateModal(true);
-        }}
-    />
-)}
+                {showViewModal && viewingTheater && (
+                    <ViewTheater
+                        theater={viewingTheater}
+                        isOpen={showViewModal}
+                        onClose={() => { 
+                            setShowViewModal(false); 
+                            setViewingTheater(null); 
+                        }}
+                        onEdit={(theater) => {
+                            setShowViewModal(false);
+                            setSelectedTheater(theater);
+                            setShowUpdateModal(true);
+                        }}
+                    />
+                )}
 
                 {/* Approve/Reject Modal */}
                 {showApproveRejectModal && pendingTheaterAction && (
@@ -777,7 +800,6 @@ const TheaterManagement: React.FC = () => {
                                         value={rejectReason}
                                         onChange={(e) => setRejectReason(e.target.value)}
                                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
-                                        required
                                     >
                                         <option value="">Select Rejection Reason</option>
                                         <option value="incomplete_documents">📄 Incomplete Documents</option>
@@ -840,55 +862,102 @@ const TheaterManagement: React.FC = () => {
                     </div>
                 )}
 
-                {/* Deactivate Confirm Modal */}
+                {/* Enhanced Deactivate Confirm Modal */}
                 {showDeactivateConfirm && theaterToDeactivate && (
                     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white rounded-2xl max-w-md w-full p-6"
+                            className="bg-white rounded-2xl max-w-md w-full shadow-xl"
                         >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-orange-100 rounded-lg">
-                                    <AlertCircle className="h-6 w-6 text-orange-600" />
+                            <div className="border-b px-6 py-4 bg-orange-50 rounded-t-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-orange-100 rounded-full">
+                                        <FileWarning className="w-5 h-5 text-orange-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800">Deactivate Theater</h2>
+                                        <p className="text-sm text-gray-600 mt-1">Theater: {theaterToDeactivate.theaterName || theaterToDeactivate.name}</p>
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-bold">Deactivate Theater</h3>
                             </div>
-                            <p className="text-gray-600 mb-4">
-                                Are you sure you want to deactivate <strong>{theaterToDeactivate.theaterName || theaterToDeactivate.name}</strong>?
-                                This will suspend all theater operations.
-                            </p>
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium mb-1">Reason for deactivation</label>
-                                <select
-                                    value={deactivationReason}
-                                    onChange={(e) => setDeactivationReason(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-                                >
-                                    <option value="">Select reason</option>
-                                    <option value="Violation">Violation of terms</option>
-                                    <option value="Inactive">Inactive account</option>
-                                    <option value="Requested">Requested by owner</option>
-                                    <option value="Payment">Payment issues</option>
-                                </select>
+                            
+                            <div className="p-6">
+                                <div className="mb-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                                    <div className="flex items-start gap-2">
+                                        <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-yellow-800">
+                                            This will suspend all theater operations. The theater owner will be notified via email.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Deactivation Reason <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={deactivationReason}
+                                        onChange={(e) => setDeactivationReason(e.target.value)}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+                                    >
+                                        <option value="">Select Deactivation Reason</option>
+                                        <option value="policy_violation">🚫 Policy Violation</option>
+                                        <option value="inactive_account">💤 Inactive Account</option>
+                                        <option value="payment_issues">💳 Payment Issues</option>
+                                        <option value="fraudulent_activity">⚠️ Fraudulent Activity</option>
+                                        <option value="owner_request">📝 Requested by Owner</option>
+                                        <option value="temporary_closure">🏗️ Temporary Closure</option>
+                                        <option value="legal_issues">⚖️ Legal Issues</option>
+                                        <option value="other">📝 Other</option>
+                                    </select>
+                                </div>
+
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Additional Notes (Optional)
+                                    </label>
+                                    <textarea
+                                        value={deactivationNotes}
+                                        onChange={(e) => setDeactivationNotes(e.target.value)}
+                                        rows={4}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
+                                        placeholder="Provide additional details about the deactivation..."
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {deactivationNotes.length} / 500 characters
+                                    </p>
+                                </div>
+
+                                <div className="mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-xs text-red-700">
+                                            Deactivated theaters cannot access the platform until reactivated by an administrator.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="flex gap-3">
+                            
+                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
                                 <button
                                     onClick={() => {
                                         setShowDeactivateConfirm(false);
                                         setTheaterToDeactivate(null);
                                         setDeactivationReason('');
+                                        setDeactivationNotes('');
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleDeactivateTheater}
                                     disabled={!deactivationReason}
-                                    className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                                 >
-                                    Deactivate
+                                    <Ban className="w-4 h-4" />
+                                    Confirm Deactivation
                                 </button>
                             </div>
                         </motion.div>
@@ -901,35 +970,60 @@ const TheaterManagement: React.FC = () => {
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white rounded-2xl max-w-md w-full p-6"
+                            className="bg-white rounded-2xl max-w-md w-full shadow-xl"
                         >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2 bg-green-100 rounded-lg">
-                                    <RefreshCw className="h-6 w-6 text-green-600" />
+                            <div className="border-b px-6 py-4 bg-green-50 rounded-t-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-green-100 rounded-full">
+                                        <RefreshCw className="w-5 h-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-800">Reactivate Theater</h2>
+                                        <p className="text-sm text-gray-600 mt-1">Theater: {theaterToReactivate.theaterName || theaterToReactivate.name}</p>
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-bold">Reactivate Theater</h3>
                             </div>
-                            <p className="text-gray-600 mb-2">
-                                Are you sure you want to reactivate <strong>{theaterToReactivate.theaterName || theaterToReactivate.name}</strong>?
-                            </p>
-                            <p className="text-sm text-gray-500 mb-6">
-                                Reactivation reason: {theaterToReactivate.status === 'Inactive' ? 'Theater was previously deactivated' : 'Reactivating operations'}
-                            </p>
-                            <div className="flex gap-3">
+                            
+                            <div className="p-6">
+                                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div className="flex items-start gap-2">
+                                        <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                                        <p className="text-sm text-blue-800">
+                                            Reactivating this theater will restore full access and operations. The theater owner will be notified.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {theaterToReactivate.deactivationReason && (
+                                    <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <p className="text-xs text-gray-600 mb-1">Previous Deactivation Details:</p>
+                                        <p className="text-sm font-medium text-gray-700">Reason: {theaterToReactivate.deactivationReason}</p>
+                                        {theaterToReactivate.deactivationNotes && (
+                                            <p className="text-xs text-gray-500 mt-1">Notes: {theaterToReactivate.deactivationNotes}</p>
+                                        )}
+                                        {theaterToReactivate.deactivatedAt && (
+                                            <p className="text-xs text-gray-500 mt-1">Deactivated on: {new Date(theaterToReactivate.deactivatedAt).toLocaleDateString()}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
                                 <button
                                     onClick={() => {
                                         setShowReactivateConfirm(false);
                                         setTheaterToReactivate(null);
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleReactivateTheater}
-                                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                    className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
                                 >
-                                    Reactivate
+                                    <RefreshCw className="w-4 h-4" />
+                                    Confirm Reactivation
                                 </button>
                             </div>
                         </motion.div>

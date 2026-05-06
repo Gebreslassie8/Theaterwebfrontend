@@ -1,6 +1,7 @@
 // src/pages/Admin/theaters/AddTheater.tsx
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as Yup from 'yup';
 import { 
     X, Building, Mail, User, Phone, MapPin, Hash, Users, Shield, 
     CreditCard, FileText, Calendar, Briefcase, Home, Globe, Clock, 
@@ -62,9 +63,82 @@ interface FormData {
     status?: string;
 }
 
-interface Errors {
-    [key: string]: string;
-}
+// Yup Validation Schemas for each step
+const step1ValidationSchema = Yup.object({
+    businessName: Yup.string()
+        .required('Business name is required')
+        .min(2, 'Business name must be at least 2 characters')
+        .max(100, 'Business name cannot exceed 100 characters'),
+    businessType: Yup.string().required('Business type is required'),
+    businessLicense: Yup.string()
+        .required('Business license is required')
+        .min(3, 'License number must be at least 3 characters'),
+    taxId: Yup.string()
+        .required('Tax ID is required')
+        .matches(/^[0-9]{9,12}$/, 'Tax ID must be 9-12 digits'),
+    yearsInOperation: Yup.string().required('Years in operation is required'),
+    businessDescription: Yup.string()
+        .required('Business description is required')
+        .min(20, 'Description must be at least 20 characters')
+        .max(1000, 'Description cannot exceed 1000 characters'),
+});
+
+const step2ValidationSchema = Yup.object({
+    ownerName: Yup.string()
+        .required('Owner name is required')
+        .min(2, 'Name must be at least 2 characters'),
+    ownerPosition: Yup.string().required('Position is required'),
+    ownerEmail: Yup.string()
+        .required('Email is required')
+        .email('Valid email is required'),
+    ownerPhone: Yup.string()
+        .required('Phone number is required')
+        .matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,5}[-\s\.]?[0-9]{1,5}$/, 'Valid phone number is required'),
+    emergencyName: Yup.string()
+        .required('Emergency contact name is required')
+        .min(2, 'Name must be at least 2 characters'),
+    emergencyPhone: Yup.string()
+        .required('Emergency phone is required')
+        .matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,5}[-\s\.]?[0-9]{1,5}$/, 'Valid phone number is required'),
+});
+
+const step3ValidationSchema = Yup.object({
+    theaterName: Yup.string()
+        .required('Theater name is required')
+        .min(2, 'Theater name must be at least 2 characters'),
+    theaterDescription: Yup.string()
+        .required('Theater description is required')
+        .min(20, 'Description must be at least 20 characters'),
+    theaterEmail: Yup.string()
+        .required('Theater email is required')
+        .email('Valid email is required'),
+    theaterPhone: Yup.string()
+        .required('Theater phone is required')
+        .matches(/^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,5}[-\s\.]?[0-9]{1,5}$/, 'Valid phone number is required'),
+    totalHalls: Yup.number()
+        .required('Number of halls is required')
+        .min(1, 'Must be at least 1 hall')
+        .max(50, 'Maximum 50 halls'),
+    totalSeats: Yup.number()
+        .required('Total seats is required')
+        .min(10, 'Must be at least 10 seats')
+        .max(10000, 'Maximum 10000 seats'),
+    city: Yup.string().required('City is required'),
+    region: Yup.string().required('Region is required'),
+    address: Yup.string()
+        .required('Address is required')
+        .min(5, 'Address must be at least 5 characters'),
+});
+
+const step4ValidationSchema = Yup.object({
+    pricingModel: Yup.string().required('Please select a pricing model'),
+    contractType: Yup.string().when('pricingModel', {
+        is: 'contract',
+        then: () => Yup.string().required('Please select a contract type'),
+        otherwise: () => Yup.string().notRequired(),
+    }),
+    payoutFrequency: Yup.string().required('Please select payout frequency'),
+});
 
 const AddTheater: React.FC<AddTheaterProps> = ({
     onSubmit,
@@ -74,7 +148,7 @@ const AddTheater: React.FC<AddTheaterProps> = ({
 }) => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState<Errors>({});
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
     const [services, setServices] = useState<string[]>([]);
     const [screenTypes, setScreenTypes] = useState<string[]>([]);
@@ -82,6 +156,7 @@ const AddTheater: React.FC<AddTheaterProps> = ({
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
     const logoInputRef = useRef<HTMLInputElement>(null);
     const [logoPreview, setLogoPreview] = useState<string>('');
+    const contentRef = useRef<HTMLDivElement>(null);
 
     const [formData, setFormData] = useState<FormData>({
         businessName: '',
@@ -125,80 +200,83 @@ const AddTheater: React.FC<AddTheaterProps> = ({
         status: 'Pending'
     });
 
-    // Validation helper functions
-    const validateEmail = (email: string): boolean => {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    };
+    // Validate current step using Yup
+    const validateStep = async (): Promise<boolean> => {
+        let schema;
+        let dataToValidate;
 
-    const validatePhone = (phone: string): boolean => {
-        return /^[\+]?[(]?[0-9]{1,4}[)]?[-\s\.]?[(]?[0-9]{1,4}[)]?[-\s\.]?[0-9]{1,5}[-\s\.]?[0-9]{1,5}$/.test(phone);
-    };
-
-    const validateStep = (): boolean => {
-        const newErrors: Errors = {};
-
-        if (step === 1) {
-            if (!formData.businessName.trim()) newErrors.businessName = "Business name is required";
-            else if (formData.businessName.length < 2) newErrors.businessName = "Business name must be at least 2 characters";
-            
-            if (!formData.businessType) newErrors.businessType = "Business type is required";
-            if (!formData.businessLicense.trim()) newErrors.businessLicense = "Business license is required";
-            if (!formData.taxId.trim()) newErrors.taxId = "Tax ID is required";
-            if (!formData.yearsInOperation) newErrors.yearsInOperation = "Years in operation is required";
-            if (!formData.businessDescription.trim()) newErrors.businessDescription = "Business description is required";
-            else if (formData.businessDescription.length < 20) newErrors.businessDescription = "Description must be at least 20 characters";
-            
-        } else if (step === 2) {
-            if (!formData.ownerName.trim()) newErrors.ownerName = "Owner name is required";
-            else if (formData.ownerName.length < 2) newErrors.ownerName = "Name must be at least 2 characters";
-            
-            if (!formData.ownerPosition) newErrors.ownerPosition = "Position is required";
-            
-            if (!formData.ownerEmail.trim()) newErrors.ownerEmail = "Email is required";
-            else if (!validateEmail(formData.ownerEmail)) newErrors.ownerEmail = "Valid email is required";
-            
-            if (!formData.ownerPhone.trim()) newErrors.ownerPhone = "Phone number is required";
-            else if (!validatePhone(formData.ownerPhone)) newErrors.ownerPhone = "Valid phone number is required";
-            
-            if (!formData.emergencyName.trim()) newErrors.emergencyName = "Emergency contact name is required";
-            if (!formData.emergencyPhone.trim()) newErrors.emergencyPhone = "Emergency phone is required";
-            else if (!validatePhone(formData.emergencyPhone)) newErrors.emergencyPhone = "Valid phone number is required";
-            
-        } else if (step === 3) {
-            if (!formData.theaterName.trim()) newErrors.theaterName = "Theater name is required";
-            if (!formData.theaterDescription.trim()) newErrors.theaterDescription = "Theater description is required";
-            
-            if (!formData.theaterEmail.trim()) newErrors.theaterEmail = "Theater email is required";
-            else if (!validateEmail(formData.theaterEmail)) newErrors.theaterEmail = "Valid email is required";
-            
-            if (!formData.theaterPhone.trim()) newErrors.theaterPhone = "Theater phone is required";
-            else if (!validatePhone(formData.theaterPhone)) newErrors.theaterPhone = "Valid phone number is required";
-            
-            if (!formData.totalHalls) newErrors.totalHalls = "Number of halls is required";
-            else if (parseInt(formData.totalHalls) < 1) newErrors.totalHalls = "Must be at least 1 hall";
-            else if (parseInt(formData.totalHalls) > 50) newErrors.totalHalls = "Maximum 50 halls";
-            
-            if (!formData.totalSeats) newErrors.totalSeats = "Total seats is required";
-            else if (parseInt(formData.totalSeats) < 10) newErrors.totalSeats = "Must be at least 10 seats";
-            
-            if (!formData.city) newErrors.city = "City is required";
-            if (!formData.region) newErrors.region = "Region is required";
-            if (!formData.address.trim()) newErrors.address = "Address is required";
-        } else if (step === 4) {
-            if (!formData.pricingModel) newErrors.pricingModel = "Please select a pricing model";
-            if (formData.pricingModel === "contract" && !formData.contractType) {
-                newErrors.contractType = "Please select a contract type";
-            }
-            if (!formData.payoutFrequency) newErrors.payoutFrequency = "Please select payout frequency";
+        switch (step) {
+            case 1:
+                schema = step1ValidationSchema;
+                dataToValidate = {
+                    businessName: formData.businessName,
+                    businessType: formData.businessType,
+                    businessLicense: formData.businessLicense,
+                    taxId: formData.taxId,
+                    yearsInOperation: formData.yearsInOperation,
+                    businessDescription: formData.businessDescription,
+                };
+                break;
+            case 2:
+                schema = step2ValidationSchema;
+                dataToValidate = {
+                    ownerName: formData.ownerName,
+                    ownerPosition: formData.ownerPosition,
+                    ownerEmail: formData.ownerEmail,
+                    ownerPhone: formData.ownerPhone,
+                    emergencyName: formData.emergencyName,
+                    emergencyPhone: formData.emergencyPhone,
+                };
+                break;
+            case 3:
+                schema = step3ValidationSchema;
+                dataToValidate = {
+                    theaterName: formData.theaterName,
+                    theaterDescription: formData.theaterDescription,
+                    theaterEmail: formData.theaterEmail,
+                    theaterPhone: formData.theaterPhone,
+                    totalHalls: formData.totalHalls ? parseInt(formData.totalHalls) : undefined,
+                    totalSeats: formData.totalSeats ? parseInt(formData.totalSeats) : undefined,
+                    city: formData.city,
+                    region: formData.region,
+                    address: formData.address,
+                };
+                break;
+            case 4:
+                schema = step4ValidationSchema;
+                dataToValidate = {
+                    pricingModel: formData.pricingModel,
+                    contractType: formData.contractType,
+                    payoutFrequency: formData.payoutFrequency,
+                };
+                break;
+            default:
+                return true;
         }
 
-        setErrors(newErrors);
-        
-        const newTouched: Record<string, boolean> = {};
-        Object.keys(newErrors).forEach(key => { newTouched[key] = true; });
-        setTouched(prev => ({ ...prev, ...newTouched }));
-        
-        return Object.keys(newErrors).length === 0;
+        try {
+            await schema.validate(dataToValidate, { abortEarly: false });
+            setErrors({});
+            return true;
+        } catch (err) {
+            if (err instanceof Yup.ValidationError) {
+                const newErrors: Record<string, string> = {};
+                err.inner.forEach(error => {
+                    if (error.path) {
+                        newErrors[error.path] = error.message;
+                    }
+                });
+                setErrors(newErrors);
+                
+                // Mark all fields as touched
+                const newTouched: Record<string, boolean> = {};
+                Object.keys(newErrors).forEach(key => {
+                    newTouched[key] = true;
+                });
+                setTouched(prev => ({ ...prev, ...newTouched }));
+            }
+            return false;
+        }
     };
 
     const cities = [
@@ -296,20 +374,26 @@ const AddTheater: React.FC<AddTheaterProps> = ({
         }
     };
 
-    const handleNext = () => {
-        if (validateStep()) {
+    const handleNext = async () => {
+        const isValid = await validateStep();
+        if (isValid) {
             setStep(prev => prev + 1);
-            window.scrollTo(0, 0);
+            if (contentRef.current) {
+                contentRef.current.scrollTop = 0;
+            }
         }
     };
 
     const handleBack = () => {
         setStep(prev => prev - 1);
-        window.scrollTo(0, 0);
+        if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
+        }
     };
 
     const handleSubmit = async () => {
-        if (!validateStep()) return;
+        const isValid = await validateStep();
+        if (!isValid) return;
 
         setIsSubmitting(true);
 
@@ -363,67 +447,70 @@ const AddTheater: React.FC<AddTheaterProps> = ({
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+                        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Header with Teal Gradient */}
-                        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-5 flex items-center justify-between z-10">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-                                    <Theater className="h-6 w-6 text-white" />
+                        {/* Header - Non-sticky */}
+                        <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-6 py-5 rounded-t-2xl">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                                        <Theater className="h-6 w-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">{formTitle}</h2>
+                                        <p className="text-white/80 text-sm mt-0.5">Fill in all required information</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-white">{formTitle}</h2>
-                                    <p className="text-white/80 text-sm mt-0.5">Fill in all required information</p>
-                                </div>
+                                <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
+                                    <X className="h-5 w-5 text-white" />
+                                </button>
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
-                                <X className="h-5 w-5 text-white" />
-                            </button>
                         </div>
 
-                        {/* Progress Steps */}
-                        <div className="px-6 pt-6">
-                            <div className="flex items-center justify-between">
-                                {steps.map((s, idx) => (
-                                    <div key={s.number} className="flex-1">
-                                        <div className="flex items-center">
-                                            <motion.div
-                                                animate={{
-                                                    scale: s.number === step ? 1.1 : 1,
-                                                    backgroundColor: s.number < step ? '#14b8a6' : (s.number === step ? '#fff' : '#e5e7eb'),
-                                                    borderColor: s.number <= step ? '#14b8a6' : '#d1d5db'
-                                                }}
-                                                className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all z-10 ${
-                                                    s.number < step ? 'bg-teal-600 text-white border-teal-600' :
-                                                    s.number === step ? 'bg-white text-teal-600 border-teal-600' :
-                                                    'bg-gray-100 text-gray-400 border-gray-300'
-                                                }`}
-                                            >
-                                                {s.number < step ? <CheckCircle className="h-5 w-5" /> : s.number}
-                                            </motion.div>
-                                            {idx !== steps.length - 1 && (
+                        {/* Scrollable Content */}
+                        <div ref={contentRef} className="flex-1 overflow-y-auto p-6">
+                            {/* Progress Steps */}
+                            <div className="mb-6">
+                                <div className="flex items-center justify-between">
+                                    {steps.map((s, idx) => (
+                                        <div key={s.number} className="flex-1">
+                                            <div className="flex items-center">
                                                 <motion.div
                                                     animate={{
-                                                        backgroundColor: s.number < step ? '#14b8a6' : '#e5e7eb'
+                                                        scale: s.number === step ? 1.1 : 1,
+                                                        backgroundColor: s.number < step ? '#14b8a6' : (s.number === step ? '#fff' : '#e5e7eb'),
+                                                        borderColor: s.number <= step ? '#14b8a6' : '#d1d5db'
                                                     }}
-                                                    className={`flex-1 h-0.5 mx-2 ${s.number < step ? 'bg-teal-600' : 'bg-gray-300'}`}
-                                                />
-                                            )}
+                                                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all z-10 ${
+                                                        s.number < step ? 'bg-teal-600 text-white border-teal-600' :
+                                                        s.number === step ? 'bg-white text-teal-600 border-teal-600' :
+                                                        'bg-gray-100 text-gray-400 border-gray-300'
+                                                    }`}
+                                                >
+                                                    {s.number < step ? <CheckCircle className="h-5 w-5" /> : s.number}
+                                                </motion.div>
+                                                {idx !== steps.length - 1 && (
+                                                    <motion.div
+                                                        animate={{
+                                                            backgroundColor: s.number < step ? '#14b8a6' : '#e5e7eb'
+                                                        }}
+                                                        className={`flex-1 h-0.5 mx-2 ${s.number < step ? 'bg-teal-600' : 'bg-gray-300'}`}
+                                                    />
+                                                )}
+                                            </div>
+                                            <div className="mt-2">
+                                                <p className={`text-xs font-medium ${s.number === step ? 'text-teal-600' : 'text-gray-500'}`}>
+                                                    {s.title}
+                                                </p>
+                                                <p className="text-xs text-gray-400 hidden sm:block">{s.description}</p>
+                                            </div>
                                         </div>
-                                        <div className="mt-2">
-                                            <p className={`text-xs font-medium ${s.number === step ? 'text-teal-600' : 'text-gray-500'}`}>
-                                                {s.title}
-                                            </p>
-                                            <p className="text-xs text-gray-400 hidden sm:block">{s.description}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Form Body */}
-                        <div className="p-6">
+                            {/* Rest of the form remains the same as before... */}
                             {/* Step 1: Business Information */}
                             {step === 1 && (
                                 <motion.div
@@ -1117,16 +1204,18 @@ const AddTheater: React.FC<AddTheaterProps> = ({
                                     </div>
                                 </motion.div>
                             )}
+                        </div>
 
-                            {/* Navigation Buttons */}
-                            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+                        {/* Navigation Buttons - Fixed at bottom */}
+                        <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 rounded-b-2xl">
+                            <div className="flex justify-between">
                                 {step > 1 && (
                                     <button onClick={handleBack} className="px-6 py-2.5 border-2 border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-all flex items-center gap-2 font-medium">
                                         <ChevronLeft className="h-4 w-4" /> Back
                                     </button>
                                 )}
                                 {step < 4 ? (
-                                    <button onClick={handleNext} className="ml-auto px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-md hover:shadow-lg">
+                                    <button onClick={handleNext} className={`px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-md hover:shadow-lg ${step === 1 ? 'ml-auto' : ''}`}>
                                         Continue <ChevronRight className="h-4 w-4" />
                                     </button>
                                 ) : (
