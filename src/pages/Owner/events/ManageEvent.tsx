@@ -69,7 +69,6 @@ const ManageEvent: React.FC = () => {
 
   const stats = {
     total: events.length,
-    upcoming: events.filter(e => e.status === 'upcoming').length,
     ongoing: events.filter(e => e.status === 'ongoing').length,
     completed: events.filter(e => e.status === 'completed').length,
     cancelled: events.filter(e => e.status === 'cancelled').length,
@@ -107,7 +106,7 @@ const ManageEvent: React.FC = () => {
       organizer: formData.organizer,
       imageUrl: image || undefined,
       createdAt: new Date().toISOString(),
-      status: 'upcoming',
+      status: 'ongoing',
       totalBookedSeats: 0,
       totalRevenue: 0,
       contractDate: formData.contractDate,
@@ -205,7 +204,6 @@ const ManageEvent: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'upcoming': return 'bg-blue-100 text-blue-700';
       case 'ongoing': return 'bg-green-100 text-green-700';
       case 'completed': return 'bg-gray-100 text-gray-700';
       case 'cancelled': return 'bg-red-100 text-red-700';
@@ -215,7 +213,6 @@ const ManageEvent: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch(status) {
-      case 'upcoming': return <Clock className="h-3 w-3" />;
       case 'ongoing': return <Activity className="h-3 w-3" />;
       case 'completed': return <CheckCircle className="h-3 w-3" />;
       case 'cancelled': return <XCircle className="h-3 w-3" />;
@@ -224,7 +221,8 @@ const ManageEvent: React.FC = () => {
   };
 
   const columns = [
-    { Header: 'Event Name', accessor: 'name', Cell: (row: EventData) => (<div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center"><Film className="h-5 w-5 text-white" /></div><div><p className="font-medium">{row.name}</p><p className="text-xs text-gray-500">{row.hall}</p></div></div>) },
+    { Header: 'Event Name', accessor: 'name', Cell: (row: EventData) => (<div className="flex items-center gap-3"><div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center"><Film className="h-5 w-5 text-white" />
+    </div><div><p className="font-medium">{row.name}</p><p className="text-xs text-gray-500">{row.hall}</p></div></div>) },
     { Header: 'Date & Time', accessor: 'timeSlots', Cell: (row: EventData) => (<div>{row.timeSlots[0]?.date}<br/><span className="text-xs text-gray-500">{row.timeSlots[0]?.startTime} - {row.timeSlots[0]?.endTime}</span></div>) },
     { Header: 'Hall', accessor: 'hall', Cell: (row: EventData) => (<div className="flex items-center gap-2"><MapPin className="h-4 w-4 text-gray-400" /><span>{row.hall}</span></div>) },
     { Header: 'Revenue', accessor: 'totalRevenue', Cell: (row: EventData) => <span className="text-green-600 font-semibold">ETB {row.totalRevenue.toLocaleString()}</span> },
@@ -282,7 +280,6 @@ const ManageEvent: React.FC = () => {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <StatCard title="Total Events" value={stats.total} icon={Calendar} color="from-teal-500 to-teal-600" />
-          <StatCard title="Upcoming" value={stats.upcoming} icon={Clock} color="from-blue-500 to-cyan-600" />
           <StatCard title="Ongoing" value={stats.ongoing} icon={Activity} color="from-green-500 to-emerald-600" />
           <StatCard title="Completed" value={stats.completed} icon={CheckCircle} color="from-purple-500 to-pink-600" />
           <StatCard title="Cancelled" value={stats.cancelled} icon={XCircle} color="from-red-500 to-rose-600" />
@@ -307,7 +304,6 @@ const ManageEvent: React.FC = () => {
               className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
             >
               <option value="all">All Status</option>
-              <option value="upcoming">Upcoming</option>
               <option value="ongoing">Ongoing</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>

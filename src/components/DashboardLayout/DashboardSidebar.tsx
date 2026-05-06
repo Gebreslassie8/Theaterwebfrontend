@@ -150,6 +150,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-green-500",
           },
           {
+                name: "View comment",
+                to: "/admin/content/contacts",
+                icon: Mail,
+              },
+          {
             name: "Content Management",
             icon: FileText,
             color: "text-purple-500",
@@ -161,21 +166,11 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: FileText,
               },
               {
-                name: "Contact Messages",
-                to: "/admin/content/contacts",
+                name: "Contacts",
+                to: "/admin/content/contact",
                 icon: Mail,
               },
               { name: "Gallery", to: "/admin/content/gallery", icon: Image },
-              {
-                name: "Help Center",
-                to: "/admin/content/help",
-                icon: HelpCircle,
-              },
-              {
-                name: "Customer Registrations",
-                to: "/admin/content/customers",
-                icon: Users,
-              },
             ],
           },
           {
@@ -260,29 +255,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             name: "Content Management",
             icon: FileText,
             color: "text-purple-500",
-            to: "/admin/content",
+            to: "/owner/content",
             subItems: [
               {
                 name: "Blog Posts",
-                to: "/admin/content/blogs",
+                to: "/owner/content/blogs",
                 icon: FileText,
               },
               {
-                name: "Contact Messages",
-                to: "/admin/content/contacts",
+                name: "Contacts",
+                to: "/owner/content/contacts",
                 icon: Mail,
               },
-              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
-              {
-                name: "Help Center",
-                to: "/admin/content/help",
-                icon: HelpCircle,
-              },
-              {
-                name: "Customer Registrations",
-                to: "/admin/content/customers",
-                icon: Users,
-              },
+              { name: "Gallery", to: "/owner/content/gallery", icon: Image },
+         
             ],
           },
         ],

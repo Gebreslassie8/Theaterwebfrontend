@@ -31,9 +31,9 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import ReusableTable from '../../../components/Reusable/ReusableTable';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import ReusableTable from '../Reusable/ReusableTable';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types matching frontend Gallery.tsx
 interface GalleryImage {

@@ -9,7 +9,10 @@ import Eventmanagement from "./events/ManageEvent";
 import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Booking/OwnerBookingInfo";
 import EmployeeManagement from "./employes/EmployeeManagement";
-
+// Content Management Imports
+import ContactManagement from "../../components/content/ContactManagement";
+import GalleryManagement from "../../components/content/GalleryManagement";
+import BlogManagement from "../../components/content/BlogManagement";
 // Protected Route Component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -52,6 +55,10 @@ export const getOwnerRoutes = () => {
       <Route path="halls/manage" element={<HallsManagement />} />
       <Route path="bookings" element={<BookingManagement />} />
       <Route path="employes/employee" element={<EmployeeManagement />} />
+      
+      <Route path="content/contacts" element={<ContactManagement />} />
+      <Route path="content/blogs" element={<BlogManagement />} />
+      <Route path="content/gallery" element={<GalleryManagement />} />
     </Route>
   );
 };

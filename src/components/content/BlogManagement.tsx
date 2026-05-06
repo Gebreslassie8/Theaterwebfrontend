@@ -29,9 +29,9 @@ import {
   Lightbulb,
   HeartHandshake
 } from 'lucide-react';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
-import ReusableTable from '../../../components/Reusable/ReusableTable';
-import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import ReusableTable from '../Reusable/ReusableTable';
+import SuccessPopup from '../Reusable/SuccessPopup';
 import * as Yup from 'yup';
 
 // Types matching frontend Blog.tsx
