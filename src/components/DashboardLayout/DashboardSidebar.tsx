@@ -237,12 +237,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Calendar,
             color: "text-orange-500",
           },
-          {
-            name: "Event Schedule",
-            to: "/owner/events/schedule",
-            icon: Clock,
-            color: "text-orange-500",
-          },
+       
           {
             name: "Manage Halls",
             to: "/owner/halls/manage",
@@ -250,7 +245,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-pink-500",
           },
           {
-            name: "Bookings Control",
+            name: "Bookings Information",
             to: "/owner/bookings",
             icon: Ticket,
             color: "text-emerald-500",
@@ -260,6 +255,35 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/owner/financial",
             icon: DollarSign,
             color: "text-emerald-500",
+          },
+          {
+            name: "Content Management",
+            icon: FileText,
+            color: "text-purple-500",
+            to: "/admin/content",
+            subItems: [
+              {
+                name: "Blog Posts",
+                to: "/admin/content/blogs",
+                icon: FileText,
+              },
+              {
+                name: "Contact Messages",
+                to: "/admin/content/contacts",
+                icon: Mail,
+              },
+              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
+              {
+                name: "Help Center",
+                to: "/admin/content/help",
+                icon: HelpCircle,
+              },
+              {
+                name: "Customer Registrations",
+                to: "/admin/content/customers",
+                icon: Users,
+              },
+            ],
           },
           {
             name: "View Reports",
@@ -285,6 +309,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/manager/events/create",
             icon: PlusCircle,
           },
+            
           {
             name: "Halls Management",
             to: "/manager/halls",
@@ -302,8 +327,38 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/manager/Report",
             icon: BarChart,
             color: "text-indigo-500",
+          },{
+            name: "Content Management",
+            icon: FileText,
+            color: "text-purple-500",
+            to: "/admin/content",
+            subItems: [
+              {
+                name: "Blog Posts",
+                to: "/admin/content/blogs",
+                icon: FileText,
+              },
+              {
+                name: "Contact Messages",
+                to: "/admin/content/contacts",
+                icon: Mail,
+              },
+              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
+              {
+                name: "Help Center",
+                to: "/admin/content/help",
+                icon: HelpCircle,
+              },
+              {
+                name: "Customer Registrations",
+                to: "/admin/content/customers",
+                icon: Users,
+              },
+            ],
           },
+
         ],
+        
       },
 
       // ==================== SALESPERSON ONLY ====================

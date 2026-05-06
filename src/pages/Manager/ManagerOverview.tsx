@@ -7,7 +7,6 @@ import {
   Activity,
   TrendingUp,
   Users,
-  Star,
   Eye,
   Edit,
   CheckCircle,
@@ -16,7 +15,6 @@ import {
   Calendar,
 } from 'lucide-react';
 
-// Only these four imports
 import { AreaChart } from '../../components/Overview/AreaChart';
 import { BarChart } from '../../components/Overview/BarChart';
 import { Card, StatCard, MetricCard } from '../../components/Overview/Card';
@@ -159,17 +157,6 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 };
 
-const getStatusBadgeClass = (status: string) => {
-  switch (status) {
-    case 'selling': return { bg: 'bg-green-100', text: 'text-green-700', label: 'Selling' };
-    case 'almost full': return { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Almost Full' };
-    case 'sold out': return { bg: 'bg-red-100', text: 'text-red-700', label: 'Sold Out' };
-    case 'upcoming': return { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Upcoming' };
-    case 'completed': return { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Completed' };
-    default: return { bg: 'bg-gray-100', text: 'text-gray-700', label: status };
-  }
-};
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } }
@@ -200,18 +187,17 @@ const ManagerOverview: React.FC = () => {
 
       {/* Primary Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Tickets Today" value={managerStats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/tickets" />
-        <StatCard title="Occupancy Rate" value={`${managerStats.occupancyRate}%`} icon={Activity} color="from-purple-500 to-pink-600" link="/manager/halls" />
-        <StatCard title="Active Shows" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/shows" />
-        <StatCard title="Total Revenue" value={formatCurrency(managerStats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/financial" />
-      </motion.div>
+        <StatCard title="Tickets Sold Today" value={managerStats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/detail" />
+        <StatCard title="Active Event" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/events/create" />
+        <StatCard title="Total Revenue" value={formatCurrency(managerStats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/Report" />
+      
 
       {/* Secondary Stats */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="Total Tickets Sold" value={managerStats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
-        <MetricCard title="Total Halls" value={`${managerStats.activeHalls}/${managerStats.totalHalls}`} icon={<Building className="h-5 w-5 text-white" />} />
-        <MetricCard title="Total Customers" value={managerStats.totalCustomers.toLocaleString()} icon={<Users className="h-5 w-5 text-white" />} />
-        <MetricCard title="Completed Shows" value={managerStats.completedShows} icon={<CheckCircle className="h-5 w-5 text-white" />} />
+        {/* Total Tickets Sold - clickable */}
+        <Link to="/manager/ticket-sales" className="block transition-transform hover:scale-[1.02]">
+          <MetricCard title="Total Tickets Sold" value={managerStats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
+        </Link>
+        {/* Total Customers - clickable */}
       </motion.div>
 
       {/* Hall Occupancy - using DonutChart from PieChart */}
@@ -224,7 +210,6 @@ const ManagerOverview: React.FC = () => {
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-700">{hall.name}</span>
-                    <span className="text-gray-500">{hall.occupancy}% occupancy</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${hall.occupancy}%`, backgroundColor: hall.color }} />
@@ -316,11 +301,11 @@ const ManagerOverview: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* Shows Table */}
+      {/* Shows Table - Status column removed */}
       <motion.div variants={itemVariants}>
         <Card title="Current Shows Performance" subtitle="Real-time performance metrics for active shows" showMoreLink="/manager/shows" showMoreText="View All Shows">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
+            <table className="w-full min-w-[800px]">
               <thead className="border-b border-gray-200">
                 <tr>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Show Name</th>
@@ -328,39 +313,32 @@ const ManagerOverview: React.FC = () => {
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Date & Time</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Sales</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Revenue</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Status</th>
                   <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {showsData.map(show => {
-                  const badge = getStatusBadgeClass(show.status);
-                  return (
-                    <tr key={show.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{show.name}</td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{show.hall}</td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{show.date} at {show.time}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-700">{show.sales}/{show.capacity}</span>
-                          <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                            <div className="h-1.5 rounded-full bg-teal-500" style={{ width: `${(show.sales / show.capacity) * 100}%` }} />
-                          </div>
+                {showsData.map(show => (
+                  <tr key={show.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td className="py-3 px-4 text-sm font-medium text-gray-900">{show.name}</td>
+                    <td className="py-3 px-4 text-sm text-gray-500">{show.hall}</td>
+                    <td className="py-3 px-4 text-sm text-gray-500">{show.date} at {show.time}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">{show.sales}/{show.capacity}</span>
+                        <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                          <div className="h-1.5 rounded-full bg-teal-500" style={{ width: `${(show.sales / show.capacity) * 100}%` }} />
                         </div>
-                      </td>
-                      <td className="py-3 px-4 text-sm font-semibold text-emerald-600">{formatCurrency(show.revenue)}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${badge.bg} ${badge.text}`}>{badge.label}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <button className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"><Eye className="h-4 w-4 text-blue-600" /></button>
-                          <button className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition"><Edit className="h-4 w-4 text-teal-600" /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-sm font-semibold text-emerald-600">{formatCurrency(show.revenue)}</td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        <button className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"><Eye className="h-4 w-4 text-blue-600" /></button>
+                        <button className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition"><Edit className="h-4 w-4 text-teal-600" /></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -17,8 +17,6 @@ import {
     Activity,
     Edit,
     ArrowLeft,
-    Download,
-    Share2,
     Ban,
     UserX,
     AlertCircle,
@@ -80,29 +78,6 @@ const ViewUsers: React.FC<ViewUserProps> = ({
         });
         setShowSuccessPopup(true);
         setTimeout(() => setShowSuccessPopup(false), 2000);
-    };
-
-    const handleDownload = () => {
-        const userData = {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            phone: user.phone,
-            password: user.password,
-            role: user.role,
-            status: user.status,
-            deactivatedAt: user.deactivatedAt,
-            deactivationReason: user.deactivationReason,
-            deactivationType: user.deactivationType
-        };
-
-        const dataStr = JSON.stringify(userData, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-        const exportFileDefaultName = `user_${(user.username || 'user').replace(/\s/g, '_')}_${user.id}.json`;
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
     };
 
     const getRoleIcon = () => {
@@ -224,20 +199,7 @@ const ViewUsers: React.FC<ViewUserProps> = ({
                             <h2 className="text-xl font-bold text-gray-900">User Details</h2>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleDownload}
-                                className="p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                title="Download JSON"
-                            >
-                                <Download className="h-4 w-4" />
-                            </button>
-                            <button
-                                onClick={() => copyToClipboard(user.email, 'Email')}
-                                className="p-2 text-gray-500 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition"
-                                title="Share"
-                            >
-                                <Share2 className="h-4 w-4" />
-                            </button>
+                            {/* Download and Share buttons REMOVED */}
                             <button
                                 onClick={onClose}
                                 className="p-1.5 hover:bg-gray-100 rounded-lg transition"
@@ -294,8 +256,9 @@ const ViewUsers: React.FC<ViewUserProps> = ({
                                         <button
                                             onClick={() => copyToClipboard(user.username, 'Username')}
                                             className="text-gray-400 hover:text-teal-600 transition"
+                                            title="Copy username"
                                         >
-                                            <Share2 className="h-3 w-3" />
+                                            <CopyIcon className="h-3 w-3" />
                                         </button>
                                     </div>
 
@@ -308,8 +271,9 @@ const ViewUsers: React.FC<ViewUserProps> = ({
                                         <button
                                             onClick={() => copyToClipboard(user.email, 'Email')}
                                             className="text-gray-400 hover:text-teal-600 transition"
+                                            title="Copy email"
                                         >
-                                            <Share2 className="h-3 w-3" />
+                                            <CopyIcon className="h-3 w-3" />
                                         </button>
                                     </div>
 
@@ -322,8 +286,9 @@ const ViewUsers: React.FC<ViewUserProps> = ({
                                         <button
                                             onClick={() => copyToClipboard(user.phone, 'Phone number')}
                                             className="text-gray-400 hover:text-teal-600 transition"
+                                            title="Copy phone number"
                                         >
-                                            <Share2 className="h-3 w-3" />
+                                            <CopyIcon className="h-3 w-3" />
                                         </button>
                                     </div>
 
@@ -468,5 +433,24 @@ const ViewUsers: React.FC<ViewUserProps> = ({
         </>
     );
 };
+
+// Helper Copy Icon component since we removed Share2
+const CopyIcon: React.FC<{ className?: string }> = ({ className }) => (
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className={className}
+    >
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+    </svg>
+);
 
 export default ViewUsers;
