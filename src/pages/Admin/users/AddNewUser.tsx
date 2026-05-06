@@ -14,32 +14,161 @@ interface AddUserProps {
   formTitle?: string;
 }
 
+// Enhanced Validation Schema with full validation
 const ValidationSchema = Yup.object({
   username: Yup.string()
     .required('Username is required')
     .min(3, 'Username must be at least 3 characters')
     .max(50, 'Username cannot exceed 50 characters')
-    .matches(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    .matches(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores')
+    .matches(/^[a-zA-Z]/, 'Username must start with a letter'),
+  
   email: Yup.string()
     .required('Email is required')
-    .email('Please enter a valid email address'),
+    .email('Please enter a valid email address')
+    .matches(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please enter a valid email format (e.g., name@domain.com)')
+    .max(100, 'Email cannot exceed 100 characters'),
+  
   password: Yup.string()
     .required('Password is required')
-    .min(6, 'Password must be at least 6 characters')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must contain uppercase, lowercase and number'),
+    .min(8, 'Password must be at least 8 characters')
+    .max(50, 'Password cannot exceed 50 characters')
+    .matches(/^(?=.*[a-z])/, 'Password must contain at least one lowercase letter')
+    .matches(/^(?=.*[A-Z])/, 'Password must contain at least one uppercase letter')
+    .matches(/^(?=.*\d)/, 'Password must contain at least one number')
+    .matches(/^(?=.*[@$!%*?&])/, 'Password must contain at least one special character (@$!%*?&)')
+    .matches(/^\S*$/, 'Password cannot contain spaces'),
+  
   confirmPassword: Yup.string()
     .required('Please confirm your password')
     .oneOf([Yup.ref('password')], 'Passwords must match'),
+  
   phone: Yup.string()
     .required('Phone number is required')
-    .matches(/^[0-9+\-\s()]{10,15}$/, 'Please enter a valid phone number'),
+    .matches(/^\+?[0-9]{10,15}$/, 'Please enter a valid phone number (10-15 digits, optional + prefix)')
+    .min(10, 'Phone number must be at least 10 digits')
+    .max(15, 'Phone number cannot exceed 15 digits'),
+  
   role: Yup.string()
-    .required('Role is required'),
+    .required('Role is required')
+    .oneOf(['admin', 'manager', 'theater_owner', 'salesperson', 'scanner', 'customer'], 'Invalid role selected'),
+  
   status: Yup.string()
-    .required('Status is required'),
-  department: Yup.string(),
+    .required('Status is required')
+    .oneOf(['Active', 'Inactive', 'Pending'], 'Invalid status selected'),
 });
 
+// Custom Input Component
+const FormInput: React.FC<{
+  label: string;
+  name: string;
+  type: string;
+  value: any;
+  onChange: (e: React.ChangeEvent<any>) => void;
+  onBlur: (e: React.FocusEvent<any>) => void;
+  error?: string;
+  touched?: boolean;
+  placeholder?: string;
+  icon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
+  onRightIconClick?: () => void;
+  required?: boolean;
+}> = ({ label, name, type, value, onChange, onBlur, error, touched, placeholder, icon, rightIcon, onRightIconClick, required }) => {
+  return (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <div className="relative group">
+        {icon && (
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-teal-500 transition-colors">
+            {icon}
+          </div>
+        )}
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          onBlur={onBlur}
+          placeholder={placeholder}
+          autoComplete="off"
+          className={`w-full ${icon ? 'pl-10' : 'px-4'} pr-10 py-2.5 border ${error && touched ? 'border-red-500' : 'border-gray-200'
+            } rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white group-focus-within:bg-white`}
+        />
+        {rightIcon && (
+          <button
+            type="button"
+            onClick={onRightIconClick}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            {rightIcon}
+          </button>
+        )}
+      </div>
+      {error && touched && (
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-red-500 text-xs mt-1 flex items-center gap-1"
+        >
+          <AlertCircle className="h-3 w-3" />
+          {error}
+        </motion.p>
+      )}
+    </div>
+  );
+};
+
+// Select Input Component
+const FormSelect: React.FC<{
+  label: string;
+  name: string;
+  value: any;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  onBlur: (e: React.FocusEvent<HTMLSelectElement>) => void;
+  error?: string;
+  touched?: boolean;
+  options: { value: string; label: string }[];
+  required?: boolean;
+}> = ({ label, name, value, onChange, onBlur, error, touched, options, required }) => {
+  return (
+    <div className="mb-4">
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+        className={`w-full px-4 py-2.5 border ${error && touched ? 'border-red-500' : 'border-gray-200'
+          } rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white`}
+      >
+        <option value="">Select {label}</option>
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {error && touched && (
+        <motion.p
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-red-500 text-xs mt-1 flex items-center gap-1"
+        >
+          <AlertCircle className="h-3 w-3" />
+          {error}
+        </motion.p>
+      )}
+    </div>
+  );
+};
+
+// Custom Button Component
 const ReusableButton: React.FC<any> = ({
   onClick,
   type = 'button',
@@ -112,116 +241,6 @@ const ReusableButton: React.FC<any> = ({
   );
 };
 
-// Form Input Component
-const FormInput: React.FC<{
-  label: string;
-  name: string;
-  type: string;
-  value: any;
-  onChange: (e: React.ChangeEvent<any>) => void;
-  onBlur: (e: React.FocusEvent<any>) => void;
-  error?: string;
-  touched?: boolean;
-  placeholder?: string;
-  icon?: React.ReactNode;
-  rightIcon?: React.ReactNode;
-  onRightIconClick?: () => void;
-  required?: boolean;
-}> = ({ label, name, type, value, onChange, onBlur, error, touched, placeholder, icon, rightIcon, onRightIconClick, required }) => {
-  return (
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <div className="relative group">
-        {icon && (
-          < div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-purple-500 transition-colors">
-            {icon}
-          </div>
-        )}
-        <input
-          type={type}
-          name={name}
-          value={value}
-          onChange={onChange}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          autoComplete="off"
-          className={`w-full ${icon ? 'pl-10' : 'px-4'} pr-10 py-2.5 border ${error && touched ? 'border-red-500' : 'border-gray-200'
-            } rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white group-focus-within:bg-white`}
-        />
-        {rightIcon && (
-          <button
-            type="button"
-            onClick={onRightIconClick}
-            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            {rightIcon}
-          </button>
-        )}
-      </div>
-      {error && touched && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 text-xs mt-1 flex items-center gap-1"
-        >
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </motion.p>
-      )}
-    </div>
-  );
-};
-
-// Select Input Component
-const FormSelect: React.FC<{
-  label: string;
-  name: string;
-  value: any;
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  onBlur: (e: React.FocusEvent<HTMLSelectElement>) => void;
-  error?: string;
-  touched?: boolean;
-  options: { value: string; label: string }[];
-  required?: boolean;
-}> = ({ label, name, value, onChange, onBlur, error, touched, options, required }) => {
-  return (
-    <div className="mb-4">
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        onBlur={onBlur}
-        className={`w-full px-4 py-2.5 border ${error && touched ? 'border-red-500' : 'border-gray-200'
-          } rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-gray-50 hover:bg-white`}
-      >
-        <option value="">Select {label}</option>
-        {options.map(option => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      {error && touched && (
-        <motion.p
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-red-500 text-xs mt-1 flex items-center gap-1"
-        >
-          <AlertCircle className="h-3 w-3" />
-          {error}
-        </motion.p>
-      )}
-    </div>
-  );
-};
-
 const AddNewUser: React.FC<AddUserProps> = ({
   onSubmit,
   onClose,
@@ -233,7 +252,6 @@ const AddNewUser: React.FC<AddUserProps> = ({
     phone: '',
     role: '',
     status: 'Active',
-    department: '',
   },
   formTitle = 'Add New User'
 }) => {
@@ -244,27 +262,30 @@ const AddNewUser: React.FC<AddUserProps> = ({
     if (!password) return { strength: 0, label: '', color: '', bg: '' };
 
     let strength = 0;
-    if (password.length >= 6) strength++;
+    if (password.length >= 8) strength++;
     if (/(?=.*[a-z])/.test(password)) strength++;
     if (/(?=.*[A-Z])/.test(password)) strength++;
     if (/(?=.*\d)/.test(password)) strength++;
+    if (/(?=.*[@$!%*?&])/.test(password)) strength++;
 
     const strengthMap: Record<number, { label: string; color: string; bg: string }> = {
-      1: { label: 'Weak', color: 'text-red-500', bg: 'bg-red-500' },
-      2: { label: 'Fair', color: 'text-orange-500', bg: 'bg-orange-500' },
-      3: { label: 'Good', color: 'text-yellow-500', bg: 'bg-yellow-500' },
-      4: { label: 'Strong', color: 'text-green-500', bg: 'bg-green-500' },
+      1: { label: 'Very Weak', color: 'text-red-500', bg: 'bg-red-500' },
+      2: { label: 'Weak', color: 'text-orange-500', bg: 'bg-orange-500' },
+      3: { label: 'Fair', color: 'text-yellow-500', bg: 'bg-yellow-500' },
+      4: { label: 'Good', color: 'text-blue-500', bg: 'bg-blue-500' },
+      5: { label: 'Strong', color: 'text-green-500', bg: 'bg-green-500' },
     };
 
-    return strengthMap[strength] || { strength, label: '', color: '', bg: '' };
+    return strengthMap[strength] || { strength: 0, label: '', color: '', bg: '' };
   };
 
+  // Form fields - Department removed
   const formFields = [
     {
       name: 'username',
       type: 'text',
       label: 'Username',
-      placeholder: 'Enter username',
+      placeholder: 'Enter username (letters, numbers, underscores only)',
       required: true,
       icon: <User className="h-4 w-4" />
     },
@@ -272,7 +293,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
       name: 'email',
       type: 'email',
       label: 'Email Address',
-      placeholder: 'Enter email address',
+      placeholder: 'Enter email address (e.g., name@domain.com)',
       required: true,
       icon: <Mail className="h-4 w-4" />
     },
@@ -280,7 +301,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
       name: 'phone',
       type: 'tel',
       label: 'Phone Number',
-      placeholder: 'Enter phone number',
+      placeholder: 'Enter phone number (e.g., +251912345678)',
       required: true,
       icon: <Phone className="h-4 w-4" />
     },
@@ -288,7 +309,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
       name: 'password',
       type: showPassword ? 'text' : 'password',
       label: 'Password',
-      placeholder: 'Enter password',
+      placeholder: 'Enter password (min 8 chars, with uppercase, lowercase, number, special char)',
       required: true,
       icon: <Shield className="h-4 w-4" />,
       rightIcon: showPassword ? <EyeOff size={18} /> : <Eye size={18} />,
@@ -308,7 +329,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
       name: 'role',
       type: 'select',
       label: 'Role',
-      placeholder: 'Select role',
+      placeholder: 'Select user role',
       required: true,
       options: [
         { value: 'admin', label: 'Admin' },
@@ -323,21 +344,14 @@ const AddNewUser: React.FC<AddUserProps> = ({
       name: 'status',
       type: 'select',
       label: 'Status',
-      placeholder: 'Select status',
+      placeholder: 'Select account status',
       required: true,
       options: [
         { value: 'Active', label: 'Active' },
         { value: 'Inactive', label: 'Inactive' },
         { value: 'Pending', label: 'Pending' }
       ]
-    },
-    {
-      name: 'department',
-      type: 'text',
-      label: 'Department',
-      placeholder: 'Enter department name (Optional)',
-      icon: <Briefcase className="h-4 w-4" />
-    },
+    }
   ];
 
   const handleSubmit = async (values: any, { setSubmitting }: any) => {
@@ -346,45 +360,49 @@ const AddNewUser: React.FC<AddUserProps> = ({
     setSubmitting(false);
   };
 
+  const passwordStrength = getPasswordStrength(initialValues.password || '');
+
   return (
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-md my-8 mx-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Modal Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <User className="h-5 w-5 text-blue-600" />
+          {/* Modal Header - Sticky but doesn't override */}
+          <div className="bg-white rounded-t-2xl border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-teal-100 rounded-lg">
+                  <UserPlus className="h-5 w-5 text-teal-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">{formTitle}</h2>
               </div>
-              <h2 className="text-xl font-bold text-gray-900">{formTitle}</h2>
+              <button
+                onClick={onClose}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
             </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
           </div>
 
-          {/* Modal Body */}
-          <div className="p-6">
+          {/* Modal Body - Scrollable */}
+          <div className="px-6 py-6 max-h-[calc(90vh-80px)] overflow-y-auto">
             {/* Info Alert */}
             <div className="mb-6 flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
               <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-blue-700">
-                All fields marked with <span className="text-red-500">*</span> are required.
+                All fields marked with <span className="text-red-500 font-medium">*</span> are required.
                 User will receive login credentials via email after creation.
               </p>
             </div>
@@ -397,7 +415,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
               validationSchema={ValidationSchema}
               render={(formik) => (
                 <div className="space-y-6">
-                  {/* Password Strength Indicator */}
+                  {/* Real-time Password Strength Indicator */}
                   {formik.values.password && formik.values.password.length > 0 && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
@@ -407,12 +425,25 @@ const AddNewUser: React.FC<AddUserProps> = ({
                       <div className="flex items-start gap-2">
                         <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                          <p className="text-xs font-medium text-blue-800 mb-2">Password Requirements:</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-medium text-blue-800">Password Strength:</p>
+                            <span className={`text-xs font-semibold ${passwordStrength.color}`}>
+                              {passwordStrength.label}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden mb-3">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                              className={`h-full ${passwordStrength.bg} rounded-full`}
+                            />
+                          </div>
+                          <p className="text-xs text-blue-700 mb-2">Password must contain:</p>
                           <div className="grid grid-cols-2 gap-2">
                             <div className="flex items-center gap-1.5">
-                              <div className={`w-1.5 h-1.5 rounded-full ${formik.values.password.length >= 6 ? 'bg-green-500' : 'bg-gray-300'}`} />
-                              <span className={`text-xs ${formik.values.password.length >= 6 ? 'text-green-600' : 'text-gray-500'}`}>
-                                At least 6 characters
+                              <div className={`w-1.5 h-1.5 rounded-full ${formik.values.password.length >= 8 ? 'bg-green-500' : 'bg-gray-300'}`} />
+                              <span className={`text-xs ${formik.values.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                                Min 8 characters
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5">
@@ -433,6 +464,12 @@ const AddNewUser: React.FC<AddUserProps> = ({
                                 Number
                               </span>
                             </div>
+                            <div className="flex items-center gap-1.5 col-span-2">
+                              <div className={`w-1.5 h-1.5 rounded-full ${/(?=.*[@$!%*?&])/.test(formik.values.password) ? 'bg-green-500' : 'bg-gray-300'}`} />
+                              <span className={`text-xs ${/(?=.*[@$!%*?&])/.test(formik.values.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                                Special character (@$!%*?&)
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -449,14 +486,14 @@ const AddNewUser: React.FC<AddUserProps> = ({
                       <div className="flex items-start gap-2">
                         <Shield className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-xs font-medium text-purple-800">Role Information:</p>
+                          <p className="text-xs font-medium text-purple-800">Role Permissions:</p>
                           <p className="text-xs text-purple-700 mt-1">
-                            {formik.values.role === 'admin' && 'Admin users have full system access including user management, settings, and all features.'}
-                            {formik.values.role === 'manager' && 'Managers can manage users, content, and view reports but cannot access system settings.'}
-                            {formik.values.role === 'theater_owner' && 'Theater owners can manage their own theater, shows, and view sales reports.'}
-                            {formik.values.role === 'salesperson' && 'Salespersons can process ticket sales and view basic reports.'}
-                            {formik.values.role === 'scanner' && 'Scanners can only scan tickets for entry validation.'}
-                            {formik.values.role === 'customer' && 'Customers have basic access to purchase tickets and view their bookings.'}
+                            {formik.values.role === 'admin' && '• Full system access\n• User management\n• System settings\n• All reports'}
+                            {formik.values.role === 'manager' && '• User management\n• Content management\n• View reports\n• No system settings'}
+                            {formik.values.role === 'theater_owner' && '• Manage own theater\n• Show management\n• Sales reports\n• Staff management'}
+                            {formik.values.role === 'salesperson' && '• Process ticket sales\n• Basic reports\n• Customer management'}
+                            {formik.values.role === 'scanner' && '• Ticket scanning\n• Entry validation\n• Basic analytics'}
+                            {formik.values.role === 'customer' && '• Purchase tickets\n• View bookings\n• Profile management'}
                           </p>
                         </div>
                       </div>
@@ -473,11 +510,11 @@ const AddNewUser: React.FC<AddUserProps> = ({
                       <div className="flex items-start gap-2">
                         <Activity className="h-4 w-4 text-gray-600 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-xs font-medium text-gray-800">Status Information:</p>
+                          <p className="text-xs font-medium text-gray-800">Account Status Effects:</p>
                           <p className="text-xs text-gray-700 mt-1">
-                            {formik.values.status === 'Active' && 'Active users can log in and access the system with their assigned permissions.'}
-                            {formik.values.status === 'Inactive' && 'Inactive users cannot log in to the system until reactivated by an admin.'}
-                            {formik.values.status === 'Pending' && 'Pending users are awaiting email verification or admin approval.'}
+                            {formik.values.status === 'Active' && '• User can log in\n• Full access based on role\n• Receive notifications'}
+                            {formik.values.status === 'Inactive' && '• Cannot log in\n• No access to system\n• Can be reactivated anytime'}
+                            {formik.values.status === 'Pending' && '• Email verification required\n• Limited access\n• Awaiting admin approval'}
                           </p>
                         </div>
                       </div>
@@ -489,10 +526,13 @@ const AddNewUser: React.FC<AddUserProps> = ({
                     <div className="flex items-start gap-2">
                       <Shield className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="text-xs font-medium text-emerald-800">Security Information</p>
-                        <p className="text-xs text-emerald-700 mt-0.5">
-                          User credentials will be encrypted and stored securely. An email will be sent to the user with their login information.
-                        </p>
+                        <p className="text-xs font-medium text-emerald-800">Security Best Practices</p>
+                        <ul className="text-xs text-emerald-700 mt-1 space-y-0.5">
+                          <li>• Credentials are encrypted using AES-256</li>
+                          <li>• Password hashed with bcrypt before storage</li>
+                          <li>• Welcome email sent with secure login link</li>
+                          <li>• User must reset password on first login</li>
+                        </ul>
                       </div>
                     </div>
                   </div>
@@ -513,7 +553,7 @@ const AddNewUser: React.FC<AddUserProps> = ({
                     <ReusableButton
                       type="submit"
                       variant="primary"
-                      disabled={formik.isSubmitting || !formik.isValid}
+                      disabled={formik.isSubmitting || !formik.isValid || !formik.dirty}
                       loading={formik.isSubmitting}
                       className="flex-1 py-2.5"
                     >
