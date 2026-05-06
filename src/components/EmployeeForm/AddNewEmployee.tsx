@@ -99,8 +99,7 @@ const getFields = (roles: any[], showPassword: boolean, setShowPassword: any) =>
         required: true, 
         options: [
             { value: 'Active', label: 'Active' },
-            { value: 'Inactive', label: 'Inactive' },
-            { value: 'On Leave', label: 'On Leave' }
+            { value: 'Inactive', label: 'Inactive' }
         ], 
         icon: <Activity size={16} />, 
         colSpan: 1 

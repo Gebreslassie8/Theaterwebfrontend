@@ -9,7 +9,6 @@ import Eventmanagement from "./events/ManageEvent";
 import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Booking/OwnerBookingInfo";
 import EmployeeManagement from "./employes/EmployeeManagement";
-import ViewReports from "./financial/ViewReports";
 
 // Protected Route Component
 const ProtectedRoute: React.FC<{
@@ -53,7 +52,6 @@ export const getOwnerRoutes = () => {
       <Route path="halls/manage" element={<HallsManagement />} />
       <Route path="bookings" element={<BookingManagement />} />
       <Route path="employes/employee" element={<EmployeeManagement />} />
-      <Route path="financial/report" element={<ViewReports />} />
     </Route>
   );
 };
