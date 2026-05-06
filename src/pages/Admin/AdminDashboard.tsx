@@ -7,103 +7,12 @@ import {
     DollarSign,
     Clock,
     UserCheck,
-    Theater,
-    ArrowRight,
-    AlertCircle,
-    Shield,
-    Calendar,
-    MapPin,
     Activity,
-    Filter,
-    TrendingUp,
-    TrendingDown,
-    Eye,
-    RefreshCw,
-    Bell,
-    Settings,
-    HelpCircle,
-    LogOut,
-    Menu,
-    X,
-    ChevronRight,
-    ChevronLeft,
-    Star,
-    Award,
-    Crown,
-    Gem,
-    Rocket,
-    Target,
-    Trophy,
-    Medal,
-    Ribbon,
-    BadgeCheck,
-    Verified,
-    Lock,
-    Unlock,
-    EyeOff,
     Eye as EyeIcon,
-    Maximize2,
-    Minimize2,
-    ExternalLink,
-    Copy,
-    Share2,
-    Printer,
-    Mail,
-    Phone,
     MapPin as MapPinIcon,
-    Globe,
-    Facebook,
-    Twitter,
-    Instagram,
-    Youtube,
-    Linkedin,
-    Github,
-    Slack,
-    Zap,
-    Sparkles,
-    Coffee,
-    Gift,
-    Heart,
-    ThumbsUp,
-    ThumbsDown,
-    Smile,
-    Frown,
-    Meh,
-    Flag,
-    Bell as BellIcon,
-    BellRing,
-    BellOff,
-    Bookmark,
-    BookmarkCheck,
-    BookmarkX,
-    Folder,
-    FolderOpen,
-    FolderPlus,
-    FolderSync,
-    FolderTree,
-    FolderInput,
-    FolderOutput,
-    FolderSearch,
-    FolderUp,
-    FolderDown,
-    FolderMinus,
-    FolderHeart,
-    FolderKey,
-    FolderLock,
-    FolderCog,
-    FolderKanban,
-    FolderGit,
-    FolderGit2,
-    FolderCode,
-    FolderDot,
-    FolderClock,
-    FolderCheck,
     FolderX as FolderXIcon,
-    FolderWarning,
-    FolderQuestion,
     Calendar as CalendarIcon,
-    Ticket,
-    CreditCard
+    ArrowRight
 } from 'lucide-react';
 import {
     AreaChart, Area, PieChart as RePieChart, Pie,
@@ -302,13 +211,13 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
 const AdminDashboard: React.FC = () => {
     const [user] = useState({ name: 'Administrator' });
 
-    // Dashboard Cards Data - Updated with new card
+    // Dashboard Cards Data - Removed notifications from New Users Today and New Theater Registrations
     const dashboardCards = [
         { title: 'Total Theaters', value: stats.totalTheaters, icon: Building, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/theaters/theaters', notification: false },
         { title: 'Pending Theaters', value: stats.pendingTheaters, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.15, link: '/admin/theaters/theaters', notification: true, notificationCount: 3 },
         { title: 'Total Users', value: stats.totalUsers.toLocaleString(), icon: Users, color: 'from-blue-500 to-cyan-600', delay: 0.2, link: '/admin/users', notification: false },
-        { title: 'New Users Today', value: stats.newUsersToday, icon: UserCheck, color: 'from-indigo-500 to-purple-600', delay: 0.25, link: '/admin/users?filter=new', notification: true, notificationCount: stats.newUsersToday },
-        { title: 'New Theater Registrations', value: stats.newTheaterRegistrations, icon: CalendarIcon, color: 'from-green-500 to-emerald-600', delay: 0.3, link: '/admin/theaters/theaters', notification: true, notificationCount: stats.newTheaterRegistrations }
+        { title: 'New Users Today', value: stats.newUsersToday, icon: UserCheck, color: 'from-indigo-500 to-purple-600', delay: 0.25, link: '/admin/users?filter=new', notification: false, notificationCount: 0 },
+        { title: 'New Theater Registrations', value: stats.newTheaterRegistrations, icon: CalendarIcon, color: 'from-green-500 to-emerald-600', delay: 0.3, link: '/admin/theaters/theaters', notification: false, notificationCount: 0 }
     ];
 
     return (
@@ -362,7 +271,7 @@ const AdminDashboard: React.FC = () => {
                             <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
                             <XAxis dataKey="month" stroke="#6B7280" />
                             <YAxis stroke="#6B7280" />
-                            <Tooltip formatter={(value: any) => `$${value.toLocaleString()}`} />
+                            <Tooltip formatter={(value: any) => `ETB ${value.toLocaleString()}`} />
                             <Area type="monotone" dataKey="revenue" stroke="#0D9488" strokeWidth={2} fill="url(#revenueGradient)" />
                         </AreaChart>
                     </ResponsiveContainer>
