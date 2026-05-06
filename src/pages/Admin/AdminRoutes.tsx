@@ -4,8 +4,8 @@ import { Navigate, Route } from "react-router-dom"; // Add Route to the import
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import AdminDashboard from "./AdminDashboard";
 import UserManagement from "./users/UserManagement";
-import WalletBalance from "../../components/wallet/WalletBalance";
-import Commission from "../../components/wallet/Commission";
+import WalletBalance from "./wallet/WalletBalance";
+import Commission from "./wallet/Commission";
 import TheaterManagement from "./theateres/Theatermanagement";
 import FinancialReports from "./financial/FinancialReports";
 

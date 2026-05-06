@@ -253,7 +253,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           {
             name: "Financial Analytics",
             to: "/owner/financial",
-            icon: DollarSign,
+            icon: Coins,
             color: "text-emerald-500",
           },
           {
@@ -284,12 +284,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: Users,
               },
             ],
-          },
-          {
-            name: "View Reports",
-            to: "/owner/financial/report",
-            icon: FileText,
-            color: "text-purple-500",
           },
         ],
       },

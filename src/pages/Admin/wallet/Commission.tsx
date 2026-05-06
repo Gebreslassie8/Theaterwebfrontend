@@ -56,7 +56,7 @@ import {
     Bar
 } from 'recharts';
 import * as Yup from 'yup';
-import SuccessPopup from '../Reusable/SuccessPopup';
+import SuccessPopup from '../../../components/Reusable/SuccessPopup';
 
 // Types
 interface TheaterCommission {

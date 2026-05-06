@@ -3,7 +3,7 @@ import React from "react";
 import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import OwnerDashboard from "./OwnerDashboard";
-import WalletBalance from "../../components/wallet/WalletBalance";
+import WalletBalance from "./wallet/OwnerWalletBalance";
 import FinancialAnalytics from "./financial/FinancialAnalytics";
 import Eventmanagement from "./events/ManageEvent";
 import HallsManagement from "./halls/HallsManagement";
