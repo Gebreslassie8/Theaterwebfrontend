@@ -9,9 +9,9 @@ import {
   Ticket, Briefcase, MessageCircle, UserCog, Theater,
   ChevronDown
 } from 'lucide-react';
-import ReusableButton from '../../components/Reusable/ReusableButton';
-import ReusableTable from '../../components/Reusable/ReusableTable';
-import SuccessPopup from '../../components/Reusable/SuccessPopup';
+import ReusableButton from '../Reusable/ReusableButton';
+import ReusableTable from '../Reusable/ReusableTable';
+import SuccessPopup from '../Reusable/SuccessPopup';
 
 // Types
 interface ContactMessage {

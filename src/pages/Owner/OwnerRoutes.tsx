@@ -56,7 +56,7 @@ export const getOwnerRoutes = () => {
       <Route path="bookings" element={<BookingManagement />} />
       <Route path="employes/employee" element={<EmployeeManagement />} />
 
-<Route path="content/contacts" element={<OwnerContactManagement />} />
+      <Route path="content/contacts" element={<OwnerContactManagement />} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />
     </Route>
