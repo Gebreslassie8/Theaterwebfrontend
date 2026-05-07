@@ -77,8 +77,7 @@ const getFields = (roles: any[]) => [
         required: true, 
         options: [
             { value: 'Active', label: 'Active' },
-            { value: 'Inactive', label: 'Inactive' },
-            { value: 'On Leave', label: 'On Leave' }
+            { value: 'Inactive', label: 'Inactive' }
         ], 
         icon: <Activity size={16} />, 
         colSpan: 1 
@@ -195,7 +194,6 @@ const UpdateEmployee: React.FC<any> = ({ isOpen, employee, roles, onClose, onUpd
                                                     {formik.values.assignedRole === 'salesperson' && 'Salespersons can sell tickets, manage sales, and view customer data.'}
                                                     {formik.values.assignedRole === 'manager' && 'Managers can manage events, staff, and view reports.'}
                                                     {formik.values.assignedRole === 'scanner' && 'Scanners can scan tickets at events and validate entries.'}
-                                                    {formik.values.assignedRole === 'admin' && 'Administrators have full system access with all permissions.'}
                                                 </p>
                                             </div>
                                         </div>

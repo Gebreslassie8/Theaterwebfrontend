@@ -3,14 +3,16 @@ import React from "react";
 import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import OwnerDashboard from "./OwnerDashboard";
-import WalletBalance from "../../components/wallet/WalletBalance";
+import WalletBalance from "./wallet/OwnerWalletBalance";
 import FinancialAnalytics from "./financial/FinancialAnalytics";
 import Eventmanagement from "./events/ManageEvent";
 import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Booking/OwnerBookingInfo";
 import EmployeeManagement from "./employes/EmployeeManagement";
-import ViewReports from "./financial/ViewReports";
-
+// Content Management Imports
+import OwnerContactManagement from '../../components/content/OwnerContactManagement';
+import GalleryManagement from "../../components/content/GalleryManagement";
+import BlogManagement from "../../components/content/BlogManagement";
 // Protected Route Component
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
@@ -53,7 +55,10 @@ export const getOwnerRoutes = () => {
       <Route path="halls/manage" element={<HallsManagement />} />
       <Route path="bookings" element={<BookingManagement />} />
       <Route path="employes/employee" element={<EmployeeManagement />} />
-      <Route path="financial/report" element={<ViewReports />} />
+
+      <Route path="content/contacts" element={<OwnerContactManagement />} />
+      <Route path="content/blogs" element={<BlogManagement />} />
+      <Route path="content/gallery" element={<GalleryManagement />} />
     </Route>
   );
 };

@@ -92,7 +92,7 @@ const itemVariants = {
     }
 };
 
-// Stat Card Component - Removed notification
+// Stat Card Component
 interface StatCardProps {
     title: string;
     value: string | number;
@@ -181,7 +181,6 @@ const EmployeeManagement: React.FC = () => {
         totalEmployees: employees.length,
         activeEmployees: employees.filter(e => e.status === 'Active').length,
         inactiveEmployees: employees.filter(e => e.status === 'Inactive').length,
-        onLeaveEmployees: employees.filter(e => e.status === 'On Leave').length,
         totalPayroll: employees.reduce((sum, e) => sum + e.salary, 0),
     };
 
@@ -456,13 +455,11 @@ const EmployeeManagement: React.FC = () => {
         }
     ];
 
-    // Dashboard Cards - Removed notification and notificationCount
+    // Dashboard Cards - Removed On Leave card (4 cards now)
     const dashboardCards = [
-        { title: 'Total Employees', value: stats.totalEmployees, icon: UsersRound, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/manager/employees' },
-        { title: 'Active Employees', value: stats.activeEmployees, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/manager/employees?status=active' },
-        { title: 'Inactive', value: stats.inactiveEmployees, icon: UserX, color: 'from-red-500 to-rose-600', delay: 0.2, link: '/manager/employees?status=inactive' },
-        { title: 'On Leave', value: stats.onLeaveEmployees, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.22, link: '/manager/employees?status=onleave' },
-        { title: 'Total Payroll', value: `Br ${stats.totalPayroll.toLocaleString()}`, icon: CoinsIcon, color: 'from-purple-500 to-pink-600', delay: 0.25 },
+        { title: 'Total Employees', value: stats.totalEmployees, icon: UsersRound, color: 'from-teal-500 to-teal-600', delay: 0.1 },
+        { title: 'Active Employees', value: stats.activeEmployees, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15 },
+        { title: 'Inactive Employees', value: stats.inactiveEmployees, icon: UserX, color: 'from-red-500 to-rose-600', delay: 0.2 },
     ];
 
     return (
@@ -473,8 +470,8 @@ const EmployeeManagement: React.FC = () => {
             className="space-y-8 p-6 bg-gray-50 min-h-screen"
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Stats Cards */}
-                <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+                {/* Stats Cards - 4 cards grid */}
+                <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {dashboardCards.map((card, index) => (
                         <StatCard
                             key={index}
@@ -510,7 +507,6 @@ const EmployeeManagement: React.FC = () => {
                             <option value="salesperson">Sales Person</option>
                             <option value="manager">Manager</option>
                             <option value="scanner">Scanner</option>
-                            <option value="admin">Admin</option>
                         </select>
                         <select
                             value={filterStatus}
@@ -520,7 +516,6 @@ const EmployeeManagement: React.FC = () => {
                             <option value="all">All Status</option>
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
-                            <option value="On Leave">On Leave</option>
                         </select>
                     </div>
                     <ReusableButton
