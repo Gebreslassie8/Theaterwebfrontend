@@ -57,18 +57,12 @@ export const getManagerRoutes = () => {
       <Route path="events/create" element={<CreateEvent />} />
       <Route path="halls" element={<HallsManagement />} />
       <Route path="detail" element={<TicketSalesDetails />} />
-<<<<<<< HEAD
      <Route path="createview" element={<CreateEventOverVIew />} />
 
       <Route
         path="Tickets/BookingTicketControl"
         element={<BookingTicketControl />}
       />
-=======
-
-      <Route path="Tickets" element={<BookingTicketControl />} />
-       <Route path="Tickets/BookingTicketControl"element={<BookingTicketControl />} />
->>>>>>> 23fa60fa38acab6993f132dd267d77ab23e9a4b7
       <Route path="Report" element={<Reports />} />
       <Route path="employee" element={<EmployeeManagement />} />
       

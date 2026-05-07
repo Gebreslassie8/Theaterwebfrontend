@@ -303,11 +303,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-green-500",
           },
           {
-<<<<<<< HEAD
             name: "Report And Analytics",
-=======
-            name: "Report Analaytics",
->>>>>>> 23fa60fa38acab6993f132dd267d77ab23e9a4b7
             to: "/manager/Report",
             icon: BarChart,
             color: "text-indigo-500",
