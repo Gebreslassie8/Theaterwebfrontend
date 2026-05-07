@@ -380,6 +380,21 @@ const EmployeeManagement: React.FC = () => {
         <Edit className="h-4 w-4 text-teal-600" />
       </button>
 
+<<<<<<< HEAD
+    // Dashboard Cards - Removed notification and notificationCount
+    const dashboardCards = [
+        { title: 'Total Employees', value: stats.totalEmployees, icon: UsersRound, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/manager/employees' },
+        { title: 'Active Employees', value: stats.activeEmployees, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/manager/employees?status=active' },
+        { title: 'Inactive', value: stats.inactiveEmployees, icon: UserX, color: 'from-red-500 to-rose-600', delay: 0.2, link: '/manager/employees?status=inactive' },
+    ];
+
+    return (
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8 p-6 bg-gray-50 min-h-screen"
+=======
       {canDeactivate(row) && (
         <button
           onClick={() => {
@@ -388,11 +403,52 @@ const EmployeeManagement: React.FC = () => {
           }}
           className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-200"
           title="Deactivate Employee"
+>>>>>>> 23fa60fa38acab6993f132dd267d77ab23e9a4b7
         >
           <Ban className="h-4 w-4 text-orange-600" />
         </button>
       )}
 
+<<<<<<< HEAD
+                {/* Search and Filters */}
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[250px]">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Search by name, email or phone..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
+                            />
+                        </div>
+                        <select
+                            value={filterRole}
+                            onChange={(e) => setFilterRole(e.target.value)}
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
+                        >
+                            <option value="salesperson">Sales Person</option>
+                            <option value="scanner">Scanner</option>
+                        </select>
+                        <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
+                        >
+                            <option value="all">All Status</option>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                    <ReusableButton
+                        onClick={() => setShowAddModal(true)}
+                        icon="UserPlus"
+                        label="Add New Employee"
+                        className="px-5 py-2.5 text-sm whitespace-nowrap bg-teal-600 hover:bg-teal-700 text-white"
+                    />
+                </div>
+=======
       {canReactivate(row) && (
         <button
           onClick={() => {
@@ -405,6 +461,7 @@ const EmployeeManagement: React.FC = () => {
           <RefreshCw className="h-4 w-4 text-green-600" />
         </button>
       )}
+>>>>>>> 23fa60fa38acab6993f132dd267d77ab23e9a4b7
 
       <button
         onClick={() => {

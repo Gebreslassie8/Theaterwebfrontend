@@ -4,8 +4,8 @@ import { useOutletContext } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import supabase from '../../../config/supabaseClient';
 import {
-  Calendar, Ticket, Star, Heart, MapPin, DollarSign, Award, Gift,
-  QrCode, ChevronRight, TrendingUp, Wallet, CheckCircle, Headphones
+  Calendar, Ticket, Star, Heart, MapPin, Wallet, Award, Gift,
+  QrCode, ChevronRight, TrendingUp, CheckCircle, Headphones
 } from 'lucide-react';
 import {
   AreaChart, Area, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -257,7 +257,7 @@ const CustomerDashboard: React.FC = () => {
   const stats = {
     ticketsBooked: bookings.reduce((sum, b) => sum + b.seats, 0),
     upcomingShows: bookings.filter(b => new Date(b.date) > new Date()).length,
-    pointsEarned: Math.floor(bookings.reduce((sum, b) => sum + b.totalAmount, 0) / 10), // 10 points per $ spent
+    pointsEarned: Math.floor(bookings.reduce((sum, b) => sum + b.totalAmount, 0) / 10), // 10 points per ETB spent
     savedAmount: 85, // mock, could be calculated from discounts
     totalSpent: bookings.reduce((sum, b) => sum + b.totalAmount, 0),
     favoriteGenre: 'Musical', // can be computed from most booked event genre
@@ -336,32 +336,12 @@ const CustomerDashboard: React.FC = () => {
                   <span className="text-sm font-medium">✨ {loyaltyPoints.tier} Member</span>
                 </motion.div>
                 <h1 className="text-3xl lg:text-4xl font-bold mb-2">Welcome back, {user?.name || 'Customer'}!</h1>
-                <p className="text-white/80 text-lg">Discover amazing events and earn rewards</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 min-w-[200px]">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-white/70">Loyalty Points</span>
-                  <Award className="h-4 w-4 text-yellow-400" />
-                </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">{loyaltyPoints.total}</span>
-                  <span className="text-xs text-white/70">points</span>
-                </div>
-                <div className="mt-2">
-                  <div className="flex justify-between text-[10px] text-white/70 mb-1">
-                    <span>To next reward</span>
-                    <span>{loyaltyPoints.nextReward - loyaltyPoints.total} points left</span>
-                  </div>
-                  <div className="w-full bg-white/20 rounded-full h-1.5">
-                    <div className="bg-yellow-400 h-1.5 rounded-full" style={{ width: `${(loyaltyPoints.total / loyaltyPoints.nextReward) * 100}%` }} />
-                  </div>
-                </div>
-              </div>
+                <p className="text-white/80 text-lg">Discover amazing events </p>
+              </div>   
             </div>
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6">
               <QuickStatBadge icon={Calendar} label="Member Since" value={new Date(stats.memberSince).toLocaleDateString()} />
               <QuickStatBadge icon={Ticket} label="Tickets Booked" value={stats.ticketsBooked} />
-              <QuickStatBadge icon={TrendingUp} label="Saved" value={`$${stats.savedAmount}`} />
               <QuickStatBadge icon={Heart} label="Favorite Genre" value={stats.favoriteGenre} />
             </div>
           </div>
@@ -391,18 +371,14 @@ const CustomerDashboard: React.FC = () => {
           <>
             {/* Stats Grid */}
             <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-              <StatCard title="Upcoming Shows" value={stats.upcomingShows} icon={Calendar} change="+2" trend="up" color="from-green-500 to-green-600" delay={0.1} dateRange="month" />
               <StatCard title="Points Earned" value={loyaltyPoints.thisMonth} icon={Star} change="+150" trend="up" color="from-yellow-500 to-yellow-600" delay={0.2} dateRange="month" />
-              <StatCard title="Total Spent" value={`$${stats.totalSpent}`} icon={DollarSign} change="+$45" trend="up" color="from-cyan-500 to-cyan-600" delay={0.3} dateRange="month" />
+              <StatCard title="Total Spent" value={`ETB ${stats.totalSpent}`} icon={Wallet} change="+ETB 45" trend="up" color="from-cyan-500 to-cyan-600" delay={0.3} dateRange="month" />
             </motion.div>
 
             {/* Upcoming Shows from Bookings */}
             <motion.div variants={itemVariants}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Your Upcoming Shows</h2>
-                <button onClick={() => setActiveTab('mybookings')} className="text-sm text-purple-600 hover:underline flex items-center gap-1">
-                  View All <ChevronRight className="h-4 w-4" />
-                </button>
+               
               </div>
               {bookings.filter(b => new Date(b.date) > new Date()).length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center text-gray-500">No upcoming shows. Browse events to book!</div>
@@ -437,79 +413,11 @@ const CustomerDashboard: React.FC = () => {
               )}
             </motion.div>
 
-            {/* Recommended & Analytics */}
-            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Recommended for You</h2>
-                <div className="space-y-4">
-                  {events.filter(e => e.isFeatured).slice(0, 3).map(event => (
-                    <div key={event.id} className="bg-white rounded-2xl p-4 shadow-lg border border-gray-200 flex gap-4">
-                      <img src={event.images.poster} alt={event.title} className="w-24 h-24 rounded-xl object-cover" />
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{event.title}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">{event.genre}</span>
-                          {event.rating && <div className="flex items-center gap-1"><Star className="h-3 w-3 text-yellow-400 fill-current" /><span className="text-xs text-gray-600">{event.rating}</span></div>}
-                        </div>
-                        <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{event.dates[0]?.date}</span>
-                          <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{event.venue}</span>
-                        </div>
-                        <button onClick={() => { setSelectedEvent(event); setIsBookingModalOpen(true); }} className="mt-2 px-3 py-1.5 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600">
-                          Book Now
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xl border border-gray-200">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Monthly Spending</h3>
-                <div className="h-[200px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={spendingData}>
-                      <defs><linearGradient id="spendingGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#7c3aed" stopOpacity={0.3} /><stop offset="95%" stopColor="#7c3aed" stopOpacity={0} /></linearGradient></defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                      <XAxis dataKey="month" stroke="#6B7280" tick={{ fontSize: 10 }} />
-                      <YAxis stroke="#6B7280" tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Area type="monotone" dataKey="amount" stroke="#7c3aed" strokeWidth={2} fill="url(#spendingGradient)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Recent Transactions & Genre Preferences */}
-            <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xl border border-gray-200">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
-                <div className="space-y-3">
-                  {bookings.slice(0, 4).map(booking => (
-                    <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-green-100"><CheckCircle className="h-4 w-4 text-green-600" /></div>
-                        <div><p className="text-sm font-medium text-gray-900">{booking.eventTitle}</p><p className="text-xs text-gray-500">{new Date(booking.bookingDate).toLocaleDateString()} • {booking.seats} tickets</p></div>
-                      </div>
-                      <div className="text-right"><p className="text-sm font-bold text-gray-900">${booking.totalAmount}</p><p className="text-xs text-gray-500">{booking.id.slice(0, 8)}</p></div>
-                    </div>
-                  ))}
-                  {bookings.length === 0 && <p className="text-center text-gray-500">No transactions yet.</p>}
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xl border border-gray-200">
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Your Genre Preferences</h3>
-                <div className="h-[200px]"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={genreData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" label>{genreData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip /></PieChart></ResponsiveContainer></div>
-                <div className="mt-4 grid grid-cols-2 gap-2">{genreData.map((genre, idx) => (<div key={idx} className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: genre.color }} /><span className="text-xs text-gray-600">{genre.name}</span><span className="text-xs font-semibold text-gray-900 ml-auto">{genre.value}%</span></div>))}</div>
-              </div>
-            </motion.div>
+           
 
             {/* Quick Actions */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
               <QuickActionButton icon={Ticket} text="Book Tickets" color="primary" onClick={() => setActiveTab('browse')} />
-              <QuickActionButton icon={Wallet} text="Add Funds" color="success" onClick={() => alert('Add funds feature coming soon')} />
-              <QuickActionButton icon={Gift} text="Redeem Points" color="warning" onClick={() => alert('Redeem points coming soon')} />
-              <QuickActionButton icon={Headphones} text="Support" color="info" onClick={() => alert('Contact support')} />
             </motion.div>
           </>
         )}
@@ -560,7 +468,7 @@ const CustomerDashboard: React.FC = () => {
                     <h3 className="font-bold text-lg">{event.title}</h3>
                     <p className="text-sm text-gray-600">{event.venue}</p>
                     {event.dates[0] && <p className="text-sm">{event.dates[0].date} at {event.dates[0].time}</p>}
-                    <p className="text-xs mt-1">💰 {event.priceRange.min} - {event.priceRange.max}</p>
+                    <p className="text-xs mt-1">💰 ETB {event.priceRange.min} - ETB {event.priceRange.max}</p>
                   </div>
                   <button onClick={() => { setSelectedEvent(event); setIsBookingModalOpen(true); }} className="bg-green-600 text-white px-5 py-2 rounded-full font-medium hover:bg-green-700">
                     Select & Book →
@@ -582,7 +490,7 @@ const CustomerDashboard: React.FC = () => {
                     <h3 className="font-bold text-xl">{booking.eventTitle}</h3>
                     <p className="text-gray-600">{booking.venue} | {booking.date} at {booking.time}</p>
                     <p className="text-sm">🎭 Seats: {booking.seats}</p>
-                    <p className="text-sm font-semibold">Total: ${booking.totalAmount} | Status: <span className={booking.status === 'confirmed' ? 'text-green-600' : 'text-red-500'}>{booking.status}</span></p>
+                    <p className="text-sm font-semibold">Total: ETB {booking.totalAmount} | Status: <span className={booking.status === 'confirmed' ? 'text-green-600' : 'text-red-500'}>{booking.status}</span></p>
                   </div>
                   <div className="flex gap-2">
                     {booking.status === 'confirmed' && (
@@ -681,4 +589,4 @@ const QuickStatBadge: React.FC<{ icon: React.ElementType; label: string; value: 
   </div>
 );
 
-export default CustomerDashboard;
+export default CustomerDashboard; 

@@ -1,7 +1,8 @@
 // src/pages/Owner/events/ManageEvent.tsx
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Calendar, Plus, Search, LayoutGrid, Clock, Activity, CheckCircle, XCircle, MapPin, Film, Eye, Edit, Ban, RefreshCw, Trash2 } from 'lucide-react';
+import { Calendar, Plus, Search, LayoutGrid, Clock, Activity, CheckCircle, XCircle, MapPin, Film, Eye, Edit, Ban, RefreshCw, Trash2, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom'; // ✅ correct routing Link
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
@@ -28,7 +29,7 @@ const itemVariants = {
   visible: { y: 0, opacity: 1 }
 };
 
-const CreateEvent: React.FC = () => {
+const CreateEventOverVIew: React.FC = () => {
   const [events, setEvents] = useState<EventData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -247,6 +248,16 @@ const CreateEvent: React.FC = () => {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Back Arrow - Top Left */}
+        <div className="mb-4">
+          <Link
+            to="/manager/dashboard"
+            className="inline-flex items-center justify-center p-2 rounded-lg bg-white shadow hover:bg-gray-50 transition"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3">
@@ -259,11 +270,11 @@ const CreateEvent: React.FC = () => {
             </div>
           </div>
         </div>
-
+            
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <StatCard title="Total Events" value={stats.total} icon={Calendar} color="from-teal-500 to-teal-600" />
-          <StatCard title="Upcoming" value={stats.upcoming} icon={Clock} color="from-blue-500 to-cyan-600" />
+          <StatCard title="Ongoing" value={stats.ongoing} icon={Activity} color="from-green-500 to-emerald-600" />
           <StatCard title="Completed" value={stats.completed} icon={CheckCircle} color="from-purple-500 to-pink-600" />
           <StatCard title="Cancelled" value={stats.cancelled} icon={XCircle} color="from-red-500 to-rose-600" />
         </div>
@@ -287,6 +298,7 @@ const CreateEvent: React.FC = () => {
               className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
             >
               <option value="all">All Status</option>
+              <option value="upcoming">Upcoming</option>
               <option value="ongoing">Ongoing</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
@@ -392,4 +404,4 @@ const CreateEvent: React.FC = () => {
   );
 };
 
-export default CreateEvent;
+export default CreateEventOverVIew;

@@ -1,9 +1,10 @@
 // src/pages/manager/TicketSalesDetails.tsx
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Ticket, TrendingUp } from 'lucide-react';
-import { Card } from '../../../components/Overview/Card';
+import { ArrowLeft, Ticket, TrendingUp, Download, Search, Filter } from 'lucide-react';
+import ReusableTable from '../../../components/Reusable/ReusableTable';
+import ReusableButton from '../../../components/Reusable/ReusableButton';
 
 interface ShowData {
   id: string;
@@ -26,6 +27,9 @@ const showsData: ShowData[] = [
   { id: '6', name: 'Les Misérables', sales: 45, capacity: 120, revenue: 2700, status: 'upcoming', time: '8:00 PM', date: '2026-05-01', hall: 'Broadway Hall' },
 ];
 
+// Extract unique hall names for filter
+const uniqueHalls = Array.from(new Set(showsData.map(show => show.hall)));
+
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1, transition: { staggerChildren: 0.05 } }
@@ -36,9 +40,66 @@ const itemVariants = {
 };
 
 const TicketSalesDetails: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedHall, setSelectedHall] = useState<string>('');
+
   const totalSold = showsData.reduce((sum, show) => sum + show.sales, 0);
   const totalCapacity = showsData.reduce((sum, show) => sum + show.capacity, 0);
   const totalFree = totalCapacity - totalSold;
+
+  // Prepare base data with computed 'free' field
+  const baseData = showsData.map(show => ({
+    id: show.id,
+    name: show.name,
+    hall: show.hall,
+    date: show.date,
+    sales: show.sales,
+    capacity: show.capacity,
+    free: show.capacity - show.sales
+  }));
+
+  // Apply filters: search by event name + filter by hall
+  const filteredData = useMemo(() => {
+    let filtered = baseData;
+    if (searchTerm.trim()) {
+      filtered = filtered.filter(item =>
+        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (selectedHall) {
+      filtered = filtered.filter(item => item.hall === selectedHall);
+    }
+    return filtered;
+  }, [searchTerm, selectedHall, baseData]);
+
+  const columns = [
+    { Header: 'Event', accessor: 'name', sortable: true },
+    { Header: 'Hall', accessor: 'hall', sortable: true },
+    { Header: 'Date', accessor: 'date', sortable: true },
+    {
+      Header: 'Sold',
+      accessor: 'sales',
+      sortable: true,
+      Cell: (row: any) => <span className="font-semibold text-teal-600">{row.sales}</span>
+    },
+    {
+      Header: 'Free',
+      accessor: 'free',
+      sortable: true,
+      Cell: (row: any) => <span className="font-semibold text-blue-600">{row.free}</span>
+    },
+    {
+      Header: 'Capacity',
+      accessor: 'capacity',
+      sortable: true,
+      Cell: (row: any) => <span className="text-gray-500">{row.capacity}</span>
+    }
+  ];
+
+  const handleExport = () => {
+    console.log('Export ticket sales data');
+    alert('Export functionality would be implemented here.');
+  };
 
   return (
     <motion.div
@@ -47,77 +108,91 @@ const TicketSalesDetails: React.FC = () => {
       variants={containerVariants}
       className="space-y-6 p-4 md:p-6 bg-gray-50 min-h-screen"
     >
-      {/* Header with back button */}
-      <motion.div variants={itemVariants} className="flex items-center gap-4">
-        <Link
-          to="/manager/overview"
-          className="p-2 rounded-lg bg-white shadow hover:bg-gray-50 transition"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-600" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Ticket Sales Details</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Breakdown of sold and free seats per event
-          </p>
+      {/* Header with back button and export */}
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link
+            to="/manager/dashboard"
+            className="p-2 rounded-lg bg-white shadow hover:bg-gray-50 transition"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Ticket Sales Details</h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Breakdown of sold and free seats per event
+            </p>
+          </div>
         </div>
       </motion.div>
 
-      {/* Summary Cards – only Sold and Free */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-        <Card className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Tickets Sold</p>
-              <p className="text-2xl font-bold text-teal-600">{totalSold.toLocaleString()}</p>
+      {/* Summary Cards – minimized width, centered */}
+      <motion.div variants={itemVariants} className="flex justify-center gap-5 flex-wrap">
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 w-64">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
+              <Ticket className="h-6 w-6 text-white" />
             </div>
-            <Ticket className="h-8 w-8 text-teal-200" />
-          </div>
-        </Card>
-        <Card className="bg-white rounded-xl shadow-sm p-4">
-          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Total Free Seats</p>
-              <p className="text-2xl font-bold text-blue-600">{totalFree.toLocaleString()}</p>
+              <p className="text-xs text-gray-500">Total Tickets Sold</p>
+              <p className="text-xl font-bold text-gray-900">{totalSold.toLocaleString()}</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-blue-200" />
           </div>
-        </Card>
+        </div>
+        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300 w-64">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-md">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-500">Total Free Seats</p>
+              <p className="text-xl font-bold text-gray-900">{totalFree.toLocaleString()}</p>
+            </div>
+          </div>
+        </div>
       </motion.div>
 
-      {/* Per‑event table – without Reserved column */}
+      {/* Filter row: search bar + hall dropdown, both centered and aligned */}
+      <motion.div variants={itemVariants} className="flex justify-center gap-4 flex-wrap">
+        {/* Search input */}
+        <div className="relative w-full max-w-md">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by event name..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 border-2 rounded-xl border-gray-200 focus:border-teal-500 focus:outline-none"
+          />
+        </div>
+
+        {/* Hall filter dropdown */}
+        <div className="relative w-full max-w-xs">
+          <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <select
+            value={selectedHall}
+            onChange={e => setSelectedHall(e.target.value)}
+            className="w-full pl-11 pr-4 py-3 border-2 rounded-xl border-gray-200 focus:border-teal-500 focus:outline-none appearance-none bg-white"
+          >
+            <option value="">All Halls</option>
+            {uniqueHalls.map(hall => (
+              <option key={hall} value={hall}>{hall}</option>
+            ))}
+          </select>
+        </div>
+      </motion.div>
+
+      {/* ReusableTable – internal search disabled */}
       <motion.div variants={itemVariants}>
-        <Card title="Per‑Event Seat Status" subtitle="Sold and free seats per event">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead className="border-b border-gray-200">
-                <tr>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Event</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Hall</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-500">Date</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Sold</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Free</th>
-                  <th className="text-right py-3 px-4 text-sm font-medium text-gray-500">Capacity</th>
-                </tr>
-              </thead>
-              <tbody>
-                {showsData.map((show) => {
-                  const free = show.capacity - show.sales;
-                  return (
-                    <tr key={show.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">{show.name}</td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{show.hall}</td>
-                      <td className="py-3 px-4 text-sm text-gray-500">{show.date}</td>
-                      <td className="py-3 px-4 text-right text-sm font-semibold text-teal-600">{show.sales}</td>
-                      <td className="py-3 px-4 text-right text-sm font-semibold text-blue-600">{free}</td>
-                      <td className="py-3 px-4 text-right text-sm text-gray-500">{show.capacity}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+        <ReusableTable
+          columns={columns}
+          data={filteredData}
+          title="Per‑Event Seat Status"
+          showSearch={false}
+          showExport={true}
+          showPrint={true}
+          itemsPerPage={10}
+        />
       </motion.div>
     </motion.div>
   );
