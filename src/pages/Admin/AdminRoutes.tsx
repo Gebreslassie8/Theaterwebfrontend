@@ -4,8 +4,8 @@ import { Navigate, Route } from "react-router-dom"; // Add Route to the import
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import AdminDashboard from "./AdminDashboard";
 import UserManagement from "./users/UserManagement";
-import WalletBalance from "../../components/wallet/WalletBalance";
-import Commission from "../../components/wallet/Commission";
+import WalletBalance from "./wallet/WalletBalance";
+import Commission from "./wallet/Commission";
 import TheaterManagement from "./theateres/Theatermanagement";
 import FinancialReports from "./financial/FinancialReports";
 
@@ -15,11 +15,9 @@ import SystemLogs from "./monitoring/SystemLogs";
 import Performance from "./monitoring/Performance";
 import ActivityLogs from "./monitoring/ActivityLogs";
 // Content Management Imports
-import ContactManagement from "./content/ContactManagement";
-import CustomerManagement from "./content/CustomerManagement";
-import GalleryManagement from "./content/GalleryManagement";
-import BlogManagement from "./content/BlogManagement";
-import HelpManagement from "./content/HelpManagement";
+import ContactManagement from "../../components/content/ContactManagement";
+import GalleryManagement from "../../components/content/GalleryManagement";
+import BlogManagement from "../../components/content/BlogManagement";
 
 // Protected Route Component
 export const AdminProtectedRoute: React.FC<{
@@ -75,10 +73,8 @@ export const getAdminRoutes = () => {
       <Route path="monitoring/performance" element={<Performance />} />
       <Route path="users/activity-logs" element={<ActivityLogs />} />
       <Route path="content/contacts" element={<ContactManagement />} />
-      <Route path="content/customers" element={<CustomerManagement />} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />
-      <Route path="content/help" element={<HelpManagement />} />
     </Route>
   );
 };
