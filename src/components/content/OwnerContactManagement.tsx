@@ -1,16 +1,15 @@
 // src/pages/Owner/content/OwnerContactManagement.tsx
-import React, { useState, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   Mail, Eye, Search, CheckCircle, Clock, Reply,
-  X, Send, Inbox,
-  Trash2, Filter, RefreshCw, User,
+  X, Inbox, Trash2, Filter, RefreshCw, User,
   Tag, MessageCircle, Theater,
-  Ticket, Phone, MapPin, Edit2, Settings, XCircle
+  Ticket, Phone, MapPin, Settings, XCircle
 } from 'lucide-react';
-import ReusableButton from '../../components/Reusable/ReusableButton';
 import ReusableTable from '../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../components/Reusable/SuccessPopup';
+import ReplyContactReusable from '../../components/content/ReplyContactReusable';
 
 // Types
 interface ContactMessage {
@@ -122,6 +121,102 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
   );
 };
 
+// Edit Contact Info Modal
+const EditContactInfoModal: React.FC<{
+  theaterInfo: TheaterInfo;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedInfo: TheaterInfo) => void;
+}> = ({ theaterInfo, isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState(theaterInfo);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      onSave(formData);
+      setIsSubmitting(false);
+      onClose();
+    }, 500);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white">Edit Theater Information</h2>
+            <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg transition">
+              <XCircle className="h-5 w-5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Theater Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input
+              type="text"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+        </div>
+
+        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancel</button>
+          <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // Mock data
 const mockMessages: ContactMessage[] = [
   {
@@ -224,123 +319,6 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-// Edit Contact Info Modal
-const EditContactInfoModal: React.FC<{
-  theaterInfo: TheaterInfo;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (updatedInfo: TheaterInfo) => void;
-}> = ({ theaterInfo, isOpen, onClose, onSave }) => {
-  const [formData, setFormData] = useState(theaterInfo);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      onSave(formData);
-      setIsSubmitting(false);
-      onClose();
-    }, 500);
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">Edit Theater Information</h2>
-            <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg transition">
-              <XCircle className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Theater Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input
-              type="text"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-            />
-          </div>
-
-          <div className="border-t pt-4 mt-2">
-            <h3 className="font-semibold text-gray-900 mb-3">Social Media Links</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {Object.entries(formData.socialMedia).map(([key, value]) => (
-                <div key={key}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">{key}</label>
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => setFormData({
-                      ...formData,
-                      socialMedia: { ...formData.socialMedia, [key]: e.target.value }
-                    })}
-                    placeholder={`https://${key}.com/yourpage`}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">Cancel</button>
-          <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
 const OwnerContactManagement: React.FC = () => {
   const theaterId = '1';
   const theaterName = 'Grand Theater';
@@ -355,11 +333,9 @@ const OwnerContactManagement: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'view' | 'reply'>('view');
-  const [replyContent, setReplyContent] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const filteredMessages = useMemo(() => {
     return messages.filter(m => {
@@ -385,26 +361,23 @@ const OwnerContactManagement: React.FC = () => {
     }
   }, []);
 
-  const handleSendReply = useCallback(() => {
-    if (selectedMessage && replyContent.trim()) {
-      setMessages(prev => prev.map(m => m.id === selectedMessage.id ? {
+  const handleReply = useCallback((messageId: string, replyContent: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? {
         ...m,
         status: 'replied',
         repliedAt: new Date().toISOString(),
         replyMessage: replyContent,
         repliedBy: 'Theater Owner'
-      } : m));
-      setShowModal(false);
-      setReplyContent('');
-      setSelectedMessage(null);
-      setPopupMessage({
-        title: '✓ Reply Sent',
-        message: `Your reply has been sent to ${selectedMessage.name}`,
-        type: 'success'
-      });
-      setShowSuccessPopup(true);
-    }
-  }, [selectedMessage, replyContent]);
+      } : m
+    ));
+    setPopupMessage({
+      title: '✓ Reply Sent',
+      message: `Your reply has been sent successfully`,
+      type: 'success'
+    });
+    setShowSuccessPopup(true);
+  }, []);
 
   const handleDelete = useCallback(() => {
     if (selectedMessage) {
@@ -435,18 +408,6 @@ const OwnerContactManagement: React.FC = () => {
     setModalMode('view');
     setShowModal(true);
     if (message.status === 'unread') handleMarkAsRead(message);
-  };
-
-  const openReplyModal = (message: ContactMessage) => {
-    setSelectedMessage(message);
-    setModalMode('reply');
-    setReplyContent('');
-    setShowModal(true);
-    setTimeout(() => {
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-      }
-    }, 100);
   };
 
   const resetFilters = () => {
@@ -505,20 +466,23 @@ const OwnerContactManagement: React.FC = () => {
       sortable: false,
       Cell: (row: ContactMessage) => (
         <div className="flex items-center gap-2">
+          {/* View Button */}
           <button
             onClick={() => openViewModal(row)}
             className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-            title="View"
+            title="View Details"
           >
             <Eye className="h-4 w-4 text-blue-600" />
           </button>
-          <button
-            onClick={() => openReplyModal(row)}
-            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-            title="Reply"
-          >
-            <Reply className="h-4 w-4 text-green-600" />
-          </button>
+
+          {/* Reply Button - Using Reusable Component */}
+          <ReplyContactReusable
+            message={row}
+            onReply={handleReply}
+            theaterName={theaterName}
+          />
+
+          {/* Delete Button */}
           <button
             onClick={() => { setSelectedMessage(row); setShowDeleteConfirm(true); }}
             className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
@@ -590,9 +554,6 @@ const OwnerContactManagement: React.FC = () => {
           )}
 
           <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <button onClick={() => { setShowModal(false); openReplyModal(selectedMessage!); }} className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
-              Reply
-            </button>
             <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
               Close
             </button>
@@ -601,87 +562,6 @@ const OwnerContactManagement: React.FC = () => {
       </div>
     </div>
   );
-
-  // Reply Modal - Fixed typing functionality
-  const ReplyModal = () => {
-    // Handle textarea change
-    const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setReplyContent(e.target.value);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-        <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-100 rounded-lg">
-                <Reply className="h-5 w-5 text-emerald-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Reply to {selectedMessage?.name}</h2>
-                <p className="text-xs text-gray-500">Write your response below</p>
-              </div>
-            </div>
-            <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-              <X className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
-
-          <div className="p-6 space-y-5">
-            {/* Message Textarea - Fixed typing */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Message <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                ref={textareaRef}
-                value={replyContent}
-                onChange={handleReplyChange}
-                rows={12}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-y font-sans"
-                placeholder="Type your reply here..."
-                autoFocus
-              />
-            </div>
-
-            {/* Original Message Reference */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <p className="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1">
-                <Mail className="h-3 w-3" />
-                Original Message
-              </p>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-                <User className="h-3 w-3" />
-                <span>{selectedMessage?.name}</span>
-                <span>•</span>
-                <Tag className="h-3 w-3" />
-                <span>{selectedMessage?.subject}</span>
-              </div>
-              <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedMessage?.message}</p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
-              <button 
-                onClick={() => setShowModal(false)} 
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSendReply} 
-                disabled={!replyContent.trim()} 
-                className="flex-1 px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-              >
-                <Send className="h-4 w-4" />
-                Send Reply
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <motion.div
@@ -734,13 +614,13 @@ const OwnerContactManagement: React.FC = () => {
                 placeholder="Search by name, email, subject..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none"
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 outline-none"
             >
               <option value="all">All Status</option>
               <option value="unread">Unread</option>
@@ -750,7 +630,7 @@ const OwnerContactManagement: React.FC = () => {
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 outline-none"
             >
               <option value="all">All Categories</option>
               <option value="general">General</option>
@@ -780,7 +660,6 @@ const OwnerContactManagement: React.FC = () => {
 
         {/* Modals */}
         {showModal && modalMode === 'view' && <ViewModal />}
-        {showModal && modalMode === 'reply' && <ReplyModal />}
         
         <EditContactInfoModal
           theaterInfo={theaterInfo}
