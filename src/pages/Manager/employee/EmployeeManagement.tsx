@@ -461,8 +461,6 @@ const EmployeeManagement: React.FC = () => {
         { title: 'Total Employees', value: stats.totalEmployees, icon: UsersRound, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/manager/employees' },
         { title: 'Active Employees', value: stats.activeEmployees, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/manager/employees?status=active' },
         { title: 'Inactive', value: stats.inactiveEmployees, icon: UserX, color: 'from-red-500 to-rose-600', delay: 0.2, link: '/manager/employees?status=inactive' },
-        { title: 'On Leave', value: stats.onLeaveEmployees, icon: Clock, color: 'from-yellow-500 to-orange-600', delay: 0.22, link: '/manager/employees?status=onleave' },
-        { title: 'Total Payroll', value: `Br ${stats.totalPayroll.toLocaleString()}`, icon: CoinsIcon, color: 'from-purple-500 to-pink-600', delay: 0.25 },
     ];
 
     return (
@@ -517,7 +515,6 @@ const EmployeeManagement: React.FC = () => {
                             <option value="all">All Status</option>
                             <option value="Active">Active</option>
                             <option value="Inactive">Inactive</option>
-                            <option value="On Leave">On Leave</option>
                         </select>
                     </div>
                     <ReusableButton
