@@ -1,13 +1,13 @@
-// src/pages/Admin/content/ContactManagement.tsx
+// src/pages/Owner/content/OwnerContactManagement.tsx
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Mail, Eye, Search, CheckCircle, Clock, Reply, Archive,
-  X, Send, Inbox, MailOpen, Archive as ArchiveIcon,
+  Mail, Eye, Search, CheckCircle, Clock, Reply,
+  X, Send, Inbox, MailOpen,
   Trash2, Filter, RefreshCw, User, AtSign, Calendar,
-  PhoneCall, Star, AlertCircle, Tag, Users, DollarSign,
-  Ticket, Briefcase, MessageCircle, UserCog, Theater,
-  ChevronDown
+  PhoneCall, Star, AlertCircle, Tag, MessageCircle, Theater,
+  Ticket, Phone, MapPin, Globe, Info, ExternalLink, Facebook, Instagram,
+  Twitter, Linkedin, Youtube, Edit2, Save, Settings, Music, XCircle
 } from 'lucide-react';
 import ReusableButton from '../../components/Reusable/ReusableButton';
 import ReusableTable from '../../components/Reusable/ReusableTable';
@@ -22,9 +22,9 @@ interface ContactMessage {
   subject: string;
   message: string;
   category: string;
-  recipientType: 'admin' | 'theater';
-  theaterId?: string;
-  theaterName?: string;
+  recipientType: 'theater';
+  theaterId: string;
+  theaterName: string;
   status: 'read' | 'unread' | 'replied' | 'archived';
   createdAt: string;
   repliedAt?: string;
@@ -32,142 +32,23 @@ interface ContactMessage {
   repliedBy?: string;
 }
 
-// Mock data with recipient types
-const initialMessages: ContactMessage[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@example.com',
-    phone: '+251911234567',
-    subject: 'Technical Issue with Platform',
-    message: 'The website is not loading properly on my mobile device.',
-    category: 'technical',
-    recipientType: 'admin',
-    status: 'unread',
-    createdAt: '2024-04-15T10:30:00'
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '+251912345678',
-    subject: 'Question about Hamilton Show',
-    message: 'I want to book tickets for Hamilton. Is there a group discount?',
-    category: 'booking',
-    recipientType: 'theater',
-    theaterId: '1',
-    theaterName: 'Grand Theater',
-    status: 'unread',
-    createdAt: '2024-04-14T14:20:00'
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    email: 'michael@example.com',
-    phone: '+251913456789',
-    subject: 'Refund Request for Cancelled Show',
-    message: 'I need a refund for my cancelled show tickets.',
-    category: 'payment',
-    recipientType: 'admin',
-    status: 'replied',
-    createdAt: '2024-04-13T09:15:00',
-    repliedAt: '2024-04-13T11:00:00',
-    replyMessage: 'Your refund has been processed. It will reflect in 3-5 business days.',
-    repliedBy: 'Admin'
-  },
-  {
-    id: '4',
-    name: 'Emily Wilson',
-    email: 'emily@example.com',
-    phone: '+251914567890',
-    subject: 'Parking Information',
-    message: 'What is the parking situation at Grand Theater?',
-    category: 'general',
-    recipientType: 'theater',
-    theaterId: '1',
-    theaterName: 'Grand Theater',
-    status: 'read',
-    createdAt: '2024-04-12T16:45:00'
-  },
-  {
-    id: '5',
-    name: 'David Brown',
-    email: 'david@example.com',
-    phone: '+251915678901',
-    subject: 'Partnership Opportunity',
-    message: 'We would like to partner with your platform for events.',
-    category: 'partnership',
-    recipientType: 'admin',
-    status: 'archived',
-    createdAt: '2024-04-11T11:30:00'
-  },
-  {
-    id: '6',
-    name: 'Lisa Anderson',
-    email: 'lisa@example.com',
-    phone: '+251916789012',
-    subject: 'Booking for Corporate Event',
-    message: 'We need to book Star Multiplex for our company event.',
-    category: 'booking',
-    recipientType: 'theater',
-    theaterId: '2',
-    theaterName: 'Star Multiplex',
-    status: 'unread',
-    createdAt: '2024-04-16T08:20:00'
-  }
-];
-
-// Helper functions
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-};
-
-const getCategoryBadge = (category: string) => {
-  const config: Record<string, { color: string; label: string }> = {
-    general: { color: 'bg-gray-100 text-gray-700', label: 'General' },
-    booking: { color: 'bg-blue-100 text-blue-700', label: 'Booking' },
-    payment: { color: 'bg-yellow-100 text-yellow-700', label: 'Payment' },
-    technical: { color: 'bg-orange-100 text-orange-700', label: 'Technical' },
-    feedback: { color: 'bg-green-100 text-green-700', label: 'Feedback' },
-    partnership: { color: 'bg-purple-100 text-purple-700', label: 'Partnership' }
+interface TheaterInfo {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  description: string;
+  socialMedia: {
+    facebook: string;
+    twitter: string;
+    instagram: string;
+    linkedin: string;
+    youtube: string;
+    telegram: string;
+    tiktok: string;
   };
-  const c = config[category] || config.general;
-  return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}>{c.label}</span>;
-};
-
-const getRecipientBadge = (recipientType: string, theaterName?: string) => {
-  if (recipientType === 'admin') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-        <UserCog className="h-3 w-3" /> System Admin
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
-      <Theater className="h-3 w-3" /> {theaterName || 'Theater Owner'}
-    </span>
-  );
-};
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'unread':
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><Clock className="h-3 w-3" /> Unread</span>;
-    case 'read':
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"><Eye className="h-3 w-3" /> Read</span>;
-    case 'replied':
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Replied</span>;
-    default:
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"><ArchiveIcon className="h-3 w-3" /> Archived</span>;
-  }
-};
+}
 
 // Animation variants
 const containerVariants = {
@@ -242,52 +123,329 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
   );
 };
 
-// Quick Templates for Admin
-const adminTemplates = [
+// Mock data
+const mockMessages: ContactMessage[] = [
   {
-    label: 'Technical Support',
-    template: (name: string) => `Dear ${name},
-
-Thank you for reporting this technical issue. Our team is investigating and will resolve it shortly.
-
-Best regards,
-Technical Support Team`
+    id: '1',
+    name: 'Sarah Johnson',
+    email: 'sarah@example.com',
+    phone: '+251912345678',
+    subject: 'Question about Hamilton Show',
+    message: 'I want to book tickets for Hamilton. Is there a group discount?',
+    category: 'booking',
+    recipientType: 'theater',
+    theaterId: '1',
+    theaterName: 'Grand Theater',
+    status: 'unread',
+    createdAt: '2024-04-14T14:20:00'
   },
   {
-    label: 'Payment Issue',
-    template: (name: string) => `Dear ${name},
-
-I apologize for the payment issue you experienced. I've forwarded this to our payment processing team for immediate review.
-
-Best regards,
-Support Team`
-  },
-  {
-    label: 'Partnership',
-    template: (name: string) => `Dear ${name},
-
-Thank you for your interest in partnering with us. I'll connect you with our partnerships team.
-
-Best regards,
-Partnerships Coordinator`
-  },
-  {
-    label: 'General Response',
-    template: (name: string) => `Dear ${name},
-
-Thank you for your message. I'll look into this and get back to you shortly.
-
-Best regards,
-Customer Support Team`
+    id: '2',
+    name: 'Emily Wilson',
+    email: 'emily@example.com',
+    phone: '+251914567890',
+    subject: 'Parking Information',
+    message: 'What is the parking situation at Grand Theater?',
+    category: 'general',
+    recipientType: 'theater',
+    theaterId: '1',
+    theaterName: 'Grand Theater',
+    status: 'replied',
+    createdAt: '2024-04-12T16:45:00',
+    repliedAt: '2024-04-12T17:30:00',
+    replyMessage: 'Dear Emily, we have valet parking available. The cost is 50 ETB.',
+    repliedBy: 'Theater Owner'
   }
 ];
 
-const ContactManagement: React.FC = () => {
-  const [messages, setMessages] = useState<ContactMessage[]>(initialMessages);
+// Mock theater info
+const mockTheaterInfo: TheaterInfo = {
+  id: '1',
+  name: 'Grand Theater',
+  phone: '+251 911 234 567',
+  email: 'info@grandtheater.com',
+  address: 'Bole Road, Addis Ababa, Ethiopia',
+  description: 'Premier cinema in Bole area with luxury seating and state-of-the-art sound system.',
+  socialMedia: {
+    facebook: 'https://facebook.com/grandtheater',
+    twitter: 'https://twitter.com/grandtheater',
+    instagram: 'https://instagram.com/grandtheater',
+    linkedin: 'https://linkedin.com/company/grandtheater',
+    youtube: 'https://youtube.com/grandtheater',
+    telegram: 'https://t.me/grandtheater',
+    tiktok: 'https://tiktok.com/@grandtheater'
+  }
+};
+
+// Helper functions
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+const getCategoryBadge = (category: string) => {
+  const config: Record<string, { color: string; label: string }> = {
+    general: { color: 'bg-gray-100 text-gray-700', label: 'General' },
+    booking: { color: 'bg-blue-100 text-blue-700', label: 'Booking' },
+    payment: { color: 'bg-yellow-100 text-yellow-700', label: 'Payment' },
+    technical: { color: 'bg-orange-100 text-orange-700', label: 'Technical' },
+    feedback: { color: 'bg-green-100 text-green-700', label: 'Feedback' }
+  };
+  const c = config[category] || config.general;
+  return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}>{c.label}</span>;
+};
+
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case 'unread':
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><Clock className="h-3 w-3" /> Unread</span>;
+    case 'read':
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"><Eye className="h-3 w-3" /> Read</span>;
+    case 'replied':
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Replied</span>;
+    default:
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Archived</span>;
+  }
+};
+
+// Edit Contact Info Modal
+const EditContactInfoModal: React.FC<{
+  theaterInfo: TheaterInfo;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedInfo: TheaterInfo) => void;
+}> = ({ theaterInfo, isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState(theaterInfo);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = () => {
+    setIsSubmitting(true);
+    setTimeout(() => {
+      onSave(formData);
+      setIsSubmitting(false);
+      onClose();
+    }, 500);
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+      >
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-bold text-white">Edit Theater Information</h2>
+            <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg transition">
+              <XCircle className="h-5 w-5 text-white" />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Theater Name</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+            <input
+              type="text"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+
+          <div className="border-t pt-4 mt-2">
+            <h3 className="font-semibold text-gray-900 mb-3">Social Media Links</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(formData.socialMedia).map(([key, value]) => (
+                <div key={key}>
+                  <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">{key}</label>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      socialMedia: { ...formData.socialMedia, [key]: e.target.value }
+                    })}
+                    placeholder={`https://${key}.com/yourpage`}
+                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+          <ReusableButton variant="secondary" onClick={onClose}>Cancel</ReusableButton>
+          <ReusableButton onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Changes'}
+          </ReusableButton>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+// Social Media Links Component
+interface SocialMediaLinksProps {
+  socialMedia: TheaterInfo['socialMedia'];
+  onEdit?: () => void;
+}
+
+const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({ socialMedia, onEdit }) => {
+  const socialLinks = [
+    { key: 'facebook' as const, icon: Facebook, label: 'Facebook', color: '#1877F2' },
+    { key: 'twitter' as const, icon: Twitter, label: 'Twitter', color: '#1DA1F2' },
+    { key: 'instagram' as const, icon: Instagram, label: 'Instagram', color: '#E4405F' },
+    { key: 'linkedin' as const, icon: Linkedin, label: 'LinkedIn', color: '#0A66C2' },
+    { key: 'youtube' as const, icon: Youtube, label: 'YouTube', color: '#FF0000' },
+    { key: 'telegram' as const, icon: Send, label: 'Telegram', color: '#0088cc' },
+    { key: 'tiktok' as const, icon: Music, label: 'TikTok', color: '#000000' }
+  ];
+
+  return (
+    <div className="relative">
+      {onEdit && (
+        <button
+          onClick={onEdit}
+          className="absolute top-0 right-0 p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition"
+          title="Edit Social Media Links"
+        >
+          <Edit2 className="h-3 w-3 text-gray-600" />
+        </button>
+      )}
+      <div className="flex flex-wrap gap-3">
+        {socialLinks.map((social) => {
+          const Icon = social.icon;
+          const url = socialMedia[social.key];
+          if (!url) return null;
+          return (
+            <a
+              key={social.key}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-10 h-10 flex items-center justify-center rounded-xl text-white transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-md hover:shadow-lg"
+              style={{ backgroundColor: social.color }}
+              aria-label={social.label}
+            >
+              <Icon className="h-5 w-5" />
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// Quick Templates
+const ownerTemplates = [
+  {
+    label: 'Booking Inquiry',
+    template: (name: string, theaterName: string) => `Dear ${name},
+
+Thank you for your interest in ${theaterName}. I'd be happy to help with your booking request.
+
+Please let me know:
+- Preferred date and time
+- Number of tickets
+- Any special requirements
+
+Best regards,
+${theaterName} Management`
+  },
+  {
+    label: 'General Response',
+    template: (name: string, theaterName: string) => `Dear ${name},
+
+Thank you for reaching out to ${theaterName}. I will look into this and get back to you shortly.
+
+Best regards,
+${theaterName} Management`
+  },
+  {
+    label: 'Parking Information',
+    template: (name: string, theaterName: string) => `Dear ${name},
+
+Thank you for your inquiry about parking at ${theaterName}. Here is the parking information:
+
+📍 Valet parking available: 50 ETB
+📍 Self-parking: Free (limited spaces)
+📍 Street parking available nearby
+
+Best regards,
+${theaterName} Management`
+  },
+  {
+    label: 'Ticket Pricing',
+    template: (name: string, theaterName: string) => `Dear ${name},
+
+Thank you for your interest in our shows at ${theaterName}. Our current ticket prices are:
+
+🎭 Regular: 150 ETB
+🎭 VIP: 300 ETB
+🎭 Groups (10+): 10% discount
+
+Best regards,
+${theaterName} Management`
+  }
+];
+
+const OwnerContactManagement: React.FC = () => {
+  const theaterId = '1';
+  const theaterName = 'Grand Theater';
+  const [theaterInfo, setTheaterInfo] = useState<TheaterInfo>(mockTheaterInfo);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [messages, setMessages] = useState<ContactMessage[]>(
+    mockMessages.filter(m => m.theaterId === theaterId)
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterCategory, setFilterCategory] = useState<string>('all');
-  const [filterRecipient, setFilterRecipient] = useState<string>('all');
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'view' | 'reply'>('view');
@@ -304,19 +462,15 @@ const ContactManagement: React.FC = () => {
         m.subject.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === 'all' || m.status === filterStatus;
       const matchesCategory = filterCategory === 'all' || m.category === filterCategory;
-      const matchesRecipient = filterRecipient === 'all' || m.recipientType === filterRecipient;
-      return matchesSearch && matchesStatus && matchesCategory && matchesRecipient;
+      return matchesSearch && matchesStatus && matchesCategory;
     });
-  }, [messages, searchTerm, filterStatus, filterCategory, filterRecipient]);
+  }, [messages, searchTerm, filterStatus, filterCategory]);
 
   const stats = useMemo(() => ({
     total: messages.length,
     unread: messages.filter(m => m.status === 'unread').length,
-    adminMessages: messages.filter(m => m.recipientType === 'admin').length,
-    theaterMessages: messages.filter(m => m.recipientType === 'theater').length,
     booking: messages.filter(m => m.category === 'booking').length,
-    payment: messages.filter(m => m.category === 'payment').length,
-    partnership: messages.filter(m => m.category === 'partnership').length,
+    general: messages.filter(m => m.category === 'general').length,
   }), [messages]);
 
   const handleMarkAsRead = useCallback((message: ContactMessage) => {
@@ -338,7 +492,7 @@ const ContactManagement: React.FC = () => {
         status: 'replied',
         repliedAt: new Date().toISOString(),
         replyMessage: replyContent,
-        repliedBy: 'Admin'
+        repliedBy: 'Theater Owner'
       } : m));
       setShowModal(false);
       setReplyContent('');
@@ -351,16 +505,6 @@ const ContactManagement: React.FC = () => {
       setShowSuccessPopup(true);
     }
   }, [selectedMessage, replyContent]);
-
-  const handleArchive = useCallback((message: ContactMessage) => {
-    setMessages(prev => prev.map(m => m.id === message.id ? { ...m, status: 'archived' } : m));
-    setPopupMessage({
-      title: 'Archived',
-      message: `Message from ${message.name} archived`,
-      type: 'success'
-    });
-    setShowSuccessPopup(true);
-  }, []);
 
   const handleDelete = useCallback(() => {
     if (selectedMessage) {
@@ -376,14 +520,24 @@ const ContactManagement: React.FC = () => {
     }
   }, [selectedMessage]);
 
-  const handleTemplateClick = (templateGenerator: (name: string) => string) => {
+  const handleTemplateClick = (templateGenerator: (name: string, theaterName: string) => string) => {
     if (selectedMessage) {
-      const template = templateGenerator(selectedMessage.name);
+      const template = templateGenerator(selectedMessage.name, theaterName);
       setReplyContent(template);
       setTimeout(() => {
         textareaRef.current?.focus();
       }, 50);
     }
+  };
+
+  const handleSaveTheaterInfo = (updatedInfo: TheaterInfo) => {
+    setTheaterInfo(updatedInfo);
+    setPopupMessage({
+      title: 'Success!',
+      message: 'Theater information updated successfully',
+      type: 'success'
+    });
+    setShowSuccessPopup(true);
   };
 
   const openViewModal = (message: ContactMessage) => {
@@ -396,7 +550,17 @@ const ContactManagement: React.FC = () => {
   const openReplyModal = (message: ContactMessage) => {
     setSelectedMessage(message);
     setModalMode('reply');
-    setReplyContent('');
+    let defaultTemplate = '';
+    if (message.category === 'booking') {
+      defaultTemplate = ownerTemplates[0].template(message.name, theaterName);
+    } else if (message.subject?.toLowerCase().includes('parking')) {
+      defaultTemplate = ownerTemplates[2].template(message.name, theaterName);
+    } else if (message.subject?.toLowerCase().includes('price') || message.subject?.toLowerCase().includes('ticket')) {
+      defaultTemplate = ownerTemplates[3].template(message.name, theaterName);
+    } else {
+      defaultTemplate = ownerTemplates[1].template(message.name, theaterName);
+    }
+    setReplyContent(defaultTemplate);
     setShowModal(true);
   };
 
@@ -404,15 +568,13 @@ const ContactManagement: React.FC = () => {
     setSearchTerm('');
     setFilterStatus('all');
     setFilterCategory('all');
-    setFilterRecipient('all');
   };
 
   const statsCards = [
-    { title: 'Total Messages', value: stats.total, icon: Inbox, color: 'from-purple-500 to-purple-600', delay: 0.1, notification: true, notificationCount: stats.total },
+    { title: 'Total Messages', value: stats.total, icon: Inbox, color: 'from-teal-500 to-teal-600', delay: 0.1, notification: true, notificationCount: stats.total },
     { title: 'Unread', value: stats.unread, icon: Mail, color: 'from-red-500 to-red-600', delay: 0.15, notification: true, notificationCount: stats.unread },
-    { title: 'To Admin', value: stats.adminMessages, icon: UserCog, color: 'from-indigo-500 to-indigo-600', delay: 0.2, notification: true, notificationCount: stats.adminMessages },
-    { title: 'To Theaters', value: stats.theaterMessages, icon: Theater, color: 'from-teal-500 to-teal-600', delay: 0.25, notification: true, notificationCount: stats.theaterMessages },
-    { title: 'Partnership', value: stats.partnership, icon: Users, color: 'from-green-500 to-green-600', delay: 0.3, notification: true, notificationCount: stats.partnership }
+    { title: 'Booking Inquiries', value: stats.booking, icon: Ticket, color: 'from-blue-500 to-blue-600', delay: 0.2, notification: true, notificationCount: stats.booking },
+    { title: 'General Inquiries', value: stats.general, icon: MessageCircle, color: 'from-green-500 to-green-600', delay: 0.25, notification: true, notificationCount: stats.general }
   ];
 
   const columns = [
@@ -439,12 +601,6 @@ const ContactManagement: React.FC = () => {
           </div>
         </div>
       )
-    },
-    {
-      Header: 'Recipient',
-      accessor: 'recipientType',
-      sortable: true,
-      Cell: (row: ContactMessage) => getRecipientBadge(row.recipientType, row.theaterName)
     },
     {
       Header: 'Received',
@@ -479,13 +635,6 @@ const ContactManagement: React.FC = () => {
             <Reply className="h-4 w-4 text-green-600" />
           </button>
           <button
-            onClick={() => handleArchive(row)}
-            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-            title="Archive"
-          >
-            <ArchiveIcon className="h-4 w-4 text-gray-600" />
-          </button>
-          <button
             onClick={() => { setSelectedMessage(row); setShowDeleteConfirm(true); }}
             className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
             title="Delete"
@@ -508,7 +657,7 @@ const ContactManagement: React.FC = () => {
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Message Details</h2>
-              <p className="text-xs text-gray-500">From: {selectedMessage?.name}</p>
+              <p className="text-xs text-gray-500">Customer Inquiry</p>
             </div>
           </div>
           <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
@@ -535,14 +684,6 @@ const ContactManagement: React.FC = () => {
               <p className="text-xs text-gray-500 uppercase mb-1">Category</p>
               {selectedMessage && getCategoryBadge(selectedMessage.category)}
             </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase mb-1">Recipient</p>
-              {selectedMessage && getRecipientBadge(selectedMessage.recipientType, selectedMessage.theaterName)}
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase mb-1">Status</p>
-              {selectedMessage && getStatusBadge(selectedMessage.status)}
-            </div>
           </div>
 
           <div>
@@ -559,10 +700,7 @@ const ContactManagement: React.FC = () => {
                 <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Your Reply</p>
               </div>
               <p className="text-sm text-green-800 whitespace-pre-wrap leading-relaxed">{selectedMessage.replyMessage}</p>
-              <div className="flex justify-between items-center mt-3 pt-2 border-t border-green-200">
-                <p className="text-xs text-green-600">Sent on {selectedMessage.repliedAt && formatDate(selectedMessage.repliedAt)}</p>
-                <p className="text-xs text-green-600">By: {selectedMessage.repliedBy || 'Admin'}</p>
-              </div>
+              <p className="text-xs text-green-600 mt-2">Sent on {selectedMessage.repliedAt && formatDate(selectedMessage.repliedAt)}</p>
             </div>
           )}
 
@@ -585,8 +723,8 @@ const ContactManagement: React.FC = () => {
               <Reply className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Reply to {selectedMessage?.name}</h2>
-              <p className="text-xs text-gray-500">Compose your response</p>
+              <h2 className="text-xl font-bold text-gray-900">Reply to Customer</h2>
+              <p className="text-xs text-gray-500">Respond to {selectedMessage?.name}</p>
             </div>
           </div>
           <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
@@ -605,12 +743,6 @@ const ContactManagement: React.FC = () => {
                 ref={textareaRef}
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={`Dear ${selectedMessage?.name},
-
-Thank you for your message. I am happy to assist you with your inquiry.
-
-Best regards,
-Customer Support Team`}
                 rows={10}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-y"
               />
@@ -623,7 +755,7 @@ Customer Support Team`}
                 Quick Templates
               </p>
               <div className="flex flex-wrap gap-2">
-                {adminTemplates.map((template, idx) => (
+                {ownerTemplates.map((template, idx) => (
                   <button
                     key={idx}
                     type="button"
@@ -634,6 +766,59 @@ Customer Support Team`}
                   </button>
                 ))}
               </div>
+              <p className="text-xs text-gray-400 mt-3">Click a template to auto-fill the message</p>
+            </div>
+
+            {/* Theater Contact Information with Edit Button */}
+            <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl p-4 border border-teal-200 relative">
+              <button
+                onClick={() => setShowEditModal(true)}
+                className="absolute top-3 right-3 p-1.5 rounded-lg bg-white hover:bg-gray-100 transition shadow-sm"
+                title="Edit Theater Information"
+              >
+                <Edit2 className="h-4 w-4 text-teal-600" />
+              </button>
+              <div className="flex items-center gap-2 mb-3">
+                <Theater className="h-4 w-4 text-teal-600" />
+                <p className="text-sm font-semibold text-teal-700">Theater Contact Information</p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-4 w-4 text-teal-500" />
+                  <span>{theaterInfo.phone}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-4 w-4 text-teal-500" />
+                  <span>{theaterInfo.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-4 w-4 text-teal-500" />
+                  <span>{theaterInfo.address}</span>
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  <p className="text-xs text-teal-600 font-medium mb-1">About</p>
+                  <p>{theaterInfo.description}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Social Media Links with Edit Button */}
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-purple-600" />
+                  <p className="text-sm font-semibold text-purple-700">Connect With Us</p>
+                </div>
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="p-1.5 rounded-lg bg-white hover:bg-gray-100 transition shadow-sm"
+                  title="Edit Social Media Links"
+                >
+                  <Edit2 className="h-3 w-3 text-purple-600" />
+                </button>
+              </div>
+              <SocialMediaLinks socialMedia={theaterInfo.socialMedia} />
+              <p className="text-xs text-gray-500 mt-3">Follow us for updates, offers, and events</p>
             </div>
 
             {/* Original Message Section */}
@@ -643,19 +828,9 @@ Customer Support Team`}
                 Original Message:
               </p>
               <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <User className="h-3 w-3 text-gray-400 mt-0.5" />
-                  <p className="text-xs text-gray-600">From: {selectedMessage?.name} ({selectedMessage?.email})</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <AtSign className="h-3 w-3 text-gray-400 mt-0.5" />
-                  <p className="text-xs text-gray-600">Subject: {selectedMessage?.subject}</p>
-                </div>
-                <div className="mt-3 pt-3 border-t border-sky-200">
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {selectedMessage?.message}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {selectedMessage?.message}
+                </p>
               </div>
             </div>
 
@@ -682,8 +857,22 @@ Customer Support Team`}
       variants={containerVariants}
       className="space-y-8 p-6 bg-gray-50 min-h-screen"
     >
+      {/* Header with Edit Button */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
+            <Theater className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Customer Messages</h1>
+            <p className="text-sm text-gray-500 mt-1">Manage customer inquiries for {theaterName}</p>
+          </div>
+        </div>
+        <ReusableButton onClick={() => setShowEditModal(true)} icon={Settings} label="Edit Theater Info" />
+      </div>
+
       {/* Stats Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
         {statsCards.map((card, index) => (
           <StatCard
             key={index}
@@ -712,15 +901,6 @@ Customer Support Team`}
             />
           </div>
           <select
-            value={filterRecipient}
-            onChange={(e) => setFilterRecipient(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-          >
-            <option value="all">All Recipients</option>
-            <option value="admin">System Admin</option>
-            <option value="theater">Theater Owners</option>
-          </select>
-          <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
             className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
@@ -729,7 +909,6 @@ Customer Support Team`}
             <option value="unread">Unread</option>
             <option value="read">Read</option>
             <option value="replied">Replied</option>
-            <option value="archived">Archived</option>
           </select>
           <select
             value={filterCategory}
@@ -739,10 +918,7 @@ Customer Support Team`}
             <option value="all">All Categories</option>
             <option value="general">General</option>
             <option value="booking">Booking</option>
-            <option value="payment">Payment</option>
-            <option value="technical">Technical</option>
             <option value="feedback">Feedback</option>
-            <option value="partnership">Partnership</option>
           </select>
           <ReusableButton onClick={resetFilters} variant="secondary" icon={RefreshCw} label="Reset" />
         </div>
@@ -753,7 +929,7 @@ Customer Support Team`}
         <ReusableTable
           columns={columns}
           data={filteredMessages}
-          title="Contact Messages"
+          title="Customer Messages"
           icon={Mail}
           showSearch={false}
           showExport={true}
@@ -761,6 +937,14 @@ Customer Support Team`}
           itemsPerPage={10}
         />
       </motion.div>
+
+      {/* Edit Modal */}
+      <EditContactInfoModal
+        theaterInfo={theaterInfo}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveTheaterInfo}
+      />
 
       {/* Modals */}
       {showModal && modalMode === 'view' && <ViewModal />}
@@ -777,7 +961,7 @@ Customer Support Team`}
               <h3 className="text-xl font-bold text-gray-900">Delete Message</h3>
             </div>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this message from "<strong>{selectedMessage.name}</strong>"? This action cannot be undone.
+              Are you sure you want to delete this message? This action cannot be undone.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
@@ -805,4 +989,4 @@ Customer Support Team`}
   );
 };
 
-export default ContactManagement;
+export default OwnerContactManagement;
