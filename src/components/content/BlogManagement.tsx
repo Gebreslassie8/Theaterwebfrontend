@@ -1,6 +1,6 @@
 // src/pages/Admin/content/BlogManagement.tsx
 import React, { useState, useEffect } from "react";
-import supabase from "../../../config/supabaseClient";
+import supabase from "../../config/supabaseClient";
 
 interface Blog {
   id: number;
