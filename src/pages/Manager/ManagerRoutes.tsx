@@ -11,7 +11,13 @@ import HallsManagement from "./halls/HallsManagement";
 import BookingTicketControl from "./Tickets/BookingTicketControl";
 import Reports from "./Report/Reports";
 import TicketSalesDetails from "./Report/TicketSalesDetails";
+
+// Content Management Imports
+import OwnerContactManagement from '../../components/content/OwnerContactManagement';
+import GalleryManagement from "../../components/content/GalleryManagement";
+import BlogManagement from "../../components/content/BlogManagement";
 // Protected Route Component
+import CreateEventOverVIew from "./events/CreateEventOverVIew";
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -50,15 +56,19 @@ export const getManagerRoutes = () => {
       <Route path="events/EventSchedule" element={<EventSchedule />} />
       <Route path="events/create" element={<CreateEvent />} />
       <Route path="halls" element={<HallsManagement />} />
-            <Route path="detail" element={<TicketSalesDetails />} />
+      <Route path="detail" element={<TicketSalesDetails />} />
+     <Route path="createview" element={<CreateEventOverVIew />} />
 
-      <Route path="Tickets" element={<BookingTicketControl />} />
       <Route
         path="Tickets/BookingTicketControl"
         element={<BookingTicketControl />}
       />
       <Route path="Report" element={<Reports />} />
       <Route path="employee" element={<EmployeeManagement />} />
+      
+      <Route path="content/contacts" element={<OwnerContactManagement />} />
+      <Route path="content/blogs" element={<BlogManagement />} />
+      <Route path="content/gallery" element={<GalleryManagement />} />
     </Route>
   );
 };

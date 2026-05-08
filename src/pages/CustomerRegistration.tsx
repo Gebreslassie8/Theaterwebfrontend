@@ -51,7 +51,7 @@ const RegistrationSchema = Yup.object({
     .oneOf([Yup.ref("password")], "Passwords must match"),
   agreeToTerms: Yup.boolean().oneOf(
     [true],
-    "You must agree to the terms and conditions",
+    "You must agree to the Terms of Service and Privacy Policy",
   ),
 });
 
@@ -72,7 +72,6 @@ const CustomerRegistration: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
 
   const handleSubmit = async (
     values: FormValues,
@@ -110,14 +109,13 @@ const CustomerRegistration: React.FC = () => {
         // Show success popup
         setShowSuccess(true);
         resetForm();
-        setAgreeToTerms(false);
 
-        // Redirect after 2 seconds
+        // Redirect after 2.5 seconds
         setTimeout(() => {
           navigate("/login", {
             state: { message: "Registration successful! Please login." },
           });
-        }, 2000);
+        }, 2500);
       } else {
         setErrorMessage(
           response.error || "Registration failed. Please try again.",
@@ -326,43 +324,55 @@ const CustomerRegistration: React.FC = () => {
                   </motion.div>
                 )}
 
-                {/* Terms and Conditions */}
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    id="agreeToTerms"
-                    checked={agreeToTerms}
-                    onChange={(e) => {
-                      setAgreeToTerms(e.target.checked);
-                      formik.setFieldValue("agreeToTerms", e.target.checked);
-                    }}
-                    className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                  />
-                  <label
-                    htmlFor="agreeToTerms"
-                    className="text-sm text-gray-600"
-                  >
-                    I agree to the{" "}
-                    <Link to="/terms" className="text-teal-600 hover:underline">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link
-                      to="/privacy"
-                      className="text-teal-600 hover:underline"
+                {/* Terms and Conditions with Validation */}
+                <div className="space-y-2">
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="agreeToTerms"
+                      name="agreeToTerms"
+                      checked={formik.values.agreeToTerms}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      className="mt-1 w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+                    />
+                    <label
+                      htmlFor="agreeToTerms"
+                      className="text-sm text-gray-700 cursor-pointer"
                     >
-                      Privacy Policy
-                    </Link>
-                  </label>
+                      I agree to the{" "}
+                      <Link
+                        to="/terms"
+                        className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
+                      >
+                        Terms of Service
+                      </Link>{" "}
+                      and{" "}
+                      <Link
+                        to="/privacy"
+                        className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
+                      >
+                        Privacy Policy
+                      </Link>
+                    </label>
+                  </div>
+                  
+                  {/* Terms validation error */}
+                  {formik.touched.agreeToTerms && formik.errors.agreeToTerms && (
+                    <div className="flex items-center gap-2 text-red-600 text-xs">
+                      <AlertCircle className="h-3 w-3" />
+                      <span>{formik.errors.agreeToTerms}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Submit Button */}
+                {/* Submit Button - Disabled until terms are agreed */}
                 <ReusableButton
                   type="submit"
                   variant="primary"
                   isLoading={formik.isSubmitting || isLoading}
-                  disabled={!agreeToTerms}
-                  className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700"
+                  disabled={!formik.values.agreeToTerms || formik.isSubmitting || isLoading}
+                  className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <>
                     <User className="h-4 w-4 mr-2" />
@@ -387,13 +397,13 @@ const CustomerRegistration: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Success Popup */}
+      {/* Success Popup - Imported and used correctly */}
       <SuccessPopup
         isOpen={showSuccess}
         onClose={() => setShowSuccess(false)}
         type="success"
-        title="Registration Successful!"
-        message="Welcome to Theatre Hub! Redirecting to login page..."
+        title="Registration Successful! 🎉"
+        message="Welcome to Theatre Hub Ethiopia! Redirecting you to login page..."
         duration={3000}
         position="top-right"
       />

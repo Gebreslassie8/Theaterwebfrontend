@@ -188,13 +188,13 @@ const ManagerOverview: React.FC = () => {
       {/* Primary Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard title="Tickets Sold Today" value={managerStats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/detail" />
-        <StatCard title="Active Event" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/events/create" />
+        <StatCard title="Active Event" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/createview" />
         <StatCard title="Total Revenue" value={formatCurrency(managerStats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/Report" />
       
 
       {/* Secondary Stats */}
         {/* Total Tickets Sold - clickable */}
-        <Link to="/manager/ticket-sales" className="block transition-transform hover:scale-[1.02]">
+        <Link to="/manager/Report" className="block transition-transform hover:scale-[1.02]">
           <MetricCard title="Total Tickets Sold" value={managerStats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
         </Link>
         {/* Total Customers - clickable */}

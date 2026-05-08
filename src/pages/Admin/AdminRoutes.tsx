@@ -15,7 +15,7 @@ import SystemLogs from "./monitoring/SystemLogs";
 import Performance from "./monitoring/Performance";
 import ActivityLogs from "./monitoring/ActivityLogs";
 // Content Management Imports
-import ContactManagement from "../../components/content/ContactManagement";
+import AdmincontactManagement from "../../components/content/AdmincontactManagement";
 import GalleryManagement from "../../components/content/GalleryManagement";
 import BlogManagement from "../../components/content/BlogManagement";
 
@@ -72,7 +72,7 @@ export const getAdminRoutes = () => {
       <Route path="monitoring/logs" element={<SystemLogs />} />
       <Route path="monitoring/performance" element={<Performance />} />
       <Route path="users/activity-logs" element={<ActivityLogs />} />
-      <Route path="content/contacts" element={<ContactManagement />} />
+      <Route path="content/contacts" element={<AdmincontactManagement/>} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />
     </Route>

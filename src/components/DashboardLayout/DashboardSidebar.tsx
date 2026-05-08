@@ -167,7 +167,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               },
               {
                 name: "Contacts",
-                to: "/admin/content/contact",
+                to: "/admin/content/contacts",
                 icon: Mail,
               },
               { name: "Gallery", to: "/admin/content/gallery", icon: Image },
@@ -303,39 +303,33 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-green-500",
           },
           {
-            name: "Report management",
+            name: "Report And Analytics",
             to: "/manager/Report",
             icon: BarChart,
             color: "text-indigo-500",
-          },{
+          },
+          
+        {
             name: "Content Management",
             icon: FileText,
             color: "text-purple-500",
-            to: "/admin/content",
+            to: "/manager/content",
             subItems: [
               {
                 name: "Blog Posts",
-                to: "/admin/content/blogs",
+                to: "/manager/content/blogs",
                 icon: FileText,
               },
               {
-                name: "Contact Messages",
-                to: "/admin/content/contacts",
+                name: "Contacts",
+                to: "/manager/content/contacts",
                 icon: Mail,
               },
-              { name: "Gallery", to: "/admin/content/gallery", icon: Image },
-              {
-                name: "Help Center",
-                to: "/admin/content/help",
-                icon: HelpCircle,
-              },
-              {
-                name: "Customer Registrations",
-                to: "/admin/content/customers",
-                icon: Users,
-              },
+              { name: "Gallery", to: "/manager/content/gallery", icon: Image },
+         
             ],
           },
+           
 
         ],
         
@@ -382,8 +376,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: QrCode,
           },
           {
-            name: "Entry Analytics",
-            to: "/scanner/stats/entries",
+            name: "scanned History",
+            to:"/scanner/scan/history ",
             icon: Users,
           },
         ],

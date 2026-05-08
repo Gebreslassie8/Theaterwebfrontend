@@ -147,7 +147,7 @@ const printQR = (canvasRef: React.RefObject<HTMLCanvasElement>, ticket: TicketDa
         <p>Seat: ${ticket.seatLabel}</p>
         <p>Customer: ${sale.customerName}</p>
         <p>Show Date: ${new Date(sale.showDate).toLocaleDateString()} at ${sale.showTime}</p>
-        <p>Price: $${sale.totalAmount / sale.seats.length}</p>
+        <p>Price: ETB ${sale.totalAmount / sale.seats.length}</p>
         <img src="${canvasRef.current?.toDataURL()}" />
         <script>window.onload = () => { window.print(); window.close(); }<\/script>
       </body>
@@ -189,7 +189,7 @@ const TicketViewModal: React.FC<TicketViewModalProps> = ({ sale, onClose }) => {
           <p><strong>Show:</strong> {sale.showTitle}</p>
           <p><strong>Show Date & Time:</strong> {formatDate(sale.showDate)} at {sale.showTime}</p>
           <p><strong>Seats:</strong> {sale.seats.join(', ')}</p>
-          <p><strong>Total Amount:</strong> ${sale.totalAmount}</p>
+          <p><strong>Total Amount:</strong> ETB {sale.totalAmount}</p>
         </div>
         <div style={modalStyles.ticketsContainer}>
           {tickets.map(ticket => (
@@ -347,7 +347,7 @@ const SellTickets: React.FC = () => {
     { Header: 'Customer', accessor: 'customerName' },
     { Header: 'Phone', accessor: 'customerPhone', Cell: (row: SaleRecord) => row.customerPhone || '-' },
     {
-      Header: 'View',
+      Header: 'Action',  // Changed from 'View' to 'Action'
       accessor: 'id',
       Cell: (row: SaleRecord) => (
         <button
@@ -374,7 +374,7 @@ const SellTickets: React.FC = () => {
       setSuccessPopup({ open: true, message: 'No data to export.' });
       return;
     }
-    const fullColumns = ['Sale Date', 'Customer', 'Phone', 'Show', 'Show Date', 'Time', 'Seats', 'Amount', 'Payment Method', 'ID'];
+    const fullColumns = ['Sale Date', 'Customer', 'Phone', 'Show', 'Show Date', 'Time', 'Seats', 'Amount (ETB)', 'Payment Method', 'ID'];
     const rows = filteredSales.map(sale => {
       return [
         formatDateTime(sale.saleDate),
@@ -433,7 +433,6 @@ const SellTickets: React.FC = () => {
               />
             </div>
             <ReusableButton variant="secondary" onClick={handleExport} icon={Download}>Export CSV</ReusableButton>
-            <ReusableButton variant="danger" onClick={handleClearHistory} icon={Trash2}>Clear History</ReusableButton>
           </div>
         </div>
 
@@ -447,7 +446,7 @@ const SellTickets: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Total Revenue</p>
-                <p className="text-xl font-bold text-gray-900">${totalRevenue.toLocaleString()}</p>
+                <p className="text-xl font-bold text-gray-900">ETB {totalRevenue.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -486,7 +485,7 @@ const SellTickets: React.FC = () => {
               </div>
               <div>
                 <p className="text-xs text-gray-500">Avg. Ticket Price</p>
-                <p className="text-xl font-bold text-gray-900">${avgTicketPrice.toFixed(2)}</p>
+                <p className="text-xl font-bold text-gray-900">ETB {avgTicketPrice.toFixed(2)}</p>
               </div>
             </div>
           </div>

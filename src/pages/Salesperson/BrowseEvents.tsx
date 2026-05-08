@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { Calendar, Clock, Building2, Armchair, TrendingUp, Search, Filter, ChevronDown, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Building2, Armchair, TrendingUp, Search, Filter, ChevronDown, CheckCircle, Theater, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import supabase from '../../config/supabaseClient';
 import EventCard, { Event } from '../../components/UI/EventCard';
@@ -138,7 +137,10 @@ const BrowseEvents: React.FC = () => {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🎭 Browse Events & Shows</h1>
+          <h1 style={styles.title}>
+            <Theater style={{ width: '1.875rem', height: '1.875rem', display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            Browse Events & Shows
+          </h1>
           <p style={styles.subtitle}>Loading events from the database...</p>
         </div>
         <div style={styles.loading}>Loading events...</div>
@@ -150,7 +152,10 @@ const BrowseEvents: React.FC = () => {
     return (
       <div style={styles.container}>
         <div style={styles.header}>
-          <h1 style={styles.title}>🎭 Browse Events & Shows</h1>
+          <h1 style={styles.title}>
+            <Theater style={{ width: '1.875rem', height: '1.875rem', display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            Browse Events & Shows
+          </h1>
           <p style={styles.subtitle}>Error loading events</p>
         </div>
         <div style={styles.error}>
@@ -166,7 +171,10 @@ const BrowseEvents: React.FC = () => {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🎭 Browse Events & Shows</h1>
+        <h1 style={styles.title}>
+          <Theater style={{ width: '1.875rem', height: '1.875rem', display: 'inline-block', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          Browse Events & Shows
+        </h1>
         <p style={styles.subtitle}>All performances in Main Hall – click "Book Now" to reserve tickets.</p>
       </div>
 
@@ -221,7 +229,8 @@ const BrowseEvents: React.FC = () => {
       )}
 
       <div style={styles.footer}>
-        📌 Click "Book Now" on any event → Select date/time → Complete payment to confirm your seats.
+        <MapPin style={{ width: '0.875rem', height: '0.875rem', display: 'inline-block', marginRight: '0.25rem', verticalAlign: 'middle' }} />
+        Click "Book Now" on any event → Select date/time → Complete payment to confirm your seats.
       </div>
     </div>
   );
@@ -245,6 +254,8 @@ const styles: { [key: string]: React.CSSProperties } = {
     fontWeight: 700,
     color: Colors.dark || '#1f2937',
     margin: 0,
+    display: 'flex',
+    alignItems: 'center',
   },
   subtitle: {
     color: Colors.gray || '#6b7280',

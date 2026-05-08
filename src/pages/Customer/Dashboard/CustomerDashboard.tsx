@@ -4,6 +4,7 @@ import { useOutletContext } from "react-router-dom";
 import { motion } from "framer-motion";
 import supabase from "../../../config/supabaseClient";
 import {
+<<<<<<< HEAD
   Calendar,
   Ticket,
   Star,
@@ -19,6 +20,11 @@ import {
   CheckCircle,
   Headphones,
 } from "lucide-react";
+=======
+  Calendar, Ticket, Star, Heart, MapPin, Wallet, Award, Gift,
+  QrCode, ChevronRight, TrendingUp, CheckCircle, Headphones
+} from 'lucide-react';
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
 import {
   AreaChart,
   Area,
@@ -293,10 +299,15 @@ const CustomerDashboard: React.FC = () => {
   // Dynamic Stats (derived from bookings) ----------
   const stats = {
     ticketsBooked: bookings.reduce((sum, b) => sum + b.seats, 0),
+<<<<<<< HEAD
     upcomingShows: bookings.filter((b) => new Date(b.date) > new Date()).length,
     pointsEarned: Math.floor(
       bookings.reduce((sum, b) => sum + b.totalAmount, 0) / 10,
     ), // 10 points per $ spent
+=======
+    upcomingShows: bookings.filter(b => new Date(b.date) > new Date()).length,
+    pointsEarned: Math.floor(bookings.reduce((sum, b) => sum + b.totalAmount, 0) / 10), // 10 points per ETB spent
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
     savedAmount: 85, // mock, could be calculated from discounts
     totalSpent: bookings.reduce((sum, b) => sum + b.totalAmount, 0),
     favoriteGenre: "Musical", // can be computed from most booked event genre
@@ -406,6 +417,7 @@ const CustomerDashboard: React.FC = () => {
                     ✨ {loyaltyPoints.tier} Member
                   </span>
                 </motion.div>
+<<<<<<< HEAD
                 <h1 className="text-3xl lg:text-4xl font-bold mb-2">
                   Welcome back, {user?.name || "Customer"}!
                 </h1>
@@ -464,6 +476,16 @@ const CustomerDashboard: React.FC = () => {
                 label="Favorite Genre"
                 value={stats.favoriteGenre}
               />
+=======
+                <h1 className="text-3xl lg:text-4xl font-bold mb-2">Welcome back, {user?.name || 'Customer'}!</h1>
+                <p className="text-white/80 text-lg">Discover amazing events </p>
+              </div>   
+            </div>
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 mt-6">
+              <QuickStatBadge icon={Calendar} label="Member Since" value={new Date(stats.memberSince).toLocaleDateString()} />
+              <QuickStatBadge icon={Ticket} label="Tickets Booked" value={stats.ticketsBooked} />
+              <QuickStatBadge icon={Heart} label="Favorite Genre" value={stats.favoriteGenre} />
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
             </div>
           </div>
         </motion.div>
@@ -495,6 +517,7 @@ const CustomerDashboard: React.FC = () => {
         {activeTab === "overview" && (
           <>
             {/* Stats Grid */}
+<<<<<<< HEAD
             <motion.div
               variants={itemVariants}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6"
@@ -529,11 +552,17 @@ const CustomerDashboard: React.FC = () => {
                 delay={0.3}
                 dateRange="month"
               />
+=======
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              <StatCard title="Points Earned" value={loyaltyPoints.thisMonth} icon={Star} change="+150" trend="up" color="from-yellow-500 to-yellow-600" delay={0.2} dateRange="month" />
+              <StatCard title="Total Spent" value={`ETB ${stats.totalSpent}`} icon={Wallet} change="+ETB 45" trend="up" color="from-cyan-500 to-cyan-600" delay={0.3} dateRange="month" />
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
             </motion.div>
 
             {/* Upcoming Shows from Bookings */}
             <motion.div variants={itemVariants}>
               <div className="flex items-center justify-between mb-4">
+<<<<<<< HEAD
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                   Your Upcoming Shows
                 </h2>
@@ -543,6 +572,9 @@ const CustomerDashboard: React.FC = () => {
                 >
                   View All <ChevronRight className="h-4 w-4" />
                 </button>
+=======
+               
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
               </div>
               {bookings.filter((b) => new Date(b.date) > new Date()).length ===
               0 ? (
@@ -597,6 +629,7 @@ const CustomerDashboard: React.FC = () => {
               )}
             </motion.div>
 
+<<<<<<< HEAD
             {/* Recommended & Analytics */}
             <motion.div
               variants={itemVariants}
@@ -828,6 +861,13 @@ const CustomerDashboard: React.FC = () => {
                 color="info"
                 onClick={() => alert("Contact support")}
               />
+=======
+           
+
+            {/* Quick Actions */}
+            <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <QuickActionButton icon={Ticket} text="Book Tickets" color="primary" onClick={() => setActiveTab('browse')} />
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
             </motion.div>
           </>
         )}
@@ -930,6 +970,7 @@ const CustomerDashboard: React.FC = () => {
                   <div>
                     <h3 className="font-bold text-lg">{event.title}</h3>
                     <p className="text-sm text-gray-600">{event.venue}</p>
+<<<<<<< HEAD
                     {event.dates[0] && (
                       <p className="text-sm">
                         {event.dates[0].date} at {event.dates[0].time}
@@ -938,6 +979,10 @@ const CustomerDashboard: React.FC = () => {
                     <p className="text-xs mt-1">
                       💰 {event.priceRange.min} - {event.priceRange.max}
                     </p>
+=======
+                    {event.dates[0] && <p className="text-sm">{event.dates[0].date} at {event.dates[0].time}</p>}
+                    <p className="text-xs mt-1">💰 ETB {event.priceRange.min} - ETB {event.priceRange.max}</p>
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
                   </div>
                   <button
                     onClick={() => {
@@ -974,6 +1019,7 @@ const CustomerDashboard: React.FC = () => {
                       {booking.venue} | {booking.date} at {booking.time}
                     </p>
                     <p className="text-sm">🎭 Seats: {booking.seats}</p>
+<<<<<<< HEAD
                     <p className="text-sm font-semibold">
                       Total: ${booking.totalAmount} | Status:{" "}
                       <span
@@ -986,6 +1032,9 @@ const CustomerDashboard: React.FC = () => {
                         {booking.status}
                       </span>
                     </p>
+=======
+                    <p className="text-sm font-semibold">Total: ETB {booking.totalAmount} | Status: <span className={booking.status === 'confirmed' ? 'text-green-600' : 'text-red-500'}>{booking.status}</span></p>
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
                   </div>
                   <div className="flex gap-2">
                     {booking.status === "confirmed" && (
@@ -1172,4 +1221,8 @@ const QuickStatBadge: React.FC<{
   </div>
 );
 
+<<<<<<< HEAD
 export default CustomerDashboard;
+=======
+export default CustomerDashboard; 
+>>>>>>> aa01dbabc9ec3ee2288b838f77464ca4ffec0b48
