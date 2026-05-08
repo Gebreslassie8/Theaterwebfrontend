@@ -4,41 +4,18 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import * as yup from "yup";
 import supabase from "@/config/supabaseClient";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  AlertCircle,
-  ArrowRight,
-  Shield,
-  HelpCircle,
-  LogIn,
-  User,
-} from "lucide-react";
+import { Mail,Lock, Eye,EyeOff,CheckCircle,AlertCircle,ArrowRight, Shield,HelpCircle,LogIn, User,} from "lucide-react";
+
 
 // Validation schemas using Yup
 const loginSchemas = {
   email: yup.object({
-    email: yup
-      .string()
-      .required("Email is required")
-      .email("Please enter a valid email address"),
-    password: yup
-      .string()
-      .required("Password is required")
-      .min(6, "Password must be at least 6 characters"),
+    email: yup.string().required("Email is required").email("Please enter a valid email address"),
+    password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
   }),
   username: yup.object({
-    username: yup
-      .string()
-      .required("Username is required")
-      .min(3, "Username must be at least 3 characters"),
-    password: yup
-      .string()
-      .required("Password is required")
-      .min(6, "Password must be at least 6 characters"),
+    username: yup.string().required("Username is required").min(3, "Username must be at least 3 characters"),
+    password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
   }),
 };
 
@@ -123,6 +100,7 @@ const Login = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loginError, setLoginError] = useState("");
+  
 
   // Check if user is already logged in
   useEffect(() => {
@@ -137,12 +115,12 @@ const Login = () => {
     }
   }, [navigate]);
 
+
   // Validate form using Yup
   const validateForm = async (field: string | null = null) => {
     try {
       const schema = loginSchemas[authMethod as keyof typeof loginSchemas];
-      const data =
-        authMethod === "email" ? { email, password } : { username, password };
+      const data = authMethod === "email" ? { email, password } : { username, password };
 
       await schema.validate(data, { abortEarly: false });
 
