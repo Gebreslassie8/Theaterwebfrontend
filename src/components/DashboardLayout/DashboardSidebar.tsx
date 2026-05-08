@@ -143,17 +143,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               },
             ],
           },
-          {
-            name: "Financial Analytics",
-            to: "/admin/financial/revenue",
-            icon: TrendingUp,
-            color: "text-green-500",
-          },
-          {
-                name: "View comment",
-                to: "/admin/content/contacts",
-                icon: Mail,
-              },
+        
           {
             name: "Content Management",
             icon: FileText,
@@ -201,6 +191,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               },
             ],
           },
+          {
+     name: "System Settings",
+     to: "/admin/settings",
+    icon: Settings,
+ 
+      },
         ],
       },
 
