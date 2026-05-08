@@ -16,6 +16,8 @@ import ActivityLogs from "./monitoring/ActivityLogs";
 import AdmincontactManagement from "../../components/content/AdmincontactManagement";
 import GalleryManagement from "../../components/content/GalleryManagement";
 import BlogManagement from "../../components/content/BlogManagement";
+import SystemSettings from "./settings/SystemSettings";
+
 
 // Protected Route Component
 export const AdminProtectedRoute: React.FC<{
@@ -72,6 +74,8 @@ export const getAdminRoutes = () => {
       <Route path="content/contacts" element={<AdmincontactManagement/>} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />
+      <Route path="settings" element={<SystemSettings />} />
+
     </Route>
   );
 };

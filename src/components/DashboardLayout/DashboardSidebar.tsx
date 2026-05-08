@@ -191,6 +191,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
               },
             ],
           },
+          {
+     name: "System Settings",
+     to: "/admin/settings",
+    icon: Settings,
+ 
+      },
         ],
       },
 
