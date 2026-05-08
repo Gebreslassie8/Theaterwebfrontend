@@ -14,6 +14,11 @@ import {
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
+// Import local images
+import g1 from '/g1.jpg';
+import g2 from '/g2.jpg';
+import g3 from '/g3.jpg';
+
 const About: React.FC = () => {
     const { t } = useTranslation();
 
@@ -23,38 +28,35 @@ const About: React.FC = () => {
         { icon: Users, valueKey: 'about.stats.customersValue', labelKey: 'about.stats.customersLabel', color: 'from-deepBlue to-blue-600' }
     ];
 
-    // Team Members – names, roles, bios are dynamic content that you may or may not want to translate.
-    // For a fully localized about page, you could have separate translations for each person.
-    // Here we'll treat them as static English names (or you can add keys). For simplicity, keep names/roles as-is.
-    // But we can translate bios using keys:
+    // Team Members - Updated with correct roles and local images
     const teamMembers = [
         {
-            name: 'Alex Johnson',
-            roleKey: 'about.team.alexRole',
-            bioKey: 'about.team.alexBio',
-            image: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop',
-            social: { facebook: '#', telegram: '#', phone: '+251-11-558-1234' }
+            name: 'Birehanu Kassa',
+            role: 'Project Manager',
+            responsibility: 'Project planning, coordination, documentation, and review',
+            image: g1,
+            social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1234' }
         },
         {
-            name: 'Sarah Chen',
-            roleKey: 'about.team.sarahRole',
-            bioKey: 'about.team.sarahBio',
-            image: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop',
-            social: { facebook: '#', telegram: '#', phone: '+251-11-558-1235' }
+            name: 'Gebreslassie Desie',
+            role: 'Backend Developer',
+            responsibility: 'Server-side logic, APIs, system integration',
+            image: g2,
+            social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1235' }
         },
         {
-            name: 'Michael Rodriguez',
-            roleKey: 'about.team.michaelRole',
-            bioKey: 'about.team.michaelBio',
-            image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop',
-            social: { facebook: '#', telegram: '#', phone: '+251-11-558-1236' }
+            name: 'Gemechis Debelo',
+            role: 'Frontend Developer',
+            responsibility: 'User interface design and client-side development',
+            image: g3,
+            social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1236' }
         },
         {
-            name: 'Emily Watson',
-            roleKey: 'about.team.emilyRole',
-            bioKey: 'about.team.emilyBio',
-            image: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop',
-            social: { facebook: '#', telegram: '#', phone: '+251-11-558-1237' }
+            name: 'Lelisa Abraham',
+            role: 'Database Designer & Tester',
+            responsibility: 'Database design and system testing',
+            image: g1, // Using g1 again for the fourth member, or you can add g4.jpg if available
+            social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1237' }
         }
     ];
 
@@ -288,14 +290,14 @@ const About: React.FC = () => {
                 </div>
             </div>
 
-            {/* Team Section */}
+            {/* Team Section - Updated with local images */}
             <div className="bg-gray-50 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('about.team.title')}</h2>
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Team</h2>
                         <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
                         <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                            {t('about.team.subtitle')}
+                            Meet the talented individuals behind Theatre Hub Ethiopia
                         </p>
                     </div>
 
@@ -320,13 +322,22 @@ const About: React.FC = () => {
                                 </div>
                                 <div className="p-5">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
-                                    <p className="text-deepTeal text-sm font-medium mb-3">{t(member.roleKey)}</p>
-                                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">{t(member.bioKey)}</p>
+                                    <p className="text-deepTeal text-sm font-medium mb-2">{member.role}</p>
+                                    <p className="text-gray-500 text-xs mb-4">{member.responsibility}</p>
+                                    <p className="text-gray-600 text-sm mb-4 leading-relaxed">
+                                        Dedicated professional committed to delivering excellence in {member.role.toLowerCase()}.
+                                    </p>
 
                                     <div className="flex gap-3">
-                                        <a href={member.social.facebook} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#1877F2', color: 'white' }} aria-label="Facebook"><Facebook className="h-4 w-4" /></a>
-                                        <a href={member.social.telegram} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#0088cc', color: 'white' }} aria-label="Telegram"><Send className="h-4 w-4" /></a>
-                                        <a href={`tel:${member.social.phone}`} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#25D366', color: 'white' }} aria-label="Phone"><Phone className="h-4 w-4" /></a>
+                                        <a href={member.social.linkedin} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#0077B5', color: 'white' }} aria-label="LinkedIn">
+                                            <Linkedin className="h-4 w-4" />
+                                        </a>
+                                        <a href={member.social.telegram} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#0088cc', color: 'white' }} aria-label="Telegram">
+                                            <Send className="h-4 w-4" />
+                                        </a>
+                                        <a href={`tel:${member.social.phone}`} className="w-9 h-9 flex items-center justify-center rounded-lg transition-all duration-300 hover:scale-110 hover:shadow-md" style={{ backgroundColor: '#25D366', color: 'white' }} aria-label="Phone">
+                                            <Phone className="h-4 w-4" />
+                                        </a>
                                     </div>
                                 </div>
                             </motion.div>
