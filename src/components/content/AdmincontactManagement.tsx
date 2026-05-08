@@ -1,4 +1,4 @@
-// src/pages/Admin/content/ContactManagement.tsx
+//frontend\src\components\content\AdmincontactManagement.tsx
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -137,6 +137,7 @@ const getCategoryBadge = (category: string) => {
     feedback: { color: 'bg-green-100 text-green-700', label: 'Feedback' },
     partnership: { color: 'bg-purple-100 text-purple-700', label: 'Partnership' }
   };
+  
   const c = config[category] || config.general;
   return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}>{c.label}</span>;
 };

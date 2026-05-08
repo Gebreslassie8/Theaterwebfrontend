@@ -18,6 +18,9 @@ import {
   Building2,
 } from "lucide-react";
 
+// --- i18n import ---
+import { useTranslation } from "react-i18next";
+
 // Types
 interface Language {
   code: string;
@@ -27,16 +30,16 @@ interface Language {
 
 interface NavLink {
   to: string;
-  label: string;
+  labelKey: string;     // changed from label to translation key
   icon: React.ElementType;
 }
 
 const Navbar: React.FC = () => {
+  const { t, i18n } = useTranslation();   // <-- use i18n hook
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isLangOpen, setIsLangOpen] = useState<boolean>(false);
   const [isJoinOpen, setIsJoinOpen] = useState<boolean>(false);
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
-  const [currentLang, setCurrentLang] = useState<string>("en");
   const location = useLocation();
 
   useEffect(() => {
@@ -52,27 +55,35 @@ const Navbar: React.FC = () => {
     setIsMenuOpen(false);
   }, [location]);
 
+  // Languages: codes remain same, names are fixed (not translated for clarity)
   const languages: Language[] = [
     { code: "en", name: "English", flag: "🇬🇧" },
     { code: "am", name: "አማርኛ", flag: "🇪🇹" },
-    { code: "fr", name: "Français", flag: "🇫🇷" },
-    { code: "ar", name: "العربية", flag: "🇸🇦" },
+    { code: "om", name: "Oromoo", flag: "🇪🇹" },
   ];
 
+  // Use translation keys instead of hardcoded labels
   const navLinks: NavLink[] = [
-    { to: "/", label: "Home", icon: Home },
-    { to: "/about", label: "About", icon: Info },
-    { to: "/blogs", label: "Blogs", icon: BookOpen },
-    { to: "/gallery", label: "Gallery", icon: Star },
-    { to: "/contact", label: "Contact", icon: HelpCircle },
-    { to: "/help", label: "Help", icon: HelpCircle },
+    { to: "/", labelKey: "nav.home", icon: Home },
+    { to: "/about", labelKey: "nav.about", icon: Info },
+    { to: "/blogs", labelKey: "nav.blogs", icon: BookOpen },
+    { to: "/gallery", labelKey: "nav.gallery", icon: Star },
+    { to: "/contact", labelKey: "nav.contact", icon: HelpCircle },
+    { to: "/help", labelKey: "nav.help", icon: HelpCircle },
   ];
 
   const isActive = (path: string): boolean => location.pathname === path;
 
+  // Get current language flag based on i18n language
   const getCurrentLangFlag = (): string => {
-    const lang = languages.find((l) => l.code === currentLang);
+    const lang = languages.find((l) => l.code === i18n.language);
     return lang?.flag || "🇬🇧";
+  };
+
+  // Change language handler
+  const changeLanguage = (code: string) => {
+    i18n.changeLanguage(code);
+    setIsLangOpen(false);
   };
 
   return (
@@ -118,7 +129,7 @@ const Navbar: React.FC = () => {
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{link.label}</span>
+                  <span>{t(link.labelKey)}</span>
                 </Link>
               );
             })}
@@ -131,7 +142,7 @@ const Navbar: React.FC = () => {
               <button
                 onClick={() => setIsLangOpen(!isLangOpen)}
                 className="flex items-center space-x-1 px-2 sm:px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Select language"
+                aria-label={t("nav.selectLanguage") || "Select language"}
               >
                 <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
                 <span className="text-sm sm:text-base">
@@ -151,12 +162,9 @@ const Navbar: React.FC = () => {
                     {languages.map((lang) => (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          setCurrentLang(lang.code);
-                          setIsLangOpen(false);
-                        }}
+                        onClick={() => changeLanguage(lang.code)}
                         className={`w-full text-left px-3 sm:px-4 py-2 hover:bg-gray-50 flex items-center space-x-2 transition-colors text-sm sm:text-base ${
-                          currentLang === lang.code
+                          i18n.language === lang.code
                             ? "bg-teal-50 text-teal-600"
                             : "text-gray-700"
                         }`}
@@ -176,7 +184,7 @@ const Navbar: React.FC = () => {
               className="hidden md:flex items-center space-x-1.5 border-2 border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-all duration-300 font-medium text-sm"
             >
               <LogIn className="h-4 w-4" />
-              <span>Sign In</span>
+              <span>{t("nav.signIn")}</span>
             </Link>
 
             {/* Join Now Dropdown - Hoverable */}
@@ -187,10 +195,10 @@ const Navbar: React.FC = () => {
             >
               <button
                 className="flex items-center space-x-1.5 bg-gradient-to-r from-teal-600 to-teal-500 text-white px-6 py-2 rounded-lg hover:from-teal-500 hover:to-teal-600 transition-all duration-300 font-semibold text-sm shadow-md hover:shadow-lg"
-                aria-label="Join now"
+                aria-label={t("nav.joinNow")}
               >
                 <UserPlus className="h-4 w-4" />
-                <span>Join Now</span>
+                <span>{t("nav.joinNow")}</span>
                 <ChevronDown
                   className={`h-4 w-4 transition-transform duration-200 ${isJoinOpen ? "rotate-180" : ""}`}
                 />
@@ -215,10 +223,10 @@ const Navbar: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 group-hover:text-teal-600 transition-colors">
-                          Customer Account
+                          {t("nav.customerAccount")}
                         </p>
                         <p className="text-xs text-gray-500">
-                          Book tickets & enjoy shows
+                          {t("nav.customerDesc")}
                         </p>
                       </div>
                     </Link>
@@ -235,10 +243,10 @@ const Navbar: React.FC = () => {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 group-hover:text-teal-600 transition-colors">
-                          Theater Owner Account
+                          {t("nav.theaterOwnerAccount")}
                         </p>
                         <p className="text-xs text-gray-500">
-                          List & manage your theater
+                          {t("nav.theaterOwnerDesc")}
                         </p>
                       </div>
                     </Link>
@@ -288,7 +296,7 @@ const Navbar: React.FC = () => {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <Icon className="h-5 w-5" />
-                      <span className="font-medium">{link.label}</span>
+                      <span className="font-medium">{t(link.labelKey)}</span>
                     </Link>
                   );
                 })}
@@ -303,7 +311,7 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <LogIn className="h-5 w-5" />
-                  <span className="font-medium">Sign In</span>
+                  <span className="font-medium">{t("nav.signIn")}</span>
                 </Link>
 
                 {/* Join Now - Mobile */}
@@ -313,7 +321,7 @@ const Navbar: React.FC = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <UserPlus className="h-5 w-5" />
-                  <span className="font-semibold">Join Now</span>
+                  <span className="font-semibold">{t("nav.joinNow")}</span>
                 </Link>
               </div>
             </motion.div>

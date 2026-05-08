@@ -21,6 +21,7 @@ import {
   Sparkles,
   PartyPopper,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Types
 interface SocialLink {
@@ -33,7 +34,7 @@ interface SocialLink {
 
 interface NavLink {
   to: string;
-  label: string;
+  labelKey: string;          // <-- changed from label to translation key
   icon: React.ElementType;
 }
 
@@ -45,6 +46,7 @@ interface PopupMessage {
 }
 
 const Footer: React.FC = () => {
+  const { t } = useTranslation();
   const currentYear = new Date().getFullYear();
   const [email, setEmail] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -56,21 +58,22 @@ const Footer: React.FC = () => {
     icon: null,
   });
 
+  // Quick links – using translation keys
   const quickLinks: NavLink[] = [
-    { to: "/about", label: "About Us", icon: Star },
-    { to: "/blogs", label: "Blog", icon: FileText },
-    { to: "/gallery", label: "Gallery", icon: Film },
+    { to: "/about", labelKey: "footer.quickLinks.about", icon: Star },
+    { to: "/blogs", labelKey: "footer.quickLinks.blog", icon: FileText },
+    { to: "/gallery", labelKey: "footer.quickLinks.gallery", icon: Film },
   ];
 
   const supportLinks: NavLink[] = [
-    { to: "/help", label: "Help Center", icon: HelpCircle },
-    { to: "/contact", label: "Contact Us", icon: Mail },
+    { to: "/help", labelKey: "footer.support.helpCenter", icon: HelpCircle },
+    { to: "/contact", labelKey: "footer.support.contactUs", icon: Mail },
   ];
 
   const legalLinks: NavLink[] = [
-    { to: "/terms", label: "Terms of Service", icon: FileText },
-    { to: "/privacy", label: "Privacy Policy", icon: Shield },
-    { to: "/cookies", label: "Cookie Policy", icon: Lock },
+    { to: "/terms", labelKey: "footer.legal.terms", icon: FileText },
+    { to: "/privacy", labelKey: "footer.legal.privacy", icon: Shield },
+    { to: "/cookies", labelKey: "footer.legal.cookies", icon: Lock },
   ];
 
   const socialLinks: SocialLink[] = [
@@ -114,9 +117,8 @@ const Footer: React.FC = () => {
   const showSuccessPopup = (): void => {
     setPopupMessage({
       type: "success",
-      title: "🎉 Welcome to TheaterHUB Family!",
-      message:
-        "You've successfully subscribed! Get ready for exclusive deals, early bird tickets, and amazing giveaways delivered straight to your inbox.",
+      title: t("footer.popup.successTitle"),
+      message: t("footer.popup.successMessage"),
       icon: PartyPopper,
     });
     setShowPopup(true);
@@ -126,7 +128,7 @@ const Footer: React.FC = () => {
   const showErrorPopup = (errorMessage: string): void => {
     setPopupMessage({
       type: "error",
-      title: "❌ Oops! Something went wrong",
+      title: t("footer.popup.errorTitle"),
       message: errorMessage,
       icon: XCircle,
     });
@@ -140,17 +142,13 @@ const Footer: React.FC = () => {
     e.preventDefault();
 
     if (!email) {
-      showErrorPopup(
-        "Please enter your email address to receive amazing offers!",
-      );
+      showErrorPopup(t("footer.errors.emailRequired"));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      showErrorPopup(
-        "Please enter a valid email address. Example: name@domain.com",
-      );
+      showErrorPopup(t("footer.errors.invalidEmail"));
       return;
     }
 
@@ -163,9 +161,7 @@ const Footer: React.FC = () => {
       );
 
       if (subscriptions.includes(email)) {
-        showErrorPopup(
-          "This email is already subscribed! You're already part of our VIP family 🎭",
-        );
+        showErrorPopup(t("footer.errors.alreadySubscribed"));
       } else {
         subscriptions.push(email);
         localStorage.setItem(
@@ -193,10 +189,10 @@ const Footer: React.FC = () => {
                   <div className="absolute -bottom-2 left-0 w-0 h-0.5 bg-gradient-to-r from-teal-400 to-emerald-500 group-hover:w-full transition-all duration-500"></div>
                   <h2 className="text-2xl font-bold">
                     <span className="bg-gradient-to-r from-teal-400 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
-                      Ethiopian TheaterHUB
+                      {t("footer.brand.name")}
                     </span>
                     <span className="block text-xs text-teal-400/70 mt-0.5 tracking-wide">
-                      Modern entertainment platform
+                      {t("footer.brand.tagline")}
                     </span>
                   </h2>
                 </div>
@@ -212,10 +208,10 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-teal-400/70 font-mono tracking-wider">
-                        LOCATION
+                        {t("footer.contact.locationLabel")}
                       </p>
                       <p className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                        Bole Medhanealem, Addis Ababa, Ethiopia
+                        {t("footer.contact.locationValue")}
                       </p>
                     </div>
                   </div>
@@ -230,13 +226,13 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-teal-400/70 font-mono tracking-wider">
-                        PHONE
+                        {t("footer.contact.phoneLabel")}
                       </p>
                       <p className="text-sm text-gray-300 group-hover:text-white transition-colors">
-                        +251-11-558-1234
+                        {t("footer.contact.phoneValue")}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Support: 24/7
+                        {t("footer.contact.supportHours")}
                       </p>
                     </div>
                   </div>
@@ -251,13 +247,13 @@ const Footer: React.FC = () => {
                     </div>
                     <div className="flex-1">
                       <p className="text-xs text-teal-400/70 font-mono tracking-wider">
-                        EMAIL
+                        {t("footer.contact.emailLabel")}
                       </p>
                       <p className="text-sm text-gray-300 group-hover:text-white transition-colors break-all">
-                        info@theaterhubethiopia.com
+                        {t("footer.contact.emailValue")}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">
-                        Response within 24h
+                        {t("footer.contact.responseTime")}
                       </p>
                     </div>
                   </div>
@@ -268,7 +264,7 @@ const Footer: React.FC = () => {
             {/* Column 2: Quick Links */}
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
-                Quick Links
+                {t("footer.quickLinks.title")}
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3">
@@ -282,7 +278,7 @@ const Footer: React.FC = () => {
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
                         <span className="group-hover:translate-x-1 transition-transform inline-block">
-                          {link.label}
+                          {t(link.labelKey)}
                         </span>
                       </Link>
                     </li>
@@ -294,7 +290,7 @@ const Footer: React.FC = () => {
             {/* Column 3: Support & Legal */}
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
-                Support
+                {t("footer.support.title")}
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3 mb-6">
@@ -308,7 +304,7 @@ const Footer: React.FC = () => {
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
                         <span className="group-hover:translate-x-1 transition-transform inline-block">
-                          {link.label}
+                          {t(link.labelKey)}
                         </span>
                       </Link>
                     </li>
@@ -317,7 +313,7 @@ const Footer: React.FC = () => {
               </ul>
 
               <h3 className="text-lg font-bold text-white relative inline-block">
-                Legal
+                {t("footer.legal.title")}
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <ul className="space-y-3">
@@ -331,7 +327,7 @@ const Footer: React.FC = () => {
                       >
                         <Icon className="h-4 w-4 text-teal-500 group-hover:translate-x-1 transition-transform" />
                         <span className="group-hover:translate-x-1 transition-transform inline-block">
-                          {link.label}
+                          {t(link.labelKey)}
                         </span>
                       </Link>
                     </li>
@@ -343,11 +339,11 @@ const Footer: React.FC = () => {
             {/* Column 4: Newsletter & Social */}
             <div className="space-y-5">
               <h3 className="text-lg font-bold text-white relative inline-block">
-                Newsletter
+                {t("footer.newsletter.title")}
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full"></span>
               </h3>
               <p className="text-gray-400 text-sm bg-gradient-to-r from-teal-500/10 to-emerald-500/10 p-3 rounded-lg border border-teal-500/20">
-                📧 Subscribe to get exclusive offers, early bird tickets
+                📧 {t("footer.newsletter.description")}
               </p>
 
               <form
@@ -360,7 +356,7 @@ const Footer: React.FC = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Your email address"
+                    placeholder={t("footer.newsletter.placeholder")}
                     className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white placeholder:text-gray-500 focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all outline-none"
                     disabled={isSubmitting}
                   />
@@ -373,12 +369,12 @@ const Footer: React.FC = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Subscribing...</span>
+                      <span>{t("footer.newsletter.subscribing")}</span>
                     </>
                   ) : (
                     <>
                       <Gift className="h-5 w-5" />
-                      <span>Subscribe</span>
+                      <span>{t("footer.newsletter.subscribe")}</span>
                     </>
                   )}
                 </button>
@@ -386,7 +382,7 @@ const Footer: React.FC = () => {
 
               <div className="pt-4">
                 <h3 className="text-lg font-bold text-white mb-4">
-                  Connect With Us
+                  {t("footer.social.title")}
                 </h3>
                 <div className="flex flex-wrap gap-3">
                   {socialLinks.map((social, index) => {
@@ -421,32 +417,32 @@ const Footer: React.FC = () => {
           <div className="border-t border-gray-800 pt-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-gray-400 text-center md:text-left">
-                <span>© {currentYear} Ethiopian TheaterHUB System</span>
+                <span>© {currentYear} {t("footer.copyright")}</span>
               </div>
               <div className="flex items-center flex-wrap justify-center gap-6">
                 <Link
                   to="/terms"
                   className="text-sm text-gray-400 hover:text-teal-400 transition-colors"
                 >
-                  Terms
+                  {t("footer.bottomLinks.terms")}
                 </Link>
                 <Link
                   to="/privacy"
                   className="text-sm text-gray-400 hover:text-teal-400 transition-colors"
                 >
-                  Privacy
+                  {t("footer.bottomLinks.privacy")}
                 </Link>
                 <Link
                   to="/cookies"
                   className="text-sm text-gray-400 hover:text-teal-400 transition-colors"
                 >
-                  Cookies
+                  {t("footer.bottomLinks.cookies")}
                 </Link>
                 <Link
                   to="/accessibility"
                   className="text-sm text-gray-400 hover:text-teal-400 transition-colors"
                 >
-                  Accessibility
+                  {t("footer.bottomLinks.accessibility")}
                 </Link>
               </div>
             </div>
@@ -495,7 +491,7 @@ const Footer: React.FC = () => {
                 <div className="bg-white/20 rounded-lg p-3 mb-4">
                   <div className="flex items-center justify-center space-x-2 text-white text-sm">
                     <Sparkles className="h-4 w-4" />
-                    <span>🎁 You've successfully subscribed!</span>
+                    <span>{t("footer.popup.successBadge")}</span>
                   </div>
                 </div>
               )}
@@ -509,8 +505,8 @@ const Footer: React.FC = () => {
                 }`}
               >
                 {popupMessage.type === "success"
-                  ? "Start Exploring 🎭"
-                  : "Try Again"}
+                  ? t("footer.popup.buttonSuccess")
+                  : t("footer.popup.buttonError")}
               </button>
             </div>
           </div>

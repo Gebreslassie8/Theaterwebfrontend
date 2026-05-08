@@ -1,0 +1,1001 @@
+{
+  "common": {
+    "searchPlaceholder": "ዝግጅቶችን፣ ቦታዎችን፣ አርቲስቶችን ወይም መግለጫዎችን ፈልግ...",
+    "sortBy": "ማደራጀት",
+    "filters": "ማጣሪያ",
+    "clearAll": "ሁሉን አጽዳ",
+    "activeFilters": "ንቁ ማጣሪያዎች፦",
+    "category": "ምድብ",
+    "allEvents": "ሁሉም ዝግጅቶች",
+    "showing": "እየታዩ ያሉ",
+    "to": "እስከ",
+    "of": "ከ",
+    "events": "ዝግጅቶች",
+    "prev": "ቀዳሚ",
+    "next": "ቀጣይ",
+    "noEventsFound": "ምንም ዝግጅት አልተገኘም",
+    "tryAdjusting": "ማጣሪያዎችዎን ወይም የፍለጋ መመዘኛዎችዎን ለውጠው ይሞክሩ",
+    "clearFilters": "ሁሉንም ማጣሪያዎች አጽዳ",
+    "loadingEvents": "ዝግጅቶችን በማጫን ላይ...",
+    "errorLoadingEvents": "ዝግጅቶችን ማጫን አልተቻለም",
+    "tryAgain": "እንደገና ይሞክሩ"
+  },
+  "sortOptions": {
+    "date": "ቀን",
+    "name": "ስም",
+    "priceLow": "ዋጋ፦ ከዝቅተኛ ወደ ከፍተኛ",
+    "priceHigh": "ዋጋ፦ ከከፍተኛ ወደ ዝቅተኛ",
+    "rating": "ምዘና"
+  },
+  "cookieConsent": {
+    "title": "ግላዊነትዎን እንከብራለን",
+    "message": "የእርስዎን የመረብ አሰሳ ልምድ ለማሻሻል፣ ግላዊ ይዘቶችን ለማቅረብ እና ትራፊክዎን ለመተንተን ኩኪዎችን እንጠቀማለን።",
+    "acceptAll": "ሁሉንም ተቀበል",
+    "rejectAll": "ሁሉንም ውድቅ አድርግ",
+    "customize": "ማበጀት"
+  },
+  "nav": {
+    "home": "መነሻ",
+    "about": "ስለ እኛ",
+    "blogs": "ብሎጎች",
+    "gallery": "ማሳያ",
+    "contact": "አግኙን",
+    "help": "እርዳታ",
+    "signIn": "ግባ",
+    "joinNow": "ተቀላቀል",
+    "customerAccount": "የደንበኛ አካውንት",
+    "customerDesc": "ቲኬቶች ይያዙ እና ትርኢቶች ይደሰቱ",
+    "theaterOwnerAccount": "የቲያትር ባለቤት አካውንት",
+    "theaterOwnerDesc": "ቲያትርዎን ይዘርዝሩ እና ያስተዳድሩ"
+  },"footer": {
+  "brand": {
+    "name": "ኢትዮጵያ TheaterHUB",
+    "tagline": "ዘመናዊ የመዝናኛ መድረክ"
+  },
+  "contact": {
+    "locationLabel": "አድራሻ",
+    "locationValue": "ቦሌ መድሀኒዓለም አዲስ አበባ ፣ ኢትዮጵያ",
+    "phoneLabel": "ስልክ",
+    "phoneValue": "+251-11-558-1234",
+    "supportHours": "ድጋፍ: 24/7",
+    "emailLabel": "ኢሜይል",
+    "emailValue": "info@theaterhubethiopia.com",
+    "responseTime": "ምላሽ በ24 ሰአት ውስጥ"
+  },
+  "quickLinks": {
+    "title": "ፈጣን መልሶች",
+    "about": "ስለ እኛ",
+    "blog": "ብሎጎች",
+    "gallery": "ማሳያ"
+  },
+  "support": {
+    "title": "ድጋፍ",
+    "helpCenter": "ዕርዳታ",
+    "contactUs": "አግኙን"
+  },
+  "legal": {
+    "title": "ሕጋዊ",
+    "terms": "የአገልግሎት ውሎች",
+    "privacy": "ክፍያ ሚስጥራዊነት",
+    "cookies": "ኩኪ ፖሊሲ"
+  },
+  "newsletter": {
+    "title": "ጋዜጣ",
+    "description": "ልዩ ቅናሾችን፣ ቀደም ብለው ቲኬቶችን ለማግኘት ይመዝገቡ",
+    "placeholder": "የኢሜይል አድራሻዎ",
+    "subscribe": "ይመዝገቡ",
+    "subscribing": "በመመዝገብ ላይ..."
+  },
+  "social": {
+    "title": "ከእኛ ጋር ይገናኙ"
+  },
+  "copyright": "ኢትዮጵያ TheaterHUB ሲስተም",
+  "bottomLinks": {
+    "terms": "ውሎች",
+    "privacy": "ክፍያ",
+    "cookies": "ኩኪ",
+    "accessibility": "ተደራሽነት"
+  },
+  "popup": {
+    "successTitle": "🎉 እንኳን ወደ TheaterHUB ቤተሰብ በደህና መጡ!",
+    "successMessage": "በተሳካ ሁኔታ ተመዝግበዋል! ልዩ ቅናሾችን፣ ቅድመ ወፍ ቲኬቶችን እና አስደናቂ ስጦታዎችን በቀጥታ ወደ ገቢ መልእክት ሳጥንዎ ይዘው ይድረሱ።",
+    "successBadge": "🎁 በተሳካ ሁኔታ ተመዝግበዋል!",
+    "buttonSuccess": "መቃኘት ጀምር 🎭",
+    "errorTitle": "❌ ይቅርታ! ስህተት ተፈጥሯል",
+    "buttonError": "እንደገና ይሞክሩ"
+  },
+  "errors": {
+    "emailRequired": "እባክዎ አስደናቂ ቅናሾችን ለመቀበል የኢሜይል አድራሻዎን ያስገቡ!",
+    "invalidEmail": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ። ለምሳሌ: name@domain.com",
+    "alreadySubscribed": "ይህ ኢሜይል ቀድሞውንም ተመዝግቧል! እስከ አሁን የ VIP ቤተሰባችን አካል ነዎት 🎭"
+  }
+},"about": {
+  "hero": {
+    "badge": "ስለ እኛ",
+    "title": "የቲያትር ቦኪንግ መድረክ",
+    "subtitle": "ቀልጣፋ ቦኪንግ፣ ደህንነቱ የተጠበቀ መጫኛ እና በመላ ኢትዮጵያ የማይረሱ ቲያትር ልምዶች",
+    "contactButton": "አግኙን"
+  },
+  "stats": {
+    "theatersValue": "50+",
+    "theatersLabel": "አጋር ቲያትሮች",
+    "customersValue": "100K+",
+    "customersLabel": "ደስተኛ ደንበኞች"
+  },
+  "missionVision": {
+    "title": "ተልዕኮአችን እና ራዕያችን",
+    "subtitle": "ለሁሉም በኢትዮጵያ የቲያትር ቦኪንግ እና መጫኛ ቀልጣፋ ለማድረግ ቁርጠኞች"
+  },
+  "mission": "ተልዕኮአችን",
+  "missionText": "ቀልጣፋ፣ ደህንነቱ የተጠበቀ እና አዲስ የሆነ የቲያትር ልምዶችን ለማስመዝገቢያ መድረክ ማቅረብ፣ መስመር ላይ መድረስ ለሁሉም በኢትዮጵያ እንዲቻል።",
+  "vision": "ራዕያችን",
+  "visionText": "የኢትዮጵያ መሪ የቲያትር ቦኪንግ እና መጫኛ መድረክ ለመሆን፣ ተመልካቾች ትርኢቶችን እንዲያገኙ፣ እንዲያስመዘግቡ እና በቀላሉ እንዲዝናኑ አብዮት ማድረግ።",
+  "values": {
+    "title": "ዋና እሴቶቻችን",
+    "subtitle": "መድረኮቻችንን የሚመሩ መርሆች",
+    "trust": {
+      "title": "መተማመን እና ደህንነት",
+      "description": "ውሂብዎ እና ክፍያዎችዎ በደረጃ በተጠበቀ ሁኔታ ተጠብቀዋል።"
+    },
+    "innovation": {
+      "title": "ፈጠራ",
+      "description": "ምርጥ የቲኬት አሰራር ልምድ ለማምጣት ያለማቋረጥ ማሻሻል።"
+    },
+    "customerFirst": {
+      "title": "ደንበኛ ቀዳሚ",
+      "description": "እርካታዎ ቀዳሚያችን ነው። እዚህ ሰዓት 24/7 አለን።"
+    }
+  },
+  "features": {
+    "title": "ለምን TheaterHUB ይምረጡ",
+    "subtitle": "በኢትዮጵያ ምርጥ የቲያትር ቦኪንግ እና ምዝገባ ለማቅረብ ቁርጠኞች ነን",
+    "easyBooking": {
+      "title": "ቀላል ቦኪንግ",
+      "description": "ቲኬቶች በጥቂት ጠቅታዎች ብቻ"
+    },
+    "multipleVenues": {
+      "title": "በርካታ ቦታዎች",
+      "description": "በመላ ኢትዮጵያ ወደሚገኙ ቲያትሮች መድረስ"
+    },
+    "mobileTickets": {
+      "title": "የሞባይል ቲኬቶች",
+      "description": "ዲጂታል ቲኬቶች በስልክዎ ላይ"
+    },
+    "bestSelection": {
+      "title": "ምርጥ ምርጫ",
+      "description": "የተለያዩ ዝግጅቶች እና ትርኢቶች"
+    },
+    "support247": {
+      "title": "24/7 ድጋፍ",
+      "description": "ምላሽ በማንኛውም ሰዓት የደንበኛ እንክብካቤ"
+    },
+    "securePayments": {
+      "title": "ደህንነቱ የተጠበቀ ክፍያ",
+      "description": "ኢንክሪፕት የተደረጉ ግብይቶች"
+    }
+  },
+  "team": {
+    "title": "ከአመራሮቻችን ጋር ይወያዩ",
+    "subtitle": "በኢትዮጵያ ምርጥ የቲያትር ቦኪንግ ተሞክሮ ለማምጣት የቆሩ ባለሙያዎች",
+    "alexRole": "መስራች እና ዋና ስራ አስኪያጅ",
+    "alexBio": "ከ15+ ዓመታት በመዝናኛ ኢንዱስትሪ ውስጥ ራዕይ ያለው መሪ",
+    "sarahRole": "የስራ ክዋኔዎች ኃላፊ",
+    "sarahBio": "ለስላሳ ቲያትር ልምዶች የሚያረጋግጥ የስራ ክወና ባለሙያ",
+    "michaelRole": "ቴክኒካል ዳይሬክተር",
+    "michaelBio": "ዘመናዊ መድረኮችን የሚገነባ ቴክ ፈጣሪ",
+    "emilyRole": "የደንበኛ ልምድ",
+    "emilyBio": "የማይረሱ ልምዶችን በመፍጠር የጉጉት ባለሙያ"
+  },
+  "cta": {
+    "title": "ቀጣዩን የቲያትር ልምድዎን ለማስያዝ ዝግጁ ነዎት?",
+    "subtitle": "በኢትዮጵያ ውስጥ ለቀልጣፋ ቦኪንግ እና ደህንነቱ ለተጠበቀ ምዝገባ TheaterHUB ከሚያምኑ በሺዎች የሚቆጠሩ የቲያትር አፍቃሪዎችን ይቀላቀሉ።",
+    "findTheaters": "በአቅራቢያዎ ቲያትሮች ያግኙ",
+    "contactUs": "አግኙን"
+  }
+},"bookingModal": {
+  "brand": "Theatre Hub Ethiopia",
+  "progress": {
+    "selectSeats": "መቀመጫዎችን ይምረጡ",
+    "yourInfo": "የእርስዎ መረጃ",
+    "payment": "ክፍያ"
+  },
+  "buttons": {
+    "back": "ተመለስ",
+    "next": "ቀጥል",
+    "done": "ጨርስ"
+  },
+  "seatSections": {
+    "vip": "VIP",
+    "premium": "ፕሪሚየም",
+    "standard": "መደበኛ"
+  },
+  "seatSelection": {
+    "title": "መቀመጫዎችዎን ይምረጡ",
+    "selectedSeats": "የተመረጡ መቀመጫዎች፦",
+    "seatsCount": "መቀመጫ",
+    "total": "ጠቅላላ፦",
+    "stage": "መድረክ",
+    "selectedSeatsList": "የተመረጡ መቀመጫዎች ({{count}})"
+  },
+  "seatLegend": {
+    "selected": "ተመርጧል",
+    "reserved": "የተያዘ"
+  },
+  "customerInfo": {
+    "title": "የእርስዎ መረጃ",
+    "fullName": "ሙሉ ስም",
+    "namePlaceholder": "ሙሉ ስምዎን ያስገቡ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "ኢሜይልዎን ያስገቡ",
+    "phone": "የኢትዮጵያ ስልክ ቁጥር",
+    "phonePlaceholder": "09XXXXXXXX ወይም 07XXXXXXXX"
+  },
+  "validation": {
+    "nameTooShort": "ስሙ ቢያንስ 2 ፊደላት መሆን አለበት",
+    "invalidEmail": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "invalidPhone": "እባክዎ ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ (09XXXXXXXX ወይም 07XXXXXXXX)"
+  },
+  "payment": {
+    "title": "ክፍያ ያጠናቅቁ",
+    "totalAmount": "ጠቅላላ ክፍያ፦",
+    "tickets": "ቲኬቶች፦",
+    "seats": "መቀመጫዎች፦",
+    "chapaTitle": "በChapa ይክፈሉ",
+    "chapaSubtitle": "ሲከር የክፍያ መድረክ",
+    "chapaFeature1": "ተሌብርር፣ ሲቢኢ ብር እና ካርዶችን ይቀበላል",
+    "chapaFeature2": "ደህንነቱ የተጠበቀ SSL ኢንክሪፕት የክፍያ ማድረጊያ",
+    "chapaFeature3": "ከክፍያ በኋላ ፈጣን የቲኬት አቅርቦት",
+    "processing": "ክፍያ በማዘጋጀት ላይ...",
+    "payButton": "{{amount}} በChapa ይክፈሉ",
+    "terms": "ይህን ክፍያ በማጠናቀቅ ውሎቻችንን እና መስፈርቶቻችንን ይስማማሉ"
+  },
+  "errors": {
+    "noSeats": "እባክዎ ቢያንስ አንድ መቀመጫ ይምረጡ",
+    "incompleteInfo": "እባክዎ ሁሉንም የደንበኛ መረጃ በትክክል ይሙሉ",
+    "paymentFailed": "ክፍያው መጀመር አልተቻለም። እባክዎ እንደገና ይሞክሩ"
+  },
+  "ticketModal": {
+    "title": "ቲኬቶችዎ",
+    "ticketCount": "ቲኬት(ዎች) ለ",
+    "paymentSuccess": "ክፍያ ተሳክቷል! የቦኪንግ መታወቂያ፦ {{bookingId}} | ጠቅላላ፦ {{total}}",
+    "ticketOf": "ቲኬት {{current}} ከ {{total}}",
+    "seat": "መቀመጫ",
+    "ticketHolder": "ቲኬት እጁና ሰው",
+    "seatType": "የመቀመጫ አይነት",
+    "price": "ዋጋ",
+    "share": "አጋራ",
+    "shared": "ተጋርቷል!",
+    "copyQR": "QR ገልብጥ",
+    "copied": "ገልብጦ ተከማችቷል!",
+    "download": "አውርድ",
+    "print": "አትም",
+    "printAll": "ሁሉንም አትም ({{count}})",
+    "scanMessage": "በቤት መግቢያ ይህን ልዩ QR ኮድ ያሳስቡ",
+    "rowSeat": "ረድፍ {{row}}፣ መቀመጫ {{number}}",
+    "printTitle": "Theatre Hub ቲኬት"
+  },
+  "share": {
+    "title": "Theatre Hub Ethiopia - ቲኬት ለ {{seat}}",
+    "text": "🎭 Theatre Hub Ethiopia ቲኬት\n\nዝግጅት: {{show}}\nመቀመጫ: {{seat}} (ረድፍ {{row}}፣ መቀመጫ {{number}})\nቲኬት መያዣ: {{customerName}}\nየቲኬት መታወቂያ: {{ticketId}}",
+    "copiedFallback": "ማጋራቻ መረጃ በክሊፕቦርድ ተቀምጧል!"
+  },
+  "ticketHtml": {
+    "title": "Theatre Hub Ethiopia ቲኬት",
+    "filenamePrefix": "TheatreHub_Ticket"
+  }
+},"eventCard": {
+  "unknownVenue": "ያልታወቀ ቲያትር",
+  "seatsAvailable": "መቀመጫዎች ይገኛሉ",
+  "bookNow": "አሁን ይያዙ",
+  "minutes": "ደቂቃ"
+},"customerRegistration": {
+  "title": "አካውንት ይፍጠሩ",
+  "subtitle": "የ Theatre Hub Ethiopia ይቀላቀሉ እና ጉዞዎን ይጀምሩ",
+  "form": {
+    "fullName": "ሙሉ ስም",
+    "fullNamePlaceholder": "ሙሉ ስምዎን ያስገቡ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "ኢሜይልዎን ያስገቡ",
+    "phone": "ስልክ ቁጥር",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "የተጠቃሚ ስም (አማራጭ)",
+    "usernamePlaceholder": "የተጠቃሚ ስም ይምረጡ",
+    "password": "የይለፍ ቃል",
+    "passwordPlaceholder": "የይለፍ ቃል ይፍጠሩ",
+    "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
+    "confirmPasswordPlaceholder": "የይለፍ ቃልዎን ያረጋግጡ"
+  },
+  "validation": {
+    "fullNameRequired": "ሙሉ ስም ያስፈልጋል",
+    "fullNameMin": "ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "fullNameMax": "ስም በጣም ረጅም ነው",
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "phoneRequired": "ስልክ ቁጥር ያስፈልጋል",
+    "phoneInvalid": "እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ",
+    "usernameMin": "የተጠቃሚ ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "usernameMax": "የተጠቃሚ ስም በጣም ረጅም ነው",
+    "usernamePattern": "የተጠቃሚ ስም ፊደላት፣ ቁጥሮች እና አሁሉም መስመሮችን ብቻ ሊይዝ ይችላል",
+    "passwordRequired": "የይለፍ ቃል ያስፈልጋል",
+    "passwordMin": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
+    "passwordStrength": "የይለፍ ቃል አቢይ ሆሄ፣ ትንሽ ሆሄ እና ቁጥር መያዝ አለበት",
+    "confirmPasswordRequired": "እባክዎ የይለፍ ቃልዎን ያረጋግጡ",
+    "passwordsMatch": "የይለፍ ቃሎች መመሳሰል አለባቸው",
+    "agreeToTermsRequired": "የአገልግሎት ውሎችን እና የክፍያ ሚስጥራዊነት ፖሊሲን መስማማት አለብዎት"
+  },
+  "passwordRequirements": {
+    "title": "የይለፍ ቃሉ መያዝ ያለበት:",
+    "length": "ቢያንስ 8 ቁምፊዎች",
+    "lowercase": "ትንሽ ሆሄ",
+    "uppercase": "አቢይ ሆሄ",
+    "number": "ቁጥር"
+  },
+  "terms": {
+    "prefix": "እስማማለሁ",
+    "termsLink": "የአገልግሎት ውሎች",
+    "and": "እና",
+    "privacyLink": "ክፍያ ሚስጥራዊነት ፖሊሲ"
+  },
+  "submitButton": "አካውንት ይፍጠሩ",
+  "alreadyHaveAccount": "አካውንት አለዎት?",
+  "signInLink": "ግባ",
+  "errors": {
+    "registrationFailed": "ምዝገባ አልተሳካም። እባክዎ እንደገና ይሞክሩ።",
+    "unexpected": "ያልተጠበቀ ስህተት ተፈጥሯል"
+  },
+  "success": {
+    "title": "ምዝገባ ተሳክቷል! 🎉",
+    "message": "እንኳን ወደ Theatre Hub Ethiopia በደህና መጡ! ወደ መግቢያ ገጽ እያዘዋወሩ ነው...",
+    "redirectMessage": "ምዝገባ ተሳክቷል! እባክዎ ይግቡ።"
+  }
+},"contact": {
+  "hero": {
+    "badge": "አግኙን",
+    "title": "አግኙን",
+    "subtitle": "ጥያቄዎች አሉዎት? እንሰማዎታለን። መልእክት ይላኩልን በተቻለ ፍጥነት እንመልሳለን።"
+  },
+  "info": {
+    "phone": {
+      "title": "የስልክ ድጋፍ",
+      "detail1": "+251 911 234 567",
+      "detail2": "+251 912 345 678",
+      "description": "ሰኞ - አርብ፣ 9:00 - 6:00"
+    },
+    "email": {
+      "title": "ኢሜይል ይላኩልን",
+      "detail1": "support@theaterhub.com",
+      "detail2": "info@theaterhub.com",
+      "description": "በ24 ሰዓት ውስጥ መልስ"
+    },
+    "visit": {
+      "title": "ይጎብኙን",
+      "detail1": "ቦሌ መንገድ አዲስ አበባ",
+      "detail2": "ኢትዮጵያ",
+      "description": "ከሚሊኒየም አዳራሽ አጠገብ"
+    },
+    "hours": {
+      "title": "የስራ ሰዓት",
+      "detail1": "ሰኞ - አርብ፡ 9AM - 8PM",
+      "detail2": "ቅዳሜ፡ 10AM - 6PM",
+      "detail3": "እሁድ፡ ዝግ ነው",
+      "description": "24/7 የመስመር ላይ ድጋፍ"
+    }
+  },
+  "contactLink": "አግኙን",
+  "form": {
+    "title": "መልእክት ይላኩልን",
+    "subtitle": "ከታች ያለውን ቅጽ ይሙሉ በቅርቡ እንመልሳለን",
+    "sendTo": "ለማን ይላክ",
+    "adminOption": "ሲስተም አስተዳዳሪ",
+    "adminDesc": "የቴክኒክ ድጋፍ፣ የመድረክ ችግሮች፣ የክፍያ ጥያቄዎች",
+    "theaterOption": "ቲያትር ባለቤት",
+    "theaterDesc": "ዝግጅት ቦኪንግ፣ አዳራሽ ኪራይ፣ ትርኢት መርሐግብር",
+    "selectTheater": "ቲያትር ይምረጡ",
+    "selectTheaterPlaceholder": "ቲያትር ይምረጡ",
+    "loadingTheaters": "ቲያትሮች እየጫኑ ነው...",
+    "yourName": "ስምዎ",
+    "namePlaceholder": "ጆን ዶ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "john@example.com",
+    "phoneOptional": "ስልክ ቁጥር (አማራጭ)",
+    "phonePlaceholder": "+251 911 234 567",
+    "category": "ምድብ",
+    "subject": "ርዕስ",
+    "subjectPlaceholder": "እንዴት ልንረዳዎ እንችላለን?",
+    "message": "መልእክት",
+    "messagePlaceholder": "ጥያቄዎን ወይም አሳሳቢነትዎን ይንገሩን...",
+    "sending": "በመላክ ላይ...",
+    "sendButton": "መልእክት ይላኩ"
+  },
+  "categories": {
+    "general": "አጠቃላይ ጥያቄ",
+    "booking": "የቦኪንግ ድጋፍ",
+    "payment": "የክፍያ ችግሮች",
+    "technical": "ቴክኒካል ድጋፍ",
+    "feedback": "አስተያየት",
+    "partnership": "አጋርነት"
+  },
+  "errors": {
+    "nameRequired": "ስም ያስፈልጋል",
+    "nameMinLength": "ስም ቢያንስ 2 ፊደላት መሆን አለበት",
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "subjectRequired": "ርዕስ ያስፈልጋል",
+    "messageRequired": "መልእክት ያስፈልጋል",
+    "messageMinLength": "መልእክት ቢያንስ 10 ቁምፊዎች መሆን አለበት",
+    "theaterRequired": "እባክዎ ቲያትር ይምረጡ"
+  },
+  "theaterDetail": {
+    "phoneSupport": "የስልክ ድጋፍ",
+    "phoneHours": "ሰኞ - አርብ፣ 9:00 - 6:00",
+    "callNow": "አሁን ይደውሉ",
+    "emailUs": "ኢሜይል ይላኩልን",
+    "emailResponse": "በ24 ሰዓት ውስጥ መልስ",
+    "sendEmail": "ኢሜይል ይላኩ",
+    "visitUs": "ይጎብኙን",
+    "nearby": "ከዋናው መንገድ አጠገብ",
+    "getDirections": "አቅጣጫ ያግኙ",
+    "about": "ስለእኛ"
+  },
+  "findUs": {
+    "title": "ያግኙን",
+    "addressLine": "ቦሌ መንገድ አዲስ አበባ ኢትዮጵያ",
+    "landmark": "ከሚሊኒየም አዳራሽ አጠገብ",
+    "phoneNumbers": "+251 911 234 567 / +251 912 345 678",
+    "emails": "support@theaterhub.com / info@theaterhub.com",
+    "hours": "ሰኞ - አርብ: 9AM - 8PM | ቅዳሜ: 10AM - 6PM"
+  },
+  "theaterSocial": {
+    "title": "ከ{{name}} ጋር ይገናኙ",
+    "followText": "{{name}} ለዝመናዎች፣ ቅናሾች እና ዝግጅቶች ይከታተሉ"
+  },
+  "globalSocial": {
+    "title": "ከእኛ ጋር ይገናኙ",
+    "followText": "ለዝመናዎች፣ ቅናሾች እና ዝግጅቶች ይከተሉን"
+  },
+  "success": {
+    "title": "መልእክት በተሳካ ሁኔታ ተልኳል! 🎉",
+    "message": "ለማነጋገርዎ እናመሰግናለን{{#if theaterName}} ከ {{theaterName}}{{/if}}። ቡድናችን በ24 ሰዓት ውስጥ ይመልሳል።",
+    "details": {
+      "name": "ስም",
+      "email": "ኢሜይል",
+      "recipient": "ተቀባይ",
+      "category": "ምድብ",
+      "responseTime": "የምላሽ ሰዓት",
+      "notProvided": "አልቀረበም",
+      "adminRecipient": "ሲስተም አስተዳዳሪ",
+      "theaterOwner": "ቲያትር ባለቤት",
+      "responseTimeValue": "በ24 ሰዓት ውስጥ"
+    },
+    "buttons": {
+      "home": "ወደ መነሻ ይሂዱ",
+      "close": "ዝጋ"
+    }
+  }
+},"help": {
+  "hero": {
+    "badge": "የእርዳታ ማዕከል",
+    "title": "እንዴት ልንረዳዎ እንችላለን?",
+    "subtitle": "ለጥያቄዎችዎ መልስ ያግኙ እና ድጋፍ ያግኙ"
+  },
+  "search": {
+    "resultCount_one": "\"{{query}}\" ለሚለው {{count}} ውጤት ተገኝቷል",
+    "resultCount_other": "\"{{query}}\" ለሚለው {{count}} ውጤቶች ተገኝተዋል"
+  },
+  "categories": {
+    "all": "ሁሉም",
+    "tickets": "ቲኬቶች",
+    "payments": "ክፍያዎች",
+    "account": "አካውንት",
+    "wallet": "ዋሌት",
+    "technical": "ቴክኒካል"
+  },
+  "noResults": {
+    "title": "ምንም ውጤት አልተገኘም",
+    "message": "የተለያዩ ቃላትን ይሞክሩ ወይም ምድቦቻችንን ያስሱ"
+  },
+  "faq": {
+    "tickets": {
+      "bookQuestion": "ቲኬቶችን በመስመር ላይ እንዴት ማስያዝ እችላለሁ?",
+      "bookAnswer": "ቲኬት ማስያዝ ቀላል ነው! ትርኢቶቻችንን ያስሱ፣ የሚፈልጉትን ቀን እና ሰዓት ይምረጡ፣ መቀመጫዎችዎን ይምረጡ፣ ከዚያ ወደ መግዣ ይቀጥሉ። በChapa፣ ተሌብርር፣ ሲቢኢ ብር ወይም ሄሎካሽ መክፈል ይችላሉ።",
+      "getQuestion": "ካስያዝኩ በኋላ ቲኬቶቼን እንዴት ማግኘት እችላለሁ?",
+      "getAnswer": "ከተሳካ ክፍያ በኋላ፣ ኢሜይልዎ ላይ ኢ-ቲኬቶችዎን ይደርስዎታል። እንዲሁም በአካውንትዎ ውስጥ “ቲኬቶቼ” በሚለው ስር ማግኘት ይችላሉ። በቲያትር መግቢያ ላይ የQR ኮዱን ብቻ ያሳዩ።",
+      "limitQuestion": "ስንት ቲኬቶች ማስያዝ እችላለሁ?",
+      "limitAnswer": "እንደፈለጉት ያክል ቲኬቶች ማስያዝ ይችላሉ! በአንድ ቦኪንግ ላይ የቲኬት ብዛት ገደብ የለም። ለትልቅ ቡድን እና ልዩ ዝግጅቶች ቲኬቶችን ማስያዝ ይችላሉ።",
+      "transferQuestion": "ቲኬቶቼን ለሌላ ሰው ማስተላለፍ እችላለሁን?",
+      "transferAnswer": "አዎ፣ በአካውንትዎ ዳሽቦርድ በኩል ቲኬቶችን ማስተላለፍ ይችላሉ። ወደ “ቲኬቶቼ” ይሂዱ፣ ቲኬቱን ይምረጡ፣ እና “አስተላልፍ” ን ጠቅ ያድርጉ። ተቀባዩ የቲኬት ዝርዝሮችን የያዘ ኢሜይል ይደርሰዋል።"
+    },
+    "payments": {
+      "methodsQuestion": "ምን ዓይነት የክፍያ ዘዴዎችን ትቀበላላችሁ?",
+      "methodsAnswer": "በርካታ የክፍያ ዘዴዎችን እንቀበላለን፦ Chapa (ካርድ/ባንክ ዝውውር)፣ ተሌብርር፣ ሲቢኢ ብር እና ሄሎካሽ። ሁሉም ክፍያዎች በደህንነት ይከናወናሉ።"
+    },
+    "account": {
+      "createQuestion": "አካውንት እንዴት መፍጠር እችላለሁ?",
+      "createAnswer": "በመነሻ ገጽ ላይ “ተመዝገብ” ን ጠቅ ያድርጉ፣ ዝርዝሮችዎን ይሙሉ፣ ኢሜይልዎን ያረጋግጡ፣ እና ማስያዝ ለመጀመር ዝግጁ ነዎት! እንዲሁም በGoogle ወይም Facebook መመዝገብ ይችላሉ።"
+    },
+    "wallet": {
+      "walletQuestion": "TheaterHUB Wallet ምንድን ነው?",
+      "walletAnswer": "TheaterHUB Wallet ፈጣን እና ቀላል የቲኬት ግዢ ለማድረግ ገንዘብ እንዲያከማቹ የሚያስችልዎ ዲጂታል የኪስ ቦርሳችን ነው። የተለያዩ የክፍያ ዘዴዎችን በመጠቀም ገንዘብ መጨመር ይችላሉ።"
+    },
+    "technical": {
+      "troubleQuestion": "በድረ-ገጹ ላይ ችግር አጋጥሞዎታል?",
+      "troubleAnswer": "የአሳሽ መሸጎጫዎን ንጹህ ያድርጉ፣ የተለየ አሳሽ ይሞክሩ፣ ወይም የድጋፍ ቡድናችንን በ support@theaterhub.com ያነጋግሩ። እኛ ለመርዳት እዚህ ነን!",
+      "resetPasswordQuestion": "የይለፍ ቃሌን እንዴት ዳግም ማስጀመር እችላለሁ?",
+      "resetPasswordAnswer": "በመግቢያ ገጽ ላይ “የይለፍ ቃሌን ረሳሁት” ን ጠቅ ያድርጉ፣ የኢሜይል አድራሻዎን ያስገቡ፣ እና ወደ ገቢ መልእክት ሳጥንዎ የሚላኩትን መመሪያዎች ይከተሉ። አዲስ የይለፍ ቃል መፍጠር ይችላሉ።"
+    }
+  }
+},"login": {
+  "title": "እንኳን ደህና መጡ",
+  "subtitle": "ወደ ዳሽቦርድዎ ለመቀጠል ይግቡ",
+  "tabs": {
+    "email": "ኢሜይል",
+    "username": "የተጠቃሚ ስም"
+  },
+  "labels": {
+    "email": "የኢሜይል አድራሻ",
+    "username": "የተጠቃሚ ስም",
+    "password": "የይለፍ ቃል"
+  },
+  "placeholders": {
+    "email": "you@example.com",
+    "username": "@ስም",
+    "password": "የይለፍ ቃልዎን ያስገቡ"
+  },
+  "rememberMe": "አስታውሰኝ",
+  "forgotPassword": "የይለፍ ቃል ረሳሁት?",
+  "signInButton": "ግባ",
+  "signingIn": "በመግባት ላይ...",
+  "footer": {
+    "text": "በመግባት የሚከተሉትን ትስማማለህ",
+    "terms": "የአገልግሎት ውሎች",
+    "and": "እና",
+    "privacy": "ክፍያ ሚስጥራዊነት"
+  },
+  "validation": {
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "passwordRequired": "የይለፍ ቃል ያስፈልጋል",
+    "passwordMin": "የይለፍ ቃል ቢያንስ 6 ቁምፊዎች መሆን አለበት",
+    "usernameRequired": "የተጠቃሚ ስም ያስፈልጋል",
+    "usernameMin": "የተጠቃሚ ስም ቢያንስ 3 ቁምፊዎች መሆን አለበት"
+  },
+  "errors": {
+    "invalidCredentials": "የተሳሳተ ኢሜይል/የተጠቃሚ ስም ወይም የይለፍ ቃል",
+    "accountInactive": "መለያዎ ንቁ አይደለም ወይም ታግዷል። እባክዎ ድጋፍን ያነጋግሩ።",
+    "general": "መግባት አልተሳካም። እባክዎ እንደገና ይሞክሩ።"
+  },
+  "roles": {
+    "superAdmin": "ሱፐር አስተዳዳሪ",
+    "superAdminDesc": "ሙሉ የሲስተም ተደራሽነት",
+    "theaterOwner": "ቲያትር ባለቤት",
+    "theaterOwnerDesc": "ቲያትሮችን ያስተዳድሩ",
+    "theaterManager": "ቲያትር ሥራ አስኪያጅ",
+    "theaterManagerDesc": "የዕለት ተዕለት ሥራዎች",
+    "salesPerson": "ሻጭ",
+    "salesPersonDesc": "ቲኬት ሽያጭ",
+    "qrScanner": "QR ስካነር",
+    "qrScannerDesc": "ቲኬቶችን ያረጋግጡ",
+    "customer": "ደንበኛ",
+    "customerDesc": "ይመልከቱ እና ቲኬቶችን ይግዙ"
+  }
+},"forgotPassword": {
+  "title": "የይለፍ ቃል ዳግም አስጀምር",
+  "subtitleStep1": "ለመቀጠል የመልሶ ማግኛ ዘዴ ይምረጡ",
+  "subtitleStep2": "የተላከልዎትን ማረጋገጫ ኮድ ያስገቡ",
+  "subtitleStep3": "ጠንካራ አዲስ የይለፍ ቃል ይፍጠሩ",
+  "stepLabels": {
+    "identity": "ማንነት",
+    "verify": "አረጋግጥ",
+    "reset": "ዳግም አስጀምር"
+  },
+  "methods": {
+    "email": { "label": "ኢሜይል", "description": "ለኢሜይልዎ ማገናኛ ይላካል" },
+    "phone": { "label": "ኤስ ኤም ኤስ", "description": "ኮድ ወደ ስልክዎ ይላካል" }
+  },
+  "labels": {
+    "email": "ኢሜይል አድራሻ",
+    "phone": "ስልክ ቁጥር",
+    "newPassword": "አዲስ የይለፍ ቃል",
+    "confirmPassword": "አዲስ የይለፍ ቃል ያረጋግጡ"
+  },
+  "placeholders": {
+    "email": "you@example.com",
+    "phone": "0912345678",
+    "newPassword": "አዲስ የይለፍ ቃል ያስገቡ",
+    "confirmPassword": "አዲስ የይለፍ ቃልዎን ያረጋግጡ"
+  },
+  "hints": {
+    "email": "የማረጋገጫ ኮድ ወደዚህ ኢሜይል እንልካለን",
+    "phone": "የማረጋገጫ ኮድ ወደዚህ ስልክ ቁጥር እንልካለን"
+  },
+  "verifyTitle": "የማረጋገጫ ኮድ ያስገቡ",
+  "verifyMessage": "6-አሃዝ ኮድ ወደ",
+  "mockCodePrefix": "የሙከራ ኮድ:",
+  "resendButton": "ኮድ አልደረሰዎትም? እንደገና ላክ",
+  "codeResent": "አዲስ የማረጋገጫ ኮድ ተልኳል!",
+  "sending": "በመላክ ላይ...",
+  "verifying": "በማረጋገጥ ላይ...",
+  "resetting": "ዳግም በማስጀመር ላይ...",
+  "sendButton": "የዳግም ማስጀመሪያ ማገናኛ ላክ",
+  "verifyButton": "ኮድ አረጋግጥ",
+  "resetButton": "የይለፍ ቃል ዳግም አስጀምር",
+  "backToLogin": "ወደ መግቢያ ተመለስ",
+  "successTitle": "የይለፍ ቃል ዳግም ማስጀመር ተሳክቷል!",
+  "successMessage": "የይለፍ ቃልዎ በተሳካ ሁኔታ ተሻሽሏል። ወደ መግቢያ ገጽ እያዘዋወሩ ነው...",
+  "passwordRequirements": {
+    "title": "የይለፍ ቃሉ መያዝ ያለበት:",
+    "length": "8-32 ቁምፊዎች",
+    "uppercase": "አቢይ ሆሄ (A-Z)",
+    "lowercase": "ትንሽ ሆሄ (a-z)",
+    "number": "ቁጥር (0-9)",
+    "special": "ልዩ ምልክት (!@#$%^&*)",
+    "noSpaces": "ክፍተት የለም",
+    "allMet": "✓ ሁሉም መስፈርቶች ተሟልተዋል!"
+  },
+  "passwordMatchSuccess": "የይለፍ ቃሎች ይዛመዳሉ",
+  "validation": {
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "emailFormat": "ኢሜይል በዚህ ቅርጸት መሆን አለበት፦ name@domain.com",
+    "emailNotFound": "ኢሜይሉ በስርዓቱ ውስጥ አልተገኘም",
+    "phoneRequired": "ስልክ ቁጥር ያስፈልጋል",
+    "phoneFormat": "ስልክ ቁጥር 10-15 አሃዞች መሆን አለበት (ለምሳሌ: 251911234567 ወይም +251911234567)",
+    "phoneEthiopian": "እባክዎ ትክክለኛ የኢትዮጵያ ስልክ ቁጥር ያስገቡ",
+    "phoneNotFound": "ስልክ ቁጥሩ በስርዓቱ ውስጥ አልተገኘም",
+    "codeRequired": "የማረጋገጫ ኮድ ያስፈልጋል",
+    "codeLength": "ኮዱ በትክክል 6 አሃዞች መሆን አለበት",
+    "codeDigits": "ኮዱ ቁጥሮችን (0-9) ብቻ ሊይዝ ይችላል",
+    "codeNotAllZeros": "ኮዱ ሁሉም ዜሮ መሆን አይችልም",
+    "newPasswordRequired": "አዲስ የይለፍ ቃል ያስፈልጋል",
+    "passwordMin": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
+    "passwordMax": "የይለፍ ቃል ከ32 ቁምፊዎች መብለጥ አይችልም",
+    "passwordUppercase": "የይለፍ ቃል ቢያንስ አንድ አቢይ ሆሄ (A-Z) መያዝ አለበት",
+    "passwordLowercase": "የይለፍ ቃል ቢያንስ አንድ ትንሽ ሆሄ (a-z) መያዝ አለበት",
+    "passwordNumber": "የይለፍ ቃል ቢያንስ አንድ ቁጥር (0-9) መያዝ አለበት",
+    "passwordSpecial": "የይለፍ ቃል ቢያንስ አንድ ልዩ ምልክት (!@#$%^&*) መያዝ አለበት",
+    "passwordNoSpaces": "የይለፍ ቃል ክፍተቶችን መያዝ አይችልም",
+    "passwordNoSequential": "የይለፍ ቃል ተከታታይ ቁምፊዎችን (123፣ abc) መያዝ አይችልም",
+    "confirmPasswordRequired": "እባክዎ የይለፍ ቃልዎን ያረጋግጡ",
+    "passwordsMatch": "የይለፍ ቃሎች መዛመድ አለባቸው"
+  },
+  "errors": {
+    "emailNotFound": "ኢሜይሉ በስርዓቱ ውስጥ አልተገኘም።",
+    "phoneNotFound": "ስልክ ቁጥሩ በስርዓቱ ውስጥ አልተገኘም።",
+    "sessionExpired": "የክፍለ ጊዜ ጊዜው አልፏል። እባክዎ ከመጀመሪያ ይጀምሩ።",
+    "codeExpired": "የማረጋገጫ ኮዱ ጊዜው አልፏል። እባክዎ አዲስ ኮድ ይጠይቁ።",
+    "invalidCode": "የማረጋገጫ ኮዱ ልክ አይደለም። እባክዎ ይፈትሹ እና እንደገና ይሞክሩ።",
+    "invalidSession": "የዳግም ማስጀመር ክፍለ ጊዜ ልክ አይደለም። እባክዎ ከመጀመሪያ ይጀምሩ።",
+    "userNotFound": "ተጠቃሚ አልተገኘም።",
+    "missingUserInfo": "የተጠቃሚ መረጃ ጠፍቷል። እባክዎ ከመጀመሪያ ይጀምሩ።"
+  },
+  "mockAccounts": {
+    "title": "የሙከራ አካውንቶች"
+  }
+},"theaterRegistration": {
+  "title": "የቲያትር ባለቤት ምዝገባ",
+  "subtitle": "TheaterHUBን ይቀላቀሉ እና በሺዎች ወደሚቆጠሩ የቲያትር አፍቃሪዎች ይድረሱ",
+  "feeNotice": "የማይመለስ የምዝገባ ክፍያ፦ $299",
+  "steps": {
+    "businessInfo": "የንግድ መረጃ",
+    "contactInfo": "የእውቂያ መረጃ",
+    "theaterDetails": "የቲያትር ዝርዝሮች",
+    "documents": "ሰነዶች",
+    "pricingPlan": "የዋጋ አሰራር",
+    "terms": "ውሎች"
+  },
+  "businessInfo": {
+    "title": "የንግድ መረጃ",
+    "subtitle": "ስለ ቲያትር ንግድዎ ይንገሩን",
+    "legalBusinessName": "ህጋዊ የንግድ ስም",
+    "legalBusinessNamePlaceholder": "Grand Theater LLC",
+    "legalBusinessNameHint": "በንግድ ፈቃድዎ ላይ እንደሚታየው",
+    "tradeName": "የንግድ ስም / DBA",
+    "tradeNamePlaceholder": "Grand Theater",
+    "businessType": "የንግድ አይነት",
+    "selectBusinessType": "የንግድ አይነት ይምረጡ",
+    "businessLicense": "የንግድ ፈቃድ ቁጥር",
+    "businessLicensePlaceholder": "BL-2024-12345",
+    "taxId": "የግብር መታወቂያ / TIN",
+    "taxIdPlaceholder": "123456789",
+    "yearsInOperation": "በስራ ላይ ያሉ ዓመታት",
+    "selectYears": "ዓመታት ይምረጡ",
+    "businessDescription": "የንግድ መግለጫ",
+    "businessDescriptionPlaceholder": "የቲያትር ንግድዎን፣ ታሪክዎን፣ ተልዕኮዎትን እና ልዩ ባህሪዎትን ይግለጹ...",
+    "businessDescriptionHint": "ልዩ የሚያደርግዎት ምንድን ነው?"
+  },
+  "contactInfo": {
+    "title": "የባለቤት እና የእውቂያ መረጃ",
+    "subtitle": "ማንን ማነጋገር አለብን?",
+    "primaryContact": "ዋና እውቂያ / ባለቤት",
+    "fullName": "ሙሉ ስም",
+    "fullNamePlaceholder": "John Doe",
+    "position": "ሹመት / ማዕረግ",
+    "selectPosition": "ሹመት ይምረጡ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "john@example.com",
+    "phone": "ስልክ ቁጥር",
+    "phonePlaceholder": "+1 (555) 000-0000",
+    "secondaryContact": "ሁለተኛ እውቂያ",
+    "secondaryContactOptional": " (አማራጭ)",
+    "secondaryName": "ስም",
+    "secondaryNamePlaceholder": "Jane Smith",
+    "secondaryPosition": "ሹመት",
+    "secondaryPositionPlaceholder": "ኦፕሬሽን ማኔጀር",
+    "secondaryEmail": "ኢሜይል",
+    "secondaryEmailPlaceholder": "jane@example.com",
+    "secondaryPhone": "ስልክ",
+    "secondaryPhonePlaceholder": "+1 (555) 000-0001",
+    "emergencyContact": "የአደጋ ጊዜ እውቂያ",
+    "emergencyName": "የእውቂያ ስም",
+    "emergencyNamePlaceholder": "የአደጋ ጊዜ እውቂያ ስም",
+    "emergencyPhone": "ስልክ ቁጥር",
+    "emergencyPhonePlaceholder": "+1 (555) 000-0002",
+    "emergencyRelation": "ዝምድና",
+    "emergencyRelationPlaceholder": "የንግድ አጋር / የቤተሰብ አባል"
+  },
+  "theaterDetails": {
+    "title": "የቲያትር ዝርዝሮች",
+    "subtitle": "ስለ ቦታዎ ይንገሩን",
+    "theaterName": "የቲያትር ስም",
+    "theaterNamePlaceholder": "Grand Theater",
+    "theaterLogo": "የቲያትር አርማ",
+    "uploadLogo": "አርማ ስቀል",
+    "changeLogo": "አርማ ቀይር",
+    "logoHint": "PNG, JPG እስከ 2MB",
+    "theaterDescription": "የቲያትር መግለጫ",
+    "theaterDescriptionPlaceholder": "ቲያትርዎን፣ ታሪኩን፣ ልዩ ባህሪያቱን ይግለጹ...",
+    "theaterEmail": "የቲያትር ኢሜይል",
+    "theaterEmailPlaceholder": "info@grandtheater.com",
+    "theaterPhone": "የቲያትር ስልክ",
+    "theaterPhonePlaceholder": "+251 911 234 567",
+    "numberOfHalls": "የአዳራሽ ብዛት",
+    "numberOfHallsPlaceholder": "3",
+    "totalSeats": "ጠቅላላ መቀመጫዎች",
+    "totalSeatsPlaceholder": "500",
+    "screenTypes": "የተገኙ የስክሪን አይነቶች",
+    "screenTypesHelp": "ብዙ ለመምረጥ Ctrl/Cmd ይያዙ",
+    "servicesOffered": "የሚቀርቡ አገልግሎቶች",
+    "services": {
+      "ticketBooking": "ቲኬት ማስያዝ",
+      "ticketBookingDesc": "የመስመር ላይ ቲኬት መጠበቂያ",
+      "refreshments": "ምግብ እና መጠጥ",
+      "refreshmentsDesc": "ቀላል ምግብ እና መጠጦች",
+      "premiumBar": "ፕሪሚየም ባር",
+      "premiumBarDesc": "ሙሉ የባር አገልግሎት",
+      "dining": "ምግብ",
+      "diningDesc": "ከዝግጅት በፊት ምግብ",
+      "freeWifi": "ነጻ ዋይፋይ",
+      "freeWifiDesc": "ነጻ በይነመረብ",
+      "valetParking": "ቫሌት ፓርኪንግ",
+      "valetParkingDesc": "ሙያዊ የመኪና ማቆሚያ አገልግሎት",
+      "wheelchairAccess": "ዊልቸር ተደራሽ",
+      "wheelchairAccessDesc": "ከኤዲኤ ጋር የሚስማማ",
+      "giftCards": "የስጦታ ካርዶች",
+      "giftCardsDesc": "ዲጂታል የስጦታ ካርዶች",
+      "groupBookings": "የቡድን ቦኪንግ",
+      "groupBookingsDesc": "ልዩ የቡድን ተመኖች",
+      "privateEvents": "የግል ዝግጅቶች",
+      "privateEventsDesc": "ቦታ ማከራየት"
+    },
+    "city": "ከተማ",
+    "selectCity": "ከተማ ይምረጡ",
+    "region": "ክልል",
+    "selectRegion": "ክልል ይምረጡ",
+    "fullAddress": "ሙሉ አድራሻ",
+    "fullAddressPlaceholder": "123 ቦሌ መንገድ, አዲስ አበባ",
+    "latitude": "ኬክሮስ",
+    "latitudePlaceholder": "9.0192",
+    "longitude": "ኬንትሮስ",
+    "longitudePlaceholder": "38.7535"
+  },
+  "documents": {
+    "title": "የሚፈለጉ ሰነዶች",
+    "subtitle": "የንግድ ሰነዶችዎን ይስቀሉ",
+    "license": {
+      "name": "የንግድ ፈቃድ",
+      "desc": "ትክክለኛ የንግድ ፈቃድ ወይም የምዝገባ የምስክር ወረቀት"
+    },
+    "taxCertificate": {
+      "name": "የግብር ምዝገባ የምስክር ወረቀት",
+      "desc": "የግብር መታወቂያ ቁጥር (TIN) የምስክር ወረቀት"
+    },
+    "ownerId": {
+      "name": "የባለቤት መታወቂያ / ፓስፖርት",
+      "desc": "ግልጽ የባለቤት መታወቂያ ወይም ፓስፖርት ፎቶ"
+    },
+    "theaterPhotos": {
+      "name": "የቲያትር ፎቶዎች",
+      "desc": "የቲያትር ውስጣዊ እና ውጫዊ ፎቶዎች"
+    },
+    "fireSafety": {
+      "name": "የእሳት ደህንነት የምስክር ወረቀት",
+      "desc": "የእሳት ደህንነት ቁጥጥር የምስክር ወረቀት"
+    },
+    "healthPermit": {
+      "name": "የጤና ፈቃድ",
+      "desc": "ምግብ/መጠጥ የሚያገለግል ከሆነ"
+    },
+    "uploadButton": "ሰነድ ስቀል",
+    "replaceButton": "ፋይል ቀይር",
+    "requirements": "የሰነድ መስፈርቶች",
+    "requirementsText": "እባክዎ ሁሉም ሰነዶች ግልጽ እና ሊነበቡ የሚችሉ መሆናቸውን ያረጋግጡ። ከፍተኛ የፋይል መጠን: በአንድ ፋይል 10MB። ተቀባይነት ያላቸው ቅርጸቶች፦ PDF፣ JPG፣ PNG።"
+  },
+  "pricingPlan": {
+    "title": "የዋጋ አሰራር",
+    "subtitle": "የሚመርጡትን የክፍያ ዘዴ ይምረጡ",
+    "selectModel": "የዋጋ አሰራር ይምረጡ",
+    "perTicket": {
+      "name": "በቲኬት መሸጥ",
+      "description": "በእያንዳንዱ የሚሸጥ ቲኬት ላይ ኮሚሽን ይክፈሉ",
+      "rate": "ከ5-10% በአንድ ቲኬት",
+      "bestFor": "አዲስ / ዝቅተኛ መጠን ቲያትሮች",
+      "details": "ወርሃዊ ክፍያ የለም፣ የሚሸጥ ብቻ ይክፈሉ"
+    },
+    "contract": {
+      "name": "የኮንትራት እቅድ",
+      "description": "ቋሚ ኮንትራት ከተለዋዋጭ ውሎች ጋር",
+      "rate": "እንደ ኮንትራት ርዝመት ይለያያል",
+      "bestFor": "ቀጣይነት ያለው ሽያጭ ላላቸው የተቋቋሙ ቲያትሮች",
+      "details": "ወርሃዊ፣ በሩብ ዓመት ወይም አመታዊ ኮንትራት ይምረጡ"
+    },
+    "selectContract": "የኮንትራት አይነት ይምረጡ",
+    "contractTypes": {
+      "monthly": {
+        "name": "ወርሃዊ ኮንትራት",
+        "price": "$299/ወር",
+        "discount": "0%",
+        "features": ["ከወር ወር", "በማንኛውም ጊዜ ሰርዝ", "መደበኛ ድጋፍ"]
+      },
+      "quarterly": {
+        "name": "የሩብ ዓመት ኮንትራት",
+        "price": "$249/ወር",
+        "discount": "15% ቆጥብ",
+        "features": ["3-ወር ጊዜ", "ቅድሚያ ድጋፍ", "በዝርዝር ውስጥ መለየት"]
+      },
+      "yearly": {
+        "name": "ዓመታዊ ኮንትራት",
+        "price": "$199/ወር",
+        "discount": "33% ቆጥብ (2 ወራት ነጻ)",
+        "features": ["12-ወር ጊዜ", "ፕሪሚየም ድጋፍ", "ከፍተኛ በዝርዝር መለየት", "የግብይት ማበልጸጊያ"]
+      }
+    }
+  },
+  "terms": {
+    "title": "ውሎች እና ስምምነት",
+    "subtitle": "እባክዎ ውሎቻችንን ይገምግሙ እና ይቀበሉ",
+    "agreementTitle": "የቲያትር ባለቤት ስምምነት",
+    "intro": "ይህን ምዝገባ በማስገባት ከሚከተሉት ውሎች ጋር ይስማማሉ:",
+    "clauses": [
+      "የቀረበው መረጃ ሁሉ ትክክል እና ሙሉ ነው",
+      "ሁሉንም የሀገር ውስጥ ህጎች እና ደንቦች ያከብራሉ",
+      "እንደተመረጠው የዋጋ እቅድ የኮሚሽን ተመኖች ይተገበራሉ",
+      "በእያንዳንዱ ቲኬት መሸጫ ሞዴል፦ ከ5-10% ኮሚሽን",
+      "ለኮንትራት ሞዴል፦ ቋሚ ወርሃዊ/ሩብ ዓመታዊ/አመታዊ ክፍያ ይተገበራል",
+      "ለተመላሽ ገንዘብ እና ተመላሽ ክፍያዎች የማቆያ ፖሊሲ ይተገበራል",
+      "TheaterHUB የቀረቡትን ሰነዶች የማረጋገጥ መብት አለው",
+      "ንግዱን ለመወከል ፈቃድ አለዎት",
+      "ትክክለኛ የዝግጅት መርሐግብር እና ዋጋዎችን ይጠብቃሉ",
+      "በTheaterHUB በኩል የሚሰሩ ሁሉንም የቲኬት ሽያጮች ያከብራሉ"
+    ],
+    "adminReview": "አስፈላጊ: ምዝገባዎ በአስተዳዳሪ ቡድናችን በ2-3 የስራ ቀናት ውስጥ ይገመገማል. ከማረጋገጫ በኋላ OTP ይላክልዎታል።",
+    "noRefundNotice": "ምንም ተመላሽ ገንዘብ የለም ፖሊሲ: የ $299 የምዝገባ ክፍያ በማንኛውም ሁኔታ አይመለስም።",
+    "accuracyCheckbox": "የቀረበው ሁሉም መረጃ ትክክል እና ሙሉ መሆኑን አረጋግጣለሁ",
+    "accuracyHint": "የውሸት መረጃ ማቅረብ ውድቅ ወይም ማገድ እንደሚያስከትል ተረድቻለሁ",
+    "marketingCheckbox": "ከTheaterHUB የግብይት ግንኙነቶችን ለመቀበል እስማማለሁ",
+    "marketingHint": "በማንኛውም ጊዜ ሰብስክራይብ ማውጣት ይችላሉ",
+    "noRefundCheckbox": "የ $299 የምዝገባ ክፍያ እንደማይመለስ ተረድቻለሁ",
+    "noRefundHint": "ክፍያ ምዝገባ ከመጨረሱ በፊት መጠናቀቅ አለበት. በማንኛውም ምክንያት ገንዘብ አይመለስም."
+  },
+  "payment": {
+    "modalTitle": "የምዝገባ ክፍያ",
+    "amountLabel": "የሚከፈል ገንዘብ",
+    "nonRefundable": "የአንድ ጊዜ የምዝገባ ክፍያ (የማይመለስ)",
+    "payWithChapa": "በChapa ይክፈሉ",
+    "chapaDesc": "ኢትዮጵያ የክፍያ መግቢያ",
+    "importantNotice": "አስፈላጊ: ይህ ክፍያ የማይመለስ ነው. በማንኛውም ሁኔታ ገንዘብ አይመለስም.",
+    "processing": "በChapa እየሰራ ነው...",
+    "payButton": "${{amount}} በChapa ይክፈሉ",
+    "secureNotice": "🔒 ደህንነቱ የተጠበቀ ክፍያ በChapa የተጎላበተ. የክፍያ መረጃዎ ኢንክሪፕት የተደረገ እና ደህንነቱ የተጠበቀ ነው."
+  },
+  "buttons": {
+    "back": "ተመለስ",
+    "continue": "ቀጥል",
+    "payAndSubmit": "${{amount}} (የማይመለስ) ክፈል እና አስገባ",
+    "submitForReview": "ለአስተዳዳሪ ግምገማ አስገባ",
+    "goHome": "ወደ መነሻ ገጽ"
+  },
+  "errors": {
+    "required": "{{field}} ያስፈልጋል",
+    "validEmail": "ትክክለኛ ኢሜይል ያስፈልጋል",
+    "validPhone": "ስልክ ቁጥር ያስፈልጋል",
+    "validNumber": "ትክክለኛ ቁጥር ያስፈልጋል",
+    "validLatitude": "ኬክሮስ ያስፈልጋል",
+    "validLongitude": "ኬንትሮስ ያስፈልጋል",
+    "selectPricingModel": "እባክዎ የዋጋ አሰራር ይምረጡ",
+    "selectContractType": "እባክዎ የኮንትራት አይነት ይምረጡ",
+    "agreeTerms": "የመረጃውን ትክክለኛነት መስማማት አለብዎት",
+    "agreeNoRefund": "የማይመለስ ክፍያ ፖሊሲን ማወቅ አለብዎት",
+    "fileSize": "የፋይል መጠን ከ{{size}}MB መብለጥ የለበትም",
+    "fileType": "JPEG, PNG, ወይም PDF ብቻ ይፈቀዳሉ",
+    "logoSize": "አርማው ከ2MB መብለጥ የለበትም",
+    "logoType": "JPEG ወይም PNG ብቻ ይፈቀዳሉ"
+  },
+  "success": {
+    "title": "ምዝገባ ለግምገማ ቀርቧል!",
+    "message": "TheaterHUBን ስለመረጡ እናመሰግናለን. ክፍያዎ ተሰርቷል እና ማመልከቻዎ ለአስተዳዳሪ ቡድን ተልኳል። ከማረጋገጫ በኋላ በ2-3 የስራ ቀናት ውስጥ OTP በኢሜይል ይደርስዎታል።",
+    "applicationId": "የማመልከቻ መታወቂያ",
+    "paymentId": "የክፍያ መታወቂያ",
+    "nextSteps": "ቀጣይ እርምጃዎች: አስተዳዳሪ መረጃዎን ያረጋግጣል እና OTP ለኮንትራት ፊርማ ይልካል",
+    "noRefundReminder": "አስፈላጊ: የምዝገባ ክፍያዎች አይመለሱም"
+  }
+},"customerRegistration": {
+  "title": "አካውንት ይፍጠሩ",
+  "subtitle": "የ Theatre Hub Ethiopia ይቀላቀሉ እና ጉዞዎን ይጀምሩ",
+  "form": {
+    "fullName": "ሙሉ ስም",
+    "fullNamePlaceholder": "ሙሉ ስምዎን ያስገቡ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "you@example.com",
+    "phone": "ስልክ ቁጥር",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "የተጠቃሚ ስም",
+    "usernamePlaceholder": "የተጠቃሚ ስም ይምረጡ",
+    "password": "የይለፍ ቃል",
+    "passwordPlaceholder": "የይለፍ ቃል ይፍጠሩ",
+    "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
+    "confirmPasswordPlaceholder": "የይለፍ ቃልዎን ያረጋግጡ"
+  },
+  "validation": {
+    "fullNameRequired": "ሙሉ ስም ያስፈልጋል",
+    "fullNameMin": "ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "fullNameMax": "ስም በጣም ረጅም ነው",
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "phoneRequired": "ስልክ ቁጥር ያስፈልጋል",
+    "phoneInvalid": "እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ",
+    "usernameRequired": "የተጠቃሚ ስም ያስፈልጋል",
+    "usernameMin": "የተጠቃሚ ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "usernameMax": "የተጠቃሚ ስም በጣም ረጅም ነው",
+    "usernamePattern": "የተጠቃሚ ስም ፊደላት፣ ቁጥሮች እና አሁሉም መስመሮችን ብቻ ሊይዝ ይችላል",
+    "passwordRequired": "የይለፍ ቃል ያስፈልጋል",
+    "passwordMin": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
+    "passwordStrength": "የይለፍ ቃል አቢይ ሆሄ፣ ትንሽ ሆሄ እና ቁጥር መያዝ አለበት",
+    "confirmPasswordRequired": "እባክዎ የይለፍ ቃልዎን ያረጋግጡ",
+    "passwordsMatch": "የይለፍ ቃሎች መመሳሰል አለባቸው",
+    "agreeToTermsRequired": "የአገልግሎት ውሎችን እና የክፍያ ሚስጥራዊነት ፖሊሲን መስማማት አለብዎት"
+  },
+  "passwordStrength": {
+    "title": "የይለፍ ቃል ጥንካሬ:",
+    "weak": "ደካማ",
+    "medium": "መካከለኛ",
+    "strong": "ጠንካራ"
+  },
+  "passwordRequirements": {
+    "length": "ቢያንስ 8 ቁምፊዎች",
+    "lowercase": "ትንሽ ፊደል",
+    "uppercase": "አቢይ ፊደል",
+    "number": "ቁጥር"
+  },
+  "terms": {
+    "prefix": "እስማማለሁ",
+    "termsLink": "የአገልግሎት ውሎች",
+    "and": "እና",
+    "privacyLink": "የክፍያ ሚስጥራዊነት ፖሊሲ"
+  },
+  "usernameAvailable": "የተጠቃሚ ስም ይገኛል",
+  "createAccount": "አካውንት ይፍጠሩ",
+  "creatingAccount": "አካውንት በመፍጠር ላይ...",
+  "alreadyHaveAccount": "አካውንት አለዎት?",
+  "signInLink": "ግባ",
+  "errors": {
+    "emailExists": "ኢሜይሉ ቀድሞ ተመዝግቧል። እባክዎ የተለየ ኢሜይል ይጠቀሙ ወይም ይግቡ።",
+    "phoneExists": "ስልክ ቁጥሩ ቀድሞ ተመዝግቧል። እባክዎ የተለየ ቁጥር ይጠቀሙ።",
+    "unexpected": "ምዝገባ አልተሳካም። እባክዎ እንደገና ይሞክሩ።"
+  },
+  "success": {
+    "title": "ምዝገባ ተሳክቷል! 🎉",
+    "message": "እንኳን ወደ Theatre Hub Ethiopia በደህና መጡ! ወደ መግቢያ ገጽ እያዘዋወሩ ነው...",
+    "redirectMessage": "ምዝገባ ተሳክቷል! እባክዎ ይግቡ።"
+  }
+}
+}

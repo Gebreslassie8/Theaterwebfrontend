@@ -1,0 +1,744 @@
+{
+  "common": {
+    "searchPlaceholder": "Search for events, venues, artists, or descriptions...",
+    "sortBy": "Sort by",
+    "filters": "Filters",
+    "clearAll": "Clear All",
+    "activeFilters": "Active filters:",
+    "category": "Category",
+    "allEvents": "All Events",
+    "showing": "Showing",
+    "to": "to",
+    "of": "of",
+    "events": "events",
+    "prev": "Prev",
+    "next": "Next",
+    "noEventsFound": "No events found",
+    "tryAdjusting": "Try adjusting your filters or search criteria",
+    "clearFilters": "Clear all filters",
+    "loadingEvents": "Loading events...",
+    "errorLoadingEvents": "Error Loading Events",
+    "tryAgain": "Try Again"
+  },
+  "sortOptions": {
+    "date": "Date",
+    "name": "Name",
+    "priceLow": "Price: Low to High",
+    "priceHigh": "Price: High to Low",
+    "rating": "Rating"
+  },
+  "cookieConsent": {
+    "title": "We value your privacy",
+    "message": "We use cookies to enhance your browsing experience, serve personalized content, and analyze our traffic.",
+    "acceptAll": "Accept All",
+    "rejectAll": "Reject All",
+    "customize": "Customize"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "blogs": "Blogs",
+    "gallery": "Gallery",
+    "contact": "Contact",
+    "help": "Help",
+    "signIn": "Sign In",
+    "joinNow": "Join Now",
+    "customerAccount": "Customer Account",
+    "customerDesc": "Book tickets & enjoy shows",
+    "theaterOwnerAccount": "Theater Owner Account",
+    "theaterOwnerDesc": "List & manage your theater"
+  },"footer": {
+  "brand": {
+    "name": "Ethiopian TheaterHUB",
+    "tagline": "Modern entertainment platform"
+  },
+  "contact": {
+    "locationLabel": "LOCATION",
+    "locationValue": "Bole Medhanealem, Addis Ababa, Ethiopia",
+    "phoneLabel": "PHONE",
+    "phoneValue": "+251-11-558-1234",
+    "supportHours": "Support: 24/7",
+    "emailLabel": "EMAIL",
+    "emailValue": "info@theaterhubethiopia.com",
+    "responseTime": "Response within 24h"
+  },
+  "quickLinks": {
+    "title": "Quick Links",
+    "about": "About Us",
+    "blog": "Blog",
+    "gallery": "Gallery"
+  },
+  "support": {
+    "title": "Support",
+    "helpCenter": "Help Center",
+    "contactUs": "Contact Us"
+  },
+  "legal": {
+    "title": "Legal",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy"
+  },
+  "newsletter": {
+    "title": "Newsletter",
+    "description": "Subscribe to get exclusive offers, early bird tickets",
+    "placeholder": "Your email address",
+    "subscribe": "Subscribe",
+    "subscribing": "Subscribing..."
+  },
+  "social": {
+    "title": "Connect With Us"
+  },
+  "copyright": "Ethiopian TheaterHUB System",
+  "bottomLinks": {
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "cookies": "Cookies",
+    "accessibility": "Accessibility"
+  },
+  "popup": {
+    "successTitle": "🎉 Welcome to TheaterHUB Family!",
+    "successMessage": "You've successfully subscribed! Get ready for exclusive deals, early bird tickets, and amazing giveaways delivered straight to your inbox.",
+    "successBadge": "🎁 You've successfully subscribed!",
+    "buttonSuccess": "Start Exploring 🎭",
+    "errorTitle": "❌ Oops! Something went wrong",
+    "buttonError": "Try Again"
+  },
+  "errors": {
+    "emailRequired": "Please enter your email address to receive amazing offers!",
+    "invalidEmail": "Please enter a valid email address. Example: name@domain.com",
+    "alreadySubscribed": "This email is already subscribed! You're already part of our VIP family 🎭"
+  }
+},"about": {
+  "hero": {
+    "badge": "About Us",
+    "title": "Ethiopia’s Modern Theater Booking Platform",
+    "subtitle": "Seamless booking, secure reservations, and unforgettable theater experiences across Ethiopia",
+    "contactButton": "Contact Us"
+  },
+  "stats": {
+    "theatersValue": "50+",
+    "theatersLabel": "Partner Theaters",
+    "customersValue": "100K+",
+    "customersLabel": "Happy Customers"
+  },
+  "missionVision": {
+    "title": "Our Mission & Vision",
+    "subtitle": "Dedicated to making theater booking and reservation seamless for everyone in Ethiopia"
+  },
+  "mission": "Our Mission",
+  "missionText": "To provide a seamless, secure, and innovative platform for booking and reserving theater experiences, making online accessible to everyone across Ethiopia. Simple booking, secure reservations.",
+  "vision": "Our Vision",
+  "visionText": "To become Ethiopia's leading theater booking and reservation platform, revolutionizing how audiences discover, book, and experience performances with ease and confidence.",
+  "values": {
+    "title": "Our Core Values",
+    "subtitle": "The principles that guide our booking and reservation platform",
+    "trust": {
+      "title": "Trust & Security",
+      "description": "Your data and payments are protected with enterprise-grade security."
+    },
+    "innovation": {
+      "title": "Innovation",
+      "description": "Constantly improving to bring you the best booking experience."
+    },
+    "customerFirst": {
+      "title": "Customer First",
+      "description": "Your satisfaction is our top priority. We're here for you 24/7."
+    }
+  },
+  "features": {
+    "title": "Why Choose TheaterHUB",
+    "subtitle": "We're dedicated to providing the best theater booking and reservation experience in Ethiopia",
+    "easyBooking": {
+      "title": "Easy Booking",
+      "description": "Book tickets in just a few clicks"
+    },
+    "multipleVenues": {
+      "title": "Multiple Venues",
+      "description": "Access to theaters across Ethiopia"
+    },
+    "mobileTickets": {
+      "title": "Mobile Tickets",
+      "description": "Digital tickets on your phone"
+    },
+    "bestSelection": {
+      "title": "Best Selection",
+      "description": "Wide variety of shows and performances"
+    },
+    "support247": {
+      "title": "24/7 Support",
+      "description": "Round-the-clock customer service"
+    },
+    "securePayments": {
+      "title": "Secure Payments",
+      "description": "Safe and encrypted transactions"
+    }
+  },
+  "team": {
+    "title": "Meet Our Leadership",
+    "subtitle": "Passionate professionals dedicated to bringing you the best theater booking experience in Ethiopia",
+    "alexRole": "Founder & CEO",
+    "alexBio": "Visionary leader with 15+ years in entertainment industry",
+    "sarahRole": "Head of Operations",
+    "sarahBio": "Operations expert ensuring smooth theater experiences",
+    "michaelRole": "Technical Director",
+    "michaelBio": "Tech innovator building cutting-edge platforms",
+    "emilyRole": "Customer Experience",
+    "emilyBio": "Passionate about creating memorable experiences"
+  },
+  "cta": {
+    "title": "Ready to Book Your Next Theater Experience?",
+    "subtitle": "Join thousands of theater lovers across Ethiopia who trust TheaterHUB for seamless booking and secure reservations.",
+    "findTheaters": "Find Theaters Near You",
+    "contactUs": "Contact Us"
+  }
+},"bookingModal": {
+  "brand": "Theatre Hub Ethiopia",
+  "progress": {
+    "selectSeats": "Select Seats",
+    "yourInfo": "Your Info",
+    "payment": "Payment"
+  },
+  "buttons": {
+    "back": "Back",
+    "next": "Next",
+    "done": "Done"
+  },
+  "seatSections": {
+    "vip": "VIP",
+    "premium": "Premium",
+    "standard": "Standard"
+  },
+  "seatSelection": {
+    "title": "Select Your Seats",
+    "selectedSeats": "Selected Seats:",
+    "seatsCount": "seats",
+    "total": "Total:",
+    "stage": "STAGE",
+    "selectedSeatsList": "Selected Seats ({{count}})"
+  },
+  "seatLegend": {
+    "selected": "Selected",
+    "reserved": "Reserved"
+  },
+  "customerInfo": {
+    "title": "Your Information",
+    "fullName": "Full Name",
+    "namePlaceholder": "Enter your full name",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "phone": "Ethiopian Phone Number",
+    "phonePlaceholder": "09XXXXXXXX or 07XXXXXXXX"
+  },
+  "validation": {
+    "nameTooShort": "Name must be at least 2 characters",
+    "invalidEmail": "Please enter a valid email address",
+    "invalidPhone": "Please enter a valid Ethiopian phone number (09XXXXXXXX or 07XXXXXXXX)"
+  },
+  "payment": {
+    "title": "Complete Payment",
+    "totalAmount": "Total Amount:",
+    "tickets": "Tickets:",
+    "seats": "Seats:",
+    "chapaTitle": "Pay with Chapa",
+    "chapaSubtitle": "Secure payment gateway",
+    "chapaFeature1": "Accepts Telebirr, CBE Birr, and all cards",
+    "chapaFeature2": "Secure SSL encrypted payment",
+    "chapaFeature3": "Instant ticket delivery after payment",
+    "processing": "Processing Payment...",
+    "payButton": "Pay {{amount}} with Chapa",
+    "terms": "By completing this payment, you agree to our terms and conditions"
+  },
+  "errors": {
+    "noSeats": "Please select at least one seat",
+    "incompleteInfo": "Please fill in all customer information correctly",
+    "paymentFailed": "Failed to initialize payment. Please try again."
+  },
+  "ticketModal": {
+    "title": "Your Tickets",
+    "ticketCount": "ticket(s) for",
+    "paymentSuccess": "Payment Successful! Booking ID: {{bookingId}} | Total: {{total}}",
+    "ticketOf": "Ticket {{current}} of {{total}}",
+    "seat": "Seat",
+    "ticketHolder": "Ticket Holder",
+    "seatType": "Seat Type",
+    "price": "Price",
+    "share": "Share",
+    "shared": "Shared!",
+    "copyQR": "Copy QR",
+    "copied": "Copied!",
+    "download": "Download",
+    "print": "Print",
+    "printAll": "Print All ({{count}})",
+    "scanMessage": "Scan this unique QR code at venue entrance",
+    "rowSeat": "Row {{row}}, Seat {{number}}",
+    "printTitle": "Theatre Hub Ticket"
+  },
+  "share": {
+    "title": "Theatre Hub Ethiopia - Ticket for {{seat}}",
+    "text": "🎭 Theatre Hub Ethiopia Ticket\n\nShow: {{show}}\nSeat: {{seat}} (Row {{row}}, Seat {{number}})\nTicket Holder: {{customerName}}\nTicket ID: {{ticketId}}",
+    "copiedFallback": "Share info copied to clipboard!"
+  },
+  "ticketHtml": {
+    "title": "Theatre Hub Ethiopia Ticket",
+    "filenamePrefix": "TheatreHub_Ticket"
+  }
+},"eventCard": {
+  "unknownVenue": "Unknown Theater",
+  "seatsAvailable": "seats available",
+  "bookNow": "Book Now",
+  "minutes": "min"
+},"customerRegistration": {
+  "title": "Create Account",
+  "subtitle": "Join Theatre Hub Ethiopia and start your journey",
+  "form": {
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "email": "Email Address",
+    "emailPlaceholder": "Enter your email",
+    "phone": "Phone Number",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "Username (Optional)",
+    "usernamePlaceholder": "Choose a username",
+    "password": "Password",
+    "passwordPlaceholder": "Create a password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password"
+  },
+  "validation": {
+    "fullNameRequired": "Full name is required",
+    "fullNameMin": "Name must be at least 3 characters",
+    "fullNameMax": "Name is too long",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Please enter a valid phone number",
+    "usernameMin": "Username must be at least 3 characters",
+    "usernameMax": "Username is too long",
+    "usernamePattern": "Username can only contain letters, numbers, and underscores",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordStrength": "Password must contain uppercase, lowercase and number",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMatch": "Passwords must match",
+    "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
+  },
+  "passwordRequirements": {
+    "title": "Password must contain:",
+    "length": "At least 8 characters",
+    "lowercase": "Lowercase letter",
+    "uppercase": "Uppercase letter",
+    "number": "Number"
+  },
+  "terms": {
+    "prefix": "I agree to the",
+    "termsLink": "Terms of Service",
+    "and": "and",
+    "privacyLink": "Privacy Policy"
+  },
+  "submitButton": "Create Account",
+  "alreadyHaveAccount": "Already have an account?",
+  "signInLink": "Sign In",
+  "errors": {
+    "registrationFailed": "Registration failed. Please try again.",
+    "unexpected": "An unexpected error occurred"
+  },
+  "success": {
+    "title": "Registration Successful! 🎉",
+    "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
+    "redirectMessage": "Registration successful! Please login."
+  }
+},"contact": {
+  "hero": {
+    "badge": "Get in Touch",
+    "title": "Contact Us",
+    "subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+  },
+  "info": {
+    "phone": {
+      "title": "Phone Support",
+      "detail1": "+251 911 234 567",
+      "detail2": "+251 912 345 678",
+      "description": "Mon-Fri, 9:00 AM - 6:00 PM"
+    },
+    "email": {
+      "title": "Email Us",
+      "detail1": "support@theaterhub.com",
+      "detail2": "info@theaterhub.com",
+      "description": "Response within 24 hours"
+    },
+    "visit": {
+      "title": "Visit Us",
+      "detail1": "Bole Road, Addis Ababa",
+      "detail2": "Ethiopia",
+      "description": "Next to Millennium Hall"
+    },
+    "hours": {
+      "title": "Office Hours",
+      "detail1": "Monday - Friday: 9AM - 8PM",
+      "detail2": "Saturday: 10AM - 6PM",
+      "detail3": "Sunday: Closed",
+      "description": "24/7 Online Support"
+    }
+  },
+  "contactLink": "Contact",
+  "form": {
+    "title": "Send us a Message",
+    "subtitle": "Fill out the form below and we'll get back to you soon",
+    "sendTo": "Send To",
+    "adminOption": "System Administrator",
+    "adminDesc": "Technical support, platform issues, billing inquiries",
+    "theaterOption": "Theater Owner",
+    "theaterDesc": "Event booking, hall rental, show scheduling",
+    "selectTheater": "Select Theater",
+    "selectTheaterPlaceholder": "Select a theater",
+    "loadingTheaters": "Loading theaters...",
+    "yourName": "Your Name",
+    "namePlaceholder": "John Doe",
+    "email": "Email Address",
+    "emailPlaceholder": "john@example.com",
+    "phoneOptional": "Phone Number (Optional)",
+    "phonePlaceholder": "+251 911 234 567",
+    "category": "Category",
+    "subject": "Subject",
+    "subjectPlaceholder": "How can we help you?",
+    "message": "Message",
+    "messagePlaceholder": "Tell us about your question or concern...",
+    "sending": "Sending...",
+    "sendButton": "Send Message"
+  },
+  "categories": {
+    "general": "General Inquiry",
+    "booking": "Booking Support",
+    "payment": "Payment Issues",
+    "technical": "Technical Support",
+    "feedback": "Feedback",
+    "partnership": "Partnership"
+  },
+  "errors": {
+    "nameRequired": "Name is required",
+    "nameMinLength": "Name must be at least 2 characters",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "subjectRequired": "Subject is required",
+    "messageRequired": "Message is required",
+    "messageMinLength": "Message must be at least 10 characters",
+    "theaterRequired": "Please select a theater"
+  },
+  "theaterDetail": {
+    "phoneSupport": "Phone Support",
+    "phoneHours": "Mon-Fri, 9:00 AM - 6:00 PM",
+    "callNow": "Call Now",
+    "emailUs": "Email Us",
+    "emailResponse": "Response within 24 hours",
+    "sendEmail": "Send Email",
+    "visitUs": "Visit Us",
+    "nearby": "Next to main road",
+    "getDirections": "Get Directions",
+    "about": "About"
+  },
+  "findUs": {
+    "title": "Find Us",
+    "addressLine": "Bole Road, Addis Ababa, Ethiopia",
+    "landmark": "Next to Millennium Hall",
+    "phoneNumbers": "+251 911 234 567 / +251 912 345 678",
+    "emails": "support@theaterhub.com / info@theaterhub.com",
+    "hours": "Mon-Fri: 9AM - 8PM | Sat: 10AM - 6PM"
+  },
+  "theaterSocial": {
+    "title": "Connect With {{name}}",
+    "followText": "Follow {{name}} for updates, offers, and events"
+  },
+  "globalSocial": {
+    "title": "Connect With Us",
+    "followText": "Follow us for updates, offers, and events"
+  },
+  "success": {
+    "title": "Message Sent Successfully! 🎉",
+    "message": "Thank you for reaching out{{#if theaterName}} to {{theaterName}}{{/if}}. Our team will get back to you within 24 hours.",
+    "details": {
+      "name": "Name",
+      "email": "Email",
+      "recipient": "Recipient",
+      "category": "Category",
+      "responseTime": "Response Time",
+      "notProvided": "Not provided",
+      "adminRecipient": "System Administrator",
+      "theaterOwner": "Theater Owner",
+      "responseTimeValue": "Within 24 hours"
+    },
+    "buttons": {
+      "home": "Go to Home",
+      "close": "Close"
+    }
+  }
+},"help": {
+  "hero": {
+    "badge": "Help Center",
+    "title": "How can we help you?",
+    "subtitle": "Find answers and get support for your questions"
+  },
+  "search": {
+    "resultCount_one": "Found {{count}} result for \"{{query}}\"",
+    "resultCount_other": "Found {{count}} results for \"{{query}}\""
+  },
+  "categories": {
+    "all": "All",
+    "tickets": "Tickets",
+    "payments": "Payments",
+    "account": "Account",
+    "wallet": "Wallet",
+    "technical": "Technical"
+  },
+  "noResults": {
+    "title": "No results found",
+    "message": "Try different keywords or browse our categories"
+  },
+  "faq": {
+    "tickets": {
+      "bookQuestion": "How do I book tickets online?",
+      "bookAnswer": "Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using Chapa, TeleBirr, CBE Birr, or HelloCash.",
+      "getQuestion": "How do I get my tickets after booking?",
+      "getAnswer": "After successful payment, you'll receive an email with your e-tickets. You can also access them in your account under \"My Tickets\". Simply show the QR code at the venue entrance.",
+      "limitQuestion": "How many tickets can I book?",
+      "limitAnswer": "You can book as many tickets as you want! There is no limit on the number of tickets per booking. Feel free to book tickets for large groups and special events.",
+      "transferQuestion": "Can I transfer my tickets to someone else?",
+      "transferAnswer": "Yes, you can transfer tickets through your account dashboard. Go to \"My Tickets\", select the ticket, and click \"Transfer\". The recipient will receive an email with the ticket details."
+    },
+    "payments": {
+      "methodsQuestion": "What payment methods do you accept?",
+      "methodsAnswer": "We accept multiple payment methods including: Chapa (Card/Bank Transfer), TeleBirr, CBE Birr, and HelloCash. All payments are processed securely."
+    },
+    "account": {
+      "createQuestion": "How do I create an account?",
+      "createAnswer": "Click \"Sign Up\" on the homepage, fill in your details, verify your email, and you're ready to start booking! You can also sign up using Google or Facebook."
+    },
+    "wallet": {
+      "walletQuestion": "What is TheaterHUB Wallet?",
+      "walletAnswer": "TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods."
+    },
+    "technical": {
+      "troubleQuestion": "Having trouble with the website?",
+      "troubleAnswer": "Clear your browser cache, try a different browser, or contact our support team at support@theaterhub.com. We're here to help!",
+      "resetPasswordQuestion": "How do I reset my password?",
+      "resetPasswordAnswer": "Click \"Forgot Password\" on the login page, enter your email address, and follow the instructions sent to your inbox. You'll be able to create a new password."
+    }
+  }
+},"login": {
+  "title": "Welcome Back",
+  "subtitle": "Sign in to continue to your dashboard",
+  "tabs": {
+    "email": "Email",
+    "username": "Username"
+  },
+  "labels": {
+    "email": "Email Address",
+    "username": "Username",
+    "password": "Password"
+  },
+  "placeholders": {
+    "email": "you@example.com",
+    "username": "@username",
+    "password": "Enter your password"
+  },
+  "rememberMe": "Remember me",
+  "forgotPassword": "Forgot Password?",
+  "signInButton": "Sign In",
+  "signingIn": "Signing in...",
+  "footer": {
+    "text": "By signing in, you agree to our",
+    "terms": "Terms of Service",
+    "and": "and",
+    "privacy": "Privacy Policy"
+  },
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 6 characters",
+    "usernameRequired": "Username is required",
+    "usernameMin": "Username must be at least 3 characters"
+  },
+  "errors": {
+    "invalidCredentials": "Invalid email/username or password",
+    "accountInactive": "Your account is inactive or suspended. Please contact support.",
+    "general": "Login failed. Please try again."
+  },
+  "roles": {
+    "superAdmin": "Super Admin",
+    "superAdminDesc": "Full system access",
+    "theaterOwner": "Theater Owner",
+    "theaterOwnerDesc": "Manage theaters",
+    "theaterManager": "Theater Manager",
+    "theaterManagerDesc": "Daily operations",
+    "salesPerson": "Salesperson",
+    "salesPersonDesc": "Ticket sales",
+    "qrScanner": "QR Scanner",
+    "qrScannerDesc": "Validate tickets",
+    "customer": "Customer",
+    "customerDesc": "Browse and purchase tickets"
+  }
+},"forgotPassword": {
+  "title": "Reset Password",
+  "subtitleStep1": "Select a recovery method to continue",
+  "subtitleStep2": "Enter the verification code sent to you",
+  "subtitleStep3": "Create a strong new password",
+  "stepLabels": {
+    "identity": "Identity",
+    "verify": "Verify",
+    "reset": "Reset"
+  },
+  "methods": {
+    "email": { "label": "Email", "description": "Reset link sent to your email" },
+    "phone": { "label": "SMS", "description": "Code sent to your phone" }
+  },
+  "labels": {
+    "email": "Email Address",
+    "phone": "Phone Number",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm New Password"
+  },
+  "placeholders": {
+    "email": "you@example.com",
+    "phone": "0912345678",
+    "newPassword": "Enter new password",
+    "confirmPassword": "Confirm new password"
+  },
+  "hints": {
+    "email": "We'll send a verification code to this email address",
+    "phone": "We'll send a verification code to this phone number"
+  },
+  "verifyTitle": "Enter Verification Code",
+  "verifyMessage": "We sent a 6-digit code to",
+  "mockCodePrefix": "Mock Code:",
+  "resendButton": "Didn't receive code? Resend",
+  "codeResent": "New verification code sent!",
+  "sending": "Sending...",
+  "verifying": "Verifying...",
+  "resetting": "Resetting...",
+  "sendButton": "Send Reset Link",
+  "verifyButton": "Verify Code",
+  "resetButton": "Reset Password",
+  "backToLogin": "Back to Login",
+  "successTitle": "Password Reset Successful!",
+  "successMessage": "Your password has been updated successfully. Redirecting to login...",
+  "passwordRequirements": {
+    "title": "Password must contain:",
+    "length": "8-32 characters",
+    "uppercase": "Uppercase letter (A-Z)",
+    "lowercase": "Lowercase letter (a-z)",
+    "number": "Number (0-9)",
+    "special": "Special character (!@#$%^&*)",
+    "noSpaces": "No spaces",
+    "allMet": "✓ All requirements met!"
+  },
+  "passwordMatchSuccess": "Passwords match",
+  "validation": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "emailFormat": "Email must be in format: name@domain.com",
+    "emailNotFound": "Email not found in our system",
+    "phoneRequired": "Phone number is required",
+    "phoneFormat": "Phone number must be 10-15 digits (e.g., 251911234567 or +251911234567)",
+    "phoneEthiopian": "Please enter a valid Ethiopian phone number",
+    "phoneNotFound": "Phone number not found in our system",
+    "codeRequired": "Verification code is required",
+    "codeLength": "Code must be exactly 6 digits",
+    "codeDigits": "Code must contain only numbers (0-9)",
+    "codeNotAllZeros": "Code cannot be all zeros",
+    "newPasswordRequired": "New password is required",
+    "passwordMin": "Password must be at least 8 characters long",
+    "passwordMax": "Password cannot exceed 32 characters",
+    "passwordUppercase": "Password must contain at least one uppercase letter (A-Z)",
+    "passwordLowercase": "Password must contain at least one lowercase letter (a-z)",
+    "passwordNumber": "Password must contain at least one number (0-9)",
+    "passwordSpecial": "Password must contain at least one special character (!@#$%^&*)",
+    "passwordNoSpaces": "Password cannot contain spaces",
+    "passwordNoSequential": "Password cannot contain sequential characters (123, abc)",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMatch": "Passwords must match"
+  },
+  "errors": {
+    "emailNotFound": "Email not found in our system.",
+    "phoneNotFound": "Phone number not found in our system.",
+    "sessionExpired": "Session expired. Please start over.",
+    "codeExpired": "Verification code has expired. Please request a new code.",
+    "invalidCode": "Invalid verification code. Please check and try again.",
+    "invalidSession": "Invalid reset session. Please start over.",
+    "userNotFound": "User not found.",
+    "missingUserInfo": "User information missing. Please start over."
+  },
+  "mockAccounts": {
+    "title": "Mock Test Accounts"
+  }
+},"customerRegistration": {
+  "title": "Create Account",
+  "subtitle": "Join Theatre Hub Ethiopia and start your journey",
+  "form": {
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter your full name",
+    "email": "Email Address",
+    "emailPlaceholder": "you@example.com",
+    "phone": "Phone Number",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "Username",
+    "usernamePlaceholder": "Choose a username",
+    "password": "Password",
+    "passwordPlaceholder": "Create a password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password"
+  },
+  "validation": {
+    "fullNameRequired": "Full name is required",
+    "fullNameMin": "Name must be at least 3 characters",
+    "fullNameMax": "Name is too long",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Please enter a valid phone number",
+    "usernameRequired": "Username is required",
+    "usernameMin": "Username must be at least 3 characters",
+    "usernameMax": "Username is too long",
+    "usernamePattern": "Username can only contain letters, numbers, and underscores",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordStrength": "Password must contain uppercase, lowercase and number",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMatch": "Passwords must match",
+    "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
+  },
+  "passwordStrength": {
+    "title": "Password strength:",
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
+  },
+  "passwordRequirements": {
+    "length": "At least 8 characters",
+    "lowercase": "Lowercase letter",
+    "uppercase": "Uppercase letter",
+    "number": "Number"
+  },
+  "terms": {
+    "prefix": "I agree to the",
+    "termsLink": "Terms of Service",
+    "and": "and",
+    "privacyLink": "Privacy Policy"
+  },
+  "usernameAvailable": "Username is available",
+  "createAccount": "Create Account",
+  "creatingAccount": "Creating Account...",
+  "alreadyHaveAccount": "Already have an account?",
+  "signInLink": "Sign In",
+  "errors": {
+    "emailExists": "Email already registered. Please use a different email or login.",
+    "phoneExists": "Phone number already registered. Please use a different number.",
+    "unexpected": "Registration failed. Please try again."
+  },
+  "success": {
+    "title": "Registration Successful! 🎉",
+    "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
+    "redirectMessage": "Registration successful! Please login."
+  }
+}
+}

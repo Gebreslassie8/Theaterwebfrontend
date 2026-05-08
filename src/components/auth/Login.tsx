@@ -4,28 +4,52 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import * as yup from "yup";
 import supabase from "@/config/supabaseClient";
-import { Mail,Lock, Eye,EyeOff,CheckCircle,AlertCircle,ArrowRight, Shield,HelpCircle,LogIn, User,} from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  AlertCircle,
+  ArrowRight,
+  Shield,
+  HelpCircle,
+  LogIn,
+  User,
+} from "lucide-react";
+import { useTranslation } from "react-i18next";
 
-
-// Validation schemas using Yup
-const loginSchemas = {
+// Validation schemas – messages will be translated inside component using t()
+const getLoginSchemas = (t: (key: string) => string) => ({
   email: yup.object({
-    email: yup.string().required("Email is required").email("Please enter a valid email address"),
-    password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
+    email: yup
+      .string()
+      .required(t("login.validation.emailRequired"))
+      .email(t("login.validation.emailInvalid")),
+    password: yup
+      .string()
+      .required(t("login.validation.passwordRequired"))
+      .min(6, t("login.validation.passwordMin")),
   }),
   username: yup.object({
-    username: yup.string().required("Username is required").min(3, "Username must be at least 3 characters"),
-    password: yup.string().required("Password is required").min(6, "Password must be at least 6 characters"),
+    username: yup
+      .string()
+      .required(t("login.validation.usernameRequired"))
+      .min(3, t("login.validation.usernameMin")),
+    password: yup
+      .string()
+      .required(t("login.validation.passwordRequired"))
+      .min(6, t("login.validation.passwordMin")),
   }),
-};
+});
 
-// Role definitions with their routes
-const roles = [
+// Role definitions – names and descriptions translated via keys
+const getRoles = (t: (key: string) => string) => [
   {
     id: "super_admin",
-    name: "Super Admin",
+    nameKey: "login.roles.superAdmin",
     icon: Shield,
-    description: "Full system access",
+    descriptionKey: "login.roles.superAdminDesc",
     gradient: "from-red-500 to-pink-600",
     route: "/admin/dashboard",
     homeRoute: "/admin",
@@ -33,9 +57,9 @@ const roles = [
   },
   {
     id: "theater_owner",
-    name: "Theater Owner",
+    nameKey: "login.roles.theaterOwner",
     icon: Shield,
-    description: "Manage theaters",
+    descriptionKey: "login.roles.theaterOwnerDesc",
     gradient: "from-amber-500 to-yellow-500",
     route: "/owner/dashboard",
     homeRoute: "/owner",
@@ -43,9 +67,9 @@ const roles = [
   },
   {
     id: "theater_manager",
-    name: "Theater Manager",
+    nameKey: "login.roles.theaterManager",
     icon: Shield,
-    description: "Daily operations",
+    descriptionKey: "login.roles.theaterManagerDesc",
     gradient: "from-blue-500 to-cyan-500",
     route: "/manager/dashboard",
     homeRoute: "/manager",
@@ -53,9 +77,9 @@ const roles = [
   },
   {
     id: "sales_person",
-    name: "Salesperson",
+    nameKey: "login.roles.salesPerson",
     icon: Shield,
-    description: "Ticket sales",
+    descriptionKey: "login.roles.salesPersonDesc",
     gradient: "from-green-500 to-emerald-500",
     route: "/sales/events/browse",
     homeRoute: "/sales",
@@ -63,9 +87,9 @@ const roles = [
   },
   {
     id: "qr_scanner",
-    name: "QR Scanner",
+    nameKey: "login.roles.qrScanner",
     icon: Shield,
-    description: "Validate tickets",
+    descriptionKey: "login.roles.qrScannerDesc",
     gradient: "from-gray-600 to-slate-700",
     route: "/scanner/dashboard",
     homeRoute: "/scanner",
@@ -73,9 +97,9 @@ const roles = [
   },
   {
     id: "customer",
-    name: "Customer",
+    nameKey: "login.roles.customer",
     icon: Shield,
-    description: "Browse and purchase tickets",
+    descriptionKey: "login.roles.customerDesc",
     gradient: "from-indigo-500 to-violet-500",
     route: "/customer/dashboard",
     homeRoute: "/",
@@ -84,6 +108,7 @@ const roles = [
 ];
 
 const Login = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [authMethod, setAuthMethod] = useState("email");
   const [showPassword, setShowPassword] = useState(false);
@@ -100,7 +125,9 @@ const Login = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loginError, setLoginError] = useState("");
-  
+
+  const roles = getRoles(t);
+  const loginSchemas = getLoginSchemas(t);
 
   // Check if user is already logged in
   useEffect(() => {
@@ -113,14 +140,16 @@ const Login = () => {
         navigate(roleData.route);
       }
     }
-  }, [navigate]);
-
+  }, [navigate, roles]);
 
   // Validate form using Yup
   const validateForm = async (field: string | null = null) => {
     try {
       const schema = loginSchemas[authMethod as keyof typeof loginSchemas];
-      const data = authMethod === "email" ? { email, password } : { username, password };
+      const data =
+        authMethod === "email"
+          ? { email, password }
+          : { username, password };
 
       await schema.validate(data, { abortEarly: false });
 
@@ -164,14 +193,12 @@ const Login = () => {
       let query;
 
       if (authMethod === "email") {
-        // Query by email
         query = supabase
           .from("users")
           .select("*")
           .eq("email", email)
           .eq("password", password);
       } else {
-        // Query by username
         query = supabase
           .from("users")
           .select("*")
@@ -183,27 +210,22 @@ const Login = () => {
 
       if (error || !userRecord) {
         console.error("Login error:", error);
-        setLoginError("Invalid email/username or password");
+        setLoginError(t("login.errors.invalidCredentials"));
         setIsLoading(false);
         return;
       }
 
-      // Check if user is active
       if (userRecord.status !== "active") {
-        setLoginError(
-          "Your account is inactive or suspended. Please contact support.",
-        );
+        setLoginError(t("login.errors.accountInactive"));
         setIsLoading(false);
         return;
       }
 
-      // Update last_login timestamp
       await supabase
         .from("users")
         .update({ last_login: new Date().toISOString() })
         .eq("id", userRecord.id);
 
-      // Prepare user data for storage
       const userData = {
         id: userRecord.id,
         email: userRecord.email,
@@ -217,7 +239,6 @@ const Login = () => {
         lastActive: new Date().toISOString(),
       };
 
-      // Store user data based on remember me
       if (rememberMe) {
         localStorage.setItem("user", JSON.stringify(userData));
         localStorage.setItem("token", userData.token);
@@ -226,7 +247,6 @@ const Login = () => {
         sessionStorage.setItem("token", userData.token);
       }
 
-      // Navigate based on role
       const roleData = roles.find((r) => r.id === userRecord.role);
       if (roleData) {
         console.log("Redirecting to:", roleData.route);
@@ -237,7 +257,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      setLoginError("Login failed. Please try again.");
+      setLoginError(t("login.errors.general"));
     } finally {
       setIsLoading(false);
     }
@@ -281,7 +301,7 @@ const Login = () => {
         variants={containerVariants}
         className="w-full px-4 sm:px-6 py-8 sm:py-12"
       >
-        {/* Login Form Card - Responsive Width */}
+        {/* Login Form Card */}
         <div className="mx-auto w-full max-w-sm sm:max-w-md lg:max-w-lg">
           <motion.div
             variants={itemVariants}
@@ -305,7 +325,7 @@ const Login = () => {
                   transition={{ delay: 0.4 }}
                   className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white"
                 >
-                  Welcome Back
+                  {t("login.title")}
                 </motion.h2>
 
                 <motion.p
@@ -314,7 +334,7 @@ const Login = () => {
                   transition={{ delay: 0.5 }}
                   className="text-xs sm:text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 sm:mt-2"
                 >
-                  Sign in to continue to your dashboard
+                  {t("login.subtitle")}
                 </motion.p>
               </div>
 
@@ -352,7 +372,7 @@ const Login = () => {
                   }`}
                 >
                   <Mail className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Email</span>
+                  <span>{t("login.tabs.email")}</span>
                 </button>
                 <button
                   type="button"
@@ -369,7 +389,7 @@ const Login = () => {
                   }`}
                 >
                   <User className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span>Username</span>
+                  <span>{t("login.tabs.username")}</span>
                 </button>
               </motion.div>
 
@@ -384,7 +404,8 @@ const Login = () => {
                   {authMethod === "email" ? (
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-1.5">
-                        Email Address <span className="text-error">*</span>
+                        {t("login.labels.email")}{" "}
+                        <span className="text-error">*</span>
                       </label>
                       <div className="relative group">
                         <Mail
@@ -416,7 +437,7 @@ const Login = () => {
                                 ? "border-deepTeal ring-4 ring-deepTeal/20"
                                 : "border-gray-200 dark:border-gray-700 hover:border-deepTeal"
                           } dark:text-white`}
-                          placeholder="you@example.com"
+                          placeholder={t("login.placeholders.email")}
                           disabled={isLoading}
                         />
                       </div>
@@ -434,7 +455,8 @@ const Login = () => {
                   ) : (
                     <div>
                       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-1.5">
-                        Username <span className="text-error">*</span>
+                        {t("login.labels.username")}{" "}
+                        <span className="text-error">*</span>
                       </label>
                       <div className="relative group">
                         <User
@@ -466,7 +488,7 @@ const Login = () => {
                                 ? "border-deepTeal ring-4 ring-deepTeal/20"
                                 : "border-gray-200 dark:border-gray-700 hover:border-deepTeal"
                           } dark:text-white`}
-                          placeholder="@username"
+                          placeholder={t("login.placeholders.username")}
                           disabled={isLoading}
                         />
                       </div>
@@ -491,7 +513,8 @@ const Login = () => {
                   transition={{ delay: 0.8 }}
                 >
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-1.5">
-                    Password <span className="text-error">*</span>
+                    {t("login.labels.password")}{" "}
+                    <span className="text-error">*</span>
                   </label>
                   <div className="relative group">
                     <Lock
@@ -523,7 +546,7 @@ const Login = () => {
                             ? "border-deepTeal ring-4 ring-deepTeal/20"
                             : "border-gray-200 dark:border-gray-700 hover:border-deepTeal"
                       } dark:text-white`}
-                      placeholder="Enter your password"
+                      placeholder={t("login.placeholders.password")}
                       disabled={isLoading}
                     />
                     <button
@@ -578,7 +601,7 @@ const Login = () => {
                       )}
                     </div>
                     <span className="ml-2 text-xs sm:text-sm text-gray-600 dark:text-gray-400 group-hover:text-deepTeal transition-colors">
-                      Remember me
+                      {t("login.rememberMe")}
                     </span>
                   </label>
                   <Link
@@ -586,7 +609,7 @@ const Login = () => {
                     className="text-xs sm:text-sm text-deepTeal hover:text-deepTeal font-medium flex items-center gap-1 transition-colors justify-center"
                   >
                     <HelpCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Forgot Password?
+                    {t("login.forgotPassword")}
                   </Link>
                 </motion.div>
 
@@ -609,12 +632,14 @@ const Login = () => {
                       <>
                         <div className="h-4 w-4 sm:h-5 sm:w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         <span className="text-sm sm:text-base">
-                          Signing in...
+                          {t("login.signingIn")}
                         </span>
                       </>
                     ) : (
                       <>
-                        <span className="text-sm sm:text-base">Sign In</span>
+                        <span className="text-sm sm:text-base">
+                          {t("login.signInButton")}
+                        </span>
                         <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 group-hover:translate-x-1 transition-transform" />
                         <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                       </>
@@ -631,19 +656,19 @@ const Login = () => {
                 className="mt-5 sm:mt-6 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700"
               >
                 <p className="text-[10px] sm:text-xs text-center text-gray-500 dark:text-gray-400">
-                  By signing in, you agree to our{" "}
+                  {t("login.footer.text")}{" "}
                   <a
                     href="terms"
                     className="text-deepTeal hover:text-deepTeal hover:underline transition-colors"
                   >
-                    Terms of Service
+                    {t("login.footer.terms")}
                   </a>{" "}
-                  and{" "}
+                  {t("login.footer.and")}{" "}
                   <a
                     href="privacy"
                     className="text-deepTeal hover:text-deepTeal hover:underline transition-colors"
                   >
-                    Privacy Policy
+                    {t("login.footer.privacy")}
                   </a>
                 </p>
               </motion.div>

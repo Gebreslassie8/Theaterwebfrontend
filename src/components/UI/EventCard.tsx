@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, MapPin, Star, Ticket, Play } from "lucide-react";
 import BookingModal from "../auth/Booking/BookingModal";
+import { useTranslation } from "react-i18next";
 
 // ======================================================
 // TYPES
@@ -15,7 +16,6 @@ interface ShowDate {
   isSoldOut?: boolean;
 }
 
-// This matches the poster_url structure from Home.tsx
 interface PosterUrls {
   poster: string;
   gallery: string[];
@@ -30,7 +30,6 @@ export interface Event {
   theater_id: string;
   venue?: string;
 
-  // Support both naming conventions (poster_url from Home.tsx)
   poster_url?: PosterUrls;
   images?: {
     poster: string;
@@ -60,43 +59,26 @@ interface EventCardProps {
 // ======================================================
 
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
-  // -------------------------
-  // STATE
-  // -------------------------
+  const { t } = useTranslation();   // <-- translation hook
+
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  // -------------------------
-  // SAFE VALUES
-  // -------------------------
-  const safeVenue = event.venue ?? "Unknown Theater";
+  const safeVenue = event.venue ?? t("eventCard.unknownVenue");
 
-  // Helper function to get the poster image URL
   const getPosterUrl = (): string => {
-    // Check for poster_url structure (from Home.tsx)
-    if (
-      event.poster_url &&
-      typeof event.poster_url === "object" &&
-      "poster" in event.poster_url
-    ) {
+    if (event.poster_url && typeof event.poster_url === "object" && "poster" in event.poster_url) {
       return event.poster_url.poster;
     }
-    // Check for images structure (original)
     if (event.images && event.images.poster) {
       return event.images.poster;
     }
-    // Fallback image
     return "https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop";
   };
 
-  // Helper function to get gallery images
   const getGallery = (): string[] => {
-    if (
-      event.poster_url &&
-      typeof event.poster_url === "object" &&
-      "gallery" in event.poster_url
-    ) {
+    if (event.poster_url && typeof event.poster_url === "object" && "gallery" in event.poster_url) {
       return event.poster_url.gallery;
     }
     if (event.images && event.images.gallery) {
@@ -105,25 +87,17 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     return [];
   };
 
-  const getAvailableSeats = () => {
-    return event.dates?.[0]?.availableSeats || 0;
-  };
+  const getAvailableSeats = () => event.dates?.[0]?.availableSeats || 0;
 
-  // Transform event for BookingModal to ensure it has the expected structure
-  const getEventForModal = () => {
-    return {
-      ...event,
-      venue: safeVenue,
-      images: {
-        poster: getPosterUrl(),
-        gallery: getGallery(),
-      },
-    };
-  };
+  const getEventForModal = () => ({
+    ...event,
+    venue: safeVenue,
+    images: {
+      poster: getPosterUrl(),
+      gallery: getGallery(),
+    },
+  });
 
-  // -------------------------
-  // HANDLERS
-  // -------------------------
   const handleBookNow = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -131,21 +105,13 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
   };
 
   const handleBookingConfirm = (bookingData: any) => {
-    const bookings = JSON.parse(
-      localStorage.getItem("theater_bookings") || "[]",
-    );
-
+    const bookings = JSON.parse(localStorage.getItem("theater_bookings") || "[]");
     bookings.push(bookingData);
     localStorage.setItem("theater_bookings", JSON.stringify(bookings));
   };
 
-  const handleBookingModalClose = () => {
-    setIsBookingModalOpen(false);
-  };
+  const handleBookingModalClose = () => setIsBookingModalOpen(false);
 
-  // ======================================================
-  // LOADING STATE
-  // ======================================================
   const LoadingSkeleton = () => (
     <div className="bg-white dark:bg-dark-800 rounded-xl shadow-md overflow-hidden h-full">
       <div className="h-56 bg-gray-200 dark:bg-dark-700 animate-pulse" />
@@ -159,9 +125,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
 
   if (!event) return <LoadingSkeleton />;
 
-  // ======================================================
-  // UI
-  // ======================================================
   return (
     <>
       <motion.div
@@ -171,14 +134,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* =========================
-            IMAGE SECTION
-        ========================= */}
+        {/* Image section */}
         <div className="relative h-56 overflow-hidden bg-gray-100 dark:bg-dark-900">
-          {!imageLoaded && (
-            <div className="absolute inset-0 animate-pulse bg-gray-300 dark:bg-dark-700" />
-          )}
-
+          {!imageLoaded && <div className="absolute inset-0 animate-pulse bg-gray-300 dark:bg-dark-700" />}
           <img
             src={getPosterUrl()}
             alt={event.title}
@@ -188,7 +146,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             onLoad={() => setImageLoaded(true)}
           />
 
-          {/* Hover Play Button */}
           {isHovered && (
             <div
               onClick={handleBookNow}
@@ -200,7 +157,6 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             </div>
           )}
 
-          {/* Rating */}
           {event.rating && (
             <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg text-white text-xs flex items-center gap-1">
               <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
@@ -208,55 +164,39 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
             </div>
           )}
 
-          {/* Genre */}
           <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg">
             {event.genre}
           </div>
 
-          {/* Duration */}
           <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            <span>{event.duration} min</span>
+            <span>{event.duration} {t("eventCard.minutes")}</span>
           </div>
         </div>
 
-        {/* =========================
-            CONTENT SECTION
-        ========================= */}
+        {/* Content section */}
         <div className="p-4 flex flex-col flex-1">
-          {/* Title */}
           <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-1 mb-1">
             {event.title}
           </h3>
-
-          {/* Venue */}
           <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-1">
             <MapPin className="w-3 h-3 text-deepTeal flex-shrink-0" />
             <span className="truncate">{safeVenue}</span>
           </div>
-
-          {/* Seats */}
           <div className="mt-3 text-xs text-gray-600 dark:text-gray-400">
-            <span className="font-semibold text-deepTeal">
-              {getAvailableSeats()}
-            </span>{" "}
-            seats available
+            <span className="font-semibold text-deepTeal">{getAvailableSeats()}</span>{" "}
+            {t("eventCard.seatsAvailable")}
           </div>
-
-          {/* Book Button */}
           <button
             onClick={handleBookNow}
             className="mt-4 bg-deepTeal text-white py-2.5 rounded-lg flex items-center justify-center gap-2 hover:bg-deepTeal/80 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
           >
             <Ticket className="w-4 h-4" />
-            Book Now
+            {t("eventCard.bookNow")}
           </button>
         </div>
       </motion.div>
 
-      {/* =========================
-          BOOKING MODAL
-      ========================= */}
       <BookingModal
         show={getEventForModal()}
         isOpen={isBookingModalOpen}
