@@ -11,24 +11,13 @@ import {
     Activity,
     Volume2,
     VolumeX,
-    Users,
-    Zap,
-    Shield,
-    Award,
-    TrendingUp,
     UserCheck,
     Ticket,
     ChevronLeft,
     Check,
     AlertTriangle,
     Edit,
-    X,
-  Scan,
-    Fingerprint,
-    Smartphone,
-    Wifi,
-    Signal,
-    Battery
+    X
 } from 'lucide-react';
 import jsQR from 'jsqr';
 
@@ -140,35 +129,45 @@ const mockTickets: TicketData[] = [
 // Track checked in tickets
 let checkedInTickets: Map<string, TicketData> = new Map();
 
-// ============= Audio Functions =============
+// ============= Improved Audio Functions =============
 const playValidSound = () => {
     try {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
         
-        const oscillator1 = audioContext.createOscillator();
-        const gain1 = audioContext.createGain();
-        oscillator1.connect(gain1);
-        gain1.connect(audioContext.destination);
-        oscillator1.frequency.value = 880;
-        oscillator1.type = 'sine';
-        gain1.gain.value = 0.4;
-        oscillator1.start();
-        gain1.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3);
-        oscillator1.stop(audioContext.currentTime + 0.3);
+        // Resume audio context if suspended (browser policy)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
         
+        // Success sound - rising two-tone beep with higher volume
+        const now = audioContext.currentTime;
+        
+        // First beep - lower frequency
+        const osc1 = audioContext.createOscillator();
+        const gain1 = audioContext.createGain();
+        osc1.connect(gain1);
+        gain1.connect(audioContext.destination);
+        osc1.frequency.value = 880;
+        osc1.type = 'sine';
+        gain1.gain.setValueAtTime(0.5, now);
+        gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        osc1.start(now);
+        osc1.stop(now + 0.2);
+        
+        // Second beep - higher frequency (sound like "ding!")
         setTimeout(() => {
-            const oscillator2 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
             const gain2 = audioContext.createGain();
-            oscillator2.connect(gain2);
+            osc2.connect(gain2);
             gain2.connect(audioContext.destination);
-            oscillator2.frequency.value = 880;
-            oscillator2.type = 'sine';
-            gain2.gain.value = 0.4;
-            oscillator2.start();
-            gain2.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3);
-            oscillator2.stop(audioContext.currentTime + 0.3);
-        }, 200);
+            osc2.frequency.value = 1320;
+            osc2.type = 'sine';
+            gain2.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.15);
+            osc2.start();
+            osc2.stop(audioContext.currentTime + 0.15);
+        }, 150);
     } catch (error) {
         console.log('Audio not supported');
     }
@@ -179,16 +178,29 @@ const playInvalidSound = () => {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
         
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // Error sound - descending harsh buzz
+        const now = audioContext.currentTime;
+        
         const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
+        const gainNode = audioContext.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
         oscillator.frequency.value = 440;
         oscillator.type = 'sawtooth';
-        gain.gain.value = 0.4;
-        oscillator.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
-        oscillator.stop(audioContext.currentTime + 0.5);
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+        
+        // Descending frequency sweep
+        oscillator.frequency.setValueAtTime(440, now);
+        oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.3);
+        
+        oscillator.start(now);
+        oscillator.stop(now + 0.4);
     } catch (error) {
         console.log('Audio not supported');
     }
@@ -199,7 +211,12 @@ const playCheckInSound = () => {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
         
-        const frequencies = [523.25, 659.25, 783.99];
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+        
+        // Success chime - 3 ascending notes (C, E, G)
+        const frequencies = [523.25, 659.25, 783.99]; // C, E, G
         frequencies.forEach((freq, index) => {
             setTimeout(() => {
                 const oscillator = audioContext.createOscillator();
@@ -208,11 +225,11 @@ const playCheckInSound = () => {
                 gain.connect(audioContext.destination);
                 oscillator.frequency.value = freq;
                 oscillator.type = 'sine';
-                gain.gain.value = 0.3;
+                gain.gain.setValueAtTime(0.4, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2);
                 oscillator.start();
-                gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
                 oscillator.stop(audioContext.currentTime + 0.2);
-            }, index * 150);
+            }, index * 120);
         });
     } catch (error) {
         console.log('Audio not supported');
@@ -259,13 +276,11 @@ const ScanQRCode: React.FC = () => {
 
     // Cleanup camera on unmount or logout
     const cleanupCamera = () => {
-        // Stop the scanning interval
         if (scanIntervalRef.current) {
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
         }
         
-        // Stop all camera tracks
         if (streamRef.current) {
             streamRef.current.getTracks().forEach(track => {
                 track.stop();
@@ -273,7 +288,6 @@ const ScanQRCode: React.FC = () => {
             streamRef.current = null;
         }
         
-        // Clear video source
         if (videoRef.current) {
             videoRef.current.srcObject = null;
         }
@@ -281,7 +295,7 @@ const ScanQRCode: React.FC = () => {
         setIsScanning(false);
     };
 
-    // Listen for beforeunload event (page refresh/close)
+    // Listen for beforeunload event
     useEffect(() => {
         const handleBeforeUnload = () => {
             cleanupCamera();
@@ -306,7 +320,7 @@ const ScanQRCode: React.FC = () => {
     }, [cameraActive, showManualInput, cameraError]);
 
     const startCamera = async () => {
-        cleanupCamera(); // Clean up any existing camera first
+        cleanupCamera();
         
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
@@ -340,7 +354,6 @@ const ScanQRCode: React.FC = () => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        // Clear any existing interval
         if (scanIntervalRef.current) {
             clearInterval(scanIntervalRef.current);
         }
@@ -357,7 +370,6 @@ const ScanQRCode: React.FC = () => {
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
                 
                 if (code) {
-                    // Pause scanning while processing
                     if (scanIntervalRef.current) {
                         clearInterval(scanIntervalRef.current);
                         scanIntervalRef.current = null;
@@ -369,7 +381,6 @@ const ScanQRCode: React.FC = () => {
     };
 
     const processQRCode = (data: string) => {
-        // Validate QR code format
         const match = data.match(/TKT-\d{4}-\d{3}/);
         if (!match) {
             showError('Invalid QR code. Please scan a valid ticket.');
@@ -391,12 +402,11 @@ const ScanQRCode: React.FC = () => {
             return;
         }
 
-        // Valid ticket - show confirmation
         if (soundEnabled) playValidSound();
         triggerFlash('#22c55e');
         setSelectedTicket(ticket);
         setShowConfirm(true);
-        stopCamera(); // Stop camera when showing confirmation
+        stopCamera();
     };
 
     const restartScanning = () => {
@@ -449,7 +459,6 @@ const ScanQRCode: React.FC = () => {
         setTimeout(() => {
             setShowResult(false);
             setScanResult(null);
-            // Restart camera after check-in
             if (cameraActive && !showManualInput) {
                 startCamera();
             }
@@ -483,12 +492,18 @@ const ScanQRCode: React.FC = () => {
         stopCamera();
     };
 
-    // Handle navigation/cleanup on unmount
     useEffect(() => {
         return () => {
             cleanupCamera();
         };
     }, []);
+
+    // Info icon component
+    const InfoIcon = ({ className }: { className?: string }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    );
 
     return (
         <div className="fixed inset-0 bg-black">
@@ -554,9 +569,8 @@ const ScanQRCode: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Right Side Icons - Check-in Button Area */}
-                        <div className="absolute top-1/2 right-4 -translate-y-1/2 space-y-3">
-                            {/* Check-in Button - Main Action */}
+                        {/* Right Side - Only Check-in Button */}
+                        <div className="absolute top-1/2 right-4 -translate-y-1/2">
                             <button
                                 onClick={() => {
                                     if (selectedTicket) {
@@ -565,26 +579,10 @@ const ScanQRCode: React.FC = () => {
                                         showError('Please scan a ticket first');
                                     }
                                 }}
-                                className="p-3 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl shadow-lg hover:scale-105 transition-transform"
+                                className="p-4 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl shadow-lg hover:scale-105 transition-transform"
                             >
-                                <UserCheck className="w-6 h-6 text-white" />
+                                <UserCheck className="w-8 h-8 text-white" />
                             </button>
-                            
-                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl relative">
-                                <Users className="w-5 h-5 text-white" />
-                                <span className="absolute -top-2 -right-2 w-5 h-5 bg-teal-500 rounded-full text-xs flex items-center justify-center text-white font-bold">
-                                    {stats.checkedIn}
-                                </span>
-                            </div>
-                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                <Shield className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                <Zap className="w-5 h-5 text-white" />
-                            </div>
-                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
-                                <Award className="w-5 h-5 text-white" />
-                            </div>
                         </div>
 
                         {/* Bottom Stats */}
@@ -605,14 +603,11 @@ const ScanQRCode: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Status Indicators */}
+                        {/* Status Indicator */}
                         <div className="absolute top-20 right-4">
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/80 backdrop-blur-sm rounded-full">
                                 <Activity className="w-3 h-3 text-white animate-pulse" />
-                                <span className="text-xs text-white">Scanning</span>
-                                <Wifi className="w-3 h-3 text-white ml-1" />
-                                <Signal className="w-3 h-3 text-white" />
-                                <Battery className="w-3 h-3 text-white" />
+                                <span className="text-xs text-white">Ready to Scan</span>
                             </div>
                         </div>
 
@@ -646,7 +641,7 @@ const ScanQRCode: React.FC = () => {
                             />
                             <div className="bg-blue-50 rounded-lg p-3">
                                 <p className="text-xs text-blue-800 flex items-center gap-2">
-                                    <Info className="w-3 h-3" />
+                                    <InfoIcon className="w-3 h-3" />
                                     Example: TKT-2024-001, TKT-2024-002
                                 </p>
                             </div>
@@ -805,19 +800,12 @@ const ScanQRCode: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className={`h-1 w-full bg-white/30 animate-pulse`} />
+                        <div className="h-1 w-full bg-white/30 animate-pulse" />
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 };
-
-// Info icon component
-const Info = ({ className }: { className?: string }) => (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-);
 
 export default ScanQRCode;
