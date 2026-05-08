@@ -1,16 +1,6 @@
 // frontend/src/components/EmployeeForm/EmployeeTable.tsx
 import React from "react";
-import {
-  Eye,
-  Edit,
-  Ban,
-  RefreshCw,
-  Trash2,
-  Mail,
-  Phone,
-  LayoutGrid,
-  UsersRound,
-} from "lucide-react";
+import { Eye, Edit, Ban, RefreshCw, Trash2, Mail, Phone, LayoutGrid, UsersRound,} from "lucide-react";
 import ReusableTable from "../Reusable/ReusableTable";
 import { Employee } from "../../pages/Owner/employes/employee.types";
 import { roleConfig, statusConfig } from "../../pages/Owner/employes/employeeConstants";
@@ -55,11 +45,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       sortable: true,
       Cell: (row: Employee) => (
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-md">
-            <span className="text-white font-bold text-sm">
-              {row.name?.charAt(0).toUpperCase()}
-            </span>
-          </div>
+          
           <div>
             <p className="font-medium text-gray-900">{row.name}</p>
             <p className="text-xs text-gray-500">@{row.username}</p>
@@ -135,14 +121,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
     },
   ];
 
+
   const renderActions = (row: Employee) => (
     <div className="flex items-center justify-start gap-2">
-      <button
-        onClick={() => onView(row)}
-        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group"
-        title="View Details"
-        type="button"
-      >
+      <button onClick={() => onView(row)} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group" title="View Details" type="button" >
         <Eye className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
       </button>
 

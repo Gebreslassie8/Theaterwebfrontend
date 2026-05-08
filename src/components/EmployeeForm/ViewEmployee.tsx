@@ -1,29 +1,9 @@
 // frontend/src/components/EmployeeForm/ViewEmployee.tsx
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import {
-  X,
-  User,
-  Mail,
-  Phone,
-  Briefcase,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  UserCheck,
-  Shield,
-  Coins,
-  Crown,
-  Activity,
-  Building,
-  AlertCircle,
-  Edit,
-  Printer,
-  Download,
-  MapPin,
-  Award,
-} from "lucide-react";
+import { X,User, Mail, Phone, Briefcase, Calendar, CheckCircle, XCircle, UserCheck, Shield, Coins, Crown, Activity, Building, AlertCircle, Edit, Printer, Download, MapPin, Award, } from "lucide-react";
 import supabase from "@/config/supabaseClient";
+
 
 interface ViewEmployeeProps {
   isOpen: boolean;
@@ -33,13 +13,7 @@ interface ViewEmployeeProps {
   onEdit?: () => void;
 }
 
-const ViewEmployee: React.FC<ViewEmployeeProps> = ({
-  isOpen,
-  employee,
-  roles,
-  onClose,
-  onEdit,
-}) => {
+const ViewEmployee: React.FC<ViewEmployeeProps> = ({ isOpen, employee, roles, onClose, onEdit, }) => {
   const [currentUserRole, setCurrentUserRole] = useState<string>("");
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -518,6 +492,7 @@ const ViewEmployee: React.FC<ViewEmployeeProps> = ({
     );
   }
 
+  
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
