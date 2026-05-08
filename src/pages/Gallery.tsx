@@ -1,5 +1,5 @@
 // src/pages/Gallery.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -10,30 +10,54 @@ import {
   Heart,
   Share2,
   Download,
-  Award,
   Theater,
   Grid,
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  Award,
 } from "lucide-react";
 import GalleryCard from "../components/UI/GalleryCard";
 import supabase from "../config/supabaseClient";
 
-// Types
+// Types based on database schema
 interface GalleryImage {
-  id: number;
+  id: string;
   title: string;
   description: string;
   image_url: string;
+  category:
+    | "performances"
+    | "behind-scenes"
+    | "venues"
+    | "audience"
+    | "costumes";
+  venue: string;
+  photographer: string;
+  event_date: string;
+  likes: number;
+  views: number;
+  is_active: boolean;
+  published_by: string | null;
+  published_by_name: string | null;
+  published_by_role: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Type for GalleryCard component (matching its expected props)
+interface GalleryCardImage {
+  id: number;
+  src: string;
+  title: string;
+  description: string;
   category: string;
   date: string;
   venue: string;
+  photographer: string;
   likes: number;
   views: number;
-  created_at?: string;
-  user_id?: string;
 }
 
 interface Category {
@@ -50,34 +74,34 @@ const Gallery: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [images, setImages] = useState<GalleryImage[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const itemsPerPage = 12;
 
   // Fetch images from Supabase
-  useEffect(() => {
-    fetchGalleryImages();
-  }, []);
-
-  const fetchGalleryImages = async () => {
+  const fetchGalleryImages = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("gallery")
+        .from("gallery_images")
         .select("*")
-        .order("date", { ascending: false });
+        .eq("is_active", true)
+        .order("event_date", { ascending: false });
 
-      if (error) {
-        console.error("Error fetching gallery images:", error);
-        alert("Failed to load gallery images");
-      } else if (data) {
-        setImages(data);
+      if (error) throw error;
+
+      if (data) {
+        setImages(data as GalleryImage[]);
       }
     } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to load gallery");
+      console.error("Error fetching gallery images:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchGalleryImages();
+  }, [fetchGalleryImages]);
 
   // Categories with dynamic counts
   const categories: Category[] = [
@@ -105,6 +129,12 @@ const Gallery: React.FC = () => {
       name: "Audience",
       icon: Users,
       count: images.filter((i) => i.category === "audience").length,
+    },
+    {
+      id: "costumes",
+      name: "Costumes",
+      icon: Award,
+      count: images.filter((i) => i.category === "costumes").length,
     },
   ];
 
@@ -138,36 +168,42 @@ const Gallery: React.FC = () => {
 
   const handleImageClick = (image: GalleryImage) => {
     setSelectedImage(image);
+    setIsModalOpen(true);
     document.body.style.overflow = "hidden";
   };
 
   const closeModal = () => {
-    setSelectedImage(null);
+    setIsModalOpen(false);
+    // Delay clearing selected image to allow exit animation
+    setTimeout(() => {
+      setSelectedImage(null);
+    }, 300);
     document.body.style.overflow = "auto";
   };
 
-  const handleLike = async (imageId: number, currentLikes: number) => {
+  const handleLike = async (imageId: string, currentLikes: number) => {
     try {
       const { error } = await supabase
-        .from("gallery")
-        .update({ likes: currentLikes + 1 })
+        .from("gallery_images")
+        .update({
+          likes: currentLikes + 1,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", imageId);
 
-      if (error) {
-        console.error("Error updating likes:", error);
-      } else {
-        // Update local state
-        setImages((prevImages) =>
-          prevImages.map((img) =>
-            img.id === imageId ? { ...img, likes: currentLikes + 1 } : img,
-          ),
-        );
-        if (selectedImage && selectedImage.id === imageId) {
-          setSelectedImage({ ...selectedImage, likes: currentLikes + 1 });
-        }
+      if (error) throw error;
+
+      // Update local state
+      setImages((prevImages) =>
+        prevImages.map((img) =>
+          img.id === imageId ? { ...img, likes: currentLikes + 1 } : img,
+        ),
+      );
+      if (selectedImage && selectedImage.id === imageId) {
+        setSelectedImage({ ...selectedImage, likes: currentLikes + 1 });
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error updating likes:", error);
     }
   };
 
@@ -182,7 +218,7 @@ const Gallery: React.FC = () => {
   };
 
   // Get page numbers for pagination with ellipsis
-  const getPageNumbers = () => {
+  const getPageNumbers = (): (number | string)[] => {
     const pages: (number | string)[] = [];
     if (totalPages <= 7) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
@@ -206,6 +242,21 @@ const Gallery: React.FC = () => {
     return pages;
   };
 
+  // Transform database image to GalleryCard expected format
+  const transformImageForCard = (image: GalleryImage): GalleryCardImage => ({
+    id: parseInt(image.id, 10), // Convert string id to number
+    src: image.image_url,
+    title: image.title,
+    description: image.description,
+    category: image.category,
+    date: image.event_date,
+    venue: image.venue,
+    photographer: image.photographer,
+    likes: image.likes,
+    views: image.views,
+  });
+
+  // Loading skeleton
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-24">
@@ -227,7 +278,7 @@ const Gallery: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue">
+      <section className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-emerald-600">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
           <motion.div
@@ -278,7 +329,7 @@ const Gallery: React.FC = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
                     isActive
-                      ? "bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg"
+                      ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg"
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
                   }`}
                 >
@@ -296,95 +347,114 @@ const Gallery: React.FC = () => {
         </motion.div>
 
         {/* Images Grid */}
-        {paginatedImages.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {paginatedImages.map((image, index) => (
-                <GalleryCard
-                  key={image.id}
-                  image={image}
-                  onClick={() => handleImageClick(image)}
-                  index={index}
-                />
-              ))}
-            </div>
+        <AnimatePresence mode="wait">
+          {paginatedImages.length > 0 ? (
+            <motion.div
+              key={`${selectedCategory}-${currentPage}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {paginatedImages.map((image, index) => (
+                  <GalleryCard
+                    key={image.id}
+                    image={transformImageForCard(image)}
+                    onClick={() => handleImageClick(image)}
+                    index={index}
+                  />
+                ))}
+              </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-12">
-                <button
-                  onClick={() => {
-                    setCurrentPage((prev) => Math.max(1, prev - 1));
-                    scrollToTop();
-                  }}
-                  disabled={currentPage === 1}
-                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <div className="flex gap-2">
-                  {getPageNumbers().map((page, idx) =>
-                    page === "..." ? (
-                      <span
-                        key={`ellipsis-${idx}`}
-                        className="w-10 h-10 flex items-center justify-center text-gray-500"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <button
-                        key={page}
-                        onClick={() => {
-                          setCurrentPage(page as number);
-                          scrollToTop();
-                        }}
-                        className={`w-10 h-10 rounded-lg font-medium transition ${
-                          currentPage === page
-                            ? "bg-deepTeal text-white shadow-md"
-                            : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ),
-                  )}
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-12">
+                  <button
+                    onClick={() => {
+                      setCurrentPage((prev) => Math.max(1, prev - 1));
+                      scrollToTop();
+                    }}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <div className="flex gap-2">
+                    {getPageNumbers().map((page, idx) =>
+                      page === "..." ? (
+                        <span
+                          key={`ellipsis-${idx}`}
+                          className="w-10 h-10 flex items-center justify-center text-gray-500"
+                        >
+                          ...
+                        </span>
+                      ) : (
+                        <button
+                          key={page}
+                          onClick={() => {
+                            setCurrentPage(page as number);
+                            scrollToTop();
+                          }}
+                          className={`w-10 h-10 rounded-lg font-medium transition ${
+                            currentPage === page
+                              ? "bg-teal-600 text-white shadow-md"
+                              : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                          }`}
+                          aria-label={`Go to page ${page}`}
+                        >
+                          {page}
+                        </button>
+                      ),
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                      scrollToTop();
+                    }}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+                    aria-label="Next page"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => {
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-                    scrollToTop();
-                  }}
-                  disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-            )}
+              )}
 
-            {/* Showing info */}
-            {totalPages > 1 && (
-              <div className="text-center mt-4 text-sm text-gray-500">
-                Showing {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                {Math.min(currentPage * itemsPerPage, filteredImages.length)} of{" "}
-                {filteredImages.length} images
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-16">
-            <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No images found
-            </h3>
-            <p className="text-gray-500">Try selecting a different category</p>
-          </div>
-        )}
+              {/* Showing info */}
+              {filteredImages.length > itemsPerPage && (
+                <div className="text-center mt-4 text-sm text-gray-500">
+                  Showing {(currentPage - 1) * itemsPerPage + 1} -{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredImages.length)}{" "}
+                  of {filteredImages.length} images
+                </div>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="text-center py-16"
+            >
+              <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No images found
+              </h3>
+              <p className="text-gray-500">
+                Try selecting a different category
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Image Modal */}
       <AnimatePresence>
-        {selectedImage && (
+        {isModalOpen && selectedImage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -396,12 +466,14 @@ const Gallery: React.FC = () => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="relative w-full max-w-6xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={closeModal}
                 className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition"
+                aria-label="Close modal"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -411,6 +483,7 @@ const Gallery: React.FC = () => {
                     src={selectedImage.image_url}
                     alt={selectedImage.title}
                     className="max-w-full max-h-[70vh] object-contain"
+                    loading="lazy"
                   />
                 </div>
                 <div className="md:w-1/3 p-6 overflow-y-auto bg-white dark:bg-gray-900">
@@ -424,19 +497,39 @@ const Gallery: React.FC = () => {
                     <div className="flex items-center gap-2 text-gray-500">
                       <Calendar className="h-4 w-4" />
                       <span>
-                        {new Date(selectedImage.date).toLocaleDateString()}
+                        {new Date(selectedImage.event_date).toLocaleDateString(
+                          undefined,
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                          },
+                        )}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-500">
                       <MapPin className="h-4 w-4" />
                       <span>{selectedImage.venue}</span>
                     </div>
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <Camera className="h-4 w-4" />
+                      <span>Photographer: {selectedImage.photographer}</span>
+                    </div>
+                    {selectedImage.published_by_name && (
+                      <div className="flex items-center gap-2 text-gray-500">
+                        <Users className="h-4 w-4" />
+                        <span>
+                          Published by: {selectedImage.published_by_name}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 pt-4">
                       <button
                         onClick={() =>
                           handleLike(selectedImage.id, selectedImage.likes)
                         }
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
+                        aria-label="Like image"
                       >
                         <Heart className="h-4 w-4 text-red-500" />
                         <span>{selectedImage.likes}</span>
@@ -444,6 +537,7 @@ const Gallery: React.FC = () => {
                       <button
                         onClick={() => handleShare(selectedImage)}
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
+                        aria-label="Share image"
                       >
                         <Share2 className="h-4 w-4" />
                         <span>Share</span>
@@ -452,6 +546,7 @@ const Gallery: React.FC = () => {
                         href={selectedImage.image_url}
                         download
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
+                        aria-label="Download image"
                       >
                         <Download className="h-4 w-4" />
                         <span>Download</span>
@@ -472,8 +567,11 @@ const Gallery: React.FC = () => {
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
+            className="fixed bottom-6 right-6 z-50 p-3 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition-all duration-200"
+            aria-label="Scroll to top"
           >
             <ChevronUp className="h-5 w-5" />
           </motion.button>
