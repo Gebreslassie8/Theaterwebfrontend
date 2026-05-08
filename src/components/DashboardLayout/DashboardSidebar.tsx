@@ -169,11 +169,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Activity,
             color: "text-cyan-500",
             subItems: [
-              {
-                name: "Platform Health",
-                to: "/admin/monitoring/platform_health",
-                icon: Heart,
-              },
+           
               {
                 name: "System Logs",
                 to: "/admin/monitoring/logs",

@@ -671,262 +671,74 @@
   "mockAccounts": {
     "title": "Mock Test Accounts"
   }
-},"theaterRegistration": {
-  "title": "Theater Owner Registration",
-  "subtitle": "Join TheaterHUB and reach thousands of theater lovers",
-  "feeNotice": "NON-REFUNDABLE registration fee: $299",
-  "steps": {
-    "businessInfo": "Business Info",
-    "contactInfo": "Contact Info",
-    "theaterDetails": "Theater Details",
-    "documents": "Documents",
-    "pricingPlan": "Pricing Plan",
-    "terms": "Terms"
-  },
-  "businessInfo": {
-    "title": "Business Information",
-    "subtitle": "Tell us about your theater business",
-    "legalBusinessName": "Legal Business Name",
-    "legalBusinessNamePlaceholder": "Grand Theater LLC",
-    "legalBusinessNameHint": "As it appears on your business license",
-    "tradeName": "Trade Name / DBA",
-    "tradeNamePlaceholder": "Grand Theater",
-    "businessType": "Business Type",
-    "selectBusinessType": "Select business type",
-    "businessLicense": "Business License Number",
-    "businessLicensePlaceholder": "BL-2024-12345",
-    "taxId": "Tax ID / TIN",
-    "taxIdPlaceholder": "123456789",
-    "yearsInOperation": "Years in Operation",
-    "selectYears": "Select years",
-    "businessDescription": "Business Description",
-    "businessDescriptionPlaceholder": "Describe your theater business, history, mission...",
-    "businessDescriptionHint": "What makes you unique?"
-  },
-  "contactInfo": {
-    "title": "Owner & Contact Information",
-    "subtitle": "Who should we contact?",
-    "primaryContact": "Primary Contact / Owner",
+},"customerRegistration": {
+  "title": "Create Account",
+  "subtitle": "Join Theatre Hub Ethiopia and start your journey",
+  "form": {
     "fullName": "Full Name",
-    "fullNamePlaceholder": "John Doe",
-    "position": "Position/Title",
-    "selectPosition": "Select position",
+    "fullNamePlaceholder": "Enter your full name",
     "email": "Email Address",
-    "emailPlaceholder": "john@example.com",
+    "emailPlaceholder": "you@example.com",
     "phone": "Phone Number",
-    "phonePlaceholder": "+1 (555) 000-0000",
-    "secondaryContact": "Secondary Contact",
-    "secondaryContactOptional": " (Optional)",
-    "secondaryName": "Name",
-    "secondaryNamePlaceholder": "Jane Smith",
-    "secondaryPosition": "Position",
-    "secondaryPositionPlaceholder": "Operations Manager",
-    "secondaryEmail": "Email",
-    "secondaryEmailPlaceholder": "jane@example.com",
-    "secondaryPhone": "Phone",
-    "secondaryPhonePlaceholder": "+1 (555) 000-0001",
-    "emergencyContact": "Emergency Contact",
-    "emergencyName": "Contact Name",
-    "emergencyNamePlaceholder": "Emergency Contact Name",
-    "emergencyPhone": "Phone Number",
-    "emergencyPhonePlaceholder": "+1 (555) 000-0002",
-    "emergencyRelation": "Relationship",
-    "emergencyRelationPlaceholder": "Business Partner / Family Member"
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "Username",
+    "usernamePlaceholder": "Choose a username",
+    "password": "Password",
+    "passwordPlaceholder": "Create a password",
+    "confirmPassword": "Confirm Password",
+    "confirmPasswordPlaceholder": "Confirm your password"
   },
-  "theaterDetails": {
-    "title": "Theater Details",
-    "subtitle": "Tell us about your venue",
-    "theaterName": "Theater Name",
-    "theaterNamePlaceholder": "Grand Theater",
-    "theaterLogo": "Theater Logo",
-    "uploadLogo": "Upload Logo",
-    "changeLogo": "Change Logo",
-    "logoHint": "PNG, JPG up to 2MB",
-    "theaterDescription": "Theater Description",
-    "theaterDescriptionPlaceholder": "Describe your theater, its history, unique features...",
-    "theaterEmail": "Theater Email",
-    "theaterEmailPlaceholder": "info@grandtheater.com",
-    "theaterPhone": "Theater Phone",
-    "theaterPhonePlaceholder": "+251 911 234 567",
-    "numberOfHalls": "Number of Halls",
-    "numberOfHallsPlaceholder": "3",
-    "totalSeats": "Total Seats",
-    "totalSeatsPlaceholder": "500",
-    "screenTypes": "Screen Types Available",
-    "screenTypesHelp": "Hold Ctrl/Cmd to select multiple",
-    "servicesOffered": "Services Offered",
-    "services": {
-      "ticketBooking": "Ticket Booking",
-      "ticketBookingDesc": "Online ticket reservation",
-      "refreshments": "Refreshments",
-      "refreshmentsDesc": "Snacks and beverages",
-      "premiumBar": "Premium Bar",
-      "premiumBarDesc": "Full bar service",
-      "dining": "Dining",
-      "diningDesc": "Pre-show dining",
-      "freeWifi": "Free WiFi",
-      "freeWifiDesc": "Complimentary internet",
-      "valetParking": "Valet Parking",
-      "valetParkingDesc": "Professional parking service",
-      "wheelchairAccess": "Wheelchair Access",
-      "wheelchairAccessDesc": "ADA compliant",
-      "giftCards": "Gift Cards",
-      "giftCardsDesc": "Digital gift certificates",
-      "groupBookings": "Group Bookings",
-      "groupBookingsDesc": "Special group rates",
-      "privateEvents": "Private Events",
-      "privateEventsDesc": "Venue rental"
-    },
-    "city": "City",
-    "selectCity": "Select city",
-    "region": "Region",
-    "selectRegion": "Select region",
-    "fullAddress": "Full Address",
-    "fullAddressPlaceholder": "123 Bole Road, Addis Ababa",
-    "latitude": "Latitude",
-    "latitudePlaceholder": "9.0192",
-    "longitude": "Longitude",
-    "longitudePlaceholder": "38.7535"
+  "validation": {
+    "fullNameRequired": "Full name is required",
+    "fullNameMin": "Name must be at least 3 characters",
+    "fullNameMax": "Name is too long",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "phoneRequired": "Phone number is required",
+    "phoneInvalid": "Please enter a valid phone number",
+    "usernameRequired": "Username is required",
+    "usernameMin": "Username must be at least 3 characters",
+    "usernameMax": "Username is too long",
+    "usernamePattern": "Username can only contain letters, numbers, and underscores",
+    "passwordRequired": "Password is required",
+    "passwordMin": "Password must be at least 8 characters",
+    "passwordStrength": "Password must contain uppercase, lowercase and number",
+    "confirmPasswordRequired": "Please confirm your password",
+    "passwordsMatch": "Passwords must match",
+    "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
   },
-  "documents": {
-    "title": "Required Documents",
-    "subtitle": "Upload your business documents",
-    "license": {
-      "name": "Business License",
-      "desc": "Valid business license or registration certificate"
-    },
-    "taxCertificate": {
-      "name": "Tax Registration Certificate",
-      "desc": "Tax Identification Number (TIN) certificate"
-    },
-    "ownerId": {
-      "name": "Owner ID / Passport",
-      "desc": "Clear photo of owner's ID or passport"
-    },
-    "theaterPhotos": {
-      "name": "Theater Photos",
-      "desc": "Interior and exterior photos of your theater"
-    },
-    "fireSafety": {
-      "name": "Fire Safety Certificate",
-      "desc": "Fire safety inspection certificate"
-    },
-    "healthPermit": {
-      "name": "Health Permit",
-      "desc": "If you serve food/drinks"
-    },
-    "uploadButton": "Upload Document",
-    "replaceButton": "Replace File",
-    "requirements": "Document Requirements",
-    "requirementsText": "Please ensure all documents are clear and legible. Maximum file size: 10MB per file. Accepted formats: PDF, JPG, PNG."
+  "passwordStrength": {
+    "title": "Password strength:",
+    "weak": "Weak",
+    "medium": "Medium",
+    "strong": "Strong"
   },
-  "pricingPlan": {
-    "title": "Pricing Plan",
-    "subtitle": "Choose your preferred payment model",
-    "selectModel": "Select Pricing Model",
-    "perTicket": {
-      "name": "Per Ticket Selling",
-      "description": "Pay commission on each ticket sold",
-      "rate": "5-10% per ticket",
-      "bestFor": "New / Low Volume Theaters",
-      "details": "No monthly fees, pay only when you sell"
-    },
-    "contract": {
-      "name": "Contract Plan",
-      "description": "Fixed contract with flexible terms",
-      "rate": "Varies by contract length",
-      "bestFor": "Established Theaters with consistent sales",
-      "details": "Choose monthly, quarterly, or yearly contract"
-    },
-    "selectContract": "Select Contract Type",
-    "contractTypes": {
-      "monthly": {
-        "name": "Monthly Contract",
-        "price": "$299/month",
-        "discount": "0%",
-        "features": ["Month-to-month", "Cancel anytime", "Standard support"]
-      },
-      "quarterly": {
-        "name": "Quarterly Contract",
-        "price": "$249/month",
-        "discount": "Save 15%",
-        "features": ["3-month term", "Priority support", "Featured listing"]
-      },
-      "yearly": {
-        "name": "Yearly Contract",
-        "price": "$199/month",
-        "discount": "Save 33% (2 months free)",
-        "features": ["12-month term", "Premium support", "Top featured listing", "Marketing boost"]
-      }
-    }
+  "passwordRequirements": {
+    "length": "At least 8 characters",
+    "lowercase": "Lowercase letter",
+    "uppercase": "Uppercase letter",
+    "number": "Number"
   },
   "terms": {
-    "title": "Terms & Agreement",
-    "subtitle": "Please review and accept our terms",
-    "agreementTitle": "Theater Owner Agreement",
-    "intro": "By submitting this registration, you agree to the following terms:",
-    "clauses": [
-      "All information provided is accurate and complete",
-      "You will comply with all local laws and regulations",
-      "Commission rates will apply as per selected pricing plan",
-      "For per-ticket model: 5-10% commission on each ticket sold",
-      "For contract model: Fixed monthly/quarterly/yearly fee applies",
-      "Holdback policy applies for refunds and chargebacks",
-      "TheaterHUB reserves the right to verify submitted documents",
-      "You are authorized to represent the business",
-      "You will maintain accurate show schedules and pricing",
-      "You will honor all ticket sales processed through TheaterHUB"
-    ],
-    "adminReview": "Important: Your registration will be reviewed by our admin team within 2-3 business days. After verification, you will receive an OTP to complete the registration process.",
-    "noRefundNotice": "NO REFUND POLICY: The registration fee of $299 is NON-REFUNDABLE under any circumstances, including but not limited to application rejection, withdrawal, or any other reason.",
-    "accuracyCheckbox": "I confirm that all information provided is accurate and complete",
-    "accuracyHint": "I understand that providing false information may result in rejection or termination",
-    "marketingCheckbox": "I agree to receive marketing communications from TheaterHUB",
-    "marketingHint": "You can unsubscribe at any time",
-    "noRefundCheckbox": "I understand that the registration fee of $299 is NON-REFUNDABLE",
-    "noRefundHint": "Payment must be completed before registration submission. No refunds will be issued for any reason."
+    "prefix": "I agree to the",
+    "termsLink": "Terms of Service",
+    "and": "and",
+    "privacyLink": "Privacy Policy"
   },
-  "payment": {
-    "modalTitle": "Registration Fee",
-    "amountLabel": "Amount to Pay",
-    "nonRefundable": "One-time registration fee (NON-REFUNDABLE)",
-    "payWithChapa": "Pay with Chapa",
-    "chapaDesc": "Ethiopian Payment Gateway",
-    "importantNotice": "IMPORTANT: This payment is NON-REFUNDABLE. No refunds will be issued under any circumstances.",
-    "processing": "Processing with Chapa...",
-    "payButton": "Pay ${{amount}} via Chapa",
-    "secureNotice": "🔒 Secure payment powered by Chapa. Your payment information is encrypted and secure."
-  },
-  "buttons": {
-    "back": "Back",
-    "continue": "Continue",
-    "payAndSubmit": "Pay ${{amount}} (Non-Refundable) & Submit",
-    "submitForReview": "Submit for Admin Review",
-    "goHome": "Go to Homepage"
-  },
+  "usernameAvailable": "Username is available",
+  "createAccount": "Create Account",
+  "creatingAccount": "Creating Account...",
+  "alreadyHaveAccount": "Already have an account?",
+  "signInLink": "Sign In",
   "errors": {
-    "required": "{{field}} is required",
-    "validEmail": "Valid email is required",
-    "validPhone": "Phone number is required",
-    "validNumber": "Valid number is required",
-    "validLatitude": "Latitude is required",
-    "validLongitude": "Longitude is required",
-    "selectPricingModel": "Please select a pricing model",
-    "selectContractType": "Please select a contract type",
-    "agreeTerms": "You must agree to the accuracy of information",
-    "agreeNoRefund": "You must acknowledge the no-refund policy",
-    "fileSize": "File size must be less than {{size}}MB",
-    "fileType": "Only JPEG, PNG, or PDF files are allowed",
-    "logoSize": "Logo must be less than 2MB",
-    "logoType": "Only JPEG or PNG files are allowed"
+    "emailExists": "Email already registered. Please use a different email or login.",
+    "phoneExists": "Phone number already registered. Please use a different number.",
+    "unexpected": "Registration failed. Please try again."
   },
   "success": {
-    "title": "Registration Submitted for Review!",
-    "message": "Thank you for registering with TheaterHUB. Your payment has been processed and your application has been sent to our admin team for review. You'll receive an OTP via email within 2-3 business days after verification.",
-    "applicationId": "Application ID",
-    "paymentId": "Payment ID",
-    "nextSteps": "Next Steps: Admin will verify your information and send OTP for contract signing",
-    "noRefundReminder": "IMPORTANT: Registration fees are NON-REFUNDABLE"
+    "title": "Registration Successful! 🎉",
+    "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
+    "redirectMessage": "Registration successful! Please login."
   }
 }
 }

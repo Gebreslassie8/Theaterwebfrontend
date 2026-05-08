@@ -928,5 +928,75 @@
     "nextSteps": "ቀጣይ እርምጃዎች: አስተዳዳሪ መረጃዎን ያረጋግጣል እና OTP ለኮንትራት ፊርማ ይልካል",
     "noRefundReminder": "አስፈላጊ: የምዝገባ ክፍያዎች አይመለሱም"
   }
+},"customerRegistration": {
+  "title": "አካውንት ይፍጠሩ",
+  "subtitle": "የ Theatre Hub Ethiopia ይቀላቀሉ እና ጉዞዎን ይጀምሩ",
+  "form": {
+    "fullName": "ሙሉ ስም",
+    "fullNamePlaceholder": "ሙሉ ስምዎን ያስገቡ",
+    "email": "የኢሜይል አድራሻ",
+    "emailPlaceholder": "you@example.com",
+    "phone": "ስልክ ቁጥር",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "የተጠቃሚ ስም",
+    "usernamePlaceholder": "የተጠቃሚ ስም ይምረጡ",
+    "password": "የይለፍ ቃል",
+    "passwordPlaceholder": "የይለፍ ቃል ይፍጠሩ",
+    "confirmPassword": "የይለፍ ቃል ያረጋግጡ",
+    "confirmPasswordPlaceholder": "የይለፍ ቃልዎን ያረጋግጡ"
+  },
+  "validation": {
+    "fullNameRequired": "ሙሉ ስም ያስፈልጋል",
+    "fullNameMin": "ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "fullNameMax": "ስም በጣም ረጅም ነው",
+    "emailRequired": "ኢሜይል ያስፈልጋል",
+    "emailInvalid": "እባክዎ ትክክለኛ የኢሜይል አድራሻ ያስገቡ",
+    "phoneRequired": "ስልክ ቁጥር ያስፈልጋል",
+    "phoneInvalid": "እባክዎ ትክክለኛ ስልክ ቁጥር ያስገቡ",
+    "usernameRequired": "የተጠቃሚ ስም ያስፈልጋል",
+    "usernameMin": "የተጠቃሚ ስም ቢያንስ 3 ፊደላት መሆን አለበት",
+    "usernameMax": "የተጠቃሚ ስም በጣም ረጅም ነው",
+    "usernamePattern": "የተጠቃሚ ስም ፊደላት፣ ቁጥሮች እና አሁሉም መስመሮችን ብቻ ሊይዝ ይችላል",
+    "passwordRequired": "የይለፍ ቃል ያስፈልጋል",
+    "passwordMin": "የይለፍ ቃል ቢያንስ 8 ቁምፊዎች መሆን አለበት",
+    "passwordStrength": "የይለፍ ቃል አቢይ ሆሄ፣ ትንሽ ሆሄ እና ቁጥር መያዝ አለበት",
+    "confirmPasswordRequired": "እባክዎ የይለፍ ቃልዎን ያረጋግጡ",
+    "passwordsMatch": "የይለፍ ቃሎች መመሳሰል አለባቸው",
+    "agreeToTermsRequired": "የአገልግሎት ውሎችን እና የክፍያ ሚስጥራዊነት ፖሊሲን መስማማት አለብዎት"
+  },
+  "passwordStrength": {
+    "title": "የይለፍ ቃል ጥንካሬ:",
+    "weak": "ደካማ",
+    "medium": "መካከለኛ",
+    "strong": "ጠንካራ"
+  },
+  "passwordRequirements": {
+    "length": "ቢያንስ 8 ቁምፊዎች",
+    "lowercase": "ትንሽ ፊደል",
+    "uppercase": "አቢይ ፊደል",
+    "number": "ቁጥር"
+  },
+  "terms": {
+    "prefix": "እስማማለሁ",
+    "termsLink": "የአገልግሎት ውሎች",
+    "and": "እና",
+    "privacyLink": "የክፍያ ሚስጥራዊነት ፖሊሲ"
+  },
+  "usernameAvailable": "የተጠቃሚ ስም ይገኛል",
+  "createAccount": "አካውንት ይፍጠሩ",
+  "creatingAccount": "አካውንት በመፍጠር ላይ...",
+  "alreadyHaveAccount": "አካውንት አለዎት?",
+  "signInLink": "ግባ",
+  "errors": {
+    "emailExists": "ኢሜይሉ ቀድሞ ተመዝግቧል። እባክዎ የተለየ ኢሜይል ይጠቀሙ ወይም ይግቡ።",
+    "phoneExists": "ስልክ ቁጥሩ ቀድሞ ተመዝግቧል። እባክዎ የተለየ ቁጥር ይጠቀሙ።",
+    "unexpected": "ምዝገባ አልተሳካም። እባክዎ እንደገና ይሞክሩ።"
+  },
+  "success": {
+    "title": "ምዝገባ ተሳክቷል! 🎉",
+    "message": "እንኳን ወደ Theatre Hub Ethiopia በደህና መጡ! ወደ መግቢያ ገጽ እያዘዋወሩ ነው...",
+    "redirectMessage": "ምዝገባ ተሳክቷል! እባክዎ ይግቡ።"
+  }
 }
+
 }
