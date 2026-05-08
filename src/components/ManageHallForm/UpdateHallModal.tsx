@@ -1,465 +1,490 @@
 // src/components/ManageHallForm/UpdateHallModal.tsx
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { X, Save, Plus, Trash2, Layers, AlertCircle, Building, Layout } from 'lucide-react';
-import * as Yup from 'yup';
-import ReusableButton from '../Reusable/ReusableButton';
-import { Hall, SeatType } from './types';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  X,
+  Save,
+  AlertCircle,
+  Building,
+  Layout,
+  Hash,
+  Tag,
+  DollarSign,
+  Info,
+  Users,
+} from "lucide-react";
+import * as Yup from "yup";
+import { Hall, SEATING_LAYOUT_OPTIONS } from "./types";
 
 interface UpdateHallModalProps {
-    hall: Hall;
-    onSubmit: (data: any) => void;
-    onCancel: () => void;
+  hall: Hall;
+  onSubmit: (data: any) => void;
+  onCancel: () => void;
 }
 
-const generateTypeId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-// Yup Validation Schema
+// Yup Validation Schema based on database schema
 const hallValidationSchema = Yup.object({
-    name: Yup.string()
-        .required('Hall name is required')
-        .min(2, 'Hall name must be at least 2 characters')
-        .max(50, 'Hall name cannot exceed 50 characters'),
-    seatingLayout: Yup.string().required('Layout is required'),
-    rows: Yup.number()
-        .required('Number of rows is required')
-        .min(1, 'Rows must be at least 1')
-        .max(50, 'Rows cannot exceed 50'),
-    columns: Yup.number()
-        .required('Number of columns is required')
-        .min(1, 'Columns must be at least 1')
-        .max(50, 'Columns cannot exceed 50'),
-    priceMultiplier: Yup.number()
-        .required('Price multiplier is required')
-        .min(0.5, 'Price multiplier must be at least 0.5')
-        .max(5, 'Price multiplier cannot exceed 5'),
-    seatTypes: Yup.array()
-        .min(1, 'At least one seat type is required')
-        .of(
-            Yup.object({
-                name: Yup.string().required('Seat type name is required'),
-                count: Yup.number()
-                    .required('Seat count is required')
-                    .min(1, 'Seat count must be at least 1')
-                    .max(1000, 'Seat count cannot exceed 1000')
-            })
-        )
+  hall_number: Yup.number()
+    .required("Hall number is required")
+    .min(1, "Hall number must be at least 1")
+    .max(999, "Hall number cannot exceed 999"),
+  name: Yup.string().max(100, "Hall name cannot exceed 100 characters"),
+  capacity: Yup.number()
+    .required("Capacity is required")
+    .min(1, "Capacity must be at least 1")
+    .max(5000, "Capacity cannot exceed 5000"),
+  rows: Yup.string().max(50, "Rows description too long"),
+  seating_layout: Yup.string()
+    .required("Seating layout is required")
+    .oneOf(
+      ["Standard", "Compact", "Premium", "VIP", "Balcony"],
+      "Invalid seating layout",
+    ),
+  price_multiplier: Yup.number()
+    .required("Price multiplier is required")
+    .min(0.5, "Price multiplier must be at least 0.5")
+    .max(5, "Price multiplier cannot exceed 5"),
+  has_dynamic_seating: Yup.boolean(),
+  description: Yup.string().max(
+    500,
+    "Description cannot exceed 500 characters",
+  ),
 });
 
-const seatTypeSchema = Yup.object({
-    name: Yup.string().required('Seat type name is required'),
-    count: Yup.number().required('Seat count is required').min(1, 'Count must be at least 1')
-});
+const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
+  hall,
+  onSubmit,
+  onCancel,
+}) => {
+  const [formData, setFormData] = useState({
+    hall_number: 1,
+    name: "",
+    capacity: 0,
+    rows: "",
+    seating_layout: "Standard",
+    price_multiplier: 1.0,
+    has_dynamic_seating: true,
+    description: "",
+    seat_configuration: null,
+  });
 
-const UpdateHallModal: React.FC<UpdateHallModalProps> = ({ hall, onSubmit, onCancel }) => {
-    const [formData, setFormData] = useState({
-        name: '',
-        features: '',
-        seatingLayout: '',
-        rows: 0,
-        columns: 0,
-        priceMultiplier: 1,
-        seatTypes: [] as SeatType[]
-    });
-    const [errors, setErrors] = useState<Record<string, string>>({});
-    const [touched, setTouched] = useState<Record<string, boolean>>({});
-    const [seatTypeErrors, setSeatTypeErrors] = useState<Record<string, Record<string, string>>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        setFormData({
-            name: hall.name,
-            features: hall.features.join(', '),
-            seatingLayout: hall.seatingLayout,
-            rows: hall.rows,
-            columns: hall.columns,
-            priceMultiplier: hall.priceMultiplier,
-            seatTypes: hall.seatTypes.map(st => ({ ...st }))
-        });
-    }, [hall]);
+  // Initialize form with hall data
+  useEffect(() => {
+    if (hall) {
+      setFormData({
+        hall_number: hall.hall_number || 1,
+        name: hall.name || "",
+        capacity: hall.capacity || 0,
+        rows: hall.rows || "",
+        seating_layout: hall.seating_layout || "Standard",
+        price_multiplier: hall.price_multiplier || 1.0,
+        has_dynamic_seating: hall.has_dynamic_seating ?? true,
+        description: hall.description || "",
+        seat_configuration: hall.seat_configuration || null,
+      });
+    }
+  }, [hall]);
 
-    const addSeatType = () => {
-        setFormData(prev => ({
-            ...prev,
-            seatTypes: [...prev.seatTypes, { id: generateTypeId(), name: '', count: 0 }]
-        }));
-    };
+  const handleBlur = async (field: string, value: any) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    try {
+      await hallValidationSchema.validateAt(field, { [field]: value });
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    } catch (err: any) {
+      setErrors((prev) => ({ ...prev, [field]: err.message }));
+    }
+  };
 
-    const updateSeatType = async (id: string, field: keyof SeatType, value: string | number) => {
-        const updatedSeatTypes = formData.seatTypes.map(st =>
-            st.id === id ? { ...st, [field]: field === 'count' ? Math.max(0, Number(value)) : value } : st
-        );
-        setFormData(prev => ({ ...prev, seatTypes: updatedSeatTypes }));
-        
-        const seatType = updatedSeatTypes.find(st => st.id === id);
-        if (seatType && touched[`seat_${id}`]) {
-            try {
-                await seatTypeSchema.validateAt(field, { [field]: seatType[field] });
-                setSeatTypeErrors(prev => ({
-                    ...prev,
-                    [id]: { ...prev[id], [field]: '' }
-                }));
-            } catch (err: any) {
-                setSeatTypeErrors(prev => ({
-                    ...prev,
-                    [id]: { ...prev[id], [field]: err.message }
-                }));
-            }
-        }
-    };
+  const validateForm = async () => {
+    try {
+      await hallValidationSchema.validate(formData, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err: any) {
+      const newErrors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        newErrors[error.path] = error.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
+  };
 
-    const removeSeatType = (id: string) => {
-        setFormData(prev => ({
-            ...prev,
-            seatTypes: prev.seatTypes.filter(st => st.id !== id)
-        }));
-    };
+  const handleSubmit = async () => {
+    const isValid = await validateForm();
+    if (isValid) {
+      onSubmit({
+        ...formData,
+        id: hall.id,
+      });
+    }
+  };
 
-    const handleBlur = async (field: string, value: any) => {
-        setTouched(prev => ({ ...prev, [field]: true }));
-        try {
-            await hallValidationSchema.validateAt(field, { [field]: value });
-            setErrors(prev => ({ ...prev, [field]: '' }));
-        } catch (err: any) {
-            setErrors(prev => ({ ...prev, [field]: err.message }));
-        }
-    };
-
-    const handleSeatTypeBlur = async (id: string, field: string, value: any) => {
-        setTouched(prev => ({ ...prev, [`seat_${id}`]: true }));
-        try {
-            await seatTypeSchema.validateAt(field, { [field]: value });
-            setSeatTypeErrors(prev => ({
-                ...prev,
-                [id]: { ...prev[id], [field]: '' }
-            }));
-        } catch (err: any) {
-            setSeatTypeErrors(prev => ({
-                ...prev,
-                [id]: { ...prev[id], [field]: err.message }
-            }));
-        }
-    };
-
-    const validateForm = async () => {
-        try {
-            await hallValidationSchema.validate(formData, { abortEarly: false });
-            for (const seatType of formData.seatTypes) {
-                await seatTypeSchema.validate(seatType);
-            }
-            setErrors({});
-            setSeatTypeErrors({});
-            return true;
-        } catch (err: any) {
-            const newErrors: Record<string, string> = {};
-            const newSeatTypeErrors: Record<string, Record<string, string>> = {};
-            
-            err.inner.forEach((error: any) => {
-                if (error.path === 'seatTypes') {
-                    error.inner?.forEach((seatErr: any) => {
-                        const match = seatErr.path.match(/seatTypes\[(\d+)\]\.(\w+)/);
-                        if (match) {
-                            const [_, index, field] = match;
-                            const seatId = formData.seatTypes[parseInt(index)]?.id;
-                            if (seatId) {
-                                if (!newSeatTypeErrors[seatId]) newSeatTypeErrors[seatId] = {};
-                                newSeatTypeErrors[seatId][field] = seatErr.message;
-                            }
-                        }
-                    });
-                } else {
-                    newErrors[error.path] = error.message;
-                }
-            });
-            
-            setErrors(newErrors);
-            setSeatTypeErrors(newSeatTypeErrors);
-            return false;
-        }
-    };
-
-    const handleSubmit = async () => {
-        const isValid = await validateForm();
-        if (isValid) {
-            const featuresArray = formData.features.split(',').map(f => f.trim()).filter(f => f);
-            onSubmit({ ...formData, features: featuresArray, id: hall.id });
-        }
-    };
-
-    const totalCapacity = formData.seatTypes.reduce((sum, st) => sum + st.count, 0);
-
-    return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-            <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
-            >
-                {/* Header */}
-                <div className="sticky top-0 bg-gradient-to-r bg-deepTeal px-6 py-5 flex justify-between items-center text-white rounded-t-2xl z-10">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white/20 rounded-lg">
-                            <Building className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold">Update Hall</h2>
-                            <p className="text-white/80 text-sm">Edit hall information below</p>
-                        </div>
-                    </div>
-                    <button onClick={onCancel} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                        <X className="h-5 w-5" />
-                    </button>
-                </div>
-
-                <div className="p-6 space-y-6">
-                    {/* Basic Information */}
-                    <div className="border-b pb-3">
-                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            <Building className="h-5 w-5 text-teal-600" />
-                            Basic Information
-                        </h3>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Hall Name <span className="text-red-500">*</span>
-                        </label>
-                        <input 
-                            type="text" 
-                            value={formData.name} 
-                            onChange={e => setFormData({...formData, name: e.target.value})}
-                            onBlur={() => handleBlur('name', formData.name)}
-                            className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                errors.name && touched.name ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-teal-300'
-                            }`}
-                            placeholder="e.g., Grand Hall" 
-                        />
-                        {errors.name && touched.name && (
-                            <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                <AlertCircle className="h-3 w-3" /> {errors.name}
-                            </p>
-                        )}
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Features (comma separated)</label>
-                        <input 
-                            type="text" 
-                            value={formData.features} 
-                            onChange={e => setFormData({...formData, features: e.target.value})}
-                            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none hover:border-teal-300 transition"
-                            placeholder="AC, Dolby Sound, VIP Seats" 
-                        />
-                    </div>
-
-                    {/* Configuration */}
-                    <div className="border-b pb-3 mt-4">
-                        <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                            <Layout className="h-5 w-5 text-teal-600" />
-                            Hall Configuration
-                        </h3>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Layout <span className="text-red-500">*</span>
-                            </label>
-                            <select 
-                                value={formData.seatingLayout} 
-                                onChange={e => setFormData({...formData, seatingLayout: e.target.value})}
-                                onBlur={() => handleBlur('seatingLayout', formData.seatingLayout)}
-                                className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                    errors.seatingLayout && touched.seatingLayout ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-teal-300'
-                                }`}
-                            >
-                                <option>Standard</option>
-                                <option>Compact</option>
-                                <option>Premium</option>
-                            </select>
-                            {errors.seatingLayout && touched.seatingLayout && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" /> {errors.seatingLayout}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Price Multiplier <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="number" 
-                                step="0.1" 
-                                value={formData.priceMultiplier} 
-                                onChange={e => setFormData({...formData, priceMultiplier: parseFloat(e.target.value)})}
-                                onBlur={() => handleBlur('priceMultiplier', formData.priceMultiplier)}
-                                className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                    errors.priceMultiplier && touched.priceMultiplier ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-teal-300'
-                                }`}
-                            />
-                            {errors.priceMultiplier && touched.priceMultiplier && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" /> {errors.priceMultiplier}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Rows <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="number" 
-                                value={formData.rows} 
-                                onChange={e => setFormData({...formData, rows: parseInt(e.target.value)})}
-                                onBlur={() => handleBlur('rows', formData.rows)}
-                                className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                    errors.rows && touched.rows ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-teal-300'
-                                }`}
-                            />
-                            {errors.rows && touched.rows && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" /> {errors.rows}
-                                </p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Columns <span className="text-red-500">*</span>
-                            </label>
-                            <input 
-                                type="number" 
-                                value={formData.columns} 
-                                onChange={e => setFormData({...formData, columns: parseInt(e.target.value)})}
-                                onBlur={() => handleBlur('columns', formData.columns)}
-                                className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                    errors.columns && touched.columns ? 'border-red-500 bg-red-50' : 'border-gray-200 hover:border-teal-300'
-                                }`}
-                            />
-                            {errors.columns && touched.columns && (
-                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                    <AlertCircle className="h-3 w-3" /> {errors.columns}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Seat Types */}
-                    <div className="border-t pt-4">
-                        <div className="flex items-center gap-2 mb-4">
-                            <Layers className="h-5 w-5 text-teal-600" />
-                            <h3 className="text-lg font-semibold text-gray-800">Seat Types</h3>
-                            <span className="text-xs text-gray-400">(Name & Count)</span>
-                        </div>
-                        
-                        <div className="space-y-3">
-                            {formData.seatTypes.map((st, idx) => (
-                                <div key={st.id} className="bg-gradient-to-r from-gray-50 to-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-sm font-medium text-gray-500">Seat Type #{idx + 1}</span>
-                                        <button 
-                                            onClick={() => removeSeatType(st.id)} 
-                                            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition text-red-600 hover:text-red-700"
-                                            title="Remove seat type"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Seat Type Name *</label>
-                                            <input 
-                                                type="text" 
-                                                placeholder="e.g., VIP, Premium, Regular" 
-                                                value={st.name} 
-                                                onChange={e => updateSeatType(st.id, 'name', e.target.value)}
-                                                onBlur={() => handleSeatTypeBlur(st.id, 'name', st.name)}
-                                                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                                    seatTypeErrors[st.id]?.name && touched[`seat_${st.id}`] 
-                                                        ? 'border-red-500 bg-red-50' 
-                                                        : 'border-gray-200 hover:border-teal-300'
-                                                }`}
-                                            />
-                                            {seatTypeErrors[st.id]?.name && touched[`seat_${st.id}`] && (
-                                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                                    <AlertCircle className="h-3 w-3" /> {seatTypeErrors[st.id].name}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label className="text-xs text-gray-500 mb-1 block">Seat Count *</label>
-                                            <input 
-                                                type="number" 
-                                                min="1"
-                                                placeholder="Number of seats" 
-                                                value={st.count || ''} 
-                                                onChange={e => updateSeatType(st.id, 'count', parseInt(e.target.value))}
-                                                onBlur={() => handleSeatTypeBlur(st.id, 'count', st.count)}
-                                                className={`w-full p-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                                                    seatTypeErrors[st.id]?.count && touched[`seat_${st.id}`] 
-                                                        ? 'border-red-500 bg-red-50' 
-                                                        : 'border-gray-200 hover:border-teal-300'
-                                                }`}
-                                            />
-                                            {seatTypeErrors[st.id]?.count && touched[`seat_${st.id}`] && (
-                                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                                                    <AlertCircle className="h-3 w-3" /> {seatTypeErrors[st.id].count}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        
-                        {/* Add Type Button - Below the seat types list */}
-                        <div className="mt-4">
-                            <button
-                                onClick={addSeatType}
-                                className="w-full py-3 border-2 border-dashed border-teal-300 rounded-lg text-teal-600 hover:bg-teal-50 hover:border-teal-400 transition-all flex items-center justify-center gap-2 font-medium"
-                            >
-                                <Plus className="h-4 w-4" />
-                                Add Seat Type
-                            </button>
-                        </div>
-                        
-                        {errors.seatTypes && touched.seatTypes && (
-                            <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
-                                <AlertCircle className="h-4 w-4" /> {errors.seatTypes}
-                            </p>
-                        )}
-                        
-                        {formData.seatTypes.length > 0 && (
-                            <div className="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-200">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium text-teal-700">Total Capacity</span>
-                                    <span className="text-xl font-bold text-teal-600">{totalCapacity.toLocaleString()} seats</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4 border-t mt-4">
-                        <ReusableButton 
-                            variant="secondary" 
-                            onClick={onCancel}
-                            className="flex-1 py-2.5"
-                        >
-                            Cancel
-                        </ReusableButton>
-                        <ReusableButton 
-                            variant="primary" 
-                            onClick={handleSubmit}
-                            icon={Save}
-                            className="flex-1 py-2.5 bg-teal-600 hover:bg-teal-700"
-                        >
-                            Update Hall
-                        </ReusableButton>
-                    </div>
-                </div>
-            </motion.div>
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 flex justify-between items-center text-white rounded-t-2xl z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Building className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Update Hall</h2>
+              <p className="text-white/80 text-sm">
+                Edit hall information below
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-    );
+
+        <div className="p-6 space-y-6">
+          {/* Basic Information */}
+          <div className="border-b pb-3">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Building className="h-5 w-5 text-teal-600" />
+              Basic Information
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hall Number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="number"
+                  value={formData.hall_number}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      hall_number: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  onBlur={() => handleBlur("hall_number", formData.hall_number)}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.hall_number && touched.hall_number
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="e.g., 1, 2, 3"
+                />
+              </div>
+              {errors.hall_number && touched.hall_number && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.hall_number}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Hall Name
+              </label>
+              <div className="relative">
+                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.name || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  onBlur={() => handleBlur("name", formData.name)}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.name && touched.name
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="e.g., Grand Hall, Premier Hall"
+                />
+              </div>
+              {errors.name && touched.name && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.name}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Total Capacity <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="number"
+                  value={formData.capacity}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      capacity: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  onBlur={() => handleBlur("capacity", formData.capacity)}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.capacity && touched.capacity
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="Total number of seats"
+                />
+              </div>
+              {errors.capacity && touched.capacity && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.capacity}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Seating Layout <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Layout className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <select
+                  value={formData.seating_layout}
+                  onChange={(e) =>
+                    setFormData({ ...formData, seating_layout: e.target.value })
+                  }
+                  onBlur={() =>
+                    handleBlur("seating_layout", formData.seating_layout)
+                  }
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.seating_layout && touched.seating_layout
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                >
+                  {SEATING_LAYOUT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {errors.seating_layout && touched.seating_layout && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.seating_layout}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price Multiplier <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="number"
+                  step="0.1"
+                  value={formData.price_multiplier}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      price_multiplier: parseFloat(e.target.value),
+                    })
+                  }
+                  onBlur={() =>
+                    handleBlur("price_multiplier", formData.price_multiplier)
+                  }
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.price_multiplier && touched.price_multiplier
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="1.0"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Base price × multiplier = final ticket price
+              </p>
+              {errors.price_multiplier && touched.price_multiplier && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.price_multiplier}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Rows Configuration
+              </label>
+              <div className="relative">
+                <Info className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.rows || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, rows: e.target.value })
+                  }
+                  onBlur={() => handleBlur("rows", formData.rows)}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.rows && touched.rows
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="e.g., A-Z (20 rows)"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Describe the row arrangement (e.g., A-Z for 26 rows)
+              </p>
+              {errors.rows && touched.rows && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.rows}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Dynamic Seating */}
+          <div className="border-b pb-3 mt-4">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Layout className="h-5 w-5 text-teal-600" />
+              Seating Configuration
+            </h3>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.has_dynamic_seating}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    has_dynamic_seating: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+              />
+              <span className="text-sm text-gray-700">
+                Enable Dynamic Seating
+              </span>
+            </label>
+            <p className="text-xs text-gray-400 mt-1 ml-7">
+              Dynamic pricing adjusts ticket prices based on demand
+            </p>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Description
+            </label>
+            <textarea
+              value={formData.description || ""}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              onBlur={() => handleBlur("description", formData.description)}
+              rows={3}
+              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                errors.description && touched.description
+                  ? "border-red-500 bg-red-50"
+                  : "border-gray-200 hover:border-teal-300"
+              }`}
+              placeholder="Additional information about this hall (e.g., location, amenities, special features...)"
+            />
+            {errors.description && touched.description && (
+              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> {errors.description}
+              </p>
+            )}
+          </div>
+
+          {/* Info Box */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-700">
+                <p className="font-medium mb-1">What is Price Multiplier?</p>
+                <p>
+                  The price multiplier affects ticket pricing for this hall. For
+                  example:
+                </p>
+                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                  <li>Base price for standard seat: 50 ETB</li>
+                  <li>With multiplier 1.5 → Price becomes 75 ETB</li>
+                  <li>With multiplier 0.8 → Price becomes 40 ETB</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview Section */}
+          {(formData.capacity > 0 || formData.name) && (
+            <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
+              <h4 className="text-sm font-semibold text-teal-800 mb-2">
+                Hall Summary Preview
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-gray-600">Hall:</span>{" "}
+                  {formData.name || `Hall ${formData.hall_number}`}
+                </div>
+                <div>
+                  <span className="text-gray-600">Layout:</span>{" "}
+                  {formData.seating_layout}
+                </div>
+                <div>
+                  <span className="text-gray-600">Capacity:</span>{" "}
+                  {formData.capacity.toLocaleString()} seats
+                </div>
+                <div>
+                  <span className="text-gray-600">Multiplier:</span>{" "}
+                  {formData.price_multiplier}x
+                </div>
+                <div>
+                  <span className="text-gray-600">Dynamic Seating:</span>{" "}
+                  {formData.has_dynamic_seating ? "Enabled" : "Disabled"}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-4 border-t mt-4">
+            <button
+              onClick={onCancel}
+              className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              className="flex-1 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all font-medium flex items-center justify-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Update Hall
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
 };
 
 export default UpdateHallModal;

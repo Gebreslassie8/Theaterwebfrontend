@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Clock, MapPin, Star, Ticket, Play } from "lucide-react";
-import BookingModal from "../Booking/BookingModal";
+import BookingModal from "../auth/Booking/BookingModal";
 
 // ======================================================
 // TYPES
