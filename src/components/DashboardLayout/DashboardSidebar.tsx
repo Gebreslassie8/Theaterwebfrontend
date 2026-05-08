@@ -376,8 +376,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: QrCode,
           },
           {
-            name: "Entry Analytics",
-            to: "/scanner/stats/entries",
+            name: "scanned History",
+            to:"/scanner/scan/history ",
             icon: Users,
           },
         ],

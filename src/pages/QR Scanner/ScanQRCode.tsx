@@ -1,68 +1,38 @@
 // src/pages/scanner/ScanQRCode.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     QrCode,
-    Scan,
     CheckCircle,
     XCircle,
-    AlertCircle,
     Camera,
-    Upload,
-    Eye,
-    ArrowLeft,
     RefreshCw,
-    Ticket,
-    Calendar,
-    Clock,
-    MapPin,
-    User,
-    Mail,
-    Phone,
-    DollarSign,
-    CreditCard,
-    Smartphone,
-    Landmark,
-    Wallet,
-    Check,
-    X,
     Activity,
-    Wifi,
-    Battery,
+    Volume2,
+    VolumeX,
+    Users,
     Zap,
     Shield,
     Award,
-    Star,
-    Crown,
     TrendingUp,
-    Download,
-    Printer,
-    Copy,
-    Share2,
-    Info,
-    Search,
-    Filter,
-    Download as DownloadIcon,
-    Edit,
-    FileText,
-    Plus,
-    Trash2,
-    Save,
-    Send,
-    ArrowRight,
+    UserCheck,
+    Ticket,
+    ChevronLeft,
+    Check,
     AlertTriangle,
-    Video,
-    VideoOff
+    Edit,
+    X,
+  Scan,
+    Fingerprint,
+    Smartphone,
+    Wifi,
+    Signal,
+    Battery
 } from 'lucide-react';
-import ReusableButton from '../../components/Reusable/ReusableButton';
-import ReusableTable from '../../components/Reusable/ReusableTable';
-import ReusableForm from '../../components/Reusable/ReusableForm';
-import * as Yup from 'yup';
-import { Link as RouterLink } from 'react-router-dom';
 import jsQR from 'jsqr';
 
-// Types
+// ============= Types =============
 interface TicketData {
     id: string;
     ticketNumber: string;
@@ -78,11 +48,10 @@ interface TicketData {
     price: number;
     paymentMethod: string;
     purchaseDate: string;
-    status: 'valid' | 'invalid' | 'used' | 'expired';
+    status: 'valid' | 'used';
     qrCode: string;
-    scannedAt?: string;
-    scannedBy?: string;
-    gate?: string;
+    checkInTime?: string;
+    checkedInBy?: string;
 }
 
 interface ScanResult {
@@ -92,820 +61,763 @@ interface ScanResult {
     timestamp: string;
 }
 
-interface ScanHistory {
-    id: string;
-    ticketNumber: string;
-    eventName: string;
-    scannedAt: string;
-    status: 'valid' | 'invalid' | 'used';
-    gate: string;
-    scannerId: string;
-}
-
-// Stat Card Props
-interface StatCardProps {
-    title: string;
-    value: string | number;
-    icon: React.ElementType;
-    color: string;
-    delay: number;
-    link?: string;
-    change?: string;
-    trend?: 'up' | 'down';
-}
-
-// Stat Card Component
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, link, change, trend }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    const CardContent = () => (
-        <div
-            className="relative overflow-hidden cursor-pointer transition-all duration-300"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
-                    <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                    <p className="text-xs text-gray-500">{title}</p>
-                    <p className="text-xl font-bold text-gray-900">{value}</p>
-                    {change && (
-                        <div className={`flex items-center gap-1 text-xs mt-0.5 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                            {trend === 'up' ? <TrendingUp className="h-3 w-3" /> : <TrendingUp className="h-3 w-3 rotate-180" />}
-                            <span>{change}</span>
-                        </div>
-                    )}
-                </div>
-                {link && (
-                    <div className={`transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-1 opacity-0'}`}>
-                        <ArrowRight className="h-4 w-4 text-gray-400" />
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay, type: "spring", stiffness: 100 }}
-            whileHover={{ y: -2 }}
-            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
-        >
-            {link ? (
-                <RouterLink to={link} className="block">
-                    <CardContent />
-                </RouterLink>
-            ) : (
-                <CardContent />
-            )}
-        </motion.div>
-    );
-};
-
-// Mock Data
-const validTickets: TicketData[] = [
+// ============= Mock Database =============
+const mockTickets: TicketData[] = [
     {
-        id: 'TKT-001',
+        id: '1',
         ticketNumber: 'TKT-2024-001',
         eventName: 'The Lion King',
-        eventDate: '2024-04-28',
+        eventDate: '2024-12-25',
         eventTime: '19:00',
         hallName: 'Main Hall',
         seatNumber: '12',
         seatRow: 'A',
         customerName: 'John Smith',
-        customerEmail: 'john.smith@example.com',
-        customerPhone: '+251 911 234 567',
+        customerEmail: 'john@email.com',
+        customerPhone: '+251911234567',
         price: 450,
         paymentMethod: 'Chapa',
-        purchaseDate: '2024-04-15',
+        purchaseDate: '2024-12-01',
         status: 'valid',
-        qrCode: 'QR-2024-001'
+        qrCode: 'TKT-2024-001'
     },
     {
-        id: 'TKT-002',
+        id: '2',
         ticketNumber: 'TKT-2024-002',
         eventName: 'Hamilton',
-        eventDate: '2024-04-28',
-        eventTime: '20:00',
+        eventDate: '2024-12-25',
+        eventTime: '20:30',
         hallName: 'Main Hall',
         seatNumber: '5',
         seatRow: 'B',
         customerName: 'Sarah Johnson',
-        customerEmail: 'sarah.j@example.com',
-        customerPhone: '+251 912 345 678',
+        customerEmail: 'sarah@email.com',
+        customerPhone: '+251912345678',
         price: 550,
         paymentMethod: 'Telebirr',
-        purchaseDate: '2024-04-16',
+        purchaseDate: '2024-12-02',
         status: 'valid',
-        qrCode: 'QR-2024-002'
+        qrCode: 'TKT-2024-002'
     },
     {
-        id: 'TKT-003',
+        id: '3',
         ticketNumber: 'TKT-2024-003',
         eventName: 'Wicked',
-        eventDate: '2024-04-29',
+        eventDate: '2024-12-26',
         eventTime: '18:30',
         hallName: 'East Hall',
         seatNumber: '8',
         seatRow: 'C',
         customerName: 'Michael Brown',
-        customerEmail: 'michael.b@example.com',
-        customerPhone: '+251 913 456 789',
+        customerEmail: 'michael@email.com',
+        customerPhone: '+251913456789',
         price: 400,
         paymentMethod: 'Chapa',
-        purchaseDate: '2024-04-17',
+        purchaseDate: '2024-12-03',
         status: 'valid',
-        qrCode: 'QR-2024-003'
+        qrCode: 'TKT-2024-003'
+    },
+    {
+        id: '4',
+        ticketNumber: 'TKT-2024-004',
+        eventName: 'Les Misérables',
+        eventDate: '2024-12-27',
+        eventTime: '19:30',
+        hallName: 'West Hall',
+        seatNumber: '3',
+        seatRow: 'D',
+        customerName: 'Emily Wilson',
+        customerEmail: 'emily@email.com',
+        customerPhone: '+251914567890',
+        price: 500,
+        paymentMethod: 'Credit Card',
+        purchaseDate: '2024-12-05',
+        status: 'valid',
+        qrCode: 'TKT-2024-004'
     }
 ];
 
-// Track scanned tickets (to prevent duplicate scans)
-let scannedTickets: string[] = [];
+// Track checked in tickets
+let checkedInTickets: Map<string, TicketData> = new Map();
 
-const mockScanHistory: ScanHistory[] = [
-    { id: '1', ticketNumber: 'TKT-2024-001', eventName: 'The Lion King', scannedAt: '2024-04-28T19:05:00', status: 'valid', gate: 'Gate A', scannerId: 'SCN-001' },
-    { id: '2', ticketNumber: 'TKT-2024-002', eventName: 'Hamilton', scannedAt: '2024-04-28T18:55:00', status: 'valid', gate: 'Gate B', scannerId: 'SCN-002' },
-];
-
-// Validation Schema for Manual Entry - Only Ticket Number
-const ManualEntrySchema = Yup.object({
-    ticketNumber: Yup.string()
-        .required('Ticket number is required')
-        .min(5, 'Ticket number must be at least 5 characters')
-        .max(50, 'Ticket number cannot exceed 50 characters')
-        .matches(/^[A-Z0-9-]+$/, 'Ticket number can only contain uppercase letters, numbers, and hyphens')
-        .test('ticket-exists', 'Ticket number not found in system', function (value) {
-            if (!value) return true;
-            return validTickets.some(t => t.ticketNumber === value);
-        })
-        .test('ticket-not-scanned', 'This ticket has already been scanned and used', function (value) {
-            if (!value) return true;
-            return !scannedTickets.includes(value);
-        })
-});
-
-// QR Code validation function
-const validateQRCode = (qrData: string): { isValid: boolean; message: string; ticket?: TicketData } => {
-    // Check if QR code is empty
-    if (!qrData || qrData.trim() === '') {
-        return { isValid: false, message: 'QR code data is empty' };
+// ============= Audio Functions =============
+const playValidSound = () => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        
+        const oscillator1 = audioContext.createOscillator();
+        const gain1 = audioContext.createGain();
+        oscillator1.connect(gain1);
+        gain1.connect(audioContext.destination);
+        oscillator1.frequency.value = 880;
+        oscillator1.type = 'sine';
+        gain1.gain.value = 0.4;
+        oscillator1.start();
+        gain1.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3);
+        oscillator1.stop(audioContext.currentTime + 0.3);
+        
+        setTimeout(() => {
+            const oscillator2 = audioContext.createOscillator();
+            const gain2 = audioContext.createGain();
+            oscillator2.connect(gain2);
+            gain2.connect(audioContext.destination);
+            oscillator2.frequency.value = 880;
+            oscillator2.type = 'sine';
+            gain2.gain.value = 0.4;
+            oscillator2.start();
+            gain2.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.3);
+            oscillator2.stop(audioContext.currentTime + 0.3);
+        }, 200);
+    } catch (error) {
+        console.log('Audio not supported');
     }
-
-    // Check if QR code format is valid
-    const ticketNumberMatch = qrData.match(/TKT-\d{4}-\d{3}/);
-    if (!ticketNumberMatch) {
-        return { isValid: false, message: 'Invalid QR code format' };
-    }
-
-    const ticketNumber = ticketNumberMatch[0];
-
-    // Check if ticket exists
-    const ticket = validTickets.find(t => t.ticketNumber === ticketNumber);
-    if (!ticket) {
-        return { isValid: false, message: 'Ticket not found in system' };
-    }
-
-    // Check if ticket has already been scanned
-    if (scannedTickets.includes(ticketNumber)) {
-        return { isValid: false, message: 'This ticket has already been scanned and used' };
-    }
-
-    // Check if event date has passed
-    const eventDate = new Date(ticket.eventDate);
-    const today = new Date();
-    if (eventDate < today) {
-        return { isValid: false, message: 'Event date has passed' };
-    }
-
-    return { isValid: true, message: 'Ticket is valid', ticket };
 };
 
+const playInvalidSound = () => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.frequency.value = 440;
+        oscillator.type = 'sawtooth';
+        gain.gain.value = 0.4;
+        oscillator.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.5);
+        oscillator.stop(audioContext.currentTime + 0.5);
+    } catch (error) {
+        console.log('Audio not supported');
+    }
+};
+
+const playCheckInSound = () => {
+    try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        const audioContext = new AudioContextClass();
+        
+        const frequencies = [523.25, 659.25, 783.99];
+        frequencies.forEach((freq, index) => {
+            setTimeout(() => {
+                const oscillator = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                oscillator.connect(gain);
+                gain.connect(audioContext.destination);
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+                gain.gain.value = 0.3;
+                oscillator.start();
+                gain.gain.exponentialRampToValueAtTime(0.00001, audioContext.currentTime + 0.2);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }, index * 150);
+        });
+    } catch (error) {
+        console.log('Audio not supported');
+    }
+};
+
+// ============= Visual Functions =============
+const triggerFlash = (color: string) => {
+    const flash = document.createElement('div');
+    flash.style.position = 'fixed';
+    flash.style.top = '0';
+    flash.style.left = '0';
+    flash.style.width = '100%';
+    flash.style.height = '100%';
+    flash.style.backgroundColor = color;
+    flash.style.zIndex = '9999';
+    flash.style.pointerEvents = 'none';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 150);
+};
+
+// ============= Main Component =============
 const ScanQRCode: React.FC = () => {
     const navigate = useNavigate();
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [scanning, setScanning] = useState(false);
+    const streamRef = useRef<MediaStream | null>(null);
+    const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    
+    const [cameraActive, setCameraActive] = useState(true);
+    const [cameraError, setCameraError] = useState<string | null>(null);
+    const [soundEnabled, setSoundEnabled] = useState(true);
+    const [showManualInput, setShowManualInput] = useState(false);
+    const [manualNumber, setManualNumber] = useState('');
     const [showResult, setShowResult] = useState(false);
     const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-    const [showManualInput, setShowManualInput] = useState(false);
-    const [scanHistory, setScanHistory] = useState<ScanHistory[]>(mockScanHistory);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [cameraActive, setCameraActive] = useState(false);
-    const [cameraError, setCameraError] = useState<string | null>(null);
-    const [validationError, setValidationError] = useState<string | null>(null);
-    const [stream, setStream] = useState<MediaStream | null>(null);
-    const [isScanningActive, setIsScanningActive] = useState(false);
+    const [selectedTicket, setSelectedTicket] = useState<TicketData | null>(null);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [isScanning, setIsScanning] = useState(true);
+    const [stats, setStats] = useState({
+        checkedIn: 0,
+        invalid: 0
+    });
 
-    // Initialize scanned tickets from history
-    useEffect(() => {
-        scannedTickets = scanHistory.map(h => h.ticketNumber);
-    }, [scanHistory]);
+    // Cleanup camera on unmount or logout
+    const cleanupCamera = () => {
+        // Stop the scanning interval
+        if (scanIntervalRef.current) {
+            clearInterval(scanIntervalRef.current);
+            scanIntervalRef.current = null;
+        }
+        
+        // Stop all camera tracks
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => {
+                track.stop();
+            });
+            streamRef.current = null;
+        }
+        
+        // Clear video source
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+        
+        setIsScanning(false);
+    };
 
-    // Cleanup camera stream on unmount
+    // Listen for beforeunload event (page refresh/close)
     useEffect(() => {
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+        const handleBeforeUnload = () => {
+            cleanupCamera();
         };
-    }, [stream]);
+        
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+            cleanupCamera();
+        };
+    }, []);
 
-    // Start camera and QR scanning
+    // Start camera on mount
+    useEffect(() => {
+        if (cameraActive && !showManualInput && !cameraError) {
+            startCamera();
+        }
+        return () => {
+            cleanupCamera();
+        };
+    }, [cameraActive, showManualInput, cameraError]);
+
     const startCamera = async () => {
-        setCameraError(null);
-        setCameraActive(true);
-
+        cleanupCamera(); // Clean up any existing camera first
+        
         try {
-            const mediaStream = await navigator.mediaDevices.getUserMedia({
+            const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' }
             });
-
-            setStream(mediaStream);
-
+            
+            streamRef.current = stream;
+            
             if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
+                videoRef.current.srcObject = stream;
                 videoRef.current.setAttribute('playsinline', 'true');
-                videoRef.current.play();
-                setIsScanningActive(true);
+                await videoRef.current.play();
+                setIsScanning(true);
                 startQRScanning();
             }
         } catch (error) {
             console.error('Camera error:', error);
-            setCameraError('Unable to access camera. Please check permissions.');
-            setCameraActive(false);
-            setScanning(false);
+            setCameraError('Camera access denied. Please allow camera permissions.');
+            setIsScanning(false);
         }
     };
 
-    // Stop camera
     const stopCamera = () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
-        setCameraActive(false);
-        setIsScanningActive(false);
+        cleanupCamera();
     };
 
-    // Start QR scanning loop
     const startQRScanning = () => {
-        if (!videoRef.current || !canvasRef.current) return;
+        if (!videoRef.current || !canvasRef.current || !isScanning) return;
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d');
 
-        const scanInterval = setInterval(() => {
-            if (!isScanningActive || !video.videoWidth || !video.videoHeight) return;
+        // Clear any existing interval
+        if (scanIntervalRef.current) {
+            clearInterval(scanIntervalRef.current);
+        }
+
+        scanIntervalRef.current = setInterval(() => {
+            if (!isScanning || !cameraActive || showManualInput || !video.videoWidth || !video.videoHeight) return;
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-
-            if (context) {
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
-                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
-
+            
+            if (ctx) {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+                
                 if (code) {
-                    clearInterval(scanInterval);
-                    handleQRScan(code.data);
+                    // Pause scanning while processing
+                    if (scanIntervalRef.current) {
+                        clearInterval(scanIntervalRef.current);
+                        scanIntervalRef.current = null;
+                    }
+                    processQRCode(code.data);
                 }
             }
         }, 500);
-
-        // Store interval ID for cleanup
-        return () => clearInterval(scanInterval);
     };
 
-    const handleQRScan = (qrData: string) => {
-        const validation = validateQRCode(qrData);
-
-        if (validation.isValid && validation.ticket) {
-            // Mark ticket as scanned
-            scannedTickets.push(validation.ticket.ticketNumber);
-
-            setScanResult({
-                success: true,
-                message: validation.message,
-                ticket: validation.ticket,
-                timestamp: new Date().toISOString()
-            });
-
-            const newHistory: ScanHistory = {
-                id: Date.now().toString(),
-                ticketNumber: validation.ticket.ticketNumber,
-                eventName: validation.ticket.eventName,
-                scannedAt: new Date().toISOString(),
-                status: 'valid',
-                gate: 'Gate A',
-                scannerId: 'SCN-001'
-            };
-            setScanHistory([newHistory, ...scanHistory]);
-            setValidationError(null);
-        } else {
-            setScanResult({
-                success: false,
-                message: validation.message,
-                timestamp: new Date().toISOString()
-            });
-            setValidationError(validation.message);
-
-            // Add invalid scan to history
-            const newHistory: ScanHistory = {
-                id: Date.now().toString(),
-                ticketNumber: qrData,
-                eventName: 'Unknown',
-                scannedAt: new Date().toISOString(),
-                status: 'invalid',
-                gate: 'Gate A',
-                scannerId: 'SCN-001'
-            };
-            setScanHistory([newHistory, ...scanHistory]);
+    const processQRCode = (data: string) => {
+        // Validate QR code format
+        const match = data.match(/TKT-\d{4}-\d{3}/);
+        if (!match) {
+            showError('Invalid QR code. Please scan a valid ticket.');
+            restartScanning();
+            return;
         }
 
-        setShowResult(true);
-        setScanning(false);
-        setCameraActive(false);
-        setIsScanningActive(false);
-        stopCamera();
+        const ticket = mockTickets.find(t => t.ticketNumber === match[0]);
+        
+        if (!ticket) {
+            showError('Ticket not found in system.');
+            restartScanning();
+            return;
+        }
+
+        if (checkedInTickets.has(ticket.ticketNumber)) {
+            showError(`Ticket already checked in.`);
+            restartScanning();
+            return;
+        }
+
+        // Valid ticket - show confirmation
+        if (soundEnabled) playValidSound();
+        triggerFlash('#22c55e');
+        setSelectedTicket(ticket);
+        setShowConfirm(true);
+        stopCamera(); // Stop camera when showing confirmation
     };
 
-    const handleManualValidate = async (values: any, { setSubmitting, resetForm }: any) => {
-        setValidationError(null);
-
-        try {
-            const ticket = validTickets.find(t => t.ticketNumber === values.ticketNumber);
-
-            if (ticket) {
-                // Check if already scanned
-                if (scannedTickets.includes(ticket.ticketNumber)) {
-                    setScanResult({
-                        success: false,
-                        message: 'This ticket has already been scanned and used',
-                        timestamp: new Date().toISOString()
-                    });
-                    setShowResult(true);
-                    setShowManualInput(false);
-                    resetForm();
-                    setSubmitting(false);
-                    return;
-                }
-
-                // Mark ticket as scanned
-                scannedTickets.push(ticket.ticketNumber);
-
-                setScanResult({
-                    success: true,
-                    message: 'Ticket validated successfully!',
-                    ticket: ticket,
-                    timestamp: new Date().toISOString()
-                });
-
-                const newHistory: ScanHistory = {
-                    id: Date.now().toString(),
-                    ticketNumber: values.ticketNumber,
-                    eventName: ticket.eventName,
-                    scannedAt: new Date().toISOString(),
-                    status: 'valid',
-                    gate: 'Gate A',
-                    scannerId: 'SCN-001'
-                };
-                setScanHistory([newHistory, ...scanHistory]);
-                setShowResult(true);
-                setShowManualInput(false);
-                resetForm();
-            } else {
-                setScanResult({
-                    success: false,
-                    message: 'Ticket not found. Please check the ticket number.',
-                    timestamp: new Date().toISOString()
-                });
-                setShowResult(true);
-                setShowManualInput(false);
-                resetForm();
+    const restartScanning = () => {
+        setTimeout(() => {
+            if (cameraActive && !showManualInput && !showConfirm) {
+                startCamera();
             }
-        } catch (error) {
-            setValidationError('An error occurred during validation');
+        }, 2000);
+    };
+
+    const showError = (message: string) => {
+        if (soundEnabled) playInvalidSound();
+        triggerFlash('#ef4444');
+        setStats(prev => ({ ...prev, invalid: prev.invalid + 1 }));
+        setScanResult({ success: false, message, timestamp: new Date().toISOString() });
+        setShowResult(true);
+        
+        setTimeout(() => {
+            setShowResult(false);
+            setScanResult(null);
+        }, 2000);
+    };
+
+    const handleCheckIn = () => {
+        if (!selectedTicket) return;
+        
+        const checkedIn = { 
+            ...selectedTicket, 
+            status: 'used' as const, 
+            checkInTime: new Date().toLocaleTimeString(),
+            checkedInBy: 'Gate Scanner'
+        };
+        checkedInTickets.set(selectedTicket.ticketNumber, checkedIn);
+        
+        if (soundEnabled) playCheckInSound();
+        triggerFlash('#22c55e');
+        
+        setStats(prev => ({ ...prev, checkedIn: prev.checkedIn + 1 }));
+        setScanResult({ 
+            success: true, 
+            message: `✓ ${selectedTicket.customerName} checked in successfully`,
+            ticket: checkedIn,
+            timestamp: new Date().toISOString()
+        });
+        
+        setShowConfirm(false);
+        setSelectedTicket(null);
+        setShowResult(true);
+        
+        setTimeout(() => {
+            setShowResult(false);
+            setScanResult(null);
+            // Restart camera after check-in
+            if (cameraActive && !showManualInput) {
+                startCamera();
+            }
+        }, 2000);
+    };
+
+    const handleManualCheckIn = () => {
+        if (!manualNumber.trim()) {
+            showError('Please enter a ticket number');
+            return;
         }
 
-        setSubmitting(false);
-    };
+        const ticket = mockTickets.find(t => t.ticketNumber === manualNumber.toUpperCase());
+        
+        if (!ticket) {
+            showError('Ticket not found');
+            setManualNumber('');
+            return;
+        }
 
-    const startScanning = async () => {
-        setScanning(true);
-        setShowResult(false);
-        setScanResult(null);
-        setValidationError(null);
-        setCameraError(null);
-        await startCamera();
-    };
+        if (checkedInTickets.has(ticket.ticketNumber)) {
+            showError('Ticket already checked in');
+            setManualNumber('');
+            return;
+        }
 
-    const resetScanner = () => {
-        setShowResult(false);
-        setScanResult(null);
-        setScanning(false);
-        setCameraActive(false);
+        setSelectedTicket(ticket);
+        setShowConfirm(true);
+        setManualNumber('');
         setShowManualInput(false);
-        setValidationError(null);
-        setCameraError(null);
-        setIsScanningActive(false);
         stopCamera();
     };
 
-    const handleMarkAsUsed = () => {
-        resetScanner();
-    };
-
-    const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'valid':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Valid</span>;
-            case 'used':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"><Clock className="h-3 w-3" /> Used</span>;
-            case 'invalid':
-                return <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Invalid</span>;
-            default:
-                return null;
-        }
-    };
-
-    // Filter scan history
-    const filteredHistory = scanHistory.filter(item => {
-        const matchesSearch = item.ticketNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            item.eventName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || item.status === filterStatus;
-        return matchesSearch && matchesStatus;
-    });
-
-    // Scan History Columns
-    const historyColumns = [
-        { Header: 'Ticket Number', accessor: 'ticketNumber', Cell: (row: ScanHistory) => <span className="font-mono text-sm">{row.ticketNumber}</span> },
-        { Header: 'Event', accessor: 'eventName' },
-        { Header: 'Scanned At', accessor: 'scannedAt', Cell: (row: ScanHistory) => formatDateTime(row.scannedAt) },
-        { Header: 'Gate', accessor: 'gate' },
-        { Header: 'Status', accessor: 'status', Cell: (row: ScanHistory) => getStatusBadge(row.status) }
-    ];
-
-    // Manual Entry Form Fields - Only Ticket Number
-    const manualEntryFields = [
-        {
-            name: 'ticketNumber',
-            type: 'text',
-            label: 'Ticket Number',
-            placeholder: 'Enter ticket number (e.g., TKT-2024-001)',
-            required: true,
-            helperText: 'Format: TKT-YYYY-XXX (e.g., TKT-2024-001)'
-        }
-    ];
-
-    // Stats calculations
-    const stats = {
-        totalScanned: scanHistory.length,
-        validScans: scanHistory.filter(s => s.status === 'valid').length,
-        invalidScans: scanHistory.filter(s => s.status === 'invalid').length,
-        todayScans: scanHistory.filter(s => new Date(s.scannedAt).toDateString() === new Date().toDateString()).length
-    };
-
-    // Dashboard Cards
-    const dashboardCards = [
-        { title: 'Total Scanned', value: stats.totalScanned, icon: Scan, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/scanner/history' },
-        { title: 'Valid Scans', value: stats.validScans, icon: CheckCircle, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/scanner/valid' },
-        { title: 'Invalid Scans', value: stats.invalidScans, icon: XCircle, color: 'from-red-500 to-pink-600', delay: 0.2, link: '/scanner/invalid' },
-        { title: "Today's Scans", value: stats.todayScans, icon: Calendar, color: 'from-blue-500 to-cyan-600', delay: 0.25, link: '/scanner/today' }
-    ];
+    // Handle navigation/cleanup on unmount
+    useEffect(() => {
+        return () => {
+            cleanupCamera();
+        };
+    }, []);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center gap-3 mb-2">
-                        <button
-                            onClick={() => navigate('/scanner/dashboard')}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition"
-                        >
-                            <ArrowLeft className="h-5 w-5 text-gray-600" />
-                        </button>
-                        <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
-                            <QrCode className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">Scan QR Code</h1>
-                            <p className="text-sm text-gray-500">Validate tickets by scanning QR code or manual entry</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stats Grid */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8"
-                >
-                    {dashboardCards.map((card, index) => (
-                        <StatCard
-                            key={index}
-                            title={card.title}
-                            value={card.value}
-                            icon={card.icon}
-                            color={card.color}
-                            delay={card.delay}
-                            link={card.link}
-                        />
-                    ))}
-                </motion.div>
-
-                {/* Validation Error Display */}
-                {validationError && !showResult && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 max-w-2xl mx-auto">
-                        <AlertTriangle className="h-4 w-4 text-red-600" />
-                        <p className="text-sm text-red-700">{validationError}</p>
-                    </div>
-                )}
-
-                {/* Camera Error Display */}
-                {cameraError && (
-                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 max-w-2xl mx-auto">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <p className="text-sm text-red-700">{cameraError}</p>
-                    </div>
-                )}
-
-                {/* Centered Scanner Section */}
-                <div className="flex flex-col items-center justify-center">
-                    {/* Action Buttons - Centered */}
-                    <div className="flex flex-wrap gap-4 mb-8 justify-center">
-                        <ReusableButton
-                            onClick={startScanning}
-                            icon={Scan}
-                            label="Scan QR Code"
-                            className="bg-gradient-to-r from-teal-600 to-emerald-600 min-w-[160px]"
-                            disabled={scanning}
-                        />
-                        <ReusableButton
-                            onClick={() => {
-                                setShowManualInput(!showManualInput);
-                                setValidationError(null);
-                            }}
-                            icon={Edit}
-                            label="Manual Entry"
-                            variant="secondary"
-                            className="min-w-[160px]"
-                        />
-                        {(scanning || showResult) && (
-                            <ReusableButton
-                                onClick={resetScanner}
-                                icon={RefreshCw}
-                                label="Reset"
-                                variant="secondary"
-                                className="min-w-[160px]"
-                            />
-                        )}
-                    </div>
-
-                    {/* Manual Entry Form - Only Ticket Number */}
-                    {showManualInput && !scanning && !showResult && (
-                        <div className="w-full max-w-2xl mx-auto mb-8">
-                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                                <div className="mb-4 flex items-center gap-2">
-                                    <Edit className="h-5 w-5 text-teal-600" />
-                                    <h3 className="text-lg font-semibold text-gray-900">Manual Ticket Validation</h3>
-                                </div>
-                                <div className="bg-blue-50 rounded-lg p-3 mb-4 border border-blue-200">
-                                    <p className="text-xs text-blue-800 flex items-center gap-1">
-                                        <Info className="h-3 w-3" />
-                                        Enter the ticket number to validate. Each ticket can only be scanned once.
-                                    </p>
-                                </div>
-                                <ReusableForm
-                                    id="manual-entry-form"
-                                    fields={manualEntryFields}
-                                    onSubmit={handleManualValidate}
-                                    initialValues={{ ticketNumber: '' }}
-                                    validationSchema={ManualEntrySchema}
-                                    render={(formik) => (
-                                        <div className="flex justify-end gap-3 mt-4">
-                                            <ReusableButton type="button" variant="secondary" onClick={() => setShowManualInput(false)}>Cancel</ReusableButton>
-                                            <ReusableButton type="submit" disabled={formik.isSubmitting}>Validate Ticket</ReusableButton>
-                                        </div>
-                                    )}
+        <div className="fixed inset-0 bg-black">
+            {/* Camera View */}
+            {cameraActive && !showManualInput && !cameraError && (
+                <>
+                    <video 
+                        ref={videoRef} 
+                        className="absolute inset-0 w-full h-full object-cover" 
+                        autoPlay 
+                        playsInline 
+                        muted 
+                    />
+                    <canvas ref={canvasRef} className="hidden" />
+                    
+                    {/* Overlay */}
+                    <div className="absolute inset-0">
+                        {/* Dark overlay */}
+                        <div className="absolute inset-0 bg-black/40">
+                            {/* Scan frame */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80">
+                                <div className="absolute -top-2 -left-2 w-16 h-16 border-t-4 border-l-4 border-teal-400 rounded-tl-2xl" />
+                                <div className="absolute -top-2 -right-2 w-16 h-16 border-t-4 border-r-4 border-teal-400 rounded-tr-2xl" />
+                                <div className="absolute -bottom-2 -left-2 w-16 h-16 border-b-4 border-l-4 border-teal-400 rounded-bl-2xl" />
+                                <div className="absolute -bottom-2 -right-2 w-16 h-16 border-b-4 border-r-4 border-teal-400 rounded-br-2xl" />
+                                <motion.div
+                                    animate={{ y: [-150, 150] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-teal-400 to-transparent"
                                 />
                             </div>
                         </div>
-                    )}
 
-                    {/* Camera Scanner View - REAL CAMERA */}
-                    {scanning && cameraActive && (
-                        <div className="w-full max-w-3xl mx-auto mb-8">
-                            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-                                <div className="relative bg-gray-900 rounded-2xl overflow-hidden">
-                                    <div className="aspect-video relative">
-                                        <video
-                                            ref={videoRef}
-                                            className="w-full h-full object-cover"
-                                            autoPlay
-                                            playsInline
-                                        />
-                                        <canvas ref={canvasRef} className="hidden" />
-
-                                        {/* Scanning Overlay */}
-                                        <div className="absolute inset-0 pointer-events-none">
-                                            <div className="absolute inset-0 bg-black/50">
-                                                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 border-2 border-teal-500 rounded-2xl shadow-lg">
-                                                    <div className="absolute -top-1 -left-1 w-8 h-8 border-t-2 border-l-2 border-teal-500"></div>
-                                                    <div className="absolute -top-1 -right-1 w-8 h-8 border-t-2 border-r-2 border-teal-500"></div>
-                                                    <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-2 border-l-2 border-teal-500"></div>
-                                                    <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-2 border-r-2 border-teal-500"></div>
-                                                </div>
-                                            </div>
-                                            <motion.div
-                                                animate={{ y: [-60, 60] }}
-                                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                                                className="absolute top-1/2 left-0 right-0 h-0.5 bg-teal-500 shadow-lg shadow-teal-500/50"
-                                                style={{ transform: 'translateY(-50%)' }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="mt-4 bg-blue-50 rounded-xl p-3 border border-blue-200">
-                                    <div className="flex items-center gap-3">
-                                        <Activity className="h-4 w-4 text-blue-600 animate-pulse" />
-                                        <div>
-                                            <p className="text-xs font-medium text-blue-800">Camera Active</p>
-                                            <p className="text-xs text-blue-600">Position QR code in the frame to scan automatically</p>
-                                        </div>
-                                        <div className="ml-auto flex items-center gap-2">
-                                            <Video className="h-3 w-3 text-blue-600" />
-                                            <span className="text-xs text-blue-600">Live</span>
-                                            <Wifi className="h-3 w-3 text-blue-600 ml-2" />
-                                            <span className="text-xs text-blue-600">Connected</span>
-                                        </div>
-                                    </div>
+                        {/* Top Bar */}
+                        <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-black/60 to-transparent">
+                            <div className="flex justify-between items-center">
+                                <button 
+                                    onClick={() => {
+                                        cleanupCamera();
+                                        navigate('/scanner/dashboard');
+                                    }} 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition"
+                                >
+                                    <ChevronLeft className="w-5 h-5 text-white" />
+                                </button>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setSoundEnabled(!soundEnabled)} 
+                                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition"
+                                    >
+                                        {soundEnabled ? <Volume2 className="w-5 h-5 text-white" /> : <VolumeX className="w-5 h-5 text-white" />}
+                                    </button>
+                                    <button 
+                                        onClick={() => { 
+                                            setShowManualInput(true); 
+                                            stopCamera(); 
+                                        }} 
+                                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition"
+                                    >
+                                        <Edit className="w-5 h-5 text-white" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )}
 
-                    {/* Scanner Instructions - When ready but not scanning */}
-                    {!scanning && !showResult && !showManualInput && !cameraActive && (
-                        <div className="w-full max-w-2xl mx-auto mb-8">
-                            <div className="bg-white rounded-2xl p-12 shadow-lg border border-gray-100 text-center">
-                                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Camera className="h-12 w-12 text-gray-400" />
+                        {/* Right Side Icons - Check-in Button Area */}
+                        <div className="absolute top-1/2 right-4 -translate-y-1/2 space-y-3">
+                            {/* Check-in Button - Main Action */}
+                            <button
+                                onClick={() => {
+                                    if (selectedTicket) {
+                                        setShowConfirm(true);
+                                    } else {
+                                        showError('Please scan a ticket first');
+                                    }
+                                }}
+                                className="p-3 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl shadow-lg hover:scale-105 transition-transform"
+                            >
+                                <UserCheck className="w-6 h-6 text-white" />
+                            </button>
+                            
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl relative">
+                                <Users className="w-5 h-5 text-white" />
+                                <span className="absolute -top-2 -right-2 w-5 h-5 bg-teal-500 rounded-full text-xs flex items-center justify-center text-white font-bold">
+                                    {stats.checkedIn}
+                                </span>
+                            </div>
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Shield className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Zap className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                                <Award className="w-5 h-5 text-white" />
+                            </div>
+                        </div>
+
+                        {/* Bottom Stats */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                                <div>
+                                    <p className="text-xs text-white/80">Checked In</p>
+                                    <p className="text-2xl font-bold text-white">{stats.checkedIn}</p>
                                 </div>
-                                <p className="text-gray-600 text-lg font-medium mb-2">Ready to scan tickets</p>
-                                <p className="text-sm text-gray-500">
-                                    Click "Scan QR Code" to begin validating tickets using your camera
+                                <div>
+                                    <p className="text-xs text-green-400">Valid</p>
+                                    <p className="text-2xl font-bold text-green-400">{stats.checkedIn}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-red-400">Invalid</p>
+                                    <p className="text-2xl font-bold text-red-400">{stats.invalid}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Status Indicators */}
+                        <div className="absolute top-20 right-4">
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/80 backdrop-blur-sm rounded-full">
+                                <Activity className="w-3 h-3 text-white animate-pulse" />
+                                <span className="text-xs text-white">Scanning</span>
+                                <Wifi className="w-3 h-3 text-white ml-1" />
+                                <Signal className="w-3 h-3 text-white" />
+                                <Battery className="w-3 h-3 text-white" />
+                            </div>
+                        </div>
+
+                        {/* Instruction */}
+                        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm rounded-full px-4 py-2">
+                            <p className="text-xs text-white/80">Position QR code in the frame</p>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Manual Input */}
+            {showManualInput && (
+                <div className="absolute inset-0 bg-black flex items-center justify-center p-4 z-50">
+                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl max-w-md w-full p-6">
+                        <div className="text-center mb-6">
+                            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <Ticket className="w-8 h-8 text-teal-600" />
+                            </div>
+                            <h2 className="text-xl font-bold">Manual Check-in</h2>
+                            <p className="text-sm text-gray-500 mt-1">Enter ticket number manually</p>
+                        </div>
+                        <div className="space-y-4">
+                            <input
+                                type="text"
+                                value={manualNumber}
+                                onChange={(e) => setManualNumber(e.target.value.toUpperCase())}
+                                placeholder="TKT-2024-001"
+                                className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-center text-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                                autoFocus
+                            />
+                            <div className="bg-blue-50 rounded-lg p-3">
+                                <p className="text-xs text-blue-800 flex items-center gap-2">
+                                    <Info className="w-3 h-3" />
+                                    Example: TKT-2024-001, TKT-2024-002
                                 </p>
                             </div>
                         </div>
-                    )}
+                        <div className="flex gap-3 mt-6">
+                            <button 
+                                onClick={() => { 
+                                    setShowManualInput(false); 
+                                    startCamera(); 
+                                }} 
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleManualCheckIn} 
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition"
+                            >
+                                Verify Ticket
+                            </button>
+                        </div>
+                    </motion.div>
                 </div>
+            )}
 
-                {/* Scan Result Section - Centered */}
-                {showResult && scanResult && (
-                    <div className="flex justify-center mb-8">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            className={`w-full max-w-2xl rounded-2xl p-6 shadow-lg border ${scanResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
+            {/* Camera Error */}
+            {cameraError && !showManualInput && (
+                <div className="absolute inset-0 bg-black flex items-center justify-center p-4">
+                    <div className="text-center max-w-sm">
+                        <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                        <p className="text-white text-lg font-semibold mb-2">Camera Error</p>
+                        <p className="text-gray-400 text-sm mb-6">{cameraError}</p>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => {
+                                    setCameraError(null);
+                                    startCamera();
+                                }} 
+                                className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                            >
+                                Retry
+                            </button>
+                            <button 
+                                onClick={() => { 
+                                    setShowManualInput(true); 
+                                    setCameraError(null);
+                                }} 
+                                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                            >
+                                Manual Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Check-in Confirmation Modal */}
+            <AnimatePresence>
+                {showConfirm && selectedTicket && (
+                    <motion.div 
+                        initial={{ opacity: 0 }} 
+                        animate={{ opacity: 1 }} 
+                        exit={{ opacity: 0 }} 
+                        className="absolute inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center z-50 p-4"
+                    >
+                        <motion.div 
+                            initial={{ scale: 0.9, y: 50 }} 
+                            animate={{ scale: 1, y: 0 }} 
+                            exit={{ scale: 0.9, y: 50 }}
+                            className="bg-white rounded-2xl max-w-md w-full overflow-hidden"
                         >
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className={`p-2 rounded-xl ${scanResult.success ? 'bg-green-100' : 'bg-red-100'}`}>
-                                    {scanResult.success ? <CheckCircle className="h-6 w-6 text-green-600" /> : <XCircle className="h-6 w-6 text-red-600" />}
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">
-                                        {scanResult.success ? 'Ticket Validated!' : 'Invalid Ticket'}
-                                    </h3>
-                                    <p className="text-sm text-gray-600">{scanResult.message}</p>
-                                </div>
-                            </div>
-
-                            {scanResult.ticket && (
-                                <div className="space-y-3">
-                                    <div className="bg-white rounded-xl p-3 space-y-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-xs text-gray-500">Ticket Number</span>
-                                            <span className="text-sm font-mono font-medium text-teal-600">{scanResult.ticket.ticketNumber}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs text-gray-500">Event</span>
-                                            <span className="text-sm font-medium">{scanResult.ticket.eventName}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs text-gray-500">Event Date & Time</span>
-                                            <span className="text-sm">{scanResult.ticket.eventDate} at {scanResult.ticket.eventTime}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs text-gray-500">Hall & Seat</span>
-                                            <span className="text-sm">{scanResult.ticket.hallName} - Row {scanResult.ticket.seatRow}, Seat {scanResult.ticket.seatNumber}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                            <span className="text-xs text-gray-500">Customer</span>
-                                            <span className="text-sm">{scanResult.ticket.customerName}</span>
-                                        </div>
+                            <div className="bg-gradient-to-r from-teal-600 to-emerald-600 p-5">
+                                <div className="flex items-center gap-3">
+                                    <UserCheck className="w-6 h-6 text-white" />
+                                    <div>
+                                        <h2 className="text-xl font-bold text-white">Confirm Check-in</h2>
+                                        <p className="text-xs text-white/80">Verify ticket details</p>
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="flex gap-3 mt-4">
-                                {scanResult.success && (
-                                    <ReusableButton onClick={handleMarkAsUsed} label="Grant Entry" className="flex-1 bg-green-600 hover:bg-green-700" />
-                                )}
-                                <ReusableButton onClick={resetScanner} label="Scan Another" variant="secondary" className="flex-1" />
+                            </div>
+                            <div className="p-5 space-y-3">
+                                <div className="flex justify-between py-2 border-b border-gray-100">
+                                    <span className="text-sm text-gray-500">Ticket Number</span>
+                                    <span className="text-sm font-mono font-semibold text-teal-600">{selectedTicket.ticketNumber}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">Event</span>
+                                    <span className="text-sm font-medium">{selectedTicket.eventName}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">Customer</span>
+                                    <span className="text-sm">{selectedTicket.customerName}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">Seat</span>
+                                    <span className="text-sm">Row {selectedTicket.seatRow}, Seat {selectedTicket.seatNumber}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-sm text-gray-500">Time</span>
+                                    <span className="text-sm">{selectedTicket.eventDate} at {selectedTicket.eventTime}</span>
+                                </div>
+                            </div>
+                            <div className="flex gap-3 p-5 border-t border-gray-100">
+                                <button 
+                                    onClick={() => { 
+                                        setShowConfirm(false); 
+                                        setSelectedTicket(null); 
+                                        startCamera(); 
+                                    }} 
+                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleCheckIn} 
+                                    className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition flex items-center justify-center gap-2"
+                                >
+                                    <Check className="w-4 h-4" />
+                                    Confirm Check-in
+                                </button>
                             </div>
                         </motion.div>
-                    </div>
+                    </motion.div>
                 )}
+            </AnimatePresence>
 
-                {/* Scan History Table */}
-                <div className="mt-8">
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-                            <div className="flex items-center justify-between flex-wrap gap-3">
-                                <div className="flex items-center gap-2">
-                                    <Clock className="h-5 w-5 text-teal-600" />
-                                    <h2 className="text-lg font-semibold text-gray-900">Scan History</h2>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            placeholder="Search by ticket or event..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10 pr-4 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none w-64"
-                                        />
-                                    </div>
-                                    <select
-                                        value={filterStatus}
-                                        onChange={(e) => setFilterStatus(e.target.value)}
-                                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
-                                    >
-                                        <option value="all">All Status</option>
-                                        <option value="valid">Valid</option>
-                                        <option value="invalid">Invalid</option>
-                                        <option value="used">Used</option>
-                                    </select>
+            {/* Result Notification */}
+            <AnimatePresence>
+                {showResult && scanResult && (
+                    <motion.div 
+                        initial={{ x: 100, opacity: 0 }} 
+                        animate={{ x: 0, opacity: 1 }} 
+                        exit={{ x: 100, opacity: 0 }}
+                        className={`fixed top-20 right-4 z-50 max-w-md w-full shadow-2xl rounded-xl overflow-hidden ${
+                            scanResult.success ? 'bg-gradient-to-r from-green-500 to-emerald-600' : 'bg-gradient-to-r from-red-500 to-rose-600'
+                        }`}
+                    >
+                        <div className="p-4">
+                            <div className="flex items-start gap-3">
+                                {scanResult.success ? 
+                                    <CheckCircle className="w-6 h-6 text-white flex-shrink-0" /> : 
+                                    <XCircle className="w-6 h-6 text-white flex-shrink-0" />
+                                }
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-white">
+                                        {scanResult.success ? 'Check-in Successful' : 'Check-in Failed'}
+                                    </h3>
+                                    <p className="text-sm text-white/90 mt-1">{scanResult.message}</p>
+                                    {scanResult.ticket && (
+                                        <div className="mt-2 pt-2 border-t border-white/20">
+                                            <p className="text-xs text-white/80">
+                                                Ticket: {scanResult.ticket.ticketNumber} | Time: {scanResult.ticket.checkInTime}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                        <ReusableTable
-                            columns={historyColumns}
-                            data={filteredHistory}
-                            title=""
-                            icon={Clock}
-                            showSearch={false}
-                            showExport={true}
-                            showPrint={false}
-                            itemsPerPage={10}
-                        />
-                    </div>
-                </div>
-
-                {/* Tips Card */}
-                <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-                    <div className="flex items-start gap-3">
-                        <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                        <div>
-                            <p className="text-sm font-medium text-blue-800">Validation Rules</p>
-                            <p className="text-xs text-blue-700 mt-1">
-                                • Ticket must be in format: TKT-YYYY-XXX<br />
-                                • Ticket must exist in the system<br />
-                                • Each ticket can only be scanned ONCE<br />
-                                • Already scanned tickets will be rejected<br />
-                                • Make sure camera permissions are granted
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        <div className={`h-1 w-full bg-white/30 animate-pulse`} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
+
+// Info icon component
+const Info = ({ className }: { className?: string }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
 
 export default ScanQRCode;

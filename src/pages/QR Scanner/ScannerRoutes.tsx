@@ -3,7 +3,7 @@ import React from "react";
 import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import ScanQRCode from "./ScanQRCode";
-import ScannerDailyReport from "./ScannerDailyReport";
+import ScanHistory from "./scan/ScanHistory";
 
 // Get current user
 const getCurrentUser = () => {
@@ -19,7 +19,7 @@ const getCurrentUser = () => {
   return null;
 };
 
-// Protected Route Component
+// Protected Route Component - Define it here
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -59,46 +59,25 @@ const ProtectedRoute: React.FC<{
   return <>{children}</>;
 };
 
-// Export as a function that returns the Route element (matching other routes pattern)
+// Export as a function that returns the Route element
 export const getScannerRoutes = () => {
   return (
     <Route
-      key="scanner-routes"
-      path="/scanner/*"
-      element={
+      key="scanner-routes" path="/scanner/*"element={
         <ProtectedRoute
-          allowedRoles={[
-            "qr_scanner",
-            "theater_manager",
-            "theater_owner",
-            "super_admin",
-          ]}
-        >
+          allowedRoles={["qr_scanner", "theater_manager", "theater_owner", "super_admin",]}>
           <DashboardLayout />
         </ProtectedRoute>
       }
     >
       {/* Default redirect */}
       <Route index element={<Navigate to="/scanner/validate/scan" replace />} />
-
-      {/* QR Code scan at entry */}
       <Route path="validate/scan" element={<ScanQRCode />} />
-      <Route path="scan" element={<ScanQRCode />} />
-
-      {/* Status & Reports */}
-      <Route path="stats" element={<ScannerDailyReport />} />
-      <Route path="stats/entries" element={<ScannerDailyReport />} />
-
-      {/* Fallback - redirect to scan page */}
-      <Route
-        path="*"
-        element={<Navigate to="/scanner/validate/scan" replace />}
-      />
+      <Route path="scan/history" element={<ScanHistory />} />
     </Route>
   );
 };
 
-// For backward compatibility, keep the original export if needed
 export const scannerRouteElement = getScannerRoutes();
 
 export default getScannerRoutes;
