@@ -15,6 +15,7 @@ import {
 import * as Yup from "yup";
 import SuccessPopup from "../components/Reusable/SuccessPopup";
 import supabase from "@/config/supabaseClient";
+import { useTranslation } from "react-i18next";
 
 // Types
 interface FormValues {
@@ -27,43 +28,48 @@ interface FormValues {
   agreeToTerms: boolean;
 }
 
-// Validation Schema
-const RegistrationSchema = Yup.object({
-  fullName: Yup.string()
-    .required("Full name is required")
-    .min(3, "Name must be at least 3 characters")
-    .max(100, "Name is too long"),
-  email: Yup.string()
-    .required("Email is required")
-    .email("Please enter a valid email address"),
-  phone: Yup.string()
-    .required("Phone number is required")
-    .matches(/^[0-9+\-\s()]{10,15}$/, "Please enter a valid phone number"),
-  username: Yup.string()
-    .required("Username is required")
-    .min(3, "Username must be at least 3 characters")
-    .max(50, "Username is too long")
-    .matches(
-      /^[a-zA-Z0-9_]+$/,
-      "Username can only contain letters, numbers, and underscores",
+// Helper to create validation schema with translated messages
+const getValidationSchema = (t: (key: string) => string) =>
+  Yup.object({
+    fullName: Yup.string()
+      .required(t("customerRegistration.validation.fullNameRequired"))
+      .min(3, t("customerRegistration.validation.fullNameMin"))
+      .max(100, t("customerRegistration.validation.fullNameMax")),
+    email: Yup.string()
+      .required(t("customerRegistration.validation.emailRequired"))
+      .email(t("customerRegistration.validation.emailInvalid")),
+    phone: Yup.string()
+      .required(t("customerRegistration.validation.phoneRequired"))
+      .matches(
+        /^[0-9+\-\s()]{10,15}$/,
+        t("customerRegistration.validation.phoneInvalid")
+      ),
+    username: Yup.string()
+      .required(t("customerRegistration.validation.usernameRequired"))
+      .min(3, t("customerRegistration.validation.usernameMin"))
+      .max(50, t("customerRegistration.validation.usernameMax"))
+      .matches(
+        /^[a-zA-Z0-9_]+$/,
+        t("customerRegistration.validation.usernamePattern")
+      ),
+    password: Yup.string()
+      .required(t("customerRegistration.validation.passwordRequired"))
+      .min(8, t("customerRegistration.validation.passwordMin"))
+      .matches(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        t("customerRegistration.validation.passwordStrength")
+      ),
+    confirmPassword: Yup.string()
+      .required(t("customerRegistration.validation.confirmPasswordRequired"))
+      .oneOf([Yup.ref("password")], t("customerRegistration.validation.passwordsMatch")),
+    agreeToTerms: Yup.boolean().oneOf(
+      [true],
+      t("customerRegistration.validation.agreeToTermsRequired")
     ),
-  password: Yup.string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters")
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      "Password must contain uppercase, lowercase and number",
-    ),
-  confirmPassword: Yup.string()
-    .required("Please confirm your password")
-    .oneOf([Yup.ref("password")], "Passwords must match"),
-  agreeToTerms: Yup.boolean().oneOf(
-    [true],
-    "You must agree to the Terms of Service and Privacy Policy",
-  ),
-});
+  });
 
 const CustomerRegistration: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -82,6 +88,9 @@ const CustomerRegistration: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
+  // Validation schema with current t function
+  const RegistrationSchema = getValidationSchema(t);
+
   // Check if username already exists
   const checkUsernameExists = async (username: string): Promise<boolean> => {
     const { data } = await supabase
@@ -94,7 +103,7 @@ const CustomerRegistration: React.FC = () => {
 
   // Generate a unique username if the chosen one is taken
   const generateUniqueUsername = async (
-    baseUsername: string,
+    baseUsername: string
   ): Promise<string> => {
     let username = baseUsername;
     let counter = 1;
@@ -189,9 +198,7 @@ const CustomerRegistration: React.FC = () => {
         .maybeSingle();
 
       if (existingEmail) {
-        throw new Error(
-          "Email already registered. Please use a different email or login.",
-        );
+        throw new Error(t("customerRegistration.errors.emailExists"));
       }
 
       // Check if phone already exists
@@ -202,9 +209,7 @@ const CustomerRegistration: React.FC = () => {
         .maybeSingle();
 
       if (existingPhone) {
-        throw new Error(
-          "Phone number already registered. Please use a different number.",
-        );
+        throw new Error(t("customerRegistration.errors.phoneExists"));
       }
 
       // Insert into users table
@@ -227,14 +232,16 @@ const CustomerRegistration: React.FC = () => {
       if (userError) throw userError;
 
       // Insert into customers table
-      const { error: customerError } = await supabase.from("customers").insert({
-        user_id: userData.id,
-        full_name: formValues.fullName,
-        email: formValues.email.toLowerCase(),
-        phone: formValues.phone,
-        is_active: true,
-        created_at: new Date().toISOString(),
-      });
+      const { error: customerError } = await supabase
+        .from("customers")
+        .insert({
+          user_id: userData.id,
+          full_name: formValues.fullName,
+          email: formValues.email.toLowerCase(),
+          phone: formValues.phone,
+          is_active: true,
+          created_at: new Date().toISOString(),
+        });
 
       if (customerError) throw customerError;
 
@@ -258,15 +265,14 @@ const CustomerRegistration: React.FC = () => {
       setTimeout(() => {
         navigate("/login", {
           state: {
-            message:
-              "Registration successful! Please login with your credentials.",
+            message: t("customerRegistration.success.redirectMessage"),
           },
         });
       }, 2500);
     } catch (error: any) {
       console.error("Registration error:", error);
       setErrorMessage(
-        error.message || "Registration failed. Please try again.",
+        error.message || t("customerRegistration.errors.unexpected")
       );
     } finally {
       setIsLoading(false);
@@ -284,10 +290,11 @@ const CustomerRegistration: React.FC = () => {
     if (/[A-Z]/.test(password)) strength++;
     if (/\d/.test(password)) strength++;
 
-    if (strength <= 2) return { strength, color: "bg-red-500", text: "Weak" };
+    if (strength <= 2)
+      return { strength, color: "bg-red-500", text: t("customerRegistration.passwordStrength.weak") };
     if (strength === 3)
-      return { strength, color: "bg-yellow-500", text: "Medium" };
-    return { strength, color: "bg-green-500", text: "Strong" };
+      return { strength, color: "bg-yellow-500", text: t("customerRegistration.passwordStrength.medium") };
+    return { strength, color: "bg-green-500", text: t("customerRegistration.passwordStrength.strong") };
   };
 
   const passwordStrength = getPasswordStrength();
@@ -305,11 +312,9 @@ const CustomerRegistration: React.FC = () => {
             <User className="h-10 w-10 text-white" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            Create Account
+            {t("customerRegistration.title")}
           </h1>
-          <p className="text-gray-500">
-            Join Theatre Hub Ethiopia and start your journey
-          </p>
+          <p className="text-gray-500">{t("customerRegistration.subtitle")}</p>
         </motion.div>
 
         {/* Error Message */}
@@ -336,7 +341,8 @@ const CustomerRegistration: React.FC = () => {
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
+                {t("customerRegistration.form.fullName")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -351,7 +357,7 @@ const CustomerRegistration: React.FC = () => {
                       ? "border-red-500 bg-red-50"
                       : "border-gray-200 hover:border-teal-300"
                   }`}
-                  placeholder="Enter your full name"
+                  placeholder={t("customerRegistration.form.fullNamePlaceholder")}
                   autoComplete="off"
                 />
               </div>
@@ -366,7 +372,8 @@ const CustomerRegistration: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address <span className="text-red-500">*</span>
+                  {t("customerRegistration.form.email")}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -381,7 +388,7 @@ const CustomerRegistration: React.FC = () => {
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 hover:border-teal-300"
                     }`}
-                    placeholder="you@example.com"
+                    placeholder={t("customerRegistration.form.emailPlaceholder")}
                     autoComplete="off"
                   />
                 </div>
@@ -394,7 +401,8 @@ const CustomerRegistration: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
+                  {t("customerRegistration.form.phone")}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -409,7 +417,7 @@ const CustomerRegistration: React.FC = () => {
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 hover:border-teal-300"
                     }`}
-                    placeholder="+251 911 234 567"
+                    placeholder={t("customerRegistration.form.phonePlaceholder")}
                     autoComplete="off"
                   />
                 </div>
@@ -424,7 +432,8 @@ const CustomerRegistration: React.FC = () => {
             {/* Username */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username <span className="text-red-500">*</span>
+                {t("customerRegistration.form.username")}{" "}
+                <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -439,7 +448,7 @@ const CustomerRegistration: React.FC = () => {
                       ? "border-red-500 bg-red-50"
                       : "border-gray-200 hover:border-teal-300"
                   }`}
-                  placeholder="Choose a username"
+                  placeholder={t("customerRegistration.form.usernamePlaceholder")}
                   autoComplete="off"
                 />
               </div>
@@ -450,7 +459,8 @@ const CustomerRegistration: React.FC = () => {
               )}
               {formValues.username && !errors.username && touched.username && (
                 <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3" /> Username is available
+                  <CheckCircle className="h-3 w-3" />{" "}
+                  {t("customerRegistration.usernameAvailable")}
                 </p>
               )}
             </div>
@@ -459,7 +469,8 @@ const CustomerRegistration: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Password <span className="text-red-500">*</span>
+                  {t("customerRegistration.form.password")}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -473,7 +484,7 @@ const CustomerRegistration: React.FC = () => {
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 hover:border-teal-300"
                     }`}
-                    placeholder="Create a password"
+                    placeholder={t("customerRegistration.form.passwordPlaceholder")}
                     autoComplete="new-password"
                   />
                   <button
@@ -497,7 +508,8 @@ const CustomerRegistration: React.FC = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password <span className="text-red-500">*</span>
+                  {t("customerRegistration.form.confirmPassword")}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -511,7 +523,7 @@ const CustomerRegistration: React.FC = () => {
                         ? "border-red-500 bg-red-50"
                         : "border-gray-200 hover:border-teal-300"
                     }`}
-                    placeholder="Confirm your password"
+                    placeholder={t("customerRegistration.form.confirmPasswordPlaceholder")}
                     autoComplete="new-password"
                   />
                   <button
@@ -543,7 +555,7 @@ const CustomerRegistration: React.FC = () => {
               >
                 <div className="flex justify-between items-center mb-2">
                   <p className="text-xs font-medium text-gray-700">
-                    Password strength:
+                    {t("customerRegistration.passwordStrength.title")}
                   </p>
                   <div className="flex items-center gap-2">
                     <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -581,7 +593,7 @@ const CustomerRegistration: React.FC = () => {
                           : "text-gray-500"
                       }
                     >
-                      At least 8 characters
+                      {t("customerRegistration.passwordRequirements.length")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -597,7 +609,7 @@ const CustomerRegistration: React.FC = () => {
                           : "text-gray-500"
                       }
                     >
-                      Lowercase letter
+                      {t("customerRegistration.passwordRequirements.lowercase")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -613,7 +625,7 @@ const CustomerRegistration: React.FC = () => {
                           : "text-gray-500"
                       }
                     >
-                      Uppercase letter
+                      {t("customerRegistration.passwordRequirements.uppercase")}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
@@ -629,7 +641,7 @@ const CustomerRegistration: React.FC = () => {
                           : "text-gray-500"
                       }
                     >
-                      Number
+                      {t("customerRegistration.passwordRequirements.number")}
                     </span>
                   </div>
                 </div>
@@ -652,19 +664,19 @@ const CustomerRegistration: React.FC = () => {
                   htmlFor="agreeToTerms"
                   className="text-sm text-gray-700 cursor-pointer"
                 >
-                  I agree to the{" "}
+                  {t("customerRegistration.terms.prefix")}{" "}
                   <Link
                     to="/terms"
                     className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
                   >
-                    Terms of Service
+                    {t("customerRegistration.terms.termsLink")}
                   </Link>{" "}
-                  and{" "}
+                  {t("customerRegistration.terms.and")}{" "}
                   <Link
                     to="/privacy"
                     className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
                   >
-                    Privacy Policy
+                    {t("customerRegistration.terms.privacyLink")}
                   </Link>
                 </label>
               </div>
@@ -685,12 +697,12 @@ const CustomerRegistration: React.FC = () => {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                  Creating Account...
+                  {t("customerRegistration.creatingAccount")}
                 </>
               ) : (
                 <>
                   <User className="h-4 w-4" />
-                  Create Account
+                  {t("customerRegistration.createAccount")}
                   <ArrowRight className="h-4 w-4" />
                 </>
               )}
@@ -699,12 +711,12 @@ const CustomerRegistration: React.FC = () => {
             {/* Sign In Link */}
             <div className="text-center pt-4 border-t border-gray-200">
               <p className="text-sm text-gray-500">
-                Already have an account?{" "}
+                {t("customerRegistration.alreadyHaveAccount")}{" "}
                 <Link
                   to="/login"
                   className="text-teal-600 font-medium hover:underline"
                 >
-                  Sign In
+                  {t("customerRegistration.signInLink")}
                 </Link>
               </p>
             </div>
@@ -717,8 +729,8 @@ const CustomerRegistration: React.FC = () => {
         isOpen={showSuccess}
         onClose={() => setShowSuccess(false)}
         type="success"
-        title="Registration Successful! 🎉"
-        message="Welcome to Theatre Hub Ethiopia! Redirecting you to login page..."
+        title={t("customerRegistration.success.title")}
+        message={t("customerRegistration.success.message")}
         duration={3000}
       />
     </div>

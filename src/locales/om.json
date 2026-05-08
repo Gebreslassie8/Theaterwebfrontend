@@ -928,5 +928,74 @@
     "nextSteps": "Tarkaanfiita Ittaansaa: Admin odeeffannoo keessan mirkaneessa dhumaa OTP mallattoo kubaatiif ni erga",
     "noRefundReminder": "IBAAS: Kaffaltiin galmee DEBISU HIN DANDENYU"
   }
+},"customerRegistration": {
+  "title": "Akaakuu Uumi",
+  "subtitle": "Theatre Hub Ethiopia waliin makamii imala keessan eegaltaa",
+  "form": {
+    "fullName": "Maqaa Guutuu",
+    "fullNamePlaceholder": "Maqaa guutuu keessan galchi",
+    "email": "Teessoo Imayyela",
+    "emailPlaceholder": "you@example.com",
+    "phone": "Lakkoofsa Bilbilaa",
+    "phonePlaceholder": "+251 911 234 567",
+    "username": "Maqaa Fagaaraa",
+    "usernamePlaceholder": "Maqaa fagaaraa filadhu",
+    "password": "Icciitii",
+    "passwordPlaceholder": "Icciitii uumi",
+    "confirmPassword": "Icciitii Mirkaneessi",
+    "confirmPasswordPlaceholder": "Icciitii keessan mirkaneessaa"
+  },
+  "validation": {
+    "fullNameRequired": "Maqaan guutuu ni barbaachisa",
+    "fullNameMin": "Maqaan xiqqaan 3 arfiitii ta'uu qaba",
+    "fullNameMax": "Maqaan baayyee dheeraa",
+    "emailRequired": "Imayyelli ni barbaachisa",
+    "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
+    "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa",
+    "phoneInvalid": "Maaloo lakkoofsa bilbilaa sirrii galchi",
+    "usernameRequired": "Maqaan fagaaraa ni barbaachisa",
+    "usernameMin": "Maqaan fagaaraa xiqqaan 3 arfiitii ta'uu qaba",
+    "usernameMax": "Maqaan fagaaraa baayyee dheeraa",
+    "usernamePattern": "Maqaan fagaaraa qubee, lakkoofsa fi foota jalqabaa qofa qabaachuu danda'a",
+    "passwordRequired": "Icciitiin ni barbaachisa",
+    "passwordMin": "Icciitiin xiqqaan 8 arfiitii ta'uu qaba",
+    "passwordStrength": "Icciitiin qubee guddaa, qubee xixiqqaa fi lakkoofsa of keessaa qabaachuu qaba",
+    "confirmPasswordRequired": "Maaloo iciitii keessan mirkaneessaa",
+    "passwordsMatch": "Icciitiwwan wal simuu qabu",
+    "agreeToTermsRequired": "Seera tajaajilaa fi icimii bulchiinsa fudhachuu qabdu"
+  },
+  "passwordStrength": {
+    "title": "Ciminni iciitii:",
+    "weak": "Lafaa",
+    "medium": "Giddugalaa",
+    "strong": "Cimaa"
+  },
+  "passwordRequirements": {
+    "length": "Xiqqaan 8 arfiitii",
+    "lowercase": "Qubee xixiqqaa",
+    "uppercase": "Qubee guddaa",
+    "number": "Lakkoofsa"
+  },
+  "terms": {
+    "prefix": "Ani nan fudhadha",
+    "termsLink": "Seera Tajaajilaa",
+    "and": "fi",
+    "privacyLink": "Icimii Bulchiinsa"
+  },
+  "usernameAvailable": "Maqaan fagaaraa ni argama",
+  "createAccount": "Akaakuu Uumi",
+  "creatingAccount": "Akaakuu Uumaa jira...",
+  "alreadyHaveAccount": "Akaakuun qabdaa?",
+  "signInLink": "Ol Seeni",
+  "errors": {
+    "emailExists": "Imayyelli raawwatame. Maaloo imayyela biraa fayyadam ykn ol seeni.",
+    "phoneExists": "Lakkoofsi bilbilaa raawwatame. Maaloo lakkoofsa biraa fayyadami.",
+    "unexpected": "Galmeessi milkaa'een hojjechuu hin dandeenye. Maaloo irra deebi'ii yaali."
+  },
+  "success": {
+    "title": "Galmeessituu Milkaa'e! 🎉",
+    "message": "Theatre Hub Ethiopia baga nagaan dhufte! Fuula galmeessifannaatti geessisa...",
+    "redirectMessage": "Galmeessi milkaa'e! Maaloo ol seeni."
+  }
 }
 }
