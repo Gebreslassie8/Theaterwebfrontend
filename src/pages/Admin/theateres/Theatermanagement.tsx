@@ -254,7 +254,7 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
     );
 };
 
-// Simple View Modal (No action buttons - just view details)
+// Simple View Modal (No action buttons - just view details with Cancel button)
 const SimpleViewModal: React.FC<{
     theater: any;
     isOpen: boolean;
@@ -406,6 +406,17 @@ const SimpleViewModal: React.FC<{
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Cancel/Close Button at Bottom */}
+                    <div className="flex justify-end pt-4 border-t border-gray-200">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                        >
+                            <X className="h-4 w-4" />
+                            Close
+                        </button>
                     </div>
                 </div>
             </motion.div>
@@ -625,6 +636,17 @@ const PendingViewModal: React.FC<{
                             </div>
                         </div>
                     )}
+
+                    {/* Cancel/Close Button at Bottom */}
+                    <div className="flex justify-end pt-4 mt-4 border-t border-gray-200">
+                        <button
+                            onClick={onClose}
+                            className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                        >
+                            <X className="h-4 w-4" />
+                            Close
+                        </button>
+                    </div>
                 </div>
             </motion.div>
         </div>
