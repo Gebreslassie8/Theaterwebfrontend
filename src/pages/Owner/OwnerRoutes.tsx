@@ -10,7 +10,7 @@ import HallsManagement from "./halls/HallsManagement";
 import BookingManagement from "./Booking/OwnerBookingInfo";
 import EmployeeManagement from "./employes/EmployeeManagement";
 // Content Management Imports
-import OwnerContactManagement from '../../components/content/OwnerContactManagement';
+import OwnerContactManagement from "../../components/content/OwnerContactManagement";
 import GalleryManagement from "../../components/content/GalleryManagement";
 import BlogManagement from "../../components/content/BlogManagement";
 // Protected Route Component

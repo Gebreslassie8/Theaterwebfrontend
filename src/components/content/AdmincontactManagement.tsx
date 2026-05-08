@@ -1,4 +1,4 @@
-// src/pages/Admin/content/ContactManagement.tsx
+//frontend\src\components\content\AdmincontactManagement.tsx
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -12,6 +12,7 @@ import {
 import ReusableButton from '../Reusable/ReusableButton';
 import ReusableTable from '../Reusable/ReusableTable';
 import SuccessPopup from '../Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
 // Types
 interface ContactMessage {
@@ -45,75 +46,6 @@ const initialMessages: ContactMessage[] = [
     recipientType: 'admin',
     status: 'unread',
     createdAt: '2024-04-15T10:30:00'
-  },
-  {
-    id: '2',
-    name: 'Sarah Johnson',
-    email: 'sarah@example.com',
-    phone: '+251912345678',
-    subject: 'Question about Hamilton Show',
-    message: 'I want to book tickets for Hamilton. Is there a group discount?',
-    category: 'booking',
-    recipientType: 'theater',
-    theaterId: '1',
-    theaterName: 'Grand Theater',
-    status: 'unread',
-    createdAt: '2024-04-14T14:20:00'
-  },
-  {
-    id: '3',
-    name: 'Michael Chen',
-    email: 'michael@example.com',
-    phone: '+251913456789',
-    subject: 'Refund Request for Cancelled Show',
-    message: 'I need a refund for my cancelled show tickets.',
-    category: 'payment',
-    recipientType: 'admin',
-    status: 'replied',
-    createdAt: '2024-04-13T09:15:00',
-    repliedAt: '2024-04-13T11:00:00',
-    replyMessage: 'Your refund has been processed. It will reflect in 3-5 business days.',
-    repliedBy: 'Admin'
-  },
-  {
-    id: '4',
-    name: 'Emily Wilson',
-    email: 'emily@example.com',
-    phone: '+251914567890',
-    subject: 'Parking Information',
-    message: 'What is the parking situation at Grand Theater?',
-    category: 'general',
-    recipientType: 'theater',
-    theaterId: '1',
-    theaterName: 'Grand Theater',
-    status: 'read',
-    createdAt: '2024-04-12T16:45:00'
-  },
-  {
-    id: '5',
-    name: 'David Brown',
-    email: 'david@example.com',
-    phone: '+251915678901',
-    subject: 'Partnership Opportunity',
-    message: 'We would like to partner with your platform for events.',
-    category: 'partnership',
-    recipientType: 'admin',
-    status: 'archived',
-    createdAt: '2024-04-11T11:30:00'
-  },
-  {
-    id: '6',
-    name: 'Lisa Anderson',
-    email: 'lisa@example.com',
-    phone: '+251916789012',
-    subject: 'Booking for Corporate Event',
-    message: 'We need to book Star Multiplex for our company event.',
-    category: 'booking',
-    recipientType: 'theater',
-    theaterId: '2',
-    theaterName: 'Star Multiplex',
-    status: 'unread',
-    createdAt: '2024-04-16T08:20:00'
   }
 ];
 
@@ -137,6 +69,7 @@ const getCategoryBadge = (category: string) => {
     feedback: { color: 'bg-green-100 text-green-700', label: 'Feedback' },
     partnership: { color: 'bg-purple-100 text-purple-700', label: 'Partnership' }
   };
+  
   const c = config[category] || config.general;
   return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}>{c.label}</span>;
 };

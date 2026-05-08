@@ -13,11 +13,19 @@ import {
   CheckCircle,
 } from "lucide-react";
 import * as Yup from "yup";
-import ReusableForm from "../components/Reusable/ReusableForm";
-import ReusableButton from "../components/Reusable/ReusableButton";
 import SuccessPopup from "../components/Reusable/SuccessPopup";
-import apiService from "../services/api.service";
-import type { Field } from "../components/Reusable/ReusableForm";
+import supabase from "@/config/supabaseClient";
+
+// Types
+interface FormValues {
+  fullName: string;
+  email: string;
+  phone: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+  agreeToTerms: boolean;
+}
 
 // Validation Schema
 const RegistrationSchema = Yup.object({
@@ -32,13 +40,13 @@ const RegistrationSchema = Yup.object({
     .required("Phone number is required")
     .matches(/^[0-9+\-\s()]{10,15}$/, "Please enter a valid phone number"),
   username: Yup.string()
+    .required("Username is required")
     .min(3, "Username must be at least 3 characters")
     .max(50, "Username is too long")
     .matches(
       /^[a-zA-Z0-9_]+$/,
       "Username can only contain letters, numbers, and underscores",
-    )
-    .optional(),
+    ),
   password: Yup.string()
     .required("Password is required")
     .min(8, "Password must be at least 8 characters")
@@ -55,16 +63,6 @@ const RegistrationSchema = Yup.object({
   ),
 });
 
-interface FormValues {
-  fullName: string;
-  email: string;
-  phone: string;
-  username: string;
-  password: string;
-  confirmPassword: string;
-  agreeToTerms: boolean;
-}
-
 const CustomerRegistration: React.FC = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
@@ -72,128 +70,231 @@ const CustomerRegistration: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [formValues, setFormValues] = useState<FormValues>({
+    fullName: "",
+    email: "",
+    phone: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+    agreeToTerms: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const handleSubmit = async (
-    values: FormValues,
-    { setSubmitting, resetForm }: any,
-  ) => {
+  // Check if username already exists
+  const checkUsernameExists = async (username: string): Promise<boolean> => {
+    const { data } = await supabase
+      .from("users")
+      .select("username")
+      .eq("username", username)
+      .maybeSingle();
+    return !!data;
+  };
+
+  // Generate a unique username if the chosen one is taken
+  const generateUniqueUsername = async (
+    baseUsername: string,
+  ): Promise<string> => {
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await checkUsernameExists(username)) {
+      username = `${baseUsername}${counter}`;
+      counter++;
+    }
+
+    return username;
+  };
+
+  // Validate a single field
+  const validateField = async (field: keyof FormValues, value: any) => {
+    try {
+      await RegistrationSchema.validateAt(field, { [field]: value });
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+      return true;
+    } catch (err: any) {
+      setErrors((prev) => ({ ...prev, [field]: err.message }));
+      return false;
+    }
+  };
+
+  // Handle input change
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
+    setFormValues((prev) => ({ ...prev, [name]: newValue }));
+
+    if (touched[name]) {
+      await validateField(name as keyof FormValues, newValue);
+    }
+  };
+
+  // Handle blur
+  const handleBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    const newValue = type === "checkbox" ? checked : value;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    await validateField(name as keyof FormValues, newValue);
+  };
+
+  // Validate all fields
+  const validateForm = async () => {
+    try {
+      await RegistrationSchema.validate(formValues, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err: any) {
+      const newErrors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        if (error.path) {
+          newErrors[error.path] = error.message;
+        }
+      });
+      setErrors(newErrors);
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Mark all fields as touched
+    const allTouched: Record<string, boolean> = {};
+    Object.keys(formValues).forEach((key) => {
+      allTouched[key] = true;
+    });
+    setTouched(allTouched);
+
+    const isValid = await validateForm();
+    if (!isValid) return;
+
     setIsLoading(true);
     setErrorMessage("");
 
     try {
-      // Generate username from email if not provided
-      const username = values.username || values.email.split("@")[0];
+      // Check if username already exists
+      const usernameExists = await checkUsernameExists(formValues.username);
+      let finalUsername = formValues.username;
 
-      // Prepare registration data for backend with DEFAULT ROLE = 'customer'
-      const registrationData = {
-        email: values.email,
-        phone: values.phone,
-        full_name: values.fullName,
-        username: username,
-        password: values.password,
-        role: "customer", // This will map to user_rol enum in Supabase
-        status: "active", // Default status
-      };
+      if (usernameExists) {
+        finalUsername = await generateUniqueUsername(formValues.username);
+      }
 
-      // Call backend API
-      const response = await apiService.registerCustomer(registrationData);
+      // Check if email already exists
+      const { data: existingEmail } = await supabase
+        .from("users")
+        .select("email")
+        .eq("email", formValues.email.toLowerCase())
+        .maybeSingle();
 
-      if (response.success) {
-        // Store user data (excluding password)
-        const { password, ...userWithoutPassword } = response.data;
-        localStorage.setItem(
-          "theater_user",
-          JSON.stringify(userWithoutPassword),
-        );
-
-        // Show success popup
-        setShowSuccess(true);
-        resetForm();
-
-        // Redirect after 2.5 seconds
-        setTimeout(() => {
-          navigate("/login", {
-            state: { message: "Registration successful! Please login." },
-          });
-        }, 2500);
-      } else {
-        setErrorMessage(
-          response.error || "Registration failed. Please try again.",
+      if (existingEmail) {
+        throw new Error(
+          "Email already registered. Please use a different email or login.",
         );
       }
+
+      // Check if phone already exists
+      const { data: existingPhone } = await supabase
+        .from("users")
+        .select("phone")
+        .eq("phone", formValues.phone)
+        .maybeSingle();
+
+      if (existingPhone) {
+        throw new Error(
+          "Phone number already registered. Please use a different number.",
+        );
+      }
+
+      // Insert into users table
+      const { data: userData, error: userError } = await supabase
+        .from("users")
+        .insert({
+          email: formValues.email.toLowerCase(),
+          phone: formValues.phone,
+          full_name: formValues.fullName,
+          username: finalUsername,
+          password: formValues.password,
+          role: "customer",
+          status: "active",
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (userError) throw userError;
+
+      // Insert into customers table
+      const { error: customerError } = await supabase.from("customers").insert({
+        user_id: userData.id,
+        full_name: formValues.fullName,
+        email: formValues.email.toLowerCase(),
+        phone: formValues.phone,
+        is_active: true,
+        created_at: new Date().toISOString(),
+      });
+
+      if (customerError) throw customerError;
+
+      // Show success message
+      setShowSuccess(true);
+
+      // Reset form
+      setFormValues({
+        fullName: "",
+        email: "",
+        phone: "",
+        username: "",
+        password: "",
+        confirmPassword: "",
+        agreeToTerms: false,
+      });
+      setTouched({});
+      setErrors({});
+
+      // Redirect after 2.5 seconds
+      setTimeout(() => {
+        navigate("/login", {
+          state: {
+            message:
+              "Registration successful! Please login with your credentials.",
+          },
+        });
+      }, 2500);
     } catch (error: any) {
       console.error("Registration error:", error);
-      setErrorMessage(error.message || "An unexpected error occurred");
+      setErrorMessage(
+        error.message || "Registration failed. Please try again.",
+      );
     } finally {
       setIsLoading(false);
-      setSubmitting(false);
     }
   };
 
-  const formFields: Field[] = [
-    {
-      name: "fullName",
-      type: "text",
-      label: "Full Name",
-      placeholder: "Enter your full name",
-      required: true,
-      icon: <User className="h-4 w-4" />,
-    },
-    {
-      name: "email",
-      type: "email",
-      label: "Email Address",
-      placeholder: "Enter your email",
-      required: true,
-      icon: <Mail className="h-4 w-4" />,
-    },
-    {
-      name: "phone",
-      type: "tel",
-      label: "Phone Number",
-      placeholder: "+251 911 234 567",
-      required: true,
-      icon: <Phone className="h-4 w-4" />,
-    },
-    {
-      name: "username",
-      type: "text",
-      label: "Username (Optional)",
-      placeholder: "Choose a username",
-      required: false,
-      icon: <User className="h-4 w-4" />,
-    },
-    {
-      name: "password",
-      type: showPassword ? "text" : "password",
-      label: "Password",
-      placeholder: "Create a password",
-      required: true,
-      icon: showPassword ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      ),
-      onIconClick: () => setShowPassword(!showPassword),
-    },
-    {
-      name: "confirmPassword",
-      type: showConfirmPassword ? "text" : "password",
-      label: "Confirm Password",
-      placeholder: "Confirm your password",
-      required: true,
-      icon: showConfirmPassword ? (
-        <EyeOff className="h-4 w-4" />
-      ) : (
-        <Eye className="h-4 w-4" />
-      ),
-      onIconClick: () => setShowConfirmPassword(!showConfirmPassword),
-    },
-  ];
+  // Check password strength for visual feedback
+  const getPasswordStrength = () => {
+    const password = formValues.password;
+    if (!password) return { strength: 0, color: "bg-gray-200", text: "" };
+
+    let strength = 0;
+    if (password.length >= 8) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/\d/.test(password)) strength++;
+
+    if (strength <= 2) return { strength, color: "bg-red-500", text: "Weak" };
+    if (strength === 3)
+      return { strength, color: "bg-yellow-500", text: "Medium" };
+    return { strength, color: "bg-green-500", text: "Strong" };
+  };
+
+  const passwordStrength = getPasswordStrength();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -231,173 +332,387 @@ const CustomerRegistration: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           className="bg-white rounded-2xl shadow-xl p-6 md:p-8"
         >
-          <ReusableForm
-            id="customer-registration-form"
-            fields={formFields}
-            onSubmit={handleSubmit}
-            initialValues={{
-              fullName: "",
-              email: "",
-              phone: "",
-              username: "",
-              password: "",
-              confirmPassword: "",
-              agreeToTerms: false,
-            }}
-            validationSchema={RegistrationSchema}
-            render={(formik) => (
-              <div className="space-y-5">
-                {/* Password Requirements */}
-                {formik.values.password && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="text-xs space-y-1 p-3 bg-gray-50 rounded-lg"
-                  >
-                    <p className="font-medium text-gray-700 mb-1">
-                      Password must contain:
-                    </p>
-                    <div className="flex items-center gap-2">
-                      {formik.values.password.length >= 8 ? (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-gray-300" />
-                      )}
-                      <span
-                        className={
-                          formik.values.password.length >= 8
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        At least 8 characters
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/(?=.*[a-z])/.test(formik.values.password) ? (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-gray-300" />
-                      )}
-                      <span
-                        className={
-                          /(?=.*[a-z])/.test(formik.values.password)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        Lowercase letter
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/(?=.*[A-Z])/.test(formik.values.password) ? (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-gray-300" />
-                      )}
-                      <span
-                        className={
-                          /(?=.*[A-Z])/.test(formik.values.password)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        Uppercase letter
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {/(?=.*\d)/.test(formik.values.password) ? (
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-gray-300" />
-                      )}
-                      <span
-                        className={
-                          /(?=.*\d)/.test(formik.values.password)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        Number
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Terms and Conditions with Validation */}
-                <div className="space-y-2">
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="checkbox"
-                      id="agreeToTerms"
-                      name="agreeToTerms"
-                      checked={formik.values.agreeToTerms}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className="mt-1 w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
-                    />
-                    <label
-                      htmlFor="agreeToTerms"
-                      className="text-sm text-gray-700 cursor-pointer"
-                    >
-                      I agree to the{" "}
-                      <Link
-                        to="/terms"
-                        className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
-                      >
-                        Terms of Service
-                      </Link>{" "}
-                      and{" "}
-                      <Link
-                        to="/privacy"
-                        className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
-                      >
-                        Privacy Policy
-                      </Link>
-                    </label>
-                  </div>
-                  
-                  {/* Terms validation error */}
-                  {formik.touched.agreeToTerms && formik.errors.agreeToTerms && (
-                    <div className="flex items-center gap-2 text-red-600 text-xs">
-                      <AlertCircle className="h-3 w-3" />
-                      <span>{formik.errors.agreeToTerms}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Submit Button - Disabled until terms are agreed */}
-                <ReusableButton
-                  type="submit"
-                  variant="primary"
-                  isLoading={formik.isSubmitting || isLoading}
-                  disabled={!formik.values.agreeToTerms || formik.isSubmitting || isLoading}
-                  className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <>
-                    <User className="h-4 w-4 mr-2" />
-                    Create Account
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </>
-                </ReusableButton>
-
-                {/* Sign In Link */}
-                <p className="text-center text-sm text-gray-500">
-                  Already have an account?{" "}
-                  <Link
-                    to="/login"
-                    className="text-teal-600 font-medium hover:underline"
-                  >
-                    Sign In
-                  </Link>
-                </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  name="fullName"
+                  value={formValues.fullName}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.fullName && touched.fullName
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="Enter your full name"
+                  autoComplete="off"
+                />
               </div>
+              {errors.fullName && touched.fullName && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.fullName}
+                </p>
+              )}
+            </div>
+
+            {/* Email and Phone - 2 columns */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formValues.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                      errors.email && touched.email
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-teal-300"
+                    }`}
+                    placeholder="you@example.com"
+                    autoComplete="off"
+                  />
+                </div>
+                {errors.email && touched.email && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.email}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formValues.phone}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                      errors.phone && touched.phone
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-teal-300"
+                    }`}
+                    placeholder="+251 911 234 567"
+                    autoComplete="off"
+                  />
+                </div>
+                {errors.phone && touched.phone && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Username */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Username <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  name="username"
+                  value={formValues.username}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                    errors.username && touched.username
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-200 hover:border-teal-300"
+                  }`}
+                  placeholder="Choose a username"
+                  autoComplete="off"
+                />
+              </div>
+              {errors.username && touched.username && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> {errors.username}
+                </p>
+              )}
+              {formValues.username && !errors.username && touched.username && (
+                <p className="text-green-600 text-xs mt-1 flex items-center gap-1">
+                  <CheckCircle className="h-3 w-3" /> Username is available
+                </p>
+              )}
+            </div>
+
+            {/* Password and Confirm Password - 2 columns */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formValues.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full pl-4 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                      errors.password && touched.password
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-teal-300"
+                    }`}
+                    placeholder="Create a password"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && touched.password && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.password}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    value={formValues.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={`w-full pl-4 pr-10 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                      errors.confirmPassword && touched.confirmPassword
+                        ? "border-red-500 bg-red-50"
+                        : "border-gray-200 hover:border-teal-300"
+                    }`}
+                    placeholder="Confirm your password"
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && touched.confirmPassword && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Password Requirements */}
+            {formValues.password && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="p-3 bg-gray-50 rounded-lg"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <p className="text-xs font-medium text-gray-700">
+                    Password strength:
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${passwordStrength.color} transition-all duration-300`}
+                        style={{
+                          width: `${(passwordStrength.strength / 4) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span
+                      className={`text-xs font-medium ${
+                        passwordStrength.strength <= 2
+                          ? "text-red-600"
+                          : passwordStrength.strength === 3
+                            ? "text-yellow-600"
+                            : "text-green-600"
+                      }`}
+                    >
+                      {passwordStrength.text}
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    {formValues.password.length >= 8 ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-gray-300" />
+                    )}
+                    <span
+                      className={
+                        formValues.password.length >= 8
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }
+                    >
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/(?=.*[a-z])/.test(formValues.password) ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-gray-300" />
+                    )}
+                    <span
+                      className={
+                        /(?=.*[a-z])/.test(formValues.password)
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }
+                    >
+                      Lowercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/(?=.*[A-Z])/.test(formValues.password) ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-gray-300" />
+                    )}
+                    <span
+                      className={
+                        /(?=.*[A-Z])/.test(formValues.password)
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }
+                    >
+                      Uppercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {/(?=.*\d)/.test(formValues.password) ? (
+                      <CheckCircle className="h-3 w-3 text-green-500" />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-gray-300" />
+                    )}
+                    <span
+                      className={
+                        /(?=.*\d)/.test(formValues.password)
+                          ? "text-green-600"
+                          : "text-gray-500"
+                      }
+                    >
+                      Number
+                    </span>
+                  </div>
+                </div>
+              </motion.div>
             )}
-          />
+
+            {/* Terms and Conditions */}
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="agreeToTerms"
+                  name="agreeToTerms"
+                  checked={formValues.agreeToTerms}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className="mt-1 w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+                />
+                <label
+                  htmlFor="agreeToTerms"
+                  className="text-sm text-gray-700 cursor-pointer"
+                >
+                  I agree to the{" "}
+                  <Link
+                    to="/terms"
+                    className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
+                  >
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    to="/privacy"
+                    className="text-teal-600 hover:text-teal-700 hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </Link>
+                </label>
+              </div>
+              {errors.agreeToTerms && touched.agreeToTerms && (
+                <div className="flex items-center gap-2 text-red-600 text-xs">
+                  <AlertCircle className="h-3 w-3" />
+                  <span>{errors.agreeToTerms}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading || !formValues.agreeToTerms}
+              className="w-full py-3 bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  <User className="h-4 w-4" />
+                  Create Account
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </button>
+
+            {/* Sign In Link */}
+            <div className="text-center pt-4 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                Already have an account?{" "}
+                <Link
+                  to="/login"
+                  className="text-teal-600 font-medium hover:underline"
+                >
+                  Sign In
+                </Link>
+              </p>
+            </div>
+          </form>
         </motion.div>
       </div>
 
-      {/* Success Popup - Imported and used correctly */}
+      {/* Success Popup */}
       <SuccessPopup
         isOpen={showSuccess}
         onClose={() => setShowSuccess(false)}
@@ -405,7 +720,6 @@ const CustomerRegistration: React.FC = () => {
         title="Registration Successful! 🎉"
         message="Welcome to Theatre Hub Ethiopia! Redirecting you to login page..."
         duration={3000}
-        position="top-right"
       />
     </div>
   );
