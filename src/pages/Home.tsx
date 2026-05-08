@@ -1,5 +1,4 @@
 // src/pages/Home.tsx
-
 import supabase from "../config/supabaseClient";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +20,9 @@ import {
 import HeroBanner from "../components/UI/HeroBanner";
 import EventCard from "../components/UI/EventCard";
 import ShowFilter from "../components/UI/ShowFilter";
+
+// i18n
+import { useTranslation } from "react-i18next";
 
 // Types
 export interface ShowDate {
@@ -82,18 +84,9 @@ interface SupabaseEvent {
   };
 }
 
-// Sort options
-const sortOptions = [
-  { value: "date", label: "Date", icon: Calendar },
-  { value: "name", label: "Name", icon: SortAsc },
-  { value: "price-low", label: "Price: Low to High", icon: SortAsc },
-  { value: "price-high", label: "Price: High to Low", icon: SortDesc },
-  { value: "rating", label: "Rating", icon: Star },
-];
-
 const ITEMS_PER_PAGE = 6;
 
-// Transform function
+// Transform function (unchanged)
 const transformSupabaseEvent = (event: SupabaseEvent): Event => {
   const sampleDates: ShowDate[] = [
     {
@@ -149,6 +142,8 @@ const transformSupabaseEvent = (event: SupabaseEvent): Event => {
 };
 
 const Home: React.FC = () => {
+  const { t } = useTranslation();   // <-- translation hook
+
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -162,7 +157,16 @@ const Home: React.FC = () => {
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // Fetch data from Supabase
+  // ------- Sort options with translated labels -------
+  const sortOptions = [
+    { value: "date", label: t("sortOptions.date"), icon: Calendar },
+    { value: "name", label: t("sortOptions.name"), icon: SortAsc },
+    { value: "price-low", label: t("sortOptions.priceLow"), icon: SortAsc },
+    { value: "price-high", label: t("sortOptions.priceHigh"), icon: SortDesc },
+    { value: "rating", label: t("sortOptions.rating"), icon: Star },
+  ];
+
+  // Fetch data from Supabase (unchanged)
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -181,9 +185,7 @@ const Home: React.FC = () => {
           )
           .order("created_at", { ascending: false });
 
-        if (supabaseError) {
-          throw supabaseError;
-        }
+        if (supabaseError) throw supabaseError;
 
         if (supabaseEvents && supabaseEvents.length > 0) {
           const transformedEvents = supabaseEvents.map(transformSupabaseEvent);
@@ -206,11 +208,12 @@ const Home: React.FC = () => {
     fetchEvents();
   }, []);
 
+  // Cookie handlers (unchanged)
   const acceptAllCookies = () => {
     localStorage.setItem("cookieConsent", "accepted");
     localStorage.setItem(
       "cookiePreferences",
-      JSON.stringify({ functional: true, analytics: true, marketing: true }),
+      JSON.stringify({ functional: true, analytics: true, marketing: true })
     );
     setShowCookieConsent(false);
   };
@@ -219,7 +222,7 @@ const Home: React.FC = () => {
     localStorage.setItem("cookieConsent", "rejected");
     localStorage.setItem(
       "cookiePreferences",
-      JSON.stringify({ functional: false, analytics: false, marketing: false }),
+      JSON.stringify({ functional: false, analytics: false, marketing: false })
     );
     setShowCookieConsent(false);
   };
@@ -228,27 +231,23 @@ const Home: React.FC = () => {
     window.location.href = "/cookies";
   };
 
+  // Filter & sort logic (unchanged)
   useEffect(() => {
     let results = [...events];
 
-    // CATEGORY FILTER
     if (selectedCategory !== "All") {
       results = results.filter((event) => event.genre === selectedCategory);
     }
 
-    // SEARCH FILTER
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-
       results = results.filter((event) => {
         const title = event.title?.toLowerCase() || "";
         const description = event.description?.toLowerCase() || "";
         const venue = event.venue?.toLowerCase() || "";
-
         const castMatch =
           event.cast?.some((actor) => actor.toLowerCase().includes(query)) ||
           false;
-
         return (
           title.includes(query) ||
           description.includes(query) ||
@@ -258,33 +257,21 @@ const Home: React.FC = () => {
       });
     }
 
-    // SORTING
     results.sort((a, b) => {
       switch (sortBy) {
-        case "date": {
-          const dateA = a.dates?.[0]?.date
-            ? new Date(a.dates[0].date).getTime()
-            : 0;
-
-          const dateB = b.dates?.[0]?.date
-            ? new Date(b.dates[0].date).getTime()
-            : 0;
-
-          return dateB - dateA;
-        }
-
+        case "date":
+          return (
+            (new Date(b.dates?.[0]?.date || 0).getTime() -
+              new Date(a.dates?.[0]?.date || 0).getTime())
+          );
         case "price-low":
           return (a.priceRange?.min ?? 0) - (b.priceRange?.min ?? 0);
-
         case "price-high":
           return (b.priceRange?.max ?? 0) - (a.priceRange?.max ?? 0);
-
         case "rating":
           return (b.rating ?? 0) - (a.rating ?? 0);
-
         case "name":
           return (a.title ?? "").localeCompare(b.title ?? "");
-
         default:
           return 0;
       }
@@ -294,11 +281,10 @@ const Home: React.FC = () => {
     setCurrentPage(1);
   }, [selectedCategory, searchQuery, sortBy, events]);
 
-  // Pagination
+  // Pagination helpers
   const getCurrentPageEvents = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    return filteredEvents.slice(startIndex, endIndex);
+    return filteredEvents.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   };
 
   const totalPages = Math.ceil(filteredEvents.length / ITEMS_PER_PAGE);
@@ -337,49 +323,37 @@ const Home: React.FC = () => {
 
   const getCurrentSortLabel = () => {
     const option = sortOptions.find((opt) => opt.value === sortBy);
-    return option ? option.label : "Sort by";
+    return option ? option.label : t("common.sortBy");
   };
 
   // Scroll to top
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 500);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   const getPageNumbers = () => {
-    const pages = [];
+    const pages: (number | string)[] = [];
     const maxVisible = 5;
 
     if (totalPages <= maxVisible) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
+        for (let i = 1; i <= 4; i++) pages.push(i);
         pages.push("...");
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
         pages.push("...");
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
+        for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
       } else {
         pages.push(1);
         pages.push("...");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
         pages.push("...");
         pages.push(totalPages);
       }
@@ -387,29 +361,26 @@ const Home: React.FC = () => {
     return pages;
   };
 
-  // Cookie consent
+  // Cookie consent timer
   useEffect(() => {
     const hasConsented = localStorage.getItem("cookieConsent");
     if (!hasConsented) {
-      setTimeout(() => {
-        setShowCookieConsent(true);
-      }, 1000);
+      setTimeout(() => setShowCookieConsent(true), 1000);
     }
   }, []);
 
-  // Loading state
+  // ---------- RENDER ----------
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-deepTeal mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t("common.loadingEvents")}</p>
         </div>
       </div>
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center">
@@ -418,14 +389,14 @@ const Home: React.FC = () => {
             <Ticket className="h-10 w-10 text-red-600 dark:text-red-400" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Error Loading Events
+            {t("common.errorLoadingEvents")}
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
           >
-            Try Again
+            {t("common.tryAgain")}
           </button>
         </div>
       </div>
@@ -434,7 +405,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
-      {/* Hero Section from database */}
+      {/* Hero Section (dynamic, not translated because titles come from DB) */}
       <HeroBanner
         featuredShows={events
           .filter((event) => event.isFeatured)
@@ -452,11 +423,12 @@ const Home: React.FC = () => {
         <div className="mb-10">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
+              {/* Search input */}
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <input
                   type="text"
-                  placeholder="Search for events, venues, artists, or descriptions..."
+                  placeholder={t("common.searchPlaceholder")}
                   className="w-full pl-12 pr-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent dark:text-white placeholder:text-gray-400 shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -471,9 +443,7 @@ const Home: React.FC = () => {
                   className="w-full sm:w-48 px-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors shadow-sm flex items-center justify-between gap-2"
                 >
                   <span className="truncate">{getCurrentSortLabel()}</span>
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`}
-                  />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`} />
                 </button>
 
                 <AnimatePresence>
@@ -502,9 +472,7 @@ const Home: React.FC = () => {
                           >
                             <Icon className="h-4 w-4" />
                             <span className="flex-1">{option.label}</span>
-                            {sortBy === option.value && (
-                              <CheckCircle className="h-4 w-4 text-deepTeal" />
-                            )}
+                            {sortBy === option.value && <CheckCircle className="h-4 w-4 text-deepTeal" />}
                           </button>
                         );
                       })}
@@ -523,14 +491,12 @@ const Home: React.FC = () => {
                 }`}
               >
                 <Filter className="h-5 w-5" />
-                <span>Filters</span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`}
-                />
+                <span>{t("common.filters")}</span>
+                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`} />
               </button>
             </div>
 
-            {/* Active Filters */}
+            {/* Active Filters (translatable) */}
             {(selectedCategory !== "All" || searchQuery) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -538,12 +504,10 @@ const Home: React.FC = () => {
                 className="flex items-center justify-between bg-deepTeal/5 rounded-lg p-3"
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-deepTeal">
-                    Active filters:
-                  </span>
+                  <span className="text-sm font-medium text-deepTeal">{t("common.activeFilters")}</span>
                   {selectedCategory !== "All" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-deepTeal/10 text-deepTeal rounded-full text-sm">
-                      Category: {selectedCategory}
+                      {t("common.category")}: {selectedCategory}
                     </span>
                   )}
                   {searchQuery && (
@@ -556,7 +520,7 @@ const Home: React.FC = () => {
                   onClick={handleClearFilters}
                   className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
                 >
-                  Clear All
+                  {t("common.clearAll")}
                 </button>
               </motion.div>
             )}
@@ -587,16 +551,11 @@ const Home: React.FC = () => {
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  All Events
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t("common.allEvents")}</h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to{" "}
-                  {Math.min(
-                    currentPage * ITEMS_PER_PAGE,
-                    filteredEvents.length,
-                  )}{" "}
-                  of {filteredEvents.length} events
+                  {t("common.showing")} {(currentPage - 1) * ITEMS_PER_PAGE + 1} {t("common.to")}{" "}
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredEvents.length)} {t("common.of")}{" "}
+                  {filteredEvents.length} {t("common.events")}
                 </p>
               </div>
             </div>
@@ -628,17 +587,12 @@ const Home: React.FC = () => {
                     }`}
                   >
                     <ChevronLeft className="h-4 w-4" />
-                    <span>Prev</span>
+                    <span>{t("common.prev")}</span>
                   </button>
 
-                  {getPageNumbers().map((page, index) =>
+                  {getPageNumbers().map((page, idx) =>
                     page === "..." ? (
-                      <span
-                        key={`dots-${index}`}
-                        className="px-3 py-2 text-gray-500 dark:text-gray-400"
-                      >
-                        ...
-                      </span>
+                      <span key={`dots-${idx}`} className="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
                     ) : (
                       <button
                         key={page}
@@ -651,7 +605,7 @@ const Home: React.FC = () => {
                       >
                         {page}
                       </button>
-                    ),
+                    )
                   )}
 
                   <button
@@ -663,7 +617,7 @@ const Home: React.FC = () => {
                         : "bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 hover:text-deepTeal"
                     }`}
                   >
-                    <span>Next</span>
+                    <span>{t("common.next")}</span>
                     <ChevronRight className="h-4 w-4" />
                   </button>
                 </nav>
@@ -675,17 +629,13 @@ const Home: React.FC = () => {
             <div className="bg-gray-100 dark:bg-dark-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
               <Ticket className="h-10 w-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No events found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400">
-              Try adjusting your filters or search criteria
-            </p>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t("common.noEventsFound")}</h3>
+            <p className="text-gray-500 dark:text-gray-400">{t("common.tryAdjusting")}</p>
             <button
               onClick={handleClearFilters}
               className="mt-4 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
             >
-              Clear all filters
+              {t("common.clearFilters")}
             </button>
           </div>
         )}
@@ -706,7 +656,7 @@ const Home: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Cookie Consent */}
+      {/* Cookie Consent (fully translatable) */}
       <AnimatePresence>
         {showCookieConsent && (
           <motion.div
@@ -724,11 +674,10 @@ const Home: React.FC = () => {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white text-base mb-1">
-                      We value your privacy
+                      {t("cookieConsent.title")}
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      We use cookies to enhance your browsing experience, serve
-                      personalized content, and analyze our traffic.
+                      {t("cookieConsent.message")}
                     </p>
                   </div>
                 </div>
@@ -738,19 +687,19 @@ const Home: React.FC = () => {
                     onClick={acceptAllCookies}
                     className="flex-1 px-4 py-2 bg-deepTeal text-white rounded-lg text-sm font-medium hover:bg-deepTeal/80 transition-all duration-200 shadow-md hover:shadow-lg"
                   >
-                    Accept All
+                    {t("cookieConsent.acceptAll")}
                   </button>
                   <button
                     onClick={rejectAllCookies}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-dark-700 transition-all duration-200"
                   >
-                    Reject All
+                    {t("cookieConsent.rejectAll")}
                   </button>
                   <button
                     onClick={customizeCookies}
                     className="px-4 py-2 text-deepTeal rounded-lg text-sm font-medium hover:bg-deepTeal/5 transition-all duration-200"
                   >
-                    Customize
+                    {t("cookieConsent.customize")}
                   </button>
                 </div>
               </div>

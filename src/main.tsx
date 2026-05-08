@@ -1,5 +1,3 @@
-// C:\Users\HP\Desktop\TheaterHUB\frontend\src\main.tsx
-
 // Frontend/src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
@@ -8,13 +6,14 @@ import App from "./App";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import "./index.css";
+import "./i18n";          // <-- ADD THIS LINE
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter
       future={{
-        v7_startTransition: true, // Wrap state updates in React.startTransition
-        v7_relativeSplatPath: true, // Fix relative path matching for splat routes
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
       }}
     >
       <ThemeProvider>

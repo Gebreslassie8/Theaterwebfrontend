@@ -6,86 +6,88 @@ import {
     Ticket, CreditCard, User, Shield,
     QrCode, Wallet, Users, XCircle
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // Types
 interface FAQItem {
     id: number;
-    question: string;
-    answer: string;
+    questionKey: string;     // translation key
+    answerKey: string;       // translation key
     category: string;
     icon: React.ElementType;
 }
 
 const Help: React.FC = () => {
+    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [openFAQ, setOpenFAQ] = useState<number | null>(null);
     const [searchResults, setSearchResults] = useState<FAQItem[]>([]);
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
-    // FAQ Data - Unlimited tickets
+    // FAQ Data with translation keys
     const faqs: FAQItem[] = [
         {
             id: 1,
             category: 'tickets',
-            question: 'How do I book tickets online?',
-            answer: 'Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using Chapa, TeleBirr, CBE Birr, or HelloCash.',
+            questionKey: 'help.faq.tickets.bookQuestion',
+            answerKey: 'help.faq.tickets.bookAnswer',
             icon: Ticket
         },
         {
             id: 2,
             category: 'tickets',
-            question: 'How do I get my tickets after booking?',
-            answer: 'After successful payment, you\'ll receive an email with your e-tickets. You can also access them in your account under "My Tickets". Simply show the QR code at the venue entrance.',
+            questionKey: 'help.faq.tickets.getQuestion',
+            answerKey: 'help.faq.tickets.getAnswer',
             icon: QrCode
         },
         {
             id: 3,
             category: 'tickets',
-            question: 'How many tickets can I book?',
-            answer: 'You can book as many tickets as you want! There is no limit on the number of tickets per booking. Feel free to book tickets for large groups and special events.',
+            questionKey: 'help.faq.tickets.limitQuestion',
+            answerKey: 'help.faq.tickets.limitAnswer',
             icon: Users
         },
         {
             id: 4,
             category: 'payments',
-            question: 'What payment methods do you accept?',
-            answer: 'We accept multiple payment methods including: Chapa (Card/Bank Transfer), TeleBirr, CBE Birr, and HelloCash. All payments are processed securely.',
+            questionKey: 'help.faq.payments.methodsQuestion',
+            answerKey: 'help.faq.payments.methodsAnswer',
             icon: CreditCard
         },
         {
             id: 5,
             category: 'account',
-            question: 'How do I create an account?',
-            answer: 'Click "Sign Up" on the homepage, fill in your details, verify your email, and you\'re ready to start booking! You can also sign up using Google or Facebook.',
+            questionKey: 'help.faq.account.createQuestion',
+            answerKey: 'help.faq.account.createAnswer',
             icon: User
         },
         {
             id: 6,
             category: 'wallet',
-            question: 'What is TheaterHUB Wallet?',
-            answer: 'TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods.',
+            questionKey: 'help.faq.wallet.walletQuestion',
+            answerKey: 'help.faq.wallet.walletAnswer',
             icon: Wallet
         },
         {
             id: 7,
             category: 'technical',
-            question: 'Having trouble with the website?',
-            answer: 'Clear your browser cache, try a different browser, or contact our support team at support@theaterhub.com. We\'re here to help!',
+            questionKey: 'help.faq.technical.troubleQuestion',
+            answerKey: 'help.faq.technical.troubleAnswer',
             icon: HelpCircle
         },
         {
             id: 8,
             category: 'tickets',
-            question: 'Can I transfer my tickets to someone else?',
-            answer: 'Yes, you can transfer tickets through your account dashboard. Go to "My Tickets", select the ticket, and click "Transfer". The recipient will receive an email with the ticket details.',
+            questionKey: 'help.faq.tickets.transferQuestion',
+            answerKey: 'help.faq.tickets.transferAnswer',
             icon: Users
         },
         {
             id: 9,
             category: 'technical',
-            question: 'How do I reset my password?',
-            answer: 'Click "Forgot Password" on the login page, enter your email address, and follow the instructions sent to your inbox. You\'ll be able to create a new password.',
+            questionKey: 'help.faq.technical.resetPasswordQuestion',
+            answerKey: 'help.faq.technical.resetPasswordAnswer',
             icon: Shield
         }
     ];
@@ -93,15 +95,13 @@ const Help: React.FC = () => {
     const handleSearch = (query: string) => {
         setSearchQuery(query);
         setIsSearching(query.length > 0);
-
         if (query.length === 0) {
             setSearchResults([]);
             return;
         }
-
         const results = faqs.filter(faq =>
-            faq.question.toLowerCase().includes(query.toLowerCase()) ||
-            faq.answer.toLowerCase().includes(query.toLowerCase())
+            t(faq.questionKey).toLowerCase().includes(query.toLowerCase()) ||
+            t(faq.answerKey).toLowerCase().includes(query.toLowerCase())
         );
         setSearchResults(results);
     };
@@ -135,7 +135,7 @@ const Help: React.FC = () => {
                             className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-xl rounded-full mb-6"
                         >
                             <HelpCircle className="h-5 w-5" />
-                            <span className="text-sm font-medium">Help Center</span>
+                            <span className="text-sm font-medium">{t('help.hero.badge')}</span>
                         </motion.div>
 
                         <motion.h1
@@ -143,7 +143,7 @@ const Help: React.FC = () => {
                             animate={{ y: 0, opacity: 1 }}
                             className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6"
                         >
-                            How can we help you?
+                            {t('help.hero.title')}
                         </motion.h1>
 
                         <motion.p
@@ -152,7 +152,7 @@ const Help: React.FC = () => {
                             transition={{ delay: 0.1 }}
                             className="text-xl text-white/90 mb-8"
                         >
-                            Find answers and get support for your questions
+                            {t('help.hero.subtitle')}
                         </motion.p>
 
                         {isSearching && (
@@ -161,7 +161,7 @@ const Help: React.FC = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 className="mt-4 text-sm text-white/80"
                             >
-                                Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} for "{searchQuery}"
+                                {t('help.search.resultCount', { count: searchResults.length, query: searchQuery })}
                             </motion.div>
                         )}
                     </div>
@@ -181,7 +181,7 @@ const Help: React.FC = () => {
                                 : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                                 }`}
                         >
-                            {category === 'all' ? 'All' : category.charAt(0).toUpperCase() + category.slice(1)}
+                            {category === 'all' ? t('help.categories.all') : t(`help.categories.${category}`)}
                         </button>
                     ))}
                 </div>
@@ -205,7 +205,7 @@ const Help: React.FC = () => {
                                         <faq.icon className="h-5 w-5 text-deepTeal" />
                                     </div>
                                     <span className="font-semibold text-gray-900">
-                                        {faq.question}
+                                        {t(faq.questionKey)}
                                     </span>
                                 </div>
                                 {openFAQ === faq.id ? (
@@ -225,7 +225,7 @@ const Help: React.FC = () => {
                                     >
                                         <div className="pl-12 border-l-2 border-deepTeal/30">
                                             <p className="text-gray-600 leading-relaxed">
-                                                {faq.answer}
+                                                {t(faq.answerKey)}
                                             </p>
                                         </div>
                                     </motion.div>
@@ -239,8 +239,8 @@ const Help: React.FC = () => {
                 {filteredFAQs.length === 0 && (
                     <div className="text-center py-12">
                         <HelpCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                        <h3 className="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
-                        <p className="text-gray-500">Try different keywords or browse our categories</p>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-2">{t('help.noResults.title')}</h3>
+                        <p className="text-gray-500">{t('help.noResults.message')}</p>
                     </div>
                 )}
             </div>
