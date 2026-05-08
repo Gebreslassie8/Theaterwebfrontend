@@ -7,8 +7,6 @@ import UserManagement from "./users/UserManagement";
 import WalletBalance from "./wallet/WalletBalance";
 import Commission from "./wallet/Commission";
 import TheaterManagement from "./theateres/Theatermanagement";
-import FinancialReports from "./financial/FinancialReports";
-
 // system monitoring Imports
 import PlatformHealth from "./monitoring/PlatformHealth";
 import SystemLogs from "./monitoring/SystemLogs";
@@ -66,7 +64,6 @@ export const getAdminRoutes = () => {
       <Route path="users/all" element={<UserManagement />} />
       <Route path="wallet/balance" element={<WalletBalance />} />
       <Route path="wallet/commission" element={<Commission />} />
-      <Route path="financial/revenue" element={<FinancialReports />} />
       <Route path="theaters/theaters" element={<TheaterManagement />} />
       <Route path="monitoring/platform_health" element={<PlatformHealth />} />
       <Route path="monitoring/logs" element={<SystemLogs />} />
