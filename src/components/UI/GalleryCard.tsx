@@ -1,4 +1,4 @@
-// src/components/UI/GalleryCard.tsx
+// frontend\src\components\UI\GalleryCard.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
