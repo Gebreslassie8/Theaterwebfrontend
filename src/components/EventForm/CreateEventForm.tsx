@@ -31,15 +31,15 @@ interface Theater {
 interface CreateEventFormProps {
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
-  theaters: Theater[];
-  selectedTheaterId: string | null;
+  theaters?: Theater[];
+  selectedTheaterId?: string | null;
 }
 
 const CreateEventForm: React.FC<CreateEventFormProps> = ({
   onSubmit,
   onCancel,
-  theaters,
-  selectedTheaterId,
+  theaters = [],
+  selectedTheaterId = null,
 }) => {
   const [selectedTheater, setSelectedTheater] = useState<string>(
     selectedTheaterId || (theaters.length > 0 ? theaters[0].id : ""),
@@ -213,7 +213,11 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
 
-  const selectedTheaterInfo = theaters.find((t) => t.id === selectedTheater);
+  const selectedTheaterInfo = theaters?.find((t) => t.id === selectedTheater);
+
+  // Check if user has multiple theaters
+  const hasMultipleTheaters = theaters && theaters.length > 1;
+  const hasSingleTheater = theaters && theaters.length === 1;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -283,11 +287,30 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {/* Loading State - No theaters available */}
+          {(!theaters || theaters.length === 0) && (
+            <div className="text-center py-8">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
+                <p className="text-yellow-800 font-medium">No Theaters Available</p>
+                <p className="text-yellow-600 text-sm mt-1">
+                  Please contact your administrator to assign a theater to your account.
+                </p>
+              </div>
+              <button
+                onClick={onCancel}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              >
+                Close
+              </button>
+            </div>
+          )}
+
           {/* Step 1: Basic Information */}
-          {currentStep === 1 && (
+          {currentStep === 1 && theaters && theaters.length > 0 && (
             <div className="space-y-5">
               {/* Theater Selection - Show if user has multiple theaters */}
-              {theaters.length > 1 && (
+              {hasMultipleTheaters && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Select Theater *
@@ -313,7 +336,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               )}
 
               {/* Theater Info Display - Single theater */}
-              {theaters.length === 1 && selectedTheaterInfo && (
+              {hasSingleTheater && selectedTheaterInfo && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-blue-600" />
@@ -609,7 +632,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           )}
 
           {/* Step 2: Media & Details */}
-          {currentStep === 2 && (
+          {currentStep === 2 && theaters && theaters.length > 0 && (
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -686,7 +709,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           )}
 
           {/* Step 3: Review */}
-          {currentStep === 3 && (
+          {currentStep === 3 && theaters && theaters.length > 0 && selectedTheaterInfo && (
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-5 rounded-xl border border-teal-200">
                 <h3 className="font-bold text-lg text-teal-800 mb-3">
@@ -694,7 +717,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   Summary
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
-                  {theaters.length > 1 && selectedTheaterInfo && (
+                  {hasMultipleTheaters && (
                     <div className="col-span-2">
                       <span className="text-gray-500">Theater:</span>{" "}
                       {selectedTheaterInfo.legal_business_name} (
@@ -776,44 +799,46 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="border-t p-5 bg-gray-50 flex justify-between shrink-0">
-          {currentStep > 1 && (
-            <button
-              onClick={handleBack}
-              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Back
-            </button>
-          )}
-          {currentStep < 3 ? (
-            <button
-              onClick={handleNext}
-              className={`px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ${currentStep === 1 ? "w-full" : "ml-auto"}`}
-            >
-              Continue
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={uploading}
-              className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
-            >
-              {uploading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4" />
-                  Create Event
-                </>
-              )}
-            </button>
-          )}
-        </div>
+        {theaters && theaters.length > 0 && (
+          <div className="border-t p-5 bg-gray-50 flex justify-between shrink-0">
+            {currentStep > 1 && (
+              <button
+                onClick={handleBack}
+                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Back
+              </button>
+            )}
+            {currentStep < 3 ? (
+              <button
+                onClick={handleNext}
+                className={`px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ${currentStep === 1 ? "w-full" : "ml-auto"}`}
+              >
+                Continue
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={uploading}
+                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
+              >
+                {uploading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Create Event
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
