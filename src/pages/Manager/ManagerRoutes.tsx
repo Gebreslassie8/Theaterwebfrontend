@@ -13,7 +13,7 @@ import Reports from "./Report/Reports";
 import TicketSalesDetails from "./Report/TicketSalesDetails";
 
 // Content Management Imports
-import OwnerContactManagement from '../../components/content/OwnerContactManagement';
+import OwnerContactManagement from "../../components/content/OwnerContactManagement";
 import GalleryManagement from "../../components/content/GalleryManagement";
 import BlogManagement from "../../components/content/BlogManagement";
 // Protected Route Component
@@ -57,7 +57,7 @@ export const getManagerRoutes = () => {
       <Route path="events/create" element={<CreateEvent />} />
       <Route path="halls" element={<HallsManagement />} />
       <Route path="detail" element={<TicketSalesDetails />} />
-     <Route path="createview" element={<CreateEventOverVIew />} />
+      <Route path="createview" element={<CreateEventOverVIew />} />
 
       <Route
         path="Tickets/BookingTicketControl"
@@ -65,7 +65,7 @@ export const getManagerRoutes = () => {
       />
       <Route path="Report" element={<Reports />} />
       <Route path="employee" element={<EmployeeManagement />} />
-      
+
       <Route path="content/contacts" element={<OwnerContactManagement />} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />

@@ -1,17 +1,17 @@
-// src/pages/Admin/content/ContactManagement.tsx
+//frontend\src\components\content\AdmincontactManagement.tsx
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Mail, Eye, Search, CheckCircle, Clock, Reply, Archive,
-  X, Send, Inbox, MailOpen, Archive as ArchiveIcon,
-  Trash2, Filter, RefreshCw, User, AtSign, Calendar,
-  PhoneCall, Star, AlertCircle, Tag, Users, DollarSign,
-  Ticket, Briefcase, MessageCircle, UserCog, Theater,
-  ChevronDown
+  Mail, Eye, Search, CheckCircle, Clock, Reply,
+  X, Inbox, Trash2, Filter, RefreshCw, User,
+  Tag, MessageCircle, Theater,
+  Ticket, Phone, MapPin, Settings, XCircle, Send,
+  Users
 } from 'lucide-react';
 import ReusableButton from '../Reusable/ReusableButton';
 import ReusableTable from '../Reusable/ReusableTable';
 import SuccessPopup from '../Reusable/SuccessPopup';
+import ReplyContactReusable from '../../components/content/ReplyContactReusable';
 
 // Types
 interface ContactMessage {
@@ -25,7 +25,7 @@ interface ContactMessage {
   recipientType: 'admin' | 'theater';
   theaterId?: string;
   theaterName?: string;
-  status: 'read' | 'unread' | 'replied' | 'archived';
+  status: 'read' | 'unread' | 'replied';
   createdAt: string;
   repliedAt?: string;
   replyMessage?: string;
@@ -98,7 +98,7 @@ const initialMessages: ContactMessage[] = [
     message: 'We would like to partner with your platform for events.',
     category: 'partnership',
     recipientType: 'admin',
-    status: 'archived',
+    status: 'read',
     createdAt: '2024-04-11T11:30:00'
   },
   {
@@ -137,6 +137,7 @@ const getCategoryBadge = (category: string) => {
     feedback: { color: 'bg-green-100 text-green-700', label: 'Feedback' },
     partnership: { color: 'bg-purple-100 text-purple-700', label: 'Partnership' }
   };
+  
   const c = config[category] || config.general;
   return <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}>{c.label}</span>;
 };
@@ -145,7 +146,7 @@ const getRecipientBadge = (recipientType: string, theaterName?: string) => {
   if (recipientType === 'admin') {
     return (
       <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-        <UserCog className="h-3 w-3" /> System Admin
+        <Settings className="h-3 w-3" /> System Admin
       </span>
     );
   }
@@ -165,7 +166,7 @@ const getStatusBadge = (status: string) => {
     case 'replied':
       return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Replied</span>;
     default:
-      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"><ArchiveIcon className="h-3 w-3" /> Archived</span>;
+      return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Unknown</span>;
   }
 };
 
@@ -242,46 +243,6 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, de
   );
 };
 
-// Quick Templates for Admin
-const adminTemplates = [
-  {
-    label: 'Technical Support',
-    template: (name: string) => `Dear ${name},
-
-Thank you for reporting this technical issue. Our team is investigating and will resolve it shortly.
-
-Best regards,
-Technical Support Team`
-  },
-  {
-    label: 'Payment Issue',
-    template: (name: string) => `Dear ${name},
-
-I apologize for the payment issue you experienced. I've forwarded this to our payment processing team for immediate review.
-
-Best regards,
-Support Team`
-  },
-  {
-    label: 'Partnership',
-    template: (name: string) => `Dear ${name},
-
-Thank you for your interest in partnering with us. I'll connect you with our partnerships team.
-
-Best regards,
-Partnerships Coordinator`
-  },
-  {
-    label: 'General Response',
-    template: (name: string) => `Dear ${name},
-
-Thank you for your message. I'll look into this and get back to you shortly.
-
-Best regards,
-Customer Support Team`
-  }
-];
-
 const ContactManagement: React.FC = () => {
   const [messages, setMessages] = useState<ContactMessage[]>(initialMessages);
   const [searchTerm, setSearchTerm] = useState('');
@@ -291,11 +252,9 @@ const ContactManagement: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'view' | 'reply'>('view');
-  const [replyContent, setReplyContent] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const filteredMessages = useMemo(() => {
     return messages.filter(m => {
@@ -314,9 +273,6 @@ const ContactManagement: React.FC = () => {
     unread: messages.filter(m => m.status === 'unread').length,
     adminMessages: messages.filter(m => m.recipientType === 'admin').length,
     theaterMessages: messages.filter(m => m.recipientType === 'theater').length,
-    booking: messages.filter(m => m.category === 'booking').length,
-    payment: messages.filter(m => m.category === 'payment').length,
-    partnership: messages.filter(m => m.category === 'partnership').length,
   }), [messages]);
 
   const handleMarkAsRead = useCallback((message: ContactMessage) => {
@@ -331,32 +287,19 @@ const ContactManagement: React.FC = () => {
     }
   }, []);
 
-  const handleSendReply = useCallback(() => {
-    if (selectedMessage && replyContent.trim()) {
-      setMessages(prev => prev.map(m => m.id === selectedMessage.id ? {
+  const handleReply = useCallback((messageId: string, replyContent: string) => {
+    setMessages(prev => prev.map(m => 
+      m.id === messageId ? {
         ...m,
         status: 'replied',
         repliedAt: new Date().toISOString(),
         replyMessage: replyContent,
         repliedBy: 'Admin'
-      } : m));
-      setShowModal(false);
-      setReplyContent('');
-      setSelectedMessage(null);
-      setPopupMessage({
-        title: '✓ Reply Sent Successfully',
-        message: `Your reply has been sent to ${selectedMessage.name}`,
-        type: 'success'
-      });
-      setShowSuccessPopup(true);
-    }
-  }, [selectedMessage, replyContent]);
-
-  const handleArchive = useCallback((message: ContactMessage) => {
-    setMessages(prev => prev.map(m => m.id === message.id ? { ...m, status: 'archived' } : m));
+      } : m
+    ));
     setPopupMessage({
-      title: 'Archived',
-      message: `Message from ${message.name} archived`,
+      title: '✓ Reply Sent',
+      message: `Your reply has been sent successfully`,
       type: 'success'
     });
     setShowSuccessPopup(true);
@@ -376,28 +319,11 @@ const ContactManagement: React.FC = () => {
     }
   }, [selectedMessage]);
 
-  const handleTemplateClick = (templateGenerator: (name: string) => string) => {
-    if (selectedMessage) {
-      const template = templateGenerator(selectedMessage.name);
-      setReplyContent(template);
-      setTimeout(() => {
-        textareaRef.current?.focus();
-      }, 50);
-    }
-  };
-
   const openViewModal = (message: ContactMessage) => {
     setSelectedMessage(message);
     setModalMode('view');
     setShowModal(true);
     if (message.status === 'unread') handleMarkAsRead(message);
-  };
-
-  const openReplyModal = (message: ContactMessage) => {
-    setSelectedMessage(message);
-    setModalMode('reply');
-    setReplyContent('');
-    setShowModal(true);
   };
 
   const resetFilters = () => {
@@ -410,7 +336,7 @@ const ContactManagement: React.FC = () => {
   const statsCards = [
     { title: 'Total Messages', value: stats.total, icon: Inbox, color: 'from-purple-500 to-purple-600', delay: 0.1, notification: true, notificationCount: stats.total },
     { title: 'Unread', value: stats.unread, icon: Mail, color: 'from-red-500 to-red-600', delay: 0.15, notification: true, notificationCount: stats.unread },
-    { title: 'To Admin', value: stats.adminMessages, icon: UserCog, color: 'from-indigo-500 to-indigo-600', delay: 0.2, notification: true, notificationCount: stats.adminMessages },
+    { title: 'To Admin', value: stats.adminMessages, icon: Settings, color: 'from-indigo-500 to-indigo-600', delay: 0.2, notification: true, notificationCount: stats.adminMessages },
     { title: 'To Theaters', value: stats.theaterMessages, icon: Theater, color: 'from-teal-500 to-teal-600', delay: 0.25, notification: true, notificationCount: stats.theaterMessages },
     { title: 'Partnership', value: stats.partnership, icon: Users, color: 'from-green-500 to-green-600', delay: 0.3, notification: true, notificationCount: stats.partnership }
   ];
@@ -471,20 +397,10 @@ const ContactManagement: React.FC = () => {
           >
             <Eye className="h-4 w-4 text-blue-600" />
           </button>
-          <button
-            onClick={() => openReplyModal(row)}
-            className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
-            title="Reply"
-          >
-            <Reply className="h-4 w-4 text-green-600" />
-          </button>
-          <button
-            onClick={() => handleArchive(row)}
-            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-            title="Archive"
-          >
-            <ArchiveIcon className="h-4 w-4 text-gray-600" />
-          </button>
+          <ReplyContactReusable
+            message={row}
+            onReply={handleReply}
+          />
           <button
             onClick={() => { setSelectedMessage(row); setShowDeleteConfirm(true); }}
             className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
@@ -497,23 +413,25 @@ const ContactManagement: React.FC = () => {
     }
   ];
 
-  // View Modal
+  // View Modal - with gradient header matching reply modal
   const ViewModal = () => (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Mail className="h-5 w-5 text-blue-600" />
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Mail className="h-5 w-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Message Details</h2>
+                <p className="text-xs text-white/80">Customer Inquiry</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Message Details</h2>
-              <p className="text-xs text-gray-500">From: {selectedMessage?.name}</p>
-            </div>
+            <button onClick={() => setShowModal(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
+              <X className="h-5 w-5 text-white" />
+            </button>
           </div>
-          <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
         </div>
 
         <div className="p-6 space-y-4">
@@ -539,10 +457,6 @@ const ContactManagement: React.FC = () => {
               <p className="text-xs text-gray-500 uppercase mb-1">Recipient</p>
               {selectedMessage && getRecipientBadge(selectedMessage.recipientType, selectedMessage.theaterName)}
             </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase mb-1">Status</p>
-              {selectedMessage && getStatusBadge(selectedMessage.status)}
-            </div>
           </div>
 
           <div>
@@ -553,122 +467,20 @@ const ContactManagement: React.FC = () => {
           </div>
 
           {selectedMessage?.replyMessage && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 border border-green-200">
+            <div className="bg-green-50 rounded-xl p-4 border border-green-200">
               <div className="flex items-center gap-2 mb-2">
                 <Reply className="h-4 w-4 text-green-600" />
-                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">Your Reply</p>
+                <p className="text-xs font-semibold text-green-700">Your Reply</p>
               </div>
-              <p className="text-sm text-green-800 whitespace-pre-wrap leading-relaxed">{selectedMessage.replyMessage}</p>
-              <div className="flex justify-between items-center mt-3 pt-2 border-t border-green-200">
-                <p className="text-xs text-green-600">Sent on {selectedMessage.repliedAt && formatDate(selectedMessage.repliedAt)}</p>
-                <p className="text-xs text-green-600">By: {selectedMessage.repliedBy || 'Admin'}</p>
-              </div>
+              <p className="text-sm text-green-800 whitespace-pre-wrap">{selectedMessage.replyMessage}</p>
+              <p className="text-xs text-green-600 mt-2">Sent on {selectedMessage.repliedAt && formatDate(selectedMessage.repliedAt)}</p>
             </div>
           )}
 
           <div className="flex gap-3 pt-4 border-t border-gray-200">
-            <ReusableButton onClick={() => { setShowModal(false); openReplyModal(selectedMessage!); }} label="Reply" className="flex-1" />
-            <ReusableButton variant="secondary" onClick={() => setShowModal(false)} label="Close" className="flex-1" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // Reply Modal
-  const ReplyModal = () => (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowModal(false)}>
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Reply className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Reply to {selectedMessage?.name}</h2>
-              <p className="text-xs text-gray-500">Compose your response</p>
-            </div>
-          </div>
-          <button onClick={() => setShowModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          <div className="space-y-5">
-            {/* Message Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Message <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                ref={textareaRef}
-                value={replyContent}
-                onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={`Dear ${selectedMessage?.name},
-
-Thank you for your message. I am happy to assist you with your inquiry.
-
-Best regards,
-Customer Support Team`}
-                rows={10}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none resize-y"
-              />
-            </div>
-
-            {/* Quick Templates */}
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-              <p className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-emerald-500" />
-                Quick Templates
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {adminTemplates.map((template, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleTemplateClick(template.template)}
-                    className="text-xs px-3 py-1.5 bg-white border border-gray-200 rounded-lg hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-700 transition-all duration-200"
-                  >
-                    {template.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Original Message Section */}
-            <div className="bg-gradient-to-br from-sky-50 to-indigo-50 rounded-xl p-4 border border-sky-100">
-              <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Mail className="h-4 w-4 text-sky-600" />
-                Original Message:
-              </p>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <User className="h-3 w-3 text-gray-400 mt-0.5" />
-                  <p className="text-xs text-gray-600">From: {selectedMessage?.name} ({selectedMessage?.email})</p>
-                </div>
-                <div className="flex items-start gap-2">
-                  <AtSign className="h-3 w-3 text-gray-400 mt-0.5" />
-                  <p className="text-xs text-gray-600">Subject: {selectedMessage?.subject}</p>
-                </div>
-                <div className="mt-3 pt-3 border-t border-sky-200">
-                  <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {selectedMessage?.message}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex gap-3 pt-4 border-t border-gray-200">
-              <ReusableButton type="button" variant="secondary" onClick={() => setShowModal(false)} className="flex-1">
-                Cancel
-              </ReusableButton>
-              <ReusableButton type="button" onClick={handleSendReply} disabled={!replyContent.trim()} className="flex-1">
-                <Send className="h-4 w-4" />
-                Send Reply
-              </ReusableButton>
-            </div>
+            <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg hover:from-teal-700 hover:to-emerald-700 transition flex items-center justify-center gap-2">
+              Close
+            </button>
           </div>
         </div>
       </div>
@@ -682,125 +494,135 @@ Customer Support Team`}
       variants={containerVariants}
       className="space-y-8 p-6 bg-gray-50 min-h-screen"
     >
-      {/* Stats Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-        {statsCards.map((card, index) => (
-          <StatCard
-            key={index}
-            title={card.title}
-            value={card.value}
-            icon={card.icon}
-            color={card.color}
-            delay={card.delay}
-            notification={card.notification}
-            notificationCount={card.notificationCount}
-          />
-        ))}
-      </motion.div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-600 shadow-lg">
+              <Mail className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Contact Messages</h1>
+              <p className="text-sm text-gray-500 mt-1">Manage all incoming customer inquiries</p>
+            </div>
+          </div>
+        </div>
 
-      {/* Search and Filters */}
-      <motion.div variants={itemVariants} className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
-        <div className="flex flex-wrap gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name, email, subject..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+        {/* Stats Cards - Removed category cards, kept only main stats */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+          {statsCards.map((card, index) => (
+            <StatCard
+              key={index}
+              title={card.title}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+              delay={card.delay}
+              notification={card.notification}
+              notificationCount={card.notificationCount}
             />
+          ))}
+        </motion.div>
+
+        {/* Search and Filters */}
+        <motion.div variants={itemVariants} className="bg-white rounded-xl p-4 shadow-md border border-gray-100 mb-6">
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name, email, subject..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+              />
+            </div>
+            <select
+              value={filterRecipient}
+              onChange={(e) => setFilterRecipient(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+              <option value="all">All Recipients</option>
+              <option value="admin">System Admin</option>
+              <option value="theater">Theater Owners</option>
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+              <option value="all">All Status</option>
+              <option value="unread">Unread</option>
+              <option value="read">Read</option>
+              <option value="replied">Replied</option>
+            </select>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+              <option value="all">All Categories</option>
+              <option value="general">General</option>
+              <option value="booking">Booking</option>
+              <option value="payment">Payment</option>
+              <option value="technical">Technical</option>
+              <option value="feedback">Feedback</option>
+              <option value="partnership">Partnership</option>
+            </select>
+            <button onClick={resetFilters} className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Reset
+            </button>
           </div>
-          <select
-            value={filterRecipient}
-            onChange={(e) => setFilterRecipient(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-          >
-            <option value="all">All Recipients</option>
-            <option value="admin">System Admin</option>
-            <option value="theater">Theater Owners</option>
-          </select>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-          >
-            <option value="all">All Status</option>
-            <option value="unread">Unread</option>
-            <option value="read">Read</option>
-            <option value="replied">Replied</option>
-            <option value="archived">Archived</option>
-          </select>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
-          >
-            <option value="all">All Categories</option>
-            <option value="general">General</option>
-            <option value="booking">Booking</option>
-            <option value="payment">Payment</option>
-            <option value="technical">Technical</option>
-            <option value="feedback">Feedback</option>
-            <option value="partnership">Partnership</option>
-          </select>
-          <ReusableButton onClick={resetFilters} variant="secondary" icon={RefreshCw} label="Reset" />
-        </div>
-      </motion.div>
+        </motion.div>
 
-      {/* Table */}
-      <motion.div variants={itemVariants}>
-        <ReusableTable
-          columns={columns}
-          data={filteredMessages}
-          title="Contact Messages"
-          icon={Mail}
-          showSearch={false}
-          showExport={true}
-          showPrint={false}
-          itemsPerPage={10}
-        />
-      </motion.div>
+        {/* Table */}
+        <motion.div variants={itemVariants}>
+          <ReusableTable
+            columns={columns}
+            data={filteredMessages}
+            title="Contact Messages"
+            icon={Mail}
+            showSearch={false}
+            showExport={true}
+            showPrint={false}
+            itemsPerPage={10}
+          />
+        </motion.div>
 
-      {/* Modals */}
-      {showModal && modalMode === 'view' && <ViewModal />}
-      {showModal && modalMode === 'reply' && <ReplyModal />}
+        {/* Modals */}
+        {showModal && modalMode === 'view' && <ViewModal />}
 
-      {/* Delete Confirm Modal */}
-      {showDeleteConfirm && selectedMessage && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Trash2 className="h-6 w-6 text-red-600" />
+        {/* Delete Confirm Modal */}
+        {showDeleteConfirm && selectedMessage && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <Trash2 className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Message</h3>
               </div>
-              <h3 className="text-xl font-bold text-gray-900">Delete Message</h3>
-            </div>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this message from "<strong>{selectedMessage.name}</strong>"? This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                Cancel
-              </button>
-              <button onClick={handleDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                Delete
-              </button>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this message? This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button onClick={handleDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Success Popup */}
-      <SuccessPopup
-        isOpen={showSuccessPopup}
-        onClose={() => setShowSuccessPopup(false)}
-        type={popupMessage.type}
-        title={popupMessage.title}
-        message={popupMessage.message}
-        duration={3000}
-        position="top-right"
-      />
+        {/* Success Popup */}
+        <SuccessPopup
+          isOpen={showSuccessPopup}
+          onClose={() => setShowSuccessPopup(false)}
+          type={popupMessage.type}
+          title={popupMessage.title}
+          message={popupMessage.message}
+          duration={3000}
+          position="top-right"
+        />
+      </div>
     </motion.div>
   );
 };
