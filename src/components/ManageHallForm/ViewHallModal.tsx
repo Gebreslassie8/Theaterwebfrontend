@@ -1,6 +1,6 @@
 // src/components/ManageHallForm/ViewHallModal.tsx
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Building,
@@ -19,8 +19,15 @@ import {
   Tag,
   Info,
   Layout,
+  Grid,
+  ChevronLeft,
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  User,
 } from "lucide-react";
-import { Hall, getStatusFromIsActive } from "./types";
+import { Hall, getStatusFromIsActive, SeatLevel, Seat } from "./types";
+import supabase from "@/config/supabaseClient";
 
 interface ViewHallModalProps {
   hall: Hall | null;
@@ -35,6 +42,59 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
   onClose,
   onEdit,
 }) => {
+  const [seatLevels, setSeatLevels] = useState<SeatLevel[]>([]);
+  const [seatLayout, setSeatLayout] = useState<Seat[]>([]);
+  const [loadingLayout, setLoadingLayout] = useState(false);
+  const [selectedLevel, setSelectedLevel] = useState<string>("all");
+  const [zoom, setZoom] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
+  const seatsPerPage = 100;
+
+  useEffect(() => {
+    if (isOpen && hall?.id) {
+      loadSeatLevels();
+      loadSeatLayout();
+    }
+  }, [isOpen, hall?.id]);
+
+  const loadSeatLevels = async () => {
+    if (!hall?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("seat_levels")
+        .select("*")
+        .eq("hall_id", hall.id)
+        .order("display_order", { ascending: true });
+
+      if (error) throw error;
+      setSeatLevels(data || []);
+    } catch (error) {
+      console.error("Error loading seat levels:", error);
+    }
+  };
+
+  const loadSeatLayout = async () => {
+    if (!hall?.id) return;
+
+    setLoadingLayout(true);
+    try {
+      const { data, error } = await supabase
+        .from("seats")
+        .select("*")
+        .eq("hall_id", hall.id)
+        .order("seat_row", { ascending: true })
+        .order("seat_number", { ascending: true });
+
+      if (error) throw error;
+      setSeatLayout(data || []);
+    } catch (error) {
+      console.error("Error loading seat layout:", error);
+    } finally {
+      setLoadingLayout(false);
+    }
+  };
+
   if (!isOpen || !hall) return null;
 
   const getStatusConfig = (isActive: boolean) => {
@@ -61,60 +121,58 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
   const statusConfig = getStatusConfig(hall.is_active);
   const StatusIcon = statusConfig.icon;
 
-  // Helper to format rows display
-  const formatRowsDisplay = (rows: string | null): string => {
-    if (!rows) return "Not configured";
-    return rows;
-  };
+  // Filter seats by selected level
+  const filteredSeats =
+    selectedLevel === "all"
+      ? seatLayout
+      : seatLayout.filter((seat) => {
+          const level = seatLevels.find((l) => l.id === seat.seat_level_id);
+          return level?.name === selectedLevel;
+        });
 
-  // Helper to get seating layout display name
-  const getSeatingLayoutDisplay = (layout: string): string => {
-    const layoutMap: Record<string, string> = {
-      Standard: "Standard",
-      Compact: "Compact",
-      Premium: "Premium",
-      VIP: "VIP",
-      Balcony: "Balcony",
-    };
-    return layoutMap[layout] || layout;
-  };
+  // Paginate seats
+  const paginatedSeats = filteredSeats.slice(
+    currentPage * seatsPerPage,
+    (currentPage + 1) * seatsPerPage,
+  );
 
-  // Helper to get seat levels from configuration
-  const getSeatLevels = () => {
-    if (hall.seat_configuration?.levels) {
-      const pricing = hall.seat_configuration.default_pricing;
-      return hall.seat_configuration.levels.map((level) => ({
-        name: level.charAt(0).toUpperCase() + level.slice(1),
-        count: Math.floor(
-          hall.capacity / hall.seat_configuration!.levels.length,
-        ),
-        price: pricing[level] || 50,
-      }));
-    }
-    // Fallback default seat types
-    return [
-      { name: "Standard", count: Math.floor(hall.capacity * 0.6), price: 50 },
-      { name: "VIP", count: Math.floor(hall.capacity * 0.25), price: 120 },
-      { name: "VVIP", count: Math.floor(hall.capacity * 0.15), price: 250 },
-    ];
-  };
+  const totalPages = Math.ceil(filteredSeats.length / seatsPerPage);
 
-  const seatLevels = getSeatLevels();
-  const totalCapacity = hall.capacity;
-
-  // Calculate total positions from rows configuration
-  const getTotalPositions = (): number => {
-    if (hall.rows) {
-      const rowMatch = hall.rows.match(/([A-Z])-([A-Z])/);
-      if (rowMatch) {
-        const startRow = rowMatch[1].charCodeAt(0);
-        const endRow = rowMatch[2].charCodeAt(0);
-        const numberOfRows = endRow - startRow + 1;
-        return numberOfRows * 20; // Approximate columns
+  // Group seats by row for better visualization
+  const seatsByRow = paginatedSeats.reduce(
+    (acc, seat) => {
+      if (!acc[seat.seat_row]) {
+        acc[seat.seat_row] = [];
       }
-    }
-    return hall.capacity;
+      acc[seat.seat_row].push(seat);
+      return acc;
+    },
+    {} as Record<string, Seat[]>,
+  );
+
+  // Sort rows alphabetically
+  const sortedRows = Object.keys(seatsByRow).sort();
+
+  // Get color for seat level
+  const getSeatLevelColor = (levelId: string | null): string => {
+    const level = seatLevels.find((l) => l.id === levelId);
+    return level?.color || "#6B7280";
   };
+
+  // Get seat status color (using is_reserved)
+  const getSeatStatusColor = (isReserved: boolean): string => {
+    return isReserved ? "bg-red-500" : "bg-green-500 hover:bg-green-600";
+  };
+
+  // Get seat status label
+  const getSeatStatusLabel = (isReserved: boolean): string => {
+    return isReserved ? "Reserved" : "Available";
+  };
+
+  const totalCapacity = hall.capacity;
+  const totalSeatsInLayout = seatLayout.length;
+  const availableSeats = seatLayout.filter((s) => !s.is_reserved).length;
+  const reservedSeats = seatLayout.filter((s) => s.is_reserved).length;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -122,10 +180,10 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
       >
         {/* Header with Gradient */}
-        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 text-white">
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 text-white z-10">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
@@ -133,20 +191,16 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
               </div>
               <div>
                 <h2 className="text-2xl font-bold">
-                  {hall.name || `Hall ${hall.hall_number}`}
+                  {hall.name || "Unnamed Hall"}
                 </h2>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   <span className="text-white/80 text-sm">
-                    #{hall.hall_number}
-                  </span>
-                  <span className="text-white/40">•</span>
-                  <span className="text-white/80 text-sm">
-                    {getSeatingLayoutDisplay(hall.seating_layout)} Layout
+                    ID: {hall.id.slice(0, 8)}...
                   </span>
                   <span className="text-white/40">•</span>
                   <span className="flex items-center gap-1 text-white/80 text-sm">
-                    <MapPin className="h-3 w-3" />
-                    {formatRowsDisplay(hall.rows)}
+                    <Grid className="h-3 w-3" />
+                    {hall.num_of_row || 0} rows × {hall.num_of_col || 0} cols
                   </span>
                 </div>
               </div>
@@ -163,7 +217,7 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {/* Status Card */}
             <div
               className={`bg-gradient-to-br ${statusConfig.bgGradient} rounded-xl p-4 border ${statusConfig.borderColor}`}
@@ -176,17 +230,6 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
               </div>
               <p className={`text-xl font-bold ${statusConfig.color}`}>
                 {statusConfig.label}
-              </p>
-            </div>
-
-            {/* Hall Number Card */}
-            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 rounded-xl p-4 border border-indigo-200">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-gray-500">Hall Number</p>
-                <Hash className="h-4 w-4 text-indigo-500" />
-              </div>
-              <p className="text-xl font-bold text-indigo-700">
-                #{hall.hall_number}
               </p>
             </div>
 
@@ -204,60 +247,236 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
               </p>
             </div>
 
-            {/* Price Multiplier Card */}
-            <div className="bg-gradient-to-br from-amber-50 to-yellow-50 rounded-xl p-4 border border-amber-200">
+            {/* Dimensions Card */}
+            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-4 border border-teal-200">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-gray-500">
-                  Price Multiplier
-                </p>
-                <DollarSign className="h-4 w-4 text-amber-500" />
+                <p className="text-xs font-medium text-gray-500">Dimensions</p>
+                <Grid className="h-4 w-4 text-teal-500" />
               </div>
-              <p className="text-xl font-bold text-amber-700">
-                {hall.price_multiplier}x
+              <p className="text-xl font-bold text-teal-700">
+                {hall.num_of_row || 0} × {hall.num_of_col || 0}
               </p>
-              <p className="text-xs text-amber-600 mt-1">
-                Base price × {hall.price_multiplier}
-              </p>
+              <p className="text-xs text-teal-600 mt-1">rows × columns</p>
             </div>
           </div>
 
-          {/* Configuration Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            {/* Seating Layout Detail */}
-            <div className="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-4 border border-teal-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Layout className="h-4 w-4 text-teal-600" />
-                <p className="text-xs font-medium text-gray-600">
-                  Seating Layout
+          {/* Seat Statistics */}
+          {seatLayout.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
+                <p className="text-xs text-green-600">Available</p>
+                <p className="text-xl font-bold text-green-700">
+                  {availableSeats}
                 </p>
               </div>
-              <p className="text-lg font-semibold text-teal-800">
-                {getSeatingLayoutDisplay(hall.seating_layout)}
-              </p>
+              <div className="bg-red-50 rounded-lg p-3 text-center border border-red-200">
+                <p className="text-xs text-red-600">Reserved</p>
+                <p className="text-xl font-bold text-red-700">
+                  {reservedSeats}
+                </p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+                <p className="text-xs text-gray-600">Total</p>
+                <p className="text-xl font-bold text-gray-700">
+                  {totalSeatsInLayout}
+                </p>
+              </div>
             </div>
+          )}
 
-            {/* Dynamic Seating Detail */}
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="h-4 w-4 text-blue-600" />
-                <p className="text-xs font-medium text-gray-600">
-                  Dynamic Seating
-                </p>
+          {/* Seat Levels Section */}
+          {seatLevels.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Award className="h-5 w-5 text-teal-600" />
+                Seat Levels
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {seatLevels.map((level) => (
+                  <div
+                    key={level.id}
+                    className="bg-gradient-to-r from-gray-50 to-white rounded-lg p-3 border border-gray-200"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: level.color }}
+                      />
+                      <span className="font-semibold text-gray-800">
+                        {level.display_name}
+                      </span>
+                    </div>
+                    <p className="text-green-600 font-bold">
+                      ETB {level.price.toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      ID: {level.id.slice(0, 8)}...
+                    </p>
+                  </div>
+                ))}
               </div>
-              <p className="text-lg font-semibold text-blue-800">
-                {hall.has_dynamic_seating ? "Enabled" : "Disabled"}
-              </p>
-              {hall.has_dynamic_seating && (
-                <p className="text-xs text-blue-600 mt-1">
-                  Dynamic pricing adjusts based on demand
-                </p>
+            </div>
+          )}
+
+          {/* Seat Layout Visualization */}
+          {seatLayout.length > 0 && (
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Layout className="h-5 w-5 text-teal-600" />
+                  Seat Layout
+                </h3>
+                <div className="flex items-center gap-2">
+                  {/* Level Filter */}
+                  <select
+                    value={selectedLevel}
+                    onChange={(e) => {
+                      setSelectedLevel(e.target.value);
+                      setCurrentPage(0);
+                    }}
+                    className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                  >
+                    <option value="all">All Levels</option>
+                    {seatLevels.map((level) => (
+                      <option key={level.id} value={level.name}>
+                        {level.display_name}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Zoom Controls */}
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() =>
+                        setZoom((prev) => Math.max(0.5, prev - 0.1))
+                      }
+                      className="p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </button>
+                    <span className="px-2 py-1.5 text-sm font-medium">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <button
+                      onClick={() =>
+                        setZoom((prev) => Math.min(1.5, prev + 0.1))
+                      }
+                      className="p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {loadingLayout ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600" />
+                </div>
+              ) : (
+                <>
+                  {/* Screen indicator */}
+                  <div className="text-center mb-6">
+                    <div className="inline-block w-48 h-1 bg-gray-300 rounded-full" />
+                    <p className="text-xs text-gray-400 mt-1">SCREEN</p>
+                  </div>
+
+                  {/* Seat Grid */}
+                  <div
+                    className="overflow-x-auto"
+                    style={{
+                      transform: `scale(${zoom})`,
+                      transformOrigin: "top left",
+                    }}
+                  >
+                    <div className="inline-block min-w-full">
+                      {sortedRows.map((row) => (
+                        <div key={row} className="flex justify-center mb-1">
+                          <div className="flex items-center gap-1">
+                            <span className="w-8 text-xs font-medium text-gray-500">
+                              {row}
+                            </span>
+                            {seatsByRow[row]
+                              .sort((a, b) => a.seat_number - b.seat_number)
+                              .map((seat) => (
+                                <div
+                                  key={seat.id}
+                                  className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center transition-all cursor-help ${getSeatStatusColor(
+                                    seat.is_reserved,
+                                  )}`}
+                                  title={`${seat.seat_label} - ${getSeatStatusLabel(
+                                    seat.is_reserved,
+                                  )}`}
+                                  style={{
+                                    backgroundColor: !seat.is_reserved
+                                      ? getSeatLevelColor(seat.seat_level_id)
+                                      : undefined,
+                                  }}
+                                >
+                                  {seat.seat_number}
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-4">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(0, prev - 1))
+                        }
+                        disabled={currentPage === 0}
+                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        Page {currentPage + 1} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(totalPages - 1, prev + 1),
+                          )
+                        }
+                        disabled={currentPage === totalPages - 1}
+                        className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Legend */}
+                  <div className="flex flex-wrap justify-center gap-4 mt-6 pt-4 border-t">
+                    {seatLevels.map((level) => (
+                      <div key={level.id} className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded"
+                          style={{ backgroundColor: level.color }}
+                        />
+                        <span className="text-xs text-gray-600">
+                          {level.display_name}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-red-500" />
+                      <span className="text-xs text-gray-600">Reserved</span>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          </div>
+          )}
 
           {/* Description Section */}
           {hall.description && (
-            <div className="mb-6">
+            <div className="mt-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <Info className="h-5 w-5 text-teal-600" />
                 Description
@@ -270,76 +489,6 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
             </div>
           )}
 
-          {/* Seat Types Breakdown */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Layers className="h-5 w-5 text-teal-600" />
-              Seat Configuration
-            </h3>
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-              <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 border-b border-gray-200">
-                <div className="text-sm font-semibold text-gray-600">
-                  Seat Level
-                </div>
-                <div className="text-sm font-semibold text-gray-600 text-right">
-                  Count
-                </div>
-                <div className="text-sm font-semibold text-gray-600 text-right">
-                  Base Price (ETB)
-                </div>
-              </div>
-              <div className="divide-y divide-gray-100">
-                {seatLevels.map((level, idx) => (
-                  <div
-                    key={idx}
-                    className="grid grid-cols-3 gap-4 p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          level.name === "Standard"
-                            ? "bg-green-500"
-                            : level.name === "VIP"
-                              ? "bg-yellow-500"
-                              : "bg-purple-500"
-                        }`}
-                      ></div>
-                      <span className="font-medium text-gray-800">
-                        {level.name}
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-gray-700 font-semibold">
-                        {level.count.toLocaleString()}
-                      </span>
-                      <span className="text-gray-400 text-sm ml-1">seats</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-green-600 font-semibold">
-                        ETB {level.price}
-                      </span>
-                      <span className="text-gray-400 text-sm ml-1">/seat</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Total Row */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-teal-50 border-t border-teal-200">
-                <div className="font-semibold text-teal-800">
-                  Total Capacity
-                </div>
-                <div className="text-right font-bold text-teal-800">
-                  {totalCapacity.toLocaleString()} seats
-                </div>
-                <div className="text-right text-teal-600">
-                  {hall.has_dynamic_seating
-                    ? "Dynamic Pricing Available"
-                    : "Fixed Pricing"}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Metadata Section */}
           <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex items-center gap-2 mb-2">
@@ -351,6 +500,19 @@ const ViewHallModal: React.FC<ViewHallModalProps> = ({
                 ? new Date(hall.created_at).toLocaleDateString()
                 : "Not available"}
             </p>
+            {hall.created_by && (
+              <>
+                <div className="flex items-center gap-2 mt-2">
+                  <User className="h-4 w-4 text-gray-500" />
+                  <span className="text-xs font-medium text-gray-500">
+                    Created by User ID
+                  </span>
+                </div>
+                <p className="text-sm text-gray-700 font-mono text-xs">
+                  {hall.created_by}
+                </p>
+              </>
+            )}
           </div>
         </div>
 

@@ -16,36 +16,33 @@ import {
   Trash2,
   Users,
   AlertCircle,
+  Grid,
 } from "lucide-react";
 import ReusableTable from "../../../components/Reusable/ReusableTable";
 import SuccessPopup from "../../../components/Reusable/SuccessPopup";
 import AddHallModal from "../../../components/ManageHallForm/AddHallModal";
 import UpdateHallModal from "../../../components/ManageHallForm/UpdateHallModal";
 import ViewHallModal from "../../../components/ManageHallForm/ViewHallModal";
+import {
+  Hall as HallType,
+  SeatStats as SeatStatsType,
+} from "../../../components/ManageHallForm/types";
 import supabase from "@/config/supabaseClient";
 
-// Hall Type based on database schema - UPDATED with published_by
-export interface Hall {
+// Re-export types from the central types file
+export type Hall = HallType;
+export type SeatLevel = {
   id: string;
-  theater_id: string;
-  hall_number: number;
-  name: string | null;
-  capacity: number;
-  created_at: string;
-  rows: string | null;
-  columns_per_row: any | null;
-  seat_layout: any | null;
-  description: string | null;
+  hall_id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  color: string;
   is_active: boolean;
-  seating_layout: string;
-  price_multiplier: number;
-  has_dynamic_seating: boolean;
-  seat_configuration: any;
-  theater_name?: string;
-  published_by: string | null; // Added
-  publisher_name?: string; // Added
-  publisher_role?: string; // Added
-}
+  created_at: string;
+  updated_at: string;
+};
+export type SeatStats = SeatStatsType;
 
 // Animation variants
 const containerVariants = {
@@ -124,8 +121,10 @@ const HallDeleteConfirmModal: React.FC<{
         </div>
         <p className="text-gray-600 mb-6">
           Are you sure you want to delete{" "}
-          <strong>{hall.name || `Hall ${hall.hall_number}`}</strong>? This
-          action cannot be undone.
+          <strong>
+            {hall.name || `${hall.num_of_col}x${hall.num_of_row || "?"} Hall`}
+          </strong>
+          ? This action cannot be undone and will also delete all seat layouts.
         </p>
         <div className="flex gap-3">
           <button
@@ -154,6 +153,7 @@ const HallsManagement: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [loading, setLoading] = useState(true);
   const [theaterId, setTheaterId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>("");
 
   const [showAddModal, setShowAddModal] = useState(false);
@@ -178,91 +178,103 @@ const HallsManagement: React.FC = () => {
   const [deactivateReason, setDeactivateReason] = useState("");
   const [showReasonModal, setShowReasonModal] = useState(false);
 
-  // Get current user's theater ID
-  useEffect(() => {
-    const getCurrentUserInfo = async () => {
-      try {
-        console.log("Getting user info...");
-        const userStr =
-          localStorage.getItem("user") || sessionStorage.getItem("user");
-
-        if (!userStr) {
-          console.error("No user found in storage");
-          setLoading(false);
-          return;
-        }
-
-        const user = JSON.parse(userStr);
-        console.log("User found:", user);
-        setCurrentUserRole(user.role || "");
-
-        // Try to get theater ID from user session first
-        let foundTheaterId = user.theater_id || null;
-
-        if (!foundTheaterId) {
-          console.log(
-            "No theater_id in user session, fetching from employees table...",
-          );
-          const { data: employeeData, error: employeeError } = await supabase
-            .from("employees")
-            .select("theater_id")
-            .eq("user_id", user.id)
-            .maybeSingle();
-
-          if (employeeError) {
-            console.error("Error fetching employee:", employeeError);
-          }
-
-          if (employeeData?.theater_id) {
-            foundTheaterId = employeeData.theater_id;
-            console.log(
-              "Found theater_id from employees table:",
-              foundTheaterId,
-            );
-          }
-        }
-
-        // If still no theater, try theaters table as owner
-        if (!foundTheaterId) {
-          console.log(
-            "No theater in employees, checking theaters table as owner...",
-          );
-          const { data: theaterData, error: theaterError } = await supabase
-            .from("theaters")
-            .select("id")
-            .eq("owner_user_id", user.id)
-            .maybeSingle();
-
-          if (theaterError) {
-            console.error("Error fetching theater:", theaterError);
-          }
-
-          if (theaterData?.id) {
-            foundTheaterId = theaterData.id;
-            console.log(
-              "Found theater_id from theaters table:",
-              foundTheaterId,
-            );
-          }
-        }
-
-        setTheaterId(foundTheaterId);
-        console.log("Final theaterId:", foundTheaterId);
-
-        if (!foundTheaterId) {
-          console.warn("No theater ID found for user");
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error("Error getting user info:", error);
-        setLoading(false);
+  // Helper to generate row letters
+  const generateRowLetters = (numOfRows: number): string[] => {
+    const letters = [];
+    for (let i = 1; i <= numOfRows; i++) {
+      let result = "";
+      let n = i;
+      while (n > 0) {
+        n--;
+        result = String.fromCharCode(65 + (n % 26)) + result;
+        n = Math.floor(n / 26);
       }
-    };
+      letters.push(result);
+    }
+    return letters;
+  };
 
-    getCurrentUserInfo();
+  // Get current user's theater ID based on role
+  const getCurrentUserInfo = useCallback(async () => {
+    try {
+      console.log("Getting user info...");
+      const userStr =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+
+      if (!userStr) {
+        console.error("No user found in storage");
+        setLoading(false);
+        return null;
+      }
+
+      const user = JSON.parse(userStr);
+      console.log("User found:", user);
+      setCurrentUser(user);
+      setCurrentUserRole(user.role || "");
+
+      let foundTheaterId = null;
+
+      // Case 1: Admin - fetch first theater
+      if (user.role === "admin") {
+        const { data: theaterData, error: theaterError } = await supabase
+          .from("theaters")
+          .select("id")
+          .limit(1)
+          .maybeSingle();
+
+        if (!theaterError && theaterData?.id) {
+          foundTheaterId = theaterData.id;
+        }
+      }
+      // Case 2: Theater Owner - get from theaters table
+      else if (user.role === "theater_owner" || user.role === "owner") {
+        const { data: theaterData, error: theaterError } = await supabase
+          .from("theaters")
+          .select("id")
+          .eq("owner_user_id", user.id)
+          .maybeSingle();
+
+        if (!theaterError && theaterData?.id) {
+          foundTheaterId = theaterData.id;
+        }
+      }
+      // Case 3: Employee (manager, sales, qr_scanner) - get from employees table
+      else if (
+        ["manager", "sales", "qr_scanner", "theater_manager"].includes(
+          user.role,
+        )
+      ) {
+        const { data: employeeData, error: employeeError } = await supabase
+          .from("employees")
+          .select("theater_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (!employeeError && employeeData?.theater_id) {
+          foundTheaterId = employeeData.theater_id;
+        }
+      }
+
+      // Fallback: check user object
+      if (!foundTheaterId && user.theater_id) {
+        foundTheaterId = user.theater_id;
+      }
+
+      setTheaterId(foundTheaterId);
+      console.log("Final theaterId:", foundTheaterId);
+
+      if (!foundTheaterId) {
+        console.warn("No theater ID found for user");
+      }
+
+      return { user, theaterId: foundTheaterId };
+    } catch (error) {
+      console.error("Error getting user info:", error);
+      return null;
+    }
   }, []);
 
-  // Load halls from database
+  // Load halls from database with seat statistics
   const loadHalls = useCallback(async () => {
     if (!theaterId) {
       console.log("No theaterId available, skipping load");
@@ -274,43 +286,88 @@ const HallsManagement: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await supabase
+      // Load halls
+      const { data: hallsData, error: hallsError } = await supabase
         .from("halls")
         .select("*")
         .eq("theater_id", theaterId)
-        .order("hall_number", { ascending: true });
+        .order("created_at", { ascending: true });
 
-      if (error) throw error;
+      if (hallsError) {
+        console.error("Halls query error:", hallsError);
+        throw hallsError;
+      }
 
-      console.log("Halls loaded:", data?.length || 0);
+      console.log("Halls loaded:", hallsData?.length || 0);
 
-      const formattedHalls: Hall[] = data.map((hall: any) => ({
-        id: hall.id,
-        theater_id: hall.theater_id,
-        hall_number: hall.hall_number,
-        name: hall.name,
-        capacity: hall.capacity,
-        created_at: hall.created_at,
-        rows: hall.rows,
-        columns_per_row: hall.columns_per_row,
-        seat_layout: hall.seat_layout,
-        description: hall.description,
-        is_active: hall.is_active,
-        seating_layout: hall.seating_layout || "Standard",
-        price_multiplier: hall.price_multiplier || 1.0,
-        has_dynamic_seating: hall.has_dynamic_seating || true,
-        seat_configuration: hall.seat_configuration,
-        published_by: hall.published_by, // Added this line
-      }));
+      // For each hall, load seat statistics
+      const hallsWithStats = await Promise.all(
+        (hallsData || []).map(async (hall: any) => {
+          let seatCounts: SeatStats = {
+            total: 0,
+            available: 0,
+            reserved: 0,
+            byLevel: {},
+          };
 
-      setHalls(formattedHalls);
-      setFilteredHalls(formattedHalls);
+          try {
+            // Get seat levels for this hall
+            const { data: seatLevels } = await supabase
+              .from("seat_levels")
+              .select("*")
+              .eq("hall_id", hall.id);
+
+            // Get seat counts from seats table
+            const { data: seats } = await supabase
+              .from("seats")
+              .select("is_reserved, seat_level_id")
+              .eq("hall_id", hall.id);
+
+            if (seats) {
+              seatCounts.total = seats.length;
+              seatCounts.reserved = seats.filter((s) => s.is_reserved).length;
+              seatCounts.available = seatCounts.total - seatCounts.reserved;
+
+              // Calculate by level
+              seatLevels?.forEach((level: any) => {
+                seatCounts.byLevel[level.id] = seats.filter(
+                  (s) => s.seat_level_id === level.id,
+                ).length;
+              });
+            }
+
+            return {
+              ...hall,
+              seat_levels: seatLevels || [],
+              seat_stats: seatCounts,
+            };
+          } catch (err) {
+            console.log("Seat tables may not exist yet:", err);
+            return {
+              ...hall,
+              seat_levels: [],
+              seat_stats: seatCounts,
+            };
+          }
+        }),
+      );
+
+      setHalls(hallsWithStats);
+      setFilteredHalls(hallsWithStats);
     } catch (error) {
       console.error("Error loading halls:", error);
     } finally {
       setLoading(false);
     }
   }, [theaterId]);
+
+  // Initialize
+  useEffect(() => {
+    const init = async () => {
+      await getCurrentUserInfo();
+    };
+    init();
+  }, [getCurrentUserInfo]);
 
   useEffect(() => {
     if (theaterId) {
@@ -326,7 +383,8 @@ const HallsManagement: React.FC = () => {
         (hall) =>
           (hall.name &&
             hall.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          hall.hall_number.toString().includes(searchTerm),
+          hall.num_of_col.toString().includes(searchTerm) ||
+          (hall.num_of_row && hall.num_of_row.toString().includes(searchTerm)),
       );
     }
     if (filterStatus !== "all") {
@@ -341,6 +399,11 @@ const HallsManagement: React.FC = () => {
     active: halls.filter((h) => h.is_active === true).length,
     inactive: halls.filter((h) => h.is_active === false).length,
     totalCapacity: halls.reduce((sum, h) => sum + (h.capacity || 0), 0),
+    totalSeats: halls.reduce((sum, h) => sum + (h.seat_stats?.total || 0), 0),
+    availableSeats: halls.reduce(
+      (sum, h) => sum + (h.seat_stats?.available || 0),
+      0,
+    ),
   };
 
   const closeAllModals = () => {
@@ -363,40 +426,123 @@ const HallsManagement: React.FC = () => {
       return;
     }
 
+    if (!currentUser?.id) {
+      alert("User not authenticated. Please log in again.");
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      const { hallInfo, seatLevels } = hallData;
+
+      if (!hallInfo) throw new Error("Hall information is missing");
+
+      console.log("Creating hall with data:", {
+        hallInfo,
+        seatLevelsCount: seatLevels?.length || 0,
+      });
+
+      // First, create the hall
+      const { data: newHall, error: hallError } = await supabase
         .from("halls")
         .insert({
           theater_id: theaterId,
-          hall_number: hallData.hall_number,
-          name: hallData.name,
-          capacity: hallData.capacity,
-          rows: hallData.rows,
-          seating_layout: hallData.seating_layout || "Standard",
-          price_multiplier: hallData.price_multiplier || 1.0,
-          has_dynamic_seating: hallData.has_dynamic_seating ?? true,
-          description: hallData.description,
-          seat_configuration: hallData.seat_configuration || {
-            levels: ["standard", "vip", "vvip"],
-            default_pricing: { vip: 120, vvip: 250, standard: 50 },
-          },
-          published_by: hallData.published_by,
+          num_of_col: hallInfo.num_of_cols,
+          name: hallInfo.name,
+          capacity: hallInfo.capacity,
+          num_of_row: hallInfo.num_of_rows,
+          description: hallInfo.description || null,
           is_active: true,
+          created_by: currentUser.id,
           created_at: new Date().toISOString(),
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (hallError) {
+        console.error("Hall creation error:", hallError);
+        throw new Error(`Failed to create hall: ${hallError.message}`);
+      }
+
+      if (!newHall) {
+        throw new Error("No hall data returned after creation");
+      }
+
+      console.log("Hall created successfully:", newHall);
+
+      // Create seat levels
+      if (seatLevels && seatLevels.length > 0) {
+        const seatLevelRecords = seatLevels.map(
+          (level: any, index: number) => ({
+            hall_id: newHall.id,
+            name: level.name.toLowerCase(),
+            display_name: level.display_name,
+            price: level.price,
+            color:
+              level.color ||
+              (level.name === "standard"
+                ? "#6B7280"
+                : level.name === "vip"
+                  ? "#EF4444"
+                  : "#F59E0B"),
+            is_active: true,
+            created_at: new Date().toISOString(),
+          }),
+        );
+
+        const { error: levelError } = await supabase
+          .from("seat_levels")
+          .insert(seatLevelRecords);
+
+        if (levelError) {
+          console.error("Seat levels creation error:", levelError);
+        } else {
+          console.log(
+            "Seat levels created successfully:",
+            seatLevelRecords.length,
+          );
+        }
+      }
+
+      // Generate and create seats
+      const rows = generateRowLetters(hallInfo.num_of_rows);
+      const seats = [];
+
+      for (const row of rows) {
+        for (let col = 1; col <= hallInfo.num_of_cols; col++) {
+          seats.push({
+            hall_id: newHall.id,
+            seat_level_id: null,
+            seat_row: row,
+            seat_number: col,
+            is_reserved: false,
+            is_active: true,
+            notes: null,
+          });
+        }
+      }
+
+      // Insert seats in batches
+      const batchSize = 500;
+      for (let i = 0; i < seats.length; i += batchSize) {
+        const batch = seats.slice(i, i + batchSize);
+        const { error: seatError } = await supabase.from("seats").insert(batch);
+        if (seatError) {
+          console.error("Seat creation error:", seatError);
+        }
+      }
 
       await loadHalls();
       closeAllModals();
-      setSuccessMessage(`✨ Hall "${hallData.name}" added successfully!`);
+
+      setSuccessMessage(
+        `✨ Hall "${hallInfo.name}" created successfully with ${seats.length} seats!`,
+      );
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error: any) {
       console.error("Error adding hall:", error);
       alert(`Failed to add hall: ${error.message}`);
+      closeAllModals();
     }
   };
 
@@ -407,15 +553,11 @@ const HallsManagement: React.FC = () => {
       const { error } = await supabase
         .from("halls")
         .update({
-          hall_number: updatedData.hall_number,
           name: updatedData.name,
-          capacity: updatedData.capacity,
-          rows: updatedData.rows,
-          seating_layout: updatedData.seating_layout,
-          price_multiplier: updatedData.price_multiplier,
-          has_dynamic_seating: updatedData.has_dynamic_seating,
           description: updatedData.description,
+          is_active: updatedData.is_active,
           updated_at: new Date().toISOString(),
+          updated_by: true,
         })
         .eq("id", selectedHallForEdit.id);
 
@@ -436,6 +578,17 @@ const HallsManagement: React.FC = () => {
     if (!selectedHallForDelete) return;
 
     try {
+      // Delete seats first
+      await supabase
+        .from("seats")
+        .delete()
+        .eq("hall_id", selectedHallForDelete.id);
+      // Delete seat levels
+      await supabase
+        .from("seat_levels")
+        .delete()
+        .eq("hall_id", selectedHallForDelete.id);
+      // Delete the hall
       const { error } = await supabase
         .from("halls")
         .delete()
@@ -446,7 +599,7 @@ const HallsManagement: React.FC = () => {
       await loadHalls();
       closeAllModals();
       setSuccessMessage(
-        `🗑️ Hall "${selectedHallForDelete.name}" deleted successfully!`,
+        `🗑️ Hall "${selectedHallForDelete.name || `${selectedHallForDelete.num_of_col}x${selectedHallForDelete.num_of_row}`}" deleted successfully!`,
       );
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
@@ -464,9 +617,7 @@ const HallsManagement: React.FC = () => {
         .from("halls")
         .update({
           is_active: false,
-          description: selectedHallForDeactivate.description
-            ? `${selectedHallForDeactivate.description}\nDeactivated: ${deactivateReason}`
-            : `Deactivated: ${deactivateReason}`,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", selectedHallForDeactivate.id);
 
@@ -475,7 +626,7 @@ const HallsManagement: React.FC = () => {
       await loadHalls();
       closeAllModals();
       setSuccessMessage(
-        `⚠️ Hall "${selectedHallForDeactivate.name}" has been deactivated. Reason: ${deactivateReason}`,
+        `⚠️ Hall "${selectedHallForDeactivate.name || `${selectedHallForDeactivate.num_of_col}x${selectedHallForDeactivate.num_of_row}`}" has been deactivated.`,
       );
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
@@ -493,6 +644,7 @@ const HallsManagement: React.FC = () => {
         .from("halls")
         .update({
           is_active: true,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", selectedHallForDeactivate.id);
 
@@ -501,7 +653,7 @@ const HallsManagement: React.FC = () => {
       await loadHalls();
       closeAllModals();
       setSuccessMessage(
-        `✅ Hall "${selectedHallForDeactivate.name}" has been reactivated!`,
+        `✅ Hall "${selectedHallForDeactivate.name || `${selectedHallForDeactivate.num_of_col}x${selectedHallForDeactivate.num_of_row}`}" has been reactivated!`,
       );
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
@@ -553,7 +705,7 @@ const HallsManagement: React.FC = () => {
     return isActive ? "Active" : "Inactive";
   };
 
-  // Include Actions as a column
+  // Columns for the table
   const columns = [
     {
       Header: "Hall",
@@ -566,10 +718,10 @@ const HallsManagement: React.FC = () => {
           </div>
           <div>
             <p className="font-medium text-gray-900">
-              {row.name || `Hall ${row.hall_number}`}
+              {row.name || `${row.num_of_col}x${row.num_of_row || "?"} Hall`}
             </p>
             <p className="text-xs text-gray-500">
-              #{row.hall_number} • {row.seating_layout} Layout
+              {row.num_of_col} cols × {row.num_of_row || "?"} rows
             </p>
           </div>
         </div>
@@ -589,14 +741,28 @@ const HallsManagement: React.FC = () => {
       ),
     },
     {
-      Header: "Price Multiplier",
-      accessor: "price_multiplier",
+      Header: "Available",
+      accessor: "seat_stats",
       sortable: true,
       Cell: (row: Hall) => (
         <div className="flex items-center gap-2">
-          <span className="font-medium text-amber-600">
-            {row.price_multiplier || 1.0}x
+          <Grid className="h-4 w-4 text-green-500" />
+          <span className="font-semibold text-green-600">
+            {row.seat_stats?.available?.toLocaleString() || 0}
           </span>
+          <span className="text-xs text-gray-400">
+            / {row.capacity?.toLocaleString() || 0}
+          </span>
+        </div>
+      ),
+    },
+    {
+      Header: "Dimension",
+      accessor: "num_of_col",
+      sortable: true,
+      Cell: (row: Hall) => (
+        <div className="text-gray-700">
+          {row.num_of_col} × {row.num_of_row || "?"}
         </div>
       ),
     },
@@ -709,15 +875,14 @@ const HallsManagement: React.FC = () => {
                 Halls Management
               </h1>
               <p className="text-sm text-gray-500">
-                Manage theater halls, seating capacity, and pricing
-                configurations
+                Manage theater halls, seating capacity, and configurations
               </p>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <StatCard
             title="Total Halls"
             value={stats.total}
@@ -746,6 +911,13 @@ const HallsManagement: React.FC = () => {
             color="from-purple-500 to-pink-600"
             delay={0.25}
           />
+          <StatCard
+            title="Available Seats"
+            value={stats.availableSeats.toLocaleString()}
+            icon={Grid}
+            color="from-blue-500 to-cyan-600"
+            delay={0.3}
+          />
         </div>
 
         {/* Search, Filter, and Add Hall */}
@@ -755,7 +927,7 @@ const HallsManagement: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by hall name or number..."
+                placeholder="Search by hall name or dimensions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white"
@@ -824,7 +996,7 @@ const HallsManagement: React.FC = () => {
           onCancel={() => closeAllModals()}
         />
 
-        {/* Deactivate with Reason Modal */}
+        {/* Deactivate Modal */}
         {showReasonModal && selectedHallForDeactivate && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -840,22 +1012,10 @@ const HallsManagement: React.FC = () => {
                 Are you sure you want to deactivate{" "}
                 <strong>
                   {selectedHallForDeactivate.name ||
-                    `Hall ${selectedHallForDeactivate.hall_number}`}
+                    `${selectedHallForDeactivate.num_of_col}x${selectedHallForDeactivate.num_of_row}`}
                 </strong>
                 ?
               </p>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Reason for deactivation *
-                </label>
-                <textarea
-                  rows={3}
-                  value={deactivateReason}
-                  onChange={(e) => setDeactivateReason(e.target.value)}
-                  placeholder="Please provide a reason for deactivating this hall..."
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
               <div className="flex gap-3">
                 <button
                   onClick={() => closeAllModals()}
@@ -865,8 +1025,7 @@ const HallsManagement: React.FC = () => {
                 </button>
                 <button
                   onClick={handleDeactivateHall}
-                  disabled={!deactivateReason.trim()}
-                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition"
+                  className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
                 >
                   Deactivate Hall
                 </button>
@@ -891,7 +1050,7 @@ const HallsManagement: React.FC = () => {
                 Are you sure you want to activate{" "}
                 <strong>
                   {selectedHallForDeactivate.name ||
-                    `Hall ${selectedHallForDeactivate.hall_number}`}
+                    `${selectedHallForDeactivate.num_of_col}x${selectedHallForDeactivate.num_of_row}`}
                 </strong>
                 ?
               </p>

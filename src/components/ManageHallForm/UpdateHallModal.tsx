@@ -7,14 +7,12 @@ import {
   AlertCircle,
   Building,
   Layout,
-  Hash,
   Tag,
-  DollarSign,
   Info,
   Users,
+  Grid,
 } from "lucide-react";
-import * as Yup from "yup";
-import { Hall, SEATING_LAYOUT_OPTIONS } from "./types";
+import { Hall } from "./types";
 
 interface UpdateHallModalProps {
   hall: Hall;
@@ -22,50 +20,18 @@ interface UpdateHallModalProps {
   onCancel: () => void;
 }
 
-// Yup Validation Schema based on database schema
-const hallValidationSchema = Yup.object({
-  hall_number: Yup.number()
-    .required("Hall number is required")
-    .min(1, "Hall number must be at least 1")
-    .max(999, "Hall number cannot exceed 999"),
-  name: Yup.string().max(100, "Hall name cannot exceed 100 characters"),
-  capacity: Yup.number()
-    .required("Capacity is required")
-    .min(1, "Capacity must be at least 1")
-    .max(5000, "Capacity cannot exceed 5000"),
-  rows: Yup.string().max(50, "Rows description too long"),
-  seating_layout: Yup.string()
-    .required("Seating layout is required")
-    .oneOf(
-      ["Standard", "Compact", "Premium", "VIP", "Balcony"],
-      "Invalid seating layout",
-    ),
-  price_multiplier: Yup.number()
-    .required("Price multiplier is required")
-    .min(0.5, "Price multiplier must be at least 0.5")
-    .max(5, "Price multiplier cannot exceed 5"),
-  has_dynamic_seating: Yup.boolean(),
-  description: Yup.string().max(
-    500,
-    "Description cannot exceed 500 characters",
-  ),
-});
-
 const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
   hall,
   onSubmit,
   onCancel,
 }) => {
   const [formData, setFormData] = useState({
-    hall_number: 1,
     name: "",
     capacity: 0,
-    rows: "",
-    seating_layout: "Standard",
-    price_multiplier: 1.0,
-    has_dynamic_seating: true,
+    num_of_rows: 0,
+    num_of_cols: 0,
     description: "",
-    seat_configuration: null,
+    is_active: true,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,53 +41,57 @@ const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
   useEffect(() => {
     if (hall) {
       setFormData({
-        hall_number: hall.hall_number || 1,
         name: hall.name || "",
         capacity: hall.capacity || 0,
-        rows: hall.rows || "",
-        seating_layout: hall.seating_layout || "Standard",
-        price_multiplier: hall.price_multiplier || 1.0,
-        has_dynamic_seating: hall.has_dynamic_seating ?? true,
+        num_of_rows: hall.num_of_row || 0,
+        num_of_cols: hall.num_of_col || 0,
         description: hall.description || "",
-        seat_configuration: hall.seat_configuration || null,
+        is_active: hall.is_active ?? true,
       });
     }
   }, [hall]);
 
-  const handleBlur = async (field: string, value: any) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-    try {
-      await hallValidationSchema.validateAt(field, { [field]: value });
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    } catch (err: any) {
-      setErrors((prev) => ({ ...prev, [field]: err.message }));
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name || formData.name.trim() === "") {
+      newErrors.name = "Hall name is required";
     }
+    if (formData.num_of_rows < 1) {
+      newErrors.num_of_rows = "Number of rows must be at least 1";
+    }
+    if (formData.num_of_cols < 1) {
+      newErrors.num_of_cols = "Number of columns must be at least 1";
+    }
+    if (formData.capacity < 1) {
+      newErrors.capacity = "Capacity must be at least 1";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const validateForm = async () => {
-    try {
-      await hallValidationSchema.validate(formData, { abortEarly: false });
-      setErrors({});
-      return true;
-    } catch (err: any) {
-      const newErrors: Record<string, string> = {};
-      err.inner.forEach((error: any) => {
-        newErrors[error.path] = error.message;
-      });
-      setErrors(newErrors);
-      return false;
-    }
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    validateForm();
   };
 
   const handleSubmit = async () => {
-    const isValid = await validateForm();
+    const isValid = validateForm();
     if (isValid) {
       onSubmit({
-        ...formData,
         id: hall.id,
+        name: formData.name,
+        capacity: formData.capacity,
+        num_of_rows: formData.num_of_rows,
+        num_of_cols: formData.num_of_cols,
+        description: formData.description,
+        is_active: formData.is_active,
       });
     }
   };
+
+  const totalCapacity = formData.num_of_rows * formData.num_of_cols;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
@@ -161,232 +131,141 @@ const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hall Number <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.hall_number}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      hall_number: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  onBlur={() => handleBlur("hall_number", formData.hall_number)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.hall_number && touched.hall_number
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="e.g., 1, 2, 3"
-                />
-              </div>
-              {errors.hall_number && touched.hall_number && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.hall_number}
-                </p>
-              )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hall Name <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                onBlur={() => handleBlur("name")}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                  errors.name && touched.name
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-200 hover:border-teal-300"
+                }`}
+                placeholder="e.g., Grand Hall"
+              />
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hall Name
-              </label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={formData.name || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  onBlur={() => handleBlur("name", formData.name)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.name && touched.name
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="e.g., Grand Hall, Premier Hall"
-                />
-              </div>
-              {errors.name && touched.name && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.name}
-                </p>
-              )}
-            </div>
+            {errors.name && touched.name && (
+              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> {errors.name}
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Capacity <span className="text-red-500">*</span>
+                Number of Rows <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Grid className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="number"
-                  value={formData.capacity}
+                  value={formData.num_of_rows}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      capacity: parseInt(e.target.value) || 0,
+                      num_of_rows: Math.max(1, parseInt(e.target.value) || 0),
                     })
                   }
-                  onBlur={() => handleBlur("capacity", formData.capacity)}
+                  onBlur={() => handleBlur("num_of_rows")}
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.capacity && touched.capacity
+                    errors.num_of_rows && touched.num_of_rows
                       ? "border-red-500 bg-red-50"
                       : "border-gray-200 hover:border-teal-300"
                   }`}
-                  placeholder="Total number of seats"
-                />
-              </div>
-              {errors.capacity && touched.capacity && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.capacity}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seating Layout <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Layout className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={formData.seating_layout}
-                  onChange={(e) =>
-                    setFormData({ ...formData, seating_layout: e.target.value })
-                  }
-                  onBlur={() =>
-                    handleBlur("seating_layout", formData.seating_layout)
-                  }
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.seating_layout && touched.seating_layout
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                >
-                  {SEATING_LAYOUT_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.seating_layout && touched.seating_layout && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.seating_layout}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price Multiplier <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.price_multiplier}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      price_multiplier: parseFloat(e.target.value),
-                    })
-                  }
-                  onBlur={() =>
-                    handleBlur("price_multiplier", formData.price_multiplier)
-                  }
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.price_multiplier && touched.price_multiplier
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="1.0"
+                  placeholder="e.g., 10"
+                  min="1"
+                  step="1"
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1">
-                Base price × multiplier = final ticket price
+                Rows will be labeled A, B, C, ... (unlimited)
               </p>
-              {errors.price_multiplier && touched.price_multiplier && (
+              {errors.num_of_rows && touched.num_of_rows && (
                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.price_multiplier}
+                  <AlertCircle className="h-3 w-3" /> {errors.num_of_rows}
                 </p>
               )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rows Configuration
+                Number of Columns <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <Info className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Grid className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
-                  type="text"
-                  value={formData.rows || ""}
+                  type="number"
+                  value={formData.num_of_cols}
                   onChange={(e) =>
-                    setFormData({ ...formData, rows: e.target.value })
+                    setFormData({
+                      ...formData,
+                      num_of_cols: Math.max(1, parseInt(e.target.value) || 0),
+                    })
                   }
-                  onBlur={() => handleBlur("rows", formData.rows)}
+                  onBlur={() => handleBlur("num_of_cols")}
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.rows && touched.rows
+                    errors.num_of_cols && touched.num_of_cols
                       ? "border-red-500 bg-red-50"
                       : "border-gray-200 hover:border-teal-300"
                   }`}
-                  placeholder="e.g., A-Z (20 rows)"
+                  placeholder="e.g., 15"
+                  min="1"
+                  step="1"
                 />
               </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Describe the row arrangement (e.g., A-Z for 26 rows)
-              </p>
-              {errors.rows && touched.rows && (
+              {errors.num_of_cols && touched.num_of_cols && (
                 <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.rows}
+                  <AlertCircle className="h-3 w-3" /> {errors.num_of_cols}
                 </p>
               )}
             </div>
-          </div>
-
-          {/* Dynamic Seating */}
-          <div className="border-b pb-3 mt-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Layout className="h-5 w-5 text-teal-600" />
-              Seating Configuration
-            </h3>
           </div>
 
           <div>
-            <label className="flex items-center gap-3 cursor-pointer">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Total Capacity <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
-                type="checkbox"
-                checked={formData.has_dynamic_seating}
+                type="number"
+                value={formData.capacity}
                 onChange={(e) =>
                   setFormData({
                     ...formData,
-                    has_dynamic_seating: e.target.checked,
+                    capacity: parseInt(e.target.value) || 0,
                   })
                 }
-                className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                onBlur={() => handleBlur("capacity")}
+                className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                  errors.capacity && touched.capacity
+                    ? "border-red-500 bg-red-50"
+                    : "border-gray-200 hover:border-teal-300"
+                }`}
+                placeholder="Total number of seats"
+                min="1"
+                step="1"
               />
-              <span className="text-sm text-gray-700">
-                Enable Dynamic Seating
-              </span>
-            </label>
-            <p className="text-xs text-gray-400 mt-1 ml-7">
-              Dynamic pricing adjusts ticket prices based on demand
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {formData.num_of_rows > 0 && formData.num_of_cols > 0
+                ? `Calculated: ${formData.num_of_rows} rows × ${formData.num_of_cols} columns = ${totalCapacity.toLocaleString()} seats`
+                : "Enter rows and columns to calculate capacity"}
             </p>
+            {errors.capacity && touched.capacity && (
+              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" /> {errors.capacity}
+              </p>
+            )}
           </div>
 
           {/* Description */}
@@ -399,7 +278,7 @@ const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              onBlur={() => handleBlur("description", formData.description)}
+              onBlur={() => handleBlur("description")}
               rows={3}
               className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
                 errors.description && touched.description
@@ -415,23 +294,32 @@ const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
             )}
           </div>
 
-          {/* Info Box */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-700">
-                <p className="font-medium mb-1">What is Price Multiplier?</p>
-                <p>
-                  The price multiplier affects ticket pricing for this hall. For
-                  example:
-                </p>
-                <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  <li>Base price for standard seat: 50 ETB</li>
-                  <li>With multiplier 1.5 → Price becomes 75 ETB</li>
-                  <li>With multiplier 0.8 → Price becomes 40 ETB</li>
-                </ul>
-              </div>
-            </div>
+          {/* Status */}
+          <div className="border-b pb-3">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Layout className="h-5 w-5 text-teal-600" />
+              Status
+            </h3>
+          </div>
+
+          <div>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_active}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    is_active: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+              />
+              <span className="text-sm text-gray-700">Active Hall</span>
+            </label>
+            <p className="text-xs text-gray-400 mt-1 ml-7">
+              Inactive halls won't be available for scheduling events
+            </p>
           </div>
 
           {/* Preview Section */}
@@ -442,28 +330,58 @@ const UpdateHallModal: React.FC<UpdateHallModalProps> = ({
               </h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <span className="text-gray-600">Hall:</span>{" "}
-                  {formData.name || `Hall ${formData.hall_number}`}
+                  <span className="text-gray-600">Hall Name:</span>{" "}
+                  <span className="font-medium">{formData.name || "—"}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Layout:</span>{" "}
-                  {formData.seating_layout}
+                  <span className="text-gray-600">Dimensions:</span>{" "}
+                  <span className="font-medium">
+                    {formData.num_of_rows} rows × {formData.num_of_cols} columns
+                  </span>
                 </div>
                 <div>
                   <span className="text-gray-600">Capacity:</span>{" "}
-                  {formData.capacity.toLocaleString()} seats
+                  <span className="font-medium">
+                    {formData.capacity.toLocaleString()} seats
+                  </span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Multiplier:</span>{" "}
-                  {formData.price_multiplier}x
-                </div>
-                <div>
-                  <span className="text-gray-600">Dynamic Seating:</span>{" "}
-                  {formData.has_dynamic_seating ? "Enabled" : "Disabled"}
+                  <span className="text-gray-600">Status:</span>{" "}
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      formData.is_active
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {formData.is_active ? "Active" : "Inactive"}
+                  </span>
                 </div>
               </div>
             </div>
           )}
+
+          {/* Info Box */}
+          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-xs text-blue-700">
+                <p className="font-medium mb-1">Note:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>
+                    Rows are labeled A, B, C, ... (supports unlimited rows)
+                  </li>
+                  <li>
+                    Changing dimensions won't affect existing seat reservations
+                  </li>
+                  <li>
+                    Use the "Manage Seats" option to update individual seat
+                    levels
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4 border-t mt-4">

@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 // Import local images
-import g1 from '/g1.jpg';
+import b1 from '/b1.jpg';
 import g2 from '/g2.jpg';
 import g3 from '/g3.jpg';
 
@@ -28,34 +28,34 @@ const About: React.FC = () => {
         { icon: Users, valueKey: 'about.stats.customersValue', labelKey: 'about.stats.customersLabel', color: 'from-deepBlue to-blue-600' }
     ];
 
-    // Team Members – using translation keys for name, role, responsibility
+    // Team Members - Updated with correct roles and local images
     const teamMembers = [
         {
-            nameKey: 'about.team.members.birehanu.name',
-            roleKey: 'about.team.members.birehanu.role',
-            responsibilityKey: 'about.team.members.birehanu.responsibility',
-            image: g1,
+            name: 'Birehanu Kassa',
+            role: 'Project Manager',
+            responsibility: 'Project planning, coordination, documentation, and review',
+            image: b1,
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1234' }
         },
         {
-            nameKey: 'about.team.members.gebreslassie.name',
-            roleKey: 'about.team.members.gebreslassie.role',
-            responsibilityKey: 'about.team.members.gebreslassie.responsibility',
+            name: 'Gebreslassie Desie',
+            role: 'Backend Developer',
+            responsibility: 'Server-side logic, APIs, system integration',
             image: g2,
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1235' }
         },
         {
-            nameKey: 'about.team.members.gemechis.name',
-            roleKey: 'about.team.members.gemechis.role',
-            responsibilityKey: 'about.team.members.gemechis.responsibility',
+            name: 'Gemechis Debelo',
+            role: 'Frontend Developer',
+            responsibility: 'User interface design and client-side development',
             image: g3,
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1236' }
         },
         {
-            nameKey: 'about.team.members.lelisa.name',
-            roleKey: 'about.team.members.lelisa.role',
-            responsibilityKey: 'about.team.members.lelisa.responsibility',
-            image: g1, // using g1 again; you can replace with g4.jpg if available
+            name: 'Lelisa Abraham',
+            role: 'Database Designer & Tester',
+            responsibility: 'Database design and system testing',
+            image: b1, // Using g1 again for the fourth member, or you can add g4.jpg if available
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1237' }
         }
     ];
@@ -290,21 +290,21 @@ const About: React.FC = () => {
                 </div>
             </div>
 
-            {/* Team Section - Fully translated */}
+            {/* Team Section - Updated with local images */}
             <div className="bg-gray-50 py-20">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
-                        <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('about.team.title')}</h2>
+                        <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Team</h2>
                         <div className="w-20 h-1 bg-gradient-to-r from-deepTeal to-deepBlue mx-auto mb-6"></div>
                         <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-                            {t('about.team.subtitle')}
+                            Meet the talented individuals behind Theatre Hub Ethiopia
                         </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {teamMembers.map((member, index) => (
                             <motion.div
-                                key={member.nameKey}
+                                key={member.name}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
@@ -315,17 +315,17 @@ const About: React.FC = () => {
                                 <div className="relative overflow-hidden">
                                     <img
                                         src={member.image}
-                                        alt={t(member.nameKey)}
+                                        alt={member.name}
                                         className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                 </div>
                                 <div className="p-5">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{t(member.nameKey)}</h3>
-                                    <p className="text-deepTeal text-sm font-medium mb-2">{t(member.roleKey)}</p>
-                                    <p className="text-gray-500 text-xs mb-4">{t(member.responsibilityKey)}</p>
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-1">{member.name}</h3>
+                                    <p className="text-deepTeal text-sm font-medium mb-2">{member.role}</p>
+                                    <p className="text-gray-500 text-xs mb-4">{member.responsibility}</p>
                                     <p className="text-gray-600 text-sm mb-4 leading-relaxed">
-                                        {t('about.team.memberDesc', { role: t(member.roleKey) })}
+                                        Dedicated professional committed to delivering excellence in {member.role.toLowerCase()}.
                                     </p>
 
                                     <div className="flex gap-3">

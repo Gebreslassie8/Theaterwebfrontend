@@ -1,231 +1,542 @@
 // frontend/src/components/ManageHallForm/types.ts
 
-// Seat type configuration (for UI display and form handling)
-export interface SeatType {
-  id: string;
-  name: string;
-  count: number;
-  price?: number; // Optional price override per seat type
-}
+// ============================================
+// DATABASE SCHEMA TYPES
+// ============================================
 
-// Seat configuration for database JSON storage
-export interface SeatLevel {
-  name: string;
-  price: number;
-  capacity?: number;
-}
-
-export interface SeatConfiguration {
-  levels: string[];
-  default_pricing: {
-    standard: number;
-    vip: number;
-    vvip: number;
-    [key: string]: number;
-  };
-  custom_pricing?: Record<string, number>;
-  seat_types?: SeatType[]; // For backward compatibility
-}
-
-// Hall interface matching database schema
+// Hall table (matches public.halls)
 export interface Hall {
-  // Primary identifiers
-  id: string; // UUID from database (changed from number)
-  theater_id: string; // Foreign key to theaters table
-
-  // Basic Info
-  hall_number: number; // Unique hall number within theater (required)
-  name: string | null; // Optional display name (e.g., "Grand Hall")
-  capacity: number; // Total seat capacity (required)
-
-  // Layout Configuration
-  rows: string | null; // Row configuration (e.g., "A-Z" for 26 rows)
-  columns_per_row: any | null; // JSON for columns per row (e.g., {"A": 20, "B": 22})
-  seat_layout: any | null; // JSON for complete seat layout
-
-  // Pricing & Configuration
-  seating_layout: string; // Standard, Compact, Premium, VIP, Balcony
-  price_multiplier: number; // Price multiplier for this hall (default: 1.0)
-  has_dynamic_seating: boolean; // Enable dynamic pricing based on demand
-  seat_configuration: SeatConfiguration | null; // JSON for seat types and pricing
-
-  // Status & Description
-  is_active: boolean; // Active status (true = Active, false = Inactive)
-  description: string | null; // Additional description
-
-  // Audit fields
-  created_at: string; // Timestamp
-  updated_at?: string; // Optional updated timestamp
-  published_by: string | null; // User ID who created the hall
-
-  // Optional: joined from users table
-  publisher_name?: string; // For display purposes
-  publisher_role?: string; // For display purposes
-
-  // Optional: joined from theaters table
-  theater_name?: string; // For display purposes
-}
-
-// For form data when creating/updating a hall
-export interface HallFormData {
-  hall_number: number;
-  name?: string;
-  capacity: number;
-  rows?: string;
-  seating_layout: string;
-  price_multiplier: number;
-  has_dynamic_seating: boolean;
-  description?: string;
-  seat_configuration?: SeatConfiguration;
-  published_by?: string; // User ID who is creating the hall
-}
-
-// For API response when fetching halls with theater info
-export interface HallWithTheater extends Hall {
-  theater_legal_business_name: string;
-  theater_city: string;
-  theater_address: string;
-}
-
-// For list/table display (simplified version)
-export interface HallListItem {
   id: string;
-  hall_number: number;
+  theater_id: string;
+  num_of_col: number;
   name: string | null;
   capacity: number;
-  seating_layout: string;
-  price_multiplier: number;
-  is_active: boolean;
-  theater_id: string;
   created_at: string;
+  num_of_row: number | null;
+  description: string | null;
+  is_active: boolean;
+  updated_by: boolean | null;
+  created_by: string | null;
+  updated_at: string | null;
+  // Joined fields (not in database)
+  theater_name?: string;
+  seat_levels?: SeatLevel[];
+  seat_stats?: SeatStats;
+}
+
+// Seat levels table (matches public.seat_levels)
+export interface SeatLevel {
+  id: string;
+  hall_id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  color: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Seats table (matches public.seats)
+export interface Seat {
+  id: string;
+  hall_id: string;
+  seat_level_id: string | null;
+  seat_row: string;
+  seat_number: number;
+  seat_label: string;
+  is_reserved: boolean;
+  is_active: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields
+  seat_level?: SeatLevel;
+}
+
+// Seat statistics (calculated, not stored)
+export interface SeatStats {
+  total: number;
+  available: number;
+  reserved: number;
+  byLevel: Record<string, number>;
+}
+
+// ============================================
+// EVENT & SHOW SCHEDULE TYPES
+// ============================================
+
+// Hall reference for events
+export interface EventHall {
+  id: string;
+  theater_id: string;
+  num_of_col: number;
+  name: string | null;
+  capacity: number;
+  num_of_row: number | null;
+  description: string | null;
+  is_active: boolean;
+}
+
+// Show schedule (links events to halls)
+export interface ShowSchedule {
+  id: string;
+  event_id: string;
+  hall_id: string;
+  show_date: string;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  hall?: EventHall;
+}
+
+// Event data from database
+export interface EventData {
+  id: string;
+  theater_id: string;
+  title: string;
+  description: string | null;
+  genre: string | null;
+  category: string | null;
+  duration_minutes: number | null;
+  director: string | null;
+  cast: string[] | null;
+  poster_url: string | null;
+  status: "coming-soon" | "now-showing" | "ended";
+  is_featured: boolean;
+  rating: number | null;
+  review_count: number;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
   published_by: string | null;
 }
 
-// Helper types for UI components
-export type HallStatus = "Active" | "Inactive" | "Maintenance";
+// Event with schedules
+export interface EventWithSchedules extends EventData {
+  schedules?: ShowSchedule[];
+}
 
-// Constants
-export const SEATING_LAYOUT_OPTIONS = [
-  { value: "Standard", label: "Standard" },
-  { value: "Compact", label: "Compact" },
-  { value: "Premium", label: "Premium" },
-  { value: "VIP", label: "VIP" },
-  { value: "Balcony", label: "Balcony" },
-];
+// ============================================
+// FORM AND UI TYPES
+// ============================================
 
-export const DEFAULT_SEAT_CONFIGURATION: SeatConfiguration = {
-  levels: ["standard", "vip", "vvip"],
-  default_pricing: {
-    standard: 50,
-    vip: 120,
-    vvip: 250,
-  },
+// For creating a new hall (Step 1)
+export interface CreateHallBasicInfo {
+  name: string;
+  num_of_rows: number;
+  num_of_cols: number;
+  description?: string;
+}
+
+// For creating seat levels (Step 2)
+export interface CreateSeatLevelInput {
+  id?: string;
+  name: string;
+  display_name: string;
+  price: number;
+  color: string;
+  // For UI range selection
+  start_row?: string;
+  end_row?: string;
+  start_col?: number;
+  end_col?: number;
+}
+
+// Complete hall creation data
+export interface CreateHallData {
+  hallInfo: CreateHallBasicInfo;
+  seatLevels: CreateSeatLevelInput[];
+}
+
+// For updating a hall
+export interface UpdateHallData {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+}
+
+// For updating a seat
+export interface UpdateSeatData {
+  id: string;
+  seat_level_id: string | null;
+  is_reserved: boolean;
+  notes?: string;
+}
+
+// For updating seat level
+export interface UpdateSeatLevelData {
+  id: string;
+  display_name: string;
+  price: number;
+  color: string;
+  is_active: boolean;
+}
+
+// ============================================
+// UI DISPLAY TYPES
+// ============================================
+
+export type HallStatus = "Active" | "Inactive";
+
+export interface HallListItem {
+  id: string;
+  name: string | null;
+  capacity: number;
+  num_of_row: number | null;
+  num_of_col: number;
+  is_active: boolean;
+  created_at: string;
+  created_by: string | null;
+  seat_stats?: SeatStats;
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+
+/**
+ * Convert number to Excel-style column letters (A, B, C, ..., Z, AA, AB, etc.)
+ */
+export const numberToRowLetter = (num: number): string => {
+  let result = "";
+  let n = num;
+  while (n > 0) {
+    n--;
+    result = String.fromCharCode(65 + (n % 26)) + result;
+    n = Math.floor(n / 26);
+  }
+  return result;
 };
 
-// Helper functions
+/**
+ * Generate row letters for given number of rows
+ */
+export const generateRowLetters = (numOfRows: number): string[] => {
+  const letters: string[] = [];
+  for (let i = 1; i <= numOfRows; i++) {
+    letters.push(numberToRowLetter(i));
+  }
+  return letters;
+};
+
+/**
+ * Generate column numbers for given number of columns
+ */
+export const generateColumnNumbers = (numOfCols: number): number[] => {
+  return Array.from({ length: numOfCols }, (_, i) => i + 1);
+};
+
+/**
+ * Calculate total capacity from rows and columns
+ */
+export const calculateTotalCapacity = (
+  numOfRows: number,
+  numOfCols: number,
+): number => {
+  return numOfRows * numOfCols;
+};
+
+/**
+ * Get status display from isActive boolean
+ */
 export const getStatusFromIsActive = (isActive: boolean): HallStatus => {
   return isActive ? "Active" : "Inactive";
 };
 
-export const getIsActiveFromStatus = (status: HallStatus): boolean => {
-  return status === "Active";
-};
-
-export const calculateTotalCapacity = (seatTypes: SeatType[]): number => {
-  return seatTypes.reduce((sum, st) => sum + (st.count || 0), 0);
-};
-
+/**
+ * Generate unique ID for UI components
+ */
 export const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 };
 
-// Convert database hall to UI-friendly format (if needed for older components)
-export const convertHallToOldFormat = (hall: Hall): any => {
-  // Extract seat types from seat_configuration if available
-  let seatTypes: SeatType[] = [];
-
-  if (hall.seat_configuration?.seat_types) {
-    seatTypes = hall.seat_configuration.seat_types;
-  } else if (hall.seat_configuration?.levels) {
-    // Convert levels to seat types
-    const pricing = hall.seat_configuration.default_pricing;
-    seatTypes = hall.seat_configuration.levels.map((level, index) => ({
-      id: generateId(),
-      name: level.charAt(0).toUpperCase() + level.slice(1),
-      count: Math.floor(hall.capacity / hall.seat_configuration!.levels.length),
-      price: pricing[level] || 50,
-    }));
-  }
-
-  return {
-    id: hall.id,
-    name: hall.name || `Hall ${hall.hall_number}`,
-    seatTypes: seatTypes,
-    features: hall.description ? [hall.description] : [],
-    status: getStatusFromIsActive(hall.is_active),
-    seatingLayout: hall.seating_layout,
-    rows: parseInt(hall.rows?.split("-")[1] || "0") || 10,
-    columns: 20, // Default, since columns_per_row is complex
-    published_by: hall.published_by,
-  };
+/**
+ * Format price for display
+ */
+export const formatPrice = (price: number): string => {
+  return `ETB ${price.toLocaleString()}`;
 };
 
-// Convert old format to database format
-export const convertOldFormatToHall = (
-  oldHall: any,
-  theaterId: string,
-  userId: string,
-): Partial<Hall> => {
-  const totalCapacity = calculateTotalCapacity(oldHall.seatTypes);
-
-  // Create seat configuration from seat types
-  const seatConfiguration: SeatConfiguration = {
-    levels: oldHall.seatTypes.map((st: SeatType) => st.name.toLowerCase()),
-    default_pricing: {
-      standard: 50,
-      vip: 120,
-      vvip: 250,
-    },
-    seat_types: oldHall.seatTypes,
-  };
-
-  // Override pricing if available
-  oldHall.seatTypes.forEach((st: SeatType) => {
-    if (st.price) {
-      seatConfiguration.default_pricing[st.name.toLowerCase()] = st.price;
-    }
-  });
-
-  return {
-    theater_id: theaterId,
-    hall_number: oldHall.hallNumber || 1,
-    name: oldHall.name,
-    capacity: totalCapacity,
-    rows: `${String.fromCharCode(64 + (oldHall.rows || 10))}-${String.fromCharCode(64 + (oldHall.rows || 10))}`,
-    seating_layout: oldHall.seatingLayout || "Standard",
-    price_multiplier: oldHall.priceMultiplier || 1.0,
-    has_dynamic_seating: true,
-    description: oldHall.features?.join(", "),
-    is_active: oldHall.status === "Active",
-    seat_configuration: seatConfiguration,
-    published_by: userId,
-  };
+/**
+ * Get seat status color for UI
+ */
+export const getSeatStatusColor = (isReserved: boolean): string => {
+  return isReserved ? "bg-red-500" : "bg-green-500 hover:bg-green-600";
 };
 
-// Get user display name from user object
+/**
+ * Get seat status label
+ */
+export const getSeatStatusLabel = (isReserved: boolean): string => {
+  return isReserved ? "Reserved" : "Available";
+};
+
+/**
+ * Get user display name from user object
+ */
 export const getUserDisplayName = (user: any): string => {
   return user?.full_name || user?.name || user?.email || "Unknown User";
 };
 
-// Get role display name
+/**
+ * Get role display name from role string
+ */
 export const getRoleDisplayName = (role: string): string => {
   const roleMap: Record<string, string> = {
     super_admin: "Super Admin",
     theater_owner: "Theater Owner",
     theater_manager: "Theater Manager",
     sales_person: "Sales Person",
+    sales: "Sales Person",
     qr_scanner: "QR Scanner",
     customer: "Customer",
   };
-  return roleMap[role] || role;
+  return (
+    roleMap[role] ||
+    role.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
+  );
 };
+
+/**
+ * Calculate seat statistics for a hall
+ */
+export const calculateSeatStats = (
+  seats: Seat[],
+  seatLevels: SeatLevel[],
+): SeatStats => {
+  const stats: SeatStats = {
+    total: seats.length,
+    available: 0,
+    reserved: 0,
+    byLevel: {},
+  };
+
+  // Initialize byLevel counts
+  seatLevels.forEach((level) => {
+    stats.byLevel[level.id] = 0;
+  });
+
+  seats.forEach((seat) => {
+    if (seat.is_reserved) {
+      stats.reserved++;
+    } else {
+      stats.available++;
+    }
+    if (seat.seat_level_id && stats.byLevel[seat.seat_level_id] !== undefined) {
+      stats.byLevel[seat.seat_level_id]++;
+    }
+  });
+
+  return stats;
+};
+
+/**
+ * Default seat level colors
+ */
+export const DEFAULT_SEAT_LEVEL_COLORS = [
+  { name: "Standard", color: "#6B7280" },
+  { name: "VIP", color: "#EF4444" },
+  { name: "Premium", color: "#F59E0B" },
+  { name: "Gold", color: "#FBBF24" },
+  { name: "Platinum", color: "#3B82F6" },
+  { name: "Royal", color: "#8B5CF6" },
+  { name: "Diamond", color: "#EC4899" },
+];
+
+/**
+ * Default seat levels for new hall
+ */
+export const getDefaultSeatLevels = (): CreateSeatLevelInput[] => {
+  return [
+    {
+      name: "standard",
+      display_name: "Standard",
+      price: 50,
+      color: "#6B7280",
+    },
+    {
+      name: "vip",
+      display_name: "VIP",
+      price: 120,
+      color: "#EF4444",
+    },
+  ];
+};
+
+/**
+ * Generate seat layout for a new hall
+ */
+export interface GeneratedSeat {
+  hall_id: string;
+  seat_level_id: string | null;
+  seat_row: string;
+  seat_number: number;
+  is_reserved: boolean;
+  is_active: boolean;
+  notes: string | null;
+}
+
+export const generateSeatLayout = (
+  hallId: string,
+  numOfRows: number,
+  numOfCols: number,
+  defaultLevelId: string,
+): GeneratedSeat[] => {
+  const rows = generateRowLetters(numOfRows);
+  const seats: GeneratedSeat[] = [];
+
+  for (const row of rows) {
+    for (let col = 1; col <= numOfCols; col++) {
+      seats.push({
+        hall_id: hallId,
+        seat_level_id: defaultLevelId,
+        seat_row: row,
+        seat_number: col,
+        is_reserved: false,
+        is_active: true,
+        notes: null,
+      });
+    }
+  }
+
+  return seats;
+};
+
+/**
+ * Seat level range for validation
+ */
+export interface SeatLevelRange {
+  display_name: string;
+  start_row: string;
+  end_row: string;
+  start_col: number;
+  end_col: number;
+  price: number;
+}
+
+/**
+ * Validate seat level ranges for premium levels
+ */
+export const validateSeatLevelRanges = (
+  levels: SeatLevelRange[],
+  totalRows: number,
+  totalCols: number,
+): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  const rowLetters = generateRowLetters(totalRows);
+
+  for (const level of levels) {
+    // Skip if it's standard level (no range needed)
+    if (level.display_name === "Standard") continue;
+
+    // Validate row range
+    const startRowIndex = rowLetters.indexOf(level.start_row);
+    const endRowIndex = rowLetters.indexOf(level.end_row);
+
+    if (startRowIndex === -1) {
+      errors.push(
+        `"${level.display_name}": Invalid start row "${level.start_row}"`,
+      );
+    }
+    if (endRowIndex === -1) {
+      errors.push(
+        `"${level.display_name}": Invalid end row "${level.end_row}"`,
+      );
+    }
+    if (
+      startRowIndex !== -1 &&
+      endRowIndex !== -1 &&
+      startRowIndex > endRowIndex
+    ) {
+      errors.push(`"${level.display_name}": Start row must be before end row`);
+    }
+
+    // Validate column range
+    if (level.start_col < 1 || level.start_col > totalCols) {
+      errors.push(
+        `"${level.display_name}": Start column must be between 1 and ${totalCols}`,
+      );
+    }
+    if (level.end_col < 1 || level.end_col > totalCols) {
+      errors.push(
+        `"${level.display_name}": End column must be between 1 and ${totalCols}`,
+      );
+    }
+    if (level.start_col > level.end_col) {
+      errors.push(
+        `"${level.display_name}": Start column must be before end column`,
+      );
+    }
+
+    // Validate price
+    if (level.price <= 0) {
+      errors.push(`"${level.display_name}": Price must be greater than 0`);
+    }
+  }
+
+  return { isValid: errors.length === 0, errors };
+};
+
+/**
+ * Booking related types
+ */
+export interface BookingSeatDetail {
+  seatId: string;
+  row: string;
+  number: number;
+  section: string;
+  price: number;
+  levelId: string;
+}
+
+export interface BookingCustomerInfo {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface BookingTicket {
+  ticketId: string;
+  bookingId: string;
+  tx_ref: string;
+  ticketNumber: number;
+  totalTickets: number;
+  show: string;
+  seat: string;
+  row: string;
+  number: number;
+  section: string;
+  price: number;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  venue: string;
+  qrData: any;
+}
+
+export interface BookingInfo {
+  bookingId: string;
+  tx_ref: string;
+  show: string;
+  show_id: string;
+  schedule_id: string;
+  hall_id: string;
+  seats: string[];
+  seatDetails: Record<string, BookingSeatDetail>;
+  totalSeats: number;
+  totalAmount: number;
+  totalAmountBirr: string;
+  customerInfo: BookingCustomerInfo;
+  paymentMethod: string;
+  paymentDetails: {
+    transactionReference: string;
+    paymentStatus: string;
+    paymentDate: string;
+  };
+  bookingDate: string;
+  status: string;
+  venue: string;
+  tickets: BookingTicket[];
+}
