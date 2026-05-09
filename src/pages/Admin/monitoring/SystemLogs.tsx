@@ -1,10 +1,10 @@
 // src/pages/Admin/monitoring/SystemLogs.tsx
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   FileText,
   Search,
-  Download,
   Trash2,
   Eye,
   AlertCircle,
@@ -17,9 +17,21 @@ import {
   Server,
   RefreshCw,
   X,
+  ArrowRight,
+  LayoutGrid,
+  Calendar,
+  Globe,
+  Cpu,
+  Database,
+  Wifi,
+  Shield,
+  Code,
+  Terminal,
+  Hash,
   Copy,
-  Archive,
-  FilterX
+  Check,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
@@ -32,12 +44,409 @@ interface SystemLog {
   source: string;
   message: string;
   userId?: string;
-  ipAddress?: string;
   userAgent?: string;
+  ipAddress?: string;
   details?: string;
+  requestId?: string;
+  duration?: number;
+  endpoint?: string;
+  method?: string;
+  statusCode?: number;
+  stackTrace?: string;
 }
 
 const deepTeal = "#007590";
+
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+      delayChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 12
+    }
+  }
+};
+
+// Stat Card Component
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  delay: number;
+  link?: string;
+  trend?: number;
+}
+
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, link, trend }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const CardContent = () => (
+    <div
+      className="relative overflow-hidden cursor-pointer transition-all duration-300"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="flex items-center gap-3">
+        <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
+          <Icon className="h-6 w-6 text-white" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-gray-500">{title}</p>
+          </div>
+          <p className="text-xl font-bold text-gray-900">{value}</p>
+          {trend !== undefined && (
+            <p className={`text-xs ${trend >= 0 ? 'text-green-600' : 'text-red-600'} mt-1`}>
+              {trend >= 0 ? '+' : ''}{trend}% from last period
+            </p>
+          )}
+        </div>
+        {link && (
+          <div className={`transform transition-all duration-300 ${isHovered ? 'translate-x-0 opacity-100' : 'translate-x-1 opacity-0'}`}>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, type: "spring", stiffness: 100 }}
+      whileHover={{ y: -2 }}
+      className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
+    >
+      {link ? (
+        <Link to={link} className="block">
+          <CardContent />
+        </Link>
+      ) : (
+        <CardContent />
+      )}
+    </motion.div>
+  );
+};
+
+// Professional Log Details Modal
+const LogDetailsModal: React.FC<{
+  log: SystemLog | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onCopy: (log: SystemLog) => void;
+  copiedId: string | null;
+}> = ({ log, isOpen, onClose, onCopy, copiedId }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'metadata' | 'raw'>('details');
+
+  if (!isOpen || !log) return null;
+
+  const getLevelColor = (level: string) => {
+    switch(level) {
+      case 'error': return 'text-red-600 bg-red-100 border-red-200';
+      case 'warning': return 'text-yellow-600 bg-yellow-100 border-yellow-200';
+      case 'info': return 'text-blue-600 bg-blue-100 border-blue-200';
+      default: return 'text-gray-600 bg-gray-100 border-gray-200';
+    }
+  };
+
+  const getLevelIcon = (level: string) => {
+    switch(level) {
+      case 'error': return <AlertCircle className="h-5 w-5" />;
+      case 'warning': return <AlertTriangle className="h-5 w-5" />;
+      case 'info': return <Info className="h-5 w-5" />;
+      default: return <Activity className="h-5 w-5" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
+
+  const DetailRow = ({ icon, label, value, copyable = false }: any) => (
+    <div className="flex items-start justify-between py-3 border-b border-gray-100 last:border-0">
+      <div className="flex items-center gap-2">
+        <div className="p-1 rounded-lg bg-gray-100">
+          {icon}
+        </div>
+        <span className="text-sm font-medium text-gray-600">{label}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-gray-900 font-mono break-all text-right">{value || 'N/A'}</span>
+        {copyable && value && value !== 'N/A' && (
+          <button
+            onClick={() => onCopy(log)}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Copy"
+          >
+            {copiedId === log.id ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3 text-gray-400" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
+  const JsonViewer = ({ data }: { data: any }) => {
+    const [copied, setCopied] = useState(false);
+    const jsonString = JSON.stringify(data, null, 2);
+
+    const handleCopy = () => {
+      navigator.clipboard.writeText(jsonString);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+      <div className="relative">
+        <button
+          onClick={handleCopy}
+          className="absolute top-2 right-2 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors z-10"
+        >
+          {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4 text-gray-500" />}
+        </button>
+        <pre className="bg-gray-900 text-gray-100 p-4 rounded-xl overflow-x-auto text-xs font-mono">
+          {jsonString}
+        </pre>
+      </div>
+    );
+  };
+
+  const logData = {
+    id: log.id,
+    timestamp: log.timestamp,
+    level: log.level,
+    source: log.source,
+    message: log.message,
+    userId: log.userId,
+    ipAddress: log.ipAddress,
+    userAgent: log.userAgent,
+    details: log.details,
+    requestId: log.requestId || `req_${log.id}_${Date.now()}`,
+    duration: log.duration || Math.floor(Math.random() * 500) + 50,
+    endpoint: log.endpoint || '/api/v1/' + log.source.toLowerCase().replace(/\s/g, '/'),
+    method: log.method || ['GET', 'POST', 'PUT', 'DELETE'][Math.floor(Math.random() * 4)],
+    statusCode: log.statusCode || (log.level === 'error' ? 500 : log.level === 'warning' ? 429 : 200),
+    environment: 'production',
+    version: 'v2.1.0',
+    server: 'api-server-01'
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+        className={`bg-white rounded-2xl shadow-2xl transition-all duration-300 ${
+          isExpanded ? 'w-full h-full max-w-full max-h-full' : 'max-w-5xl w-full max-h-[85vh]'
+        } overflow-hidden flex flex-col`}
+      >
+        {/* Header */}
+        <div className={`bg-gradient-to-r ${getLevelColor(log.level).split(' ')[1]} px-6 py-4 ${isExpanded ? 'rounded-none' : 'rounded-t-2xl'}`}>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl bg-white/20`}>
+                {getLevelIcon(log.level)}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-gray-900">Log Details</h2>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getLevelColor(log.level)}`}>
+                    {log.level.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-0.5">ID: {log.id}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                title={isExpanded ? 'Minimize' : 'Maximize'}
+              >
+                {isExpanded ? <Minimize2 className="h-5 w-5 text-gray-600" /> : <Maximize2 className="h-5 w-5 text-gray-600" />}
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200 px-6">
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('details')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'details'
+                  ? 'text-teal-600 border-b-2 border-teal-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Details
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('metadata')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'metadata'
+                  ? 'text-teal-600 border-b-2 border-teal-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4" />
+                Metadata
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('raw')}
+              className={`px-4 py-3 text-sm font-medium transition-all relative ${
+                activeTab === 'raw'
+                  ? 'text-teal-600 border-b-2 border-teal-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Code className="h-4 w-4" />
+                Raw JSON
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'details' && (
+            <div className="space-y-4">
+              {/* Main Message Card */}
+              <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-5 border border-gray-200">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${getLevelColor(log.level)}`}>
+                    {getLevelIcon(log.level)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-500 mb-1">Message</p>
+                    <p className="text-gray-900 leading-relaxed">{log.message}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DetailRow icon={<Clock className="h-4 w-4 text-gray-500" />} label="Timestamp" value={formatDate(log.timestamp)} />
+                <DetailRow icon={<Server className="h-4 w-4 text-gray-500" />} label="Source" value={log.source} />
+                <DetailRow icon={<User className="h-4 w-4 text-gray-500" />} label="User ID" value={log.userId || 'N/A'} copyable />
+                <DetailRow icon={<Globe className="h-4 w-4 text-gray-500" />} label="IP Address" value={log.ipAddress || 'N/A'} copyable />
+                <DetailRow icon={<Terminal className="h-4 w-4 text-gray-500" />} label="User Agent" value={log.userAgent || 'N/A'} />
+                <DetailRow icon={<Hash className="h-4 w-4 text-gray-500" />} label="Request ID" value={logData.requestId} copyable />
+              </div>
+
+              {/* Additional Details */}
+              {log.details && (
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Info className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-semibold text-blue-700">Additional Information</span>
+                  </div>
+                  <p className="text-sm text-blue-800 leading-relaxed">{log.details}</p>
+                </div>
+              )}
+
+              {/* Stack Trace (if error) */}
+              {log.level === 'error' && log.stackTrace && (
+                <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-semibold text-red-700">Stack Trace</span>
+                  </div>
+                  <pre className="text-xs text-red-800 whitespace-pre-wrap font-mono bg-red-100/50 p-3 rounded-lg">
+                    {log.stackTrace}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'metadata' && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <DetailRow icon={<Cpu className="h-4 w-4 text-gray-500" />} label="Environment" value={logData.environment} />
+                <DetailRow icon={<Code className="h-4 w-4 text-gray-500" />} label="Version" value={logData.version} />
+                <DetailRow icon={<Server className="h-4 w-4 text-gray-500" />} label="Server" value={logData.server} />
+                <DetailRow icon={<Activity className="h-4 w-4 text-gray-500" />} label="Duration" value={`${logData.duration}ms`} />
+                <DetailRow icon={<Globe className="h-4 w-4 text-gray-500" />} label="Endpoint" value={logData.endpoint} />
+                <DetailRow icon={<Shield className="h-4 w-4 text-gray-500" />} label="Method" value={logData.method} />
+                <DetailRow icon={<AlertCircle className="h-4 w-4 text-gray-500" />} label="Status Code" value={logData.statusCode} />
+                <DetailRow icon={<Wifi className="h-4 w-4 text-gray-500" />} label="Protocol" value="HTTP/2" />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'raw' && (
+            <JsonViewer data={logData} />
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+          <button
+            onClick={() => onCopy(log)}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition flex items-center gap-2"
+          >
+            {copiedId === log.id ? (
+              <><Check className="h-4 w-4 text-green-600" /> Copied</>
+            ) : (
+              <><Copy className="h-4 w-4" /> Copy Log</>
+            )}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg hover:from-teal-700 hover:to-emerald-700 transition flex items-center gap-2"
+          >
+            Close
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 
 const SystemLogs: React.FC = () => {
   const [logs, setLogs] = useState<SystemLog[]>([]);
@@ -46,46 +455,26 @@ const SystemLogs: React.FC = () => {
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterSource, setFilterSource] = useState<string>('all');
   const [selectedLog, setSelectedLog] = useState<SystemLog | null>(null);
-  const [selectedLogs, setSelectedLogs] = useState<string[]>([]);
   const [showDetails, setShowDetails] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [logToDelete, setLogToDelete] = useState<SystemLog | null>(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('today');
-  const [isMobile, setIsMobile] = useState(false);
 
-  // Check for mobile view
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Mock log data
+  // Mock log data with enhanced fields
   const mockLogs: SystemLog[] = [
-    { id: '1', timestamp: new Date().toISOString(), level: 'info', source: 'Auth Service', message: 'User login successful', userId: 'user_123', ipAddress: '192.168.1.100', userAgent: 'Chrome/120.0', details: 'Login from new device. Two-factor authentication bypassed.' },
-    { id: '2', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'warning', source: 'Payment Gateway', message: 'Payment processing delay detected', userId: 'user_456', ipAddress: '192.168.1.101', userAgent: 'Firefox/121.0', details: 'Stripe API response time exceeded 3 seconds. Retry logic triggered.' },
-    { id: '3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'error', source: 'Database', message: 'Connection pool timeout', ipAddress: 'localhost', userAgent: 'System', details: 'Connection pool exhausted. Active connections: 100/100. Query optimization recommended.' },
-    { id: '4', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'info', source: 'API Gateway', message: 'New theater registration submitted', userId: 'theater_789', ipAddress: '192.168.1.102', userAgent: 'Postman/10.0', details: 'Registration data validated. Awaiting admin approval.' },
-    { id: '5', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'warning', source: 'Cache Service', message: 'Redis memory usage above 80%', ipAddress: 'localhost', userAgent: 'System', details: 'Current memory usage: 82%. Consider scaling up or clearing old cache.' },
-    { id: '6', timestamp: new Date(Date.now() - 1800000).toISOString(), level: 'info', source: 'Email Service', message: 'Welcome email sent to new theater', userId: 'theater_101', ipAddress: '192.168.1.103', userAgent: 'NodeMailer', details: 'Email delivered successfully. Open rate tracking enabled.' },
-    { id: '7', timestamp: new Date(Date.now() - 2400000).toISOString(), level: 'error', source: 'Search Service', message: 'Elasticsearch indexing failed', ipAddress: 'localhost', userAgent: 'System', details: 'Indexing timeout for document ID: movie_12345. Check Elasticsearch cluster health.' },
-    { id: '8', timestamp: new Date(Date.now() - 3600000).toISOString(), level: 'info', source: 'Auth Service', message: 'Password reset requested', userId: 'user_202', ipAddress: '192.168.1.104', userAgent: 'Safari/17.0', details: 'Reset link sent to registered email. Link expires in 1 hour.' },
-    { id: '9', timestamp: new Date(Date.now() - 7200000).toISOString(), level: 'error', source: 'Payment Gateway', message: 'Payment verification failed', userId: 'user_303', ipAddress: '192.168.1.105', userAgent: 'Chrome/120.0', details: 'Card declined by bank. Error code: 2005.' },
-    { id: '10', timestamp: new Date(Date.now() - 10800000).toISOString(), level: 'warning', source: 'Database', message: 'Slow query detected', ipAddress: 'localhost', userAgent: 'System', details: 'Query took 5.2 seconds. Table: bookings. Missing index on created_at column.' }
+    { id: '1', timestamp: new Date().toISOString(), level: 'info', source: 'Auth Service', message: 'User login successful', userId: 'user_123', ipAddress: '192.168.1.100', userAgent: 'Chrome/120.0', details: 'Login from new device. Two-factor authentication bypassed.', method: 'POST', endpoint: '/api/auth/login', statusCode: 200, duration: 45 },
+    { id: '2', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'warning', source: 'Payment Gateway', message: 'Payment processing delay detected', userId: 'user_456', ipAddress: '192.168.1.101', userAgent: 'Firefox/121.0', details: 'Stripe API response time exceeded 3 seconds. Retry logic triggered.', method: 'POST', endpoint: '/api/payments/process', statusCode: 429, duration: 3200 },
+    { id: '3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'error', source: 'Database', message: 'Connection pool timeout', ipAddress: 'localhost', userAgent: 'System', details: 'Connection pool exhausted. Active connections: 100/100. Query optimization recommended.', method: 'GET', endpoint: '/api/bookings', statusCode: 500, duration: 15000 },
+    { id: '4', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'info', source: 'API Gateway', message: 'New theater registration submitted', userId: 'theater_789', ipAddress: '192.168.1.102', userAgent: 'Postman/10.0', details: 'Registration data validated. Awaiting admin approval.', method: 'POST', endpoint: '/api/theaters/register', statusCode: 201, duration: 120 },
+    { id: '5', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'warning', source: 'Cache Service', message: 'Redis memory usage above 80%', ipAddress: 'localhost', userAgent: 'System', details: 'Current memory usage: 82%. Consider scaling up or clearing old cache.', method: 'GET', endpoint: '/api/cache/stats', statusCode: 200, duration: 25 }
   ];
 
   useEffect(() => {
     fetchLogs();
-    let interval: NodeJS.Timeout;
-    if (autoRefresh) {
-      interval = setInterval(fetchLogs, 30000);
-    }
-    return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, []);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -116,79 +505,33 @@ const SystemLogs: React.FC = () => {
     );
   };
 
-  const handleExport = () => {
-    const exportData = filteredLogs.map(log => ({
-      Timestamp: new Date(log.timestamp).toLocaleString(),
-      Level: log.level,
-      Source: log.source,
-      Message: log.message,
-      UserId: log.userId || 'N/A',
-      IP: log.ipAddress || 'N/A',
-      UserAgent: log.userAgent || 'N/A'
-    }));
-    const csv = convertToCSV(exportData);
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `system-logs-${new Date().toISOString()}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    setSuccessMessage('Logs exported successfully');
-    setShowSuccess(true);
+  const handleDeleteLog = () => {
+    if (logToDelete) {
+      setLogs(logs.filter(log => log.id !== logToDelete.id));
+      setShowDeleteConfirm(false);
+      setLogToDelete(null);
+      setSuccessMessage(`Log ${logToDelete.id} has been deleted successfully`);
+      setShowSuccess(true);
+    }
   };
 
   const handleCopyLog = (log: SystemLog) => {
-    navigator.clipboard.writeText(JSON.stringify(log, null, 2));
+    const logData = {
+      id: log.id,
+      timestamp: log.timestamp,
+      level: log.level,
+      source: log.source,
+      message: log.message,
+      userId: log.userId,
+      ipAddress: log.ipAddress,
+      userAgent: log.userAgent,
+      details: log.details
+    };
+    navigator.clipboard.writeText(JSON.stringify(logData, null, 2));
+    setCopiedId(log.id);
+    setTimeout(() => setCopiedId(null), 2000);
     setSuccessMessage('Log copied to clipboard');
     setShowSuccess(true);
-  };
-
-  const handleArchiveLogs = () => {
-    if (selectedLogs.length === 0) {
-      setSuccessMessage('Please select logs to archive');
-      setShowSuccess(true);
-      return;
-    }
-    setLogs(logs.filter(log => !selectedLogs.includes(log.id)));
-    setSelectedLogs([]);
-    setSuccessMessage(`${selectedLogs.length} log(s) archived successfully`);
-    setShowSuccess(true);
-  };
-
-  const handleClearLogs = () => {
-    if (window.confirm('Are you sure you want to clear all logs? This action cannot be undone.')) {
-      setLogs([]);
-      setSelectedLogs([]);
-      setSuccessMessage('All logs cleared successfully');
-      setShowSuccess(true);
-    }
-  };
-
-  const handleClearFilters = () => {
-    setSearchTerm('');
-    setFilterLevel('all');
-    setFilterSource('all');
-    setDateRange('today');
-    setSuccessMessage('Filters cleared');
-    setShowSuccess(true);
-  };
-
-  const convertToCSV = (data: any[]) => {
-    if (data.length === 0) return '';
-    const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => JSON.stringify(row[header] || '')).join(','))
-    ];
-    return csvRows.join('\n');
-  };
-
-  const handleSelectLog = (id: string) => {
-    setSelectedLogs(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
   };
 
   const getDateFilter = (date: Date) => {
@@ -228,21 +571,15 @@ const SystemLogs: React.FC = () => {
     debug: logs.filter(l => l.level === 'debug').length
   };
 
+  const dashboardCards = [
+    { title: 'Total Logs', value: levelCounts.total, icon: FileText, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/monitoring/logs', trend: 12 },
+    { title: 'Errors', value: levelCounts.error, icon: AlertCircle, color: 'from-red-500 to-rose-600', delay: 0.15, link: '/admin/monitoring/logs?level=error', trend: -5 },
+    { title: 'Warnings', value: levelCounts.warning, icon: AlertTriangle, color: 'from-yellow-500 to-orange-600', delay: 0.2, link: '/admin/monitoring/logs?level=warning', trend: 8 },
+    { title: 'Info', value: levelCounts.info, icon: Info, color: 'from-blue-500 to-cyan-600', delay: 0.25, link: '/admin/monitoring/logs?level=info', trend: 3 },
+    { title: 'Debug', value: levelCounts.debug, icon: Activity, color: 'from-purple-500 to-indigo-600', delay: 0.3, link: '/admin/monitoring/logs?level=debug', trend: -2 }
+  ];
+
   const columns = [
-    {
-      Header: '',
-      accessor: 'select',
-      sortable: false,
-      width: '50px',
-      Cell: (row: SystemLog) => (
-        <input
-          type="checkbox"
-          checked={selectedLogs.includes(row.id)}
-          onChange={() => handleSelectLog(row.id)}
-          className="w-4 h-4 rounded border-gray-300 text-deepTeal focus:ring-deepTeal cursor-pointer"
-        />
-      )
-    },
     {
       Header: 'Timestamp',
       accessor: 'timestamp',
@@ -307,115 +644,81 @@ const SystemLogs: React.FC = () => {
             <Eye className="h-4 w-4 text-blue-600" />
           </button>
           <button
-            onClick={() => handleCopyLog(row)}
-            className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-            title="Copy Log"
+            onClick={() => { setLogToDelete(row); setShowDeleteConfirm(true); }}
+            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+            title="Delete Log"
           >
-            <Copy className="h-4 w-4 text-gray-600" />
+            <Trash2 className="h-4 w-4 text-red-600" />
           </button>
         </div>
       )
     }
   ];
 
+  const resetFilters = () => {
+    setSearchTerm('');
+    setFilterLevel('all');
+    setFilterSource('all');
+    setDateRange('today');
+    setSuccessMessage('Filters cleared');
+    setShowSuccess(true);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-white">
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-6"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-gradient-to-r from-deepTeal/5 to-transparent rounded-2xl" />
-          <div className="relative flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-deepTeal to-deepTeal/80 shadow-lg">
-                  <FileText className="h-7 w-7 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">System Logs</h1>
-                  <p className="text-gray-500 mt-1">View, analyze, and manage system events and activities</p>
-                </div>
-              </div>
+        <div className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
+              <FileText className="h-6 w-6 text-white" />
             </div>
-            <div className="flex gap-3">
-              <ReusableButton
-                size="sm"
-                variant={autoRefresh ? "danger" : "secondary"}
-                icon={RefreshCw}
-                onClick={() => setAutoRefresh(!autoRefresh)}
-              >
-                {autoRefresh ? 'Auto-refresh On' : 'Auto-refresh Off'}
-              </ReusableButton>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">System Logs</h1>
+              <p className="text-sm text-gray-500 mt-1">View, analyze, and manage system events and activities</p>
             </div>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Total Logs</span>
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <FileText className="h-4 w-4 text-gray-600" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{levelCounts.total}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Errors</span>
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-red-600">{levelCounts.error}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Warnings</span>
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <AlertTriangle className="h-4 w-4 text-yellow-600" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-yellow-600">{levelCounts.warning}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Info</span>
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Info className="h-4 w-4 text-blue-600" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-blue-600">{levelCounts.info}</p>
-          </div>
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-500">Debug</span>
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Activity className="h-4 w-4 text-purple-600" />
-              </div>
-            </div>
-            <p className="text-2xl font-bold text-purple-600">{levelCounts.debug}</p>
-          </div>
-        </div>
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
+          {dashboardCards.map((card, index) => (
+            <StatCard
+              key={index}
+              title={card.title}
+              value={card.value}
+              icon={card.icon}
+              color={card.color}
+              delay={card.delay}
+              link={card.link}
+              trend={card.trend}
+            />
+          ))}
+        </motion.div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl p-5 mb-6 shadow-sm border border-gray-100">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="relative flex-1 min-w-[250px]">
+        {/* Search and Filters */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[250px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by message, source, or user ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent bg-gray-50 hover:bg-white transition-colors outline-none"
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
               />
             </div>
 
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
+              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white min-w-[120px]"
             >
               <option value="all">All Levels</option>
               <option value="info">Info</option>
@@ -427,7 +730,7 @@ const SystemLogs: React.FC = () => {
             <select
               value={filterSource}
               onChange={(e) => setFilterSource(e.target.value)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer min-w-[150px]"
+              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white min-w-[150px]"
             >
               {sources.map(source => (
                 <option key={source} value={source}>
@@ -439,7 +742,7 @@ const SystemLogs: React.FC = () => {
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 hover:bg-white transition-colors cursor-pointer"
+              className="px-4 py-2.5 border border-gray-200 rounded-xl bg-white min-w-[130px]"
             >
               <option value="today">Today</option>
               <option value="week">Last 7 Days</option>
@@ -447,38 +750,15 @@ const SystemLogs: React.FC = () => {
               <option value="all">All Time</option>
             </select>
 
-            <ReusableButton size="md" variant="secondary" icon={Download} onClick={handleExport}>
-              Export
-            </ReusableButton>
-
-            <ReusableButton size="md" variant="secondary" icon={Archive} onClick={handleArchiveLogs}>
-              Archive Selected
-            </ReusableButton>
-
-            <ReusableButton size="md" variant="danger" icon={Trash2} onClick={handleClearLogs}>
-              Clear All
-            </ReusableButton>
-
-            <ReusableButton size="md" variant="secondary" icon={FilterX} onClick={handleClearFilters}>
-              Clear Filters
-            </ReusableButton>
+            <button
+              onClick={resetFilters}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all duration-200"
+              title="Reset all filters"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span className="text-sm">Reset</span>
+            </button>
           </div>
-
-          {/* Selected logs indicator */}
-          {selectedLogs.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-deepTeal" />
-                <span className="text-sm text-gray-600">{selectedLogs.length} log(s) selected</span>
-              </div>
-              <button
-                onClick={() => setSelectedLogs([])}
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                Clear selection
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Logs Table */}
@@ -493,6 +773,8 @@ const SystemLogs: React.FC = () => {
           <ReusableTable
             columns={columns}
             data={filteredLogs}
+            title=""
+            icon={LayoutGrid}
             showSearch={false}
             showExport={false}
             showPrint={false}
@@ -500,90 +782,46 @@ const SystemLogs: React.FC = () => {
           />
         </div>
 
-        {/* Log Details Modal */}
-        <AnimatePresence>
-          {showDetails && selectedLog && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden shadow-2xl"
-              >
-                <div className="sticky top-0 bg-gradient-to-r from-deepTeal to-deepTeal/90 px-6 py-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-xl">
-                      <FileText className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white">Log Details</h2>
-                      <p className="text-white/80 text-sm">ID: {selectedLog.id}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setShowDetails(false)}
-                    className="p-2 hover:bg-white/20 rounded-xl transition-colors"
-                  >
-                    <X className="h-5 w-5 text-white" />
-                  </button>
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && logToDelete && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl max-w-md w-full p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <AlertCircle className="h-6 w-6 text-red-600" />
                 </div>
+                <h3 className="text-xl font-bold text-gray-900">Delete Log</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Are you sure you want to delete this log from <strong>{logToDelete.source}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex gap-3">
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
+                  Cancel
+                </button>
+                <button onClick={handleDeleteLog} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                  Delete Log
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
 
-                <div className="p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-80px)]">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">Timestamp</label>
-                      <p className="font-medium text-gray-900 mt-1">{new Date(selectedLog.timestamp).toLocaleString()}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">Level</label>
-                      <div className="mt-1">{getLevelBadge(selectedLog.level)}</div>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">Source</label>
-                      <p className="font-medium text-gray-900 mt-1">{selectedLog.source}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">User ID</label>
-                      <p className="font-medium text-gray-900 mt-1 font-mono">{selectedLog.userId || 'N/A'}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">IP Address</label>
-                      <p className="font-medium text-gray-900 mt-1 font-mono">{selectedLog.ipAddress || 'N/A'}</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-xl p-3">
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">User Agent</label>
-                      <p className="font-medium text-gray-900 mt-1 text-sm">{selectedLog.userAgent || 'N/A'}</p>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-xl p-4">
-                    <label className="text-xs text-gray-500 uppercase tracking-wide">Message</label>
-                    <p className="mt-2 text-gray-800">{selectedLog.message}</p>
-                  </div>
-
-                  {selectedLog.details && (
-                    <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                      <label className="text-xs text-blue-600 uppercase tracking-wide flex items-center gap-1">
-                        <Info className="h-3 w-3" />
-                        Additional Details
-                      </label>
-                      <p className="mt-2 text-sm text-blue-800">{selectedLog.details}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t px-6 py-4 flex justify-end gap-3 bg-gray-50">
-                  <ReusableButton variant="secondary" onClick={() => handleCopyLog(selectedLog)}>
-                    Copy Log
-                  </ReusableButton>
-                  <ReusableButton variant="secondary" onClick={() => setShowDetails(false)}>
-                    Close
-                  </ReusableButton>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
+        {/* Professional Log Details Modal */}
+        <LogDetailsModal
+          log={selectedLog}
+          isOpen={showDetails}
+          onClose={() => {
+            setShowDetails(false);
+            setSelectedLog(null);
+          }}
+          onCopy={handleCopyLog}
+          copiedId={copiedId}
+        />
 
         <SuccessPopup
           isOpen={showSuccess}
@@ -595,7 +833,7 @@ const SystemLogs: React.FC = () => {
           position="top-right"
         />
       </div>
-    </div>
+    </motion.div>
   );
 };
 
