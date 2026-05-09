@@ -15,7 +15,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 // Import local images
-import g1 from '/g1.jpg';
+import b1 from '/b1.jpg';
 import g2 from '/g2.jpg';
 import g3 from '/g3.jpg';
 
@@ -34,7 +34,7 @@ const About: React.FC = () => {
             name: 'Birehanu Kassa',
             role: 'Project Manager',
             responsibility: 'Project planning, coordination, documentation, and review',
-            image: g1,
+            image: b1,
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1234' }
         },
         {
@@ -55,7 +55,7 @@ const About: React.FC = () => {
             name: 'Lelisa Abraham',
             role: 'Database Designer & Tester',
             responsibility: 'Database design and system testing',
-            image: g1, // Using g1 again for the fourth member, or you can add g4.jpg if available
+            image: b1, // Using g1 again for the fourth member, or you can add g4.jpg if available
             social: { linkedin: '#', telegram: '#', phone: '+251-11-558-1237' }
         }
     ];
