@@ -51,21 +51,54 @@
     "theaterOwnerDesc": "Tiyaatira keessan tarreessi & bulchi"
   },
   "footer": {
-    "brand": { "name": "Itoophiyaa TheaterHUB", "tagline": "Bilisa itti gaafatamaa hojiilee" },
+    "brand": {
+      "name": "Itoophiyaa TheaterHUB",
+      "tagline": "Bilisa itti gaafatamaa hojiilee"
+    },
     "contact": {
-      "locationLabel": "BAAKKI", "locationValue": "Bole Medhanealem, Finfinnee, Itoophiyaa",
-      "phoneLabel": "BILBILA", "phoneValue": "+251-11-558-1234",
+      "locationLabel": "BAAKKI",
+      "locationValue": "Bole Medhanealem, Finfinnee, Itoophiyaa",
+      "phoneLabel": "BILBILA",
+      "phoneValue": "+251-11-558-1234",
       "supportHours": "Gargaarsa: 24/7",
-      "emailLabel": "E-MAIL", "emailValue": "info@theaterhubethiopia.com",
+      "emailLabel": "E-MAIL",
+      "emailValue": "info@theaterhubethiopia.com",
       "responseTime": "Deebi sa'aatii 24 keessatti"
     },
-    "quickLinks": { "title": "Geessituu Dafaa", "about": "Waa'ee Keenya", "blog": "Bilogii", "gallery": "Kuusaa Fakkii" },
-    "support": { "title": "Gargaarsa", "helpCenter": "Gidduu Gargaarsaa", "contactUs": "Nu Quunnami" },
-    "legal": { "title": "Seera", "terms": "Seerota Tajaajilaa", "privacy": "Icimii Bulchiinsa", "cookies": "Kuukii Seera" },
-    "newsletter": { "title": "Oduu Ergamaa", "description": "Fayyaadamiif kennaa addaa, tiikiti ariifachiisaa argachuuf tola", "placeholder": "Teessoo imeeli keessani", "subscribe": "Ergamaa", "subscribing": "Ergamaa..." },
-    "social": { "title": "Nu Waliin Quunnami" },
+    "quickLinks": {
+      "title": "Geessituu Dafaa",
+      "about": "Waa'ee Keenya",
+      "blog": "Bilogii",
+      "gallery": "Kuusaa Fakkii"
+    },
+    "support": {
+      "title": "Gargaarsa",
+      "helpCenter": "Gidduu Gargaarsaa",
+      "contactUs": "Nu Quunnami"
+    },
+    "legal": {
+      "title": "Seera",
+      "terms": "Seerota Tajaajilaa",
+      "privacy": "Icimii Bulchiinsa",
+      "cookies": "Kuukii Seera"
+    },
+    "newsletter": {
+      "title": "Oduu Ergamaa",
+      "description": "Fayyaadamiif kennaa addaa, tiikiti ariifachiisaa argachuuf tola",
+      "placeholder": "Teessoo imeeli keessani",
+      "subscribe": "Ergamaa",
+      "subscribing": "Ergamaa..."
+    },
+    "social": {
+      "title": "Nu Waliin Quunnami"
+    },
     "copyright": "Itoophiyaa TheaterHUB Siistimi",
-    "bottomLinks": { "terms": "Seera", "privacy": "Icimii", "cookies": "Kuukii", "accessibility": "Akkisibilliitii" },
+    "bottomLinks": {
+      "terms": "Seera",
+      "privacy": "Icimii",
+      "cookies": "Kuukii",
+      "accessibility": "Akkisibilliitii"
+    },
     "popup": {
       "successTitle": "🎉 Baga Maatii TheaterHUB seentani!",
       "successMessage": "Baga akkaatif! Fayyaadamiif kennaa addaa, tiikiti ariifachiisaa, fi marfaawwan dinqisiisaan erguufan qophoofte.",
@@ -81,176 +114,518 @@
     }
   },
   "about": {
-    "hero": { "badge": "Waa'ee Keenya", "title": "Itoophiyaa’s Platform Tiyaatiraa Dhaabbatichaa", "subtitle": "Buufata bu’uuraa ariifachiisa, ittigaafannaa amansiisaa, fi muuxannoo tiyaatiraa hin irraanfanne guutuu Itoophiyaatti", "contactButton": "Nu Quunnami" },
-    "stats": { "theatersValue": "50+", "theatersLabel": "Tiyaatiraa Hiriyaa", "customersValue": "100K+", "customersLabel": "Nama Itti Gammadan" },
-    "missionVision": { "title": "Ergafi Mul’ata Keenya", "subtitle": "Guyyaa fulmaanaaf tiyaatiraa akka bal’inaatti namaaf mijeessuuf" },
-    "mission": "Erga Kee", "missionText": "Rifeensa salphaa, amansiisaa fi hojiirra oola ta’e kan tiyaatiraa sanaa taasisuuf karaa online guutuu Itiyoophiyaa hawaasaaf mijeessu.",
-    "vision": "Mul’ata", "visionText": "Itoophiyaa’s platform tiyaatiraa ergaafi ittigaafannaa keessatti leenjisuuf, akka hawaasiin salphaattu beeluuf, buufachuuf, fi itti gammaduuf.",
+    "hero": {
+      "badge": "Waa'ee Keenya",
+      "title": "Itoophiyaa’s Modern Theater Booking Platform",
+      "subtitle": "Buufata bu’uuraa ariifachiisa, ittigaafannaa amansiisaa, fi muuxannoo tiyaatiraa hin irraanfanne guutuu Itoophiyaatti",
+      "contactButton": "Nu Quunnami"
+    },
+    "stats": {
+      "theatersValue": "50+",
+      "theatersLabel": "Tiyaatiraa Hiriyaa",
+      "customersValue": "100K+",
+      "customersLabel": "Nama Itti Gammadan"
+    },
+    "missionVision": {
+      "title": "Ergafi Mul’ata Keenya",
+      "subtitle": "Guyyaa fulmaanaaf tiyaatiraa akka bal’inaatti namaaf mijeessuuf"
+    },
+    "mission": "Erga Kee",
+    "missionText": "Rifeensa salphaa, amansiisaa fi hojiirra oola ta’e kan tiyaatiraa sanaa taasisuuf karaa online guutuu Itiyoophiyaa hawaasaaf mijeessu.",
+    "vision": "Mul’ata",
+    "visionText": "Itoophiyaa’s platform tiyaatiraa ergaafi ittigaafannaa keessatti leenjisuuf, akka hawaasiin salphaattu beeluuf, buufachuuf, fi itti gammaduuf.",
     "values": {
-      "title": "Akaakuwaa Jijjiiramoo", "subtitle": "Isaan karaa nuti ittiin hojjenna geggefessu",
-      "trust": { "title": "Amantii fi Sirna", "description": "Detaa keessanifi kaffaltiin gara jabessa enterprise-qabameen eegama." },
-      "innovation": { "title": "Shakileemaa", "description": "Guyyaa guutuu fooyyessuu akka muuxannoon keessan gaggaarii ta’uuf." },
-      "customerFirst": { "title": "Dura Maqaa", "description": "Gammachuun keessan duraantuma. Garaa 24/7 nuu ni argama." }
+      "title": "Akaakuwaa Jijjiiramoo",
+      "subtitle": "Isaan karaa nuti ittiin hojjenna geggefessu",
+      "trust": {
+        "title": "Amantii fi Sirna",
+        "description": "Detaa keessanifi kaffaltiin gara jabessa enterprise‑qabameen eegama."
+      },
+      "innovation": {
+        "title": "Shakileemaa",
+        "description": "Guyyaa guutuu fooyyessuu akka muuxannoon keessan gaggaarii ta’uuf."
+      },
+      "customerFirst": {
+        "title": "Dura Maqaa",
+        "description": "Gammachuun keessan duraantuma. Garaa 24/7 nuu ni argama."
+      }
     },
     "features": {
-      "title": "Maaliif TheaterHUB", "subtitle": "Nu muuxannoo tiyaatiraan Itoophiyaa keessatti gaarii taasisuuf waadaa galeerra",
-      "easyBooking": { "title": "Buufata Safuu", "description": "Tiikitii dhaquu muraasa tuquun" },
-      "multipleVenues": { "title": "Bakkeewwan Hedduu", "description": "Qunnamti tiyaatiraa Itoophiyaa guutuu" },
-      "mobileTickets": { "title": "Tiikitii Bilbilaa", "description": "Tiikitiidijitaalaa bilbilaa keessanirratti" },
-      "bestSelection": { "title": "Filannoo Garaa", "description": "Addunyaa agartootaa fi raawwiiwwan hedduu" },
-      "support247": { "title": "24/7 Gargaarsa", "description": "Tajaajila maamilaa guyyaa fi halkan" },
-      "securePayments": { "title": "Kaffaltii Amansiisaa", "description": "Gadda ife galma galmeeffame" }
+      "title": "Maaliif TheaterHUB",
+      "subtitle": "Nu muuxannoo tiyaatiraan Itoophiyaa keessatti gaarii taasisuuf waadaa galeerra",
+      "easyBooking": {
+        "title": "Buufata Safuu",
+        "description": "Tiikitii dhaquu muraasa tuquun"
+      },
+      "multipleVenues": {
+        "title": "Bakkeewwan Hedduu",
+        "description": "Qunnamti tiyaatiraa Itoophiyaa guutuu"
+      },
+      "mobileTickets": {
+        "title": "Tiikitii Bilbilaa",
+        "description": "Tiikitiidijitaalaa bilbilaa keessanirratti"
+      },
+      "bestSelection": {
+        "title": "Filannoo Garaa",
+        "description": "Addunyaa agartootaa fi raawwiiwwan hedduu"
+      },
+      "support247": {
+        "title": "24/7 Gargaarsa",
+        "description": "Tajaajila maamilaa guyyaa fi halkan"
+      },
+      "securePayments": {
+        "title": "Kaffaltii Amansiisaa",
+        "description": "Gadda ife galma galmeeffame"
+      }
     },
     "team": {
-      "title": "Jiraata Keenya Buna", "subtitle": "Hojirottoo waadaaf galani waan tiyaatiraan Itoophiyaa keessatti gaarisa taasisuuf",
-      "alexRole": "Jireenyaa fi CEO", "alexBio": "Jiraata mul’annoo waggaa 15 bara wireessa",
-      "sarahRole": "Mataa Hojii", "sarahBio": "Mataa hojiin tiyaatiraa salphaa ta’uuf",
-      "michaelRole": "Akeeka Teekinikaa", "michaelBio": "Teekinolojiin platform ariifachiisaa ijaaruu",
-      "emilyRole": "Muuxannoo Maamilaa", "emilyBio": "Wa’ee muuxannoo qophaa'uu dinqisiisaan"
+      "title": "Garee Keenya",
+      "subtitle": "Abbootii ogummaa Theatre Hub Ethiopia duuba jiran waliin wal argaa",
+      "memberDesc": "Ogummaa isaa of kennee fi hojiirratti milkaa’uu {{role}} keessatti dhaabbata.",
+      "members": {
+        "birehanu": {
+          "name": "Birehanu Kassa",
+          "role": "Hojiin Bulchaa",
+          "responsibility": "Karoora hojii, walitti hidhii, galmee fi gulaaluu"
+        },
+        "gebreslassie": {
+          "name": "Gebreslassie Desie",
+          "role": "Hojii Duuba",
+          "responsibility": "Logikii biraa, API, walitti hidhii sirnaa"
+        },
+        "gemechis": {
+          "name": "Gemechis Debelo",
+          "role": "Hojii Fuula Duraa",
+          "responsibility": "Ijaarsa ilaalcha fayyadamaa fi hojiin fuula duraa"
+        },
+        "lelisa": {
+          "name": "Lelisa Abraham",
+          "role": "Ijaarsa Koombiyuutaraa fi Mirkaneessaa",
+          "responsibility": "Ijaarsa koombiyuutaraa fi mirkaneessaa sirnaa"
+        }
+      }
     },
     "cta": {
-      "title": "Akkasuma Tiikitii Keessan Buufachuuf?", "subtitle": "Hedduu jaalattoota tiyaatiraa Itoophiyaa irratti nu amanan waliin",
-      "findTheaters": "Bakkeewwan Buna Keessan Barbaadi", "contactUs": "Nu Quunnami"
+      "title": "Akkasuma Tiikitii Keessan Buufachuuf Qophaa’a?",
+      "subtitle": "Hedduu jaalattoota tiyaatiraa Itoophiyaa irratti nu amanan waliin gadi yaadi.",
+      "findTheaters": "Bakkeewwan Buna Keessan Barbaadi",
+      "contactUs": "Nu Quunnami"
+    }
+  },
+  "gallery": {
+    "hero": {
+      "title": "Kuusaa Fakkii Tiyaatiraa",
+      "subtitle": "Agarsaawwan, bakkeewwan duuba, bakkee fi muuxannoo dhaggeeffattoota kuusaa tiyaatiraa keenyaa keessaa ilaali."
+    },
+    "categories": {
+      "all": "Hundaa",
+      "performances": "Agarsaawwan",
+      "behindScenes": "Duuba Sitiinii",
+      "venues": "Bakkeewwan",
+      "audience": "Dhaggeeffattoota",
+      "costumes": "Uffata"
+    },
+    "noImages": {
+      "title": "Fakkii hin argamne",
+      "message": "Ramaddii biraa filadhu"
+    },
+    "pagination": {
+      "prev": "Fuula duraa",
+      "next": "Fuula ittaanu",
+      "goToPage": "Fuula {{page}} dhaq",
+      "showing": "Fakkiiwwan {{start}} - {{end}} kanneen {{total}} keessaa agarsiifame"
+    },
+    "modal": {
+      "photographer": "Fakkii kaasaa: {{name}}",
+      "publishedBy": "Maxxansaa: {{name}}",
+      "share": "Waliin qoodi",
+      "download": "Buufadhu",
+      "close": "Cuufi",
+      "like": "Jaalladhu",
+      "linkCopied": "Liinkiin kuupidhaa galmeeffame!"
+    },
+    "scrollToTop": "Ol gadi"
+  },
+  "eventCard": {
+    "unknownVenue": "Tiyaatira Hin Beekamne",
+    "seatsAvailable": "teessoo argamu",
+    "bookNow": "Amma Dhaabi",
+    "minutes": "daqiiqaa"
+  },
+  "customerRegistration": {
+    "title": "Akaakuu Uumi",
+    "subtitle": "Theatre Hub Ethiopia waliin makamii imala keessan eegaltaa",
+    "form": {
+      "fullName": "Maqaa Guutuu",
+      "fullNamePlaceholder": "Maqaa guutuu keessan galchi",
+      "email": "Teessoo Imayyela",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Lakkoofsa Bilbilaa",
+      "phonePlaceholder": "+251 911 234 567",
+      "username": "Maqaa Fagaaraa",
+      "usernamePlaceholder": "Maqaa fagaaraa filadhu",
+      "password": "Icciitii",
+      "passwordPlaceholder": "Icciitii uumi",
+      "confirmPassword": "Icciitii Mirkaneessi",
+      "confirmPasswordPlaceholder": "Icciitii keessan mirkaneessaa"
+    },
+    "validation": {
+      "fullNameRequired": "Maqaan guutuu ni barbaachisa",
+      "fullNameMin": "Maqaan xiqqaan 3 arfiitii ta'uu qaba",
+      "fullNameMax": "Maqaan baayyee dheeraa",
+      "emailRequired": "Imayyelli ni barbaachisa",
+      "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
+      "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa",
+      "phoneInvalid": "Maaloo lakkoofsa bilbilaa sirrii galchi",
+      "usernameRequired": "Maqaan fagaaraa ni barbaachisa",
+      "usernameMin": "Maqaan fagaaraa xiqqaan 3 arfiitii ta'uu qaba",
+      "usernameMax": "Maqaan fagaaraa baayyee dheeraa",
+      "usernamePattern": "Maqaan fagaaraa qubee, lakkoofsa fi foota jalqabaa qofa qabaachuu danda'a",
+      "passwordRequired": "Icciitiin ni barbaachisa",
+      "passwordMin": "Icciitiin xiqqaan 8 arfiitii ta'uu qaba",
+      "passwordStrength": "Icciitiin qubee guddaa, qubee xixiqqaa fi lakkoofsa of keessaa qabaachuu qaba",
+      "confirmPasswordRequired": "Maaloo iciitii keessan mirkaneessaa",
+      "passwordsMatch": "Icciitiwwan wal simuu qabu",
+      "agreeToTermsRequired": "Seera tajaajilaa fi icimii bulchiinsa fudhachuu qabdu"
+    },
+    "passwordStrength": {
+      "title": "Ciminni iciitii:",
+      "weak": "Lafaa",
+      "medium": "Giddugalaa",
+      "strong": "Cimaa"
+    },
+    "passwordRequirements": {
+      "length": "Xiqqaan 8 arfiitii",
+      "lowercase": "Qubee xixiqqaa",
+      "uppercase": "Qubee guddaa",
+      "number": "Lakkoofsa"
+    },
+    "terms": {
+      "prefix": "Ani nan fudhadha",
+      "termsLink": "Seera Tajaajilaa",
+      "and": "fi",
+      "privacyLink": "Icimii Bulchiinsa"
+    },
+    "usernameAvailable": "Maqaan fagaaraa ni argama",
+    "createAccount": "Akaakuu Uumi",
+    "creatingAccount": "Akaakuu Uumaa jira...",
+    "alreadyHaveAccount": "Akaakuun qabdaa?",
+    "signInLink": "Ol Seeni",
+    "errors": {
+      "emailExists": "Imayyelli raawwatame. Maaloo imayyela biraa fayyadam ykn ol seeni.",
+      "phoneExists": "Lakkoofsi bilbilaa raawwatame. Maaloo lakkoofsa biraa fayyadami.",
+      "unexpected": "Galmeessi milkaa'een hojjechuu hin dandeenye. Maaloo irra deebi'ii yaali."
+    },
+    "success": {
+      "title": "Galmeessituu Milkaa'e! 🎉",
+      "message": "Theatre Hub Ethiopia baga nagaan dhufte! Fuula galmeessifannaatti geessisa...",
+      "redirectMessage": "Galmeessi milkaa'e! Maaloo ol seeni."
     }
   },
   "bookingModal": {
     "brand": "Theatre Hub Ethiopia",
-    "progress": { "selectSeats": "Teessoo Filadhu", "yourInfo": "Qormaata Keessan", "payment": "Kaffaltii" },
-    "buttons": { "back": "Duuba", "next": "Ittaansaa", "done": "Xumuri" },
-    "seatSections": { "vip": "VIP", "premium": "Duraa", "standard": "Iddoo" },
-    "seatSelection": { "title": "Teessoo Baraaraa Filadhu", "selectedSeats": "Teessoo Filataman:", "seatsCount": "teessoo", "total": "Iddoo:", "stage": "MINJALA", "selectedSeatsList": "Teessoo Filataman ({{count}})" },
-    "seatLegend": { "selected": "Filatame", "reserved": "Tolfame" },
-    "customerInfo": { "title": "Qormaata Keessan", "fullName": "Maqaa Guutuu", "namePlaceholder": "Maqaa guutuu keessan galchi", "email": "Teessoo Imayyela", "emailPlaceholder": "Imayyela keessan galchi", "phone": "Lakkoofsa Bilbilaa Itoophiyaa", "phonePlaceholder": "09XXXXXXXX ykn 07XXXXXXXX" },
-    "validation": { "nameTooShort": "Maqaan xiqqaan akka 2 arfiitii ta'uu qaba", "invalidEmail": "Maaloo teessoo imayyela sirrii galchi", "invalidPhone": "Maaloo lakkoofsa bilbilaa Itoophiyaa sirrii galchi (09XXXXXXXX ykn 07XXXXXXXX)" },
+    "progress": {
+      "selectSeats": "Teessoo Filadhu",
+      "yourInfo": "Qormaata Keessan",
+      "payment": "Kaffaltii"
+    },
+    "buttons": {
+      "back": "Duuba",
+      "next": "Ittaansaa",
+      "done": "Xumuri"
+    },
+    "seatSections": {
+      "vip": "VIP",
+      "premium": "Duraa",
+      "standard": "Iddoo"
+    },
+    "seatSelection": {
+      "title": "Teessoo Baraaraa Filadhu",
+      "selectedSeats": "Teessoo Filataman:",
+      "seatsCount": "teessoo",
+      "total": "Iddoo:",
+      "stage": "MINJALA",
+      "selectedSeatsList": "Teessoo Filataman ({{count}})"
+    },
+    "seatLegend": {
+      "selected": "Filatame",
+      "reserved": "Tolfame"
+    },
+    "customerInfo": {
+      "title": "Qormaata Keessan",
+      "fullName": "Maqaa Guutuu",
+      "namePlaceholder": "Maqaa guutuu keessan galchi",
+      "email": "Teessoo Imayyela",
+      "emailPlaceholder": "Imayyela keessan galchi",
+      "phone": "Lakkoofsa Bilbilaa Itoophiyaa",
+      "phonePlaceholder": "09XXXXXXXX ykn 07XXXXXXXX"
+    },
+    "validation": {
+      "nameTooShort": "Maqaan xiqqaan akka 2 arfiitii ta’uu qaba",
+      "invalidEmail": "Maaloo teessoo imayyela sirrii galchi",
+      "invalidPhone": "Maaloo lakkoofsa bilbilaa Itoophiyaa sirrii galchi (09XXXXXXXX ykn 07XXXXXXXX)"
+    },
     "payment": {
-      "title": "Kaffaltii Xumuri", "totalAmount": "Hamma Kaffaltii:", "tickets": "Tiikiti:", "seats": "Teessoo:",
-      "chapaTitle": "Chapaan Kaffali", "chapaSubtitle": "Karaa Kaffaltii Nageenyaa",
+      "title": "Kaffaltii Xumuri",
+      "totalAmount": "Hamma Kaffaltii:",
+      "tickets": "Tiikiti:",
+      "seats": "Teessoo:",
+      "chapaTitle": "Chapaan Kaffali",
+      "chapaSubtitle": "Karaa Kaffaltii Nageenyaa",
       "chapaFeature1": "Telebirr, CBE Birr fi kaardiiwwan hunda fudhata",
       "chapaFeature2": "Kaffaltii SSL nageenyaan dhokate",
       "chapaFeature3": "Kaffaltii booda tiikiti battaluma ni argattu",
-      "processing": "Kaffaltii Hojii Jira...", "payButton": "{{amount}} Chapaan Kaffali",
+      "processing": "Kaffaltii Hojii Jira...",
+      "payButton": "{{amount}} Chapaan Kaffali",
       "terms": "Kaffaltii kana xumuruun seera fi shartii keenya ni waligalta"
     },
-    "errors": { "noSeats": "Maaloo xiqqaatee teessoo tokkos filadhu", "incompleteInfo": "Maaloo odeeffannoo maamilaa hunda sirriitti guuti", "paymentFailed": "Kaffaltiini eegalamee hin jiru. Maaloo irra deebiʼii yaali." },
+    "errors": {
+      "noSeats": "Maaloo xiqqaatee teessoo tokkos filadhu",
+      "incompleteInfo": "Maaloo odeeffannoo maamilaa hunda sirriitti guuti",
+      "paymentFailed": "Kaffaltiini eegalamee hin jiru. Maaloo irra deebiʼii yaali."
+    },
     "ticketModal": {
-      "title": "Tiikitii Keessan", "ticketCount": "tiikitiidhaaf", "paymentSuccess": "Kaffaltiin Mifateera! ID ittigaafannaa: {{bookingId}} | Iddoo: {{total}}",
-      "ticketOf": "Tiikiti {{current}} keessaa {{total}}", "seat": "Teessoo", "ticketHolder": "Abboommata Tiikiti", "seatType": "Gosa Teessoo", "price": "Gatii",
-      "share": "Waliin qoodi", "shared": "Waliin qoodame!", "copyQR": "QR Gadachoo", "copied": "Gadachoo!", "download": "Buufadhu", "print": "Maxxansi", "printAll": "Hunda Maxxansi ({{count}})", "scanMessage": "QR koda akka lixxinaatti ofbarte", "rowSeal": "Torbaan {{row}}, Teessoo {{number}}", "printTitle": "Tiikiti Theatre Hub"
+      "title": "Tiikitii Keessan",
+      "ticketCount": "tiikitiidhaaf",
+      "paymentSuccess": "Kaffaltiin Mifateera! ID ittigaafannaa: {{bookingId}} | Iddoo: {{total}}",
+      "ticketOf": "Tiikiti {{current}} keessaa {{total}}",
+      "seat": "Teessoo",
+      "ticketHolder": "Abboommata Tiikiti",
+      "seatType": "Gosa Teessoo",
+      "price": "Gatii",
+      "share": "Waliin qoodi",
+      "shared": "Waliin qoodame!",
+      "copyQR": "QR Gadachoo",
+      "copied": "Gadachoo!",
+      "download": "Buufadhu",
+      "print": "Maxxansi",
+      "printAll": "Hunda Maxxansi ({{count}})",
+      "scanMessage": "QR koda akka lixxinaatti ofbarte",
+      "rowSeat": "Torbaan {{row}}, Teessoo {{number}}",
+      "printTitle": "Tiikiti Theatre Hub"
     },
-    "share": { "title": "Theatre Hub Ethiopia - Tiikitiif {{seat}}", "text": "🎭 Tiikiti Theatre Hub Ethiopia\n\nAgarsaa: {{show}}\nTeessoo: {{seat}} (Torbaan {{row}}, Teessoo {{number}})\nAbboommata Tiikiti: {{customerName}}\nID Tiikiti: {{ticketId}}", "copiedFallback": "Odeeffanno waliin qoodamu garagara kupiidhaan galmeessame!" },
-    "ticketHtml": { "title": "Tiikiti Theatre Hub Ethiopia", "filenamePrefix": "TheatreHub_Tiikiti" }
-  },
-  "eventCard": { "unknownVenue": "Tiyaatira Hin Beekamne", "seatsAvailable": "teessoo argamu", "bookNow": "Amma Dhaabi", "minutes": "daqiiqaa" },
-  "customerRegistration": {
-    "title": "Akaakuu Uumi", "subtitle": "Theatre Hub Ethiopia waliin makamii imala keessan eegaltaa",
-    "form": {
-      "fullName": "Maqaa Guutuu", "fullNamePlaceholder": "Maqaa guutuu keessan galchi",
-      "email": "Teessoo Imayyela", "emailPlaceholder": "you@example.com",
-      "phone": "Lakkoofsa Bilbilaa", "phonePlaceholder": "+251 911 234 567",
-      "username": "Maqaa Fagaaraa", "usernamePlaceholder": "Maqaa fagaaraa filadhu",
-      "password": "Icciitii", "passwordPlaceholder": "Icciitii uumi",
-      "confirmPassword": "Icciitii Mirkaneessi", "confirmPasswordPlaceholder": "Icciitii keessan mirkaneessaa"
+    "share": {
+      "title": "Theatre Hub Ethiopia - Tiikitiif {{seat}}",
+      "text": "🎭 Tiikiti Theatre Hub Ethiopia\n\nAgarsaa: {{show}}\nTeessoo: {{seat}} (Torbaan {{row}}, Teessoo {{number}})\nAbboommata Tiikiti: {{customerName}}\nID Tiikiti: {{ticketId}}",
+      "copiedFallback": "Odeeffanno waliin qoodamu garagara kupiidhaan galmeessame!"
     },
-    "validation": {
-      "fullNameRequired": "Maqaan guutuu ni barbaachisa", "fullNameMin": "Maqaan xiqqaan 3 arfiitii ta'uu qaba", "fullNameMax": "Maqaan baayyee dheeraa",
-      "emailRequired": "Imayyelli ni barbaachisa", "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
-      "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa", "phoneInvalid": "Maaloo lakkoofsa bilbilaa sirrii galchi",
-      "usernameRequired": "Maqaan fagaaraa ni barbaachisa", "usernameMin": "Maqaan fagaaraa xiqqaan 3 arfiitii ta'uu qaba", "usernameMax": "Maqaan fagaaraa baayyee dheeraa", "usernamePattern": "Maqaan fagaaraa qubee, lakkoofsa fi foota jalqabaa qofa qabaachuu danda'a",
-      "passwordRequired": "Icciitiin ni barbaachisa", "passwordMin": "Icciitiin xiqqaan 8 arfiitii ta'uu qaba", "passwordStrength": "Icciitiin qubee guddaa, qubee xixiqqaa fi lakkoofsa of keessaa qabaachuu qaba",
-      "confirmPasswordRequired": "Maaloo iciitii keessan mirkaneessaa", "passwordsMatch": "Icciitiwwan wal simuu qabu",
-      "agreeToTermsRequired": "Seera tajaajilaa fi icimii bulchiinsa fudhachuu qabdu"
-    },
-    "passwordStrength": { "title": "Ciminni iciitii:", "weak": "Lafaa", "medium": "Giddugalaa", "strong": "Cimaa" },
-    "passwordRequirements": { "length": "Xiqqaan 8 arfiitii", "lowercase": "Qubee xixiqqaa", "uppercase": "Qubee guddaa", "number": "Lakkoofsa" },
-    "terms": { "prefix": "Ani nan fudhadha", "termsLink": "Seera Tajaajilaa", "and": "fi", "privacyLink": "Icimii Bulchiinsa" },
-    "usernameAvailable": "Maqaan fagaaraa ni argama", "createAccount": "Akaakuu Uumi", "creatingAccount": "Akaakuu Uumaa jira...",
-    "alreadyHaveAccount": "Akaakuun qabdaa?", "signInLink": "Ol Seeni",
-    "errors": { "emailExists": "Imayyelli raawwatame. Maaloo imayyela biraa fayyadam ykn ol seeni.", "phoneExists": "Lakkoofsi bilbilaa raawwatame. Maaloo lakkoofsa biraa fayyadami.", "unexpected": "Galmeessi milkaa'een hojjechuu hin dandeenye. Maaloo irra deebi'ii yaali." },
-    "success": { "title": "Galmeessituu Milkaa'e! 🎉", "message": "Theatre Hub Ethiopia baga nagaan dhufte! Fuula galmeessifannaatti geessisa...", "redirectMessage": "Galmeessi milkaa'e! Maaloo ol seeni." }
+    "ticketHtml": {
+      "title": "Tiikiti Theatre Hub Ethiopia",
+      "filenamePrefix": "TheatreHub_Tiikiti"
+    }
   },
   "contact": {
-    "hero": { "badge": "Nu Quunnami", "title": "Nu Quunnami", "subtitle": "Gaafiin qabduu? Nu isin dhaga'uu jaalanna. Ergamaa nuu ergaa; yeroof isin deebisna." },
+    "hero": {
+      "badge": "Nu Quunnami",
+      "title": "Nu Quunnami",
+      "subtitle": "Gaafiin qabduu? Nu isin dhaga'uu jaalanna. Ergamaa nuu ergaa; yeroof isin deebisna."
+    },
     "info": {
-      "phone": { "title": "Gargaarsa Bilbilaa", "detail1": "+251 911 234 567", "detail2": "+251 912 345 678", "description": "Wiixata - Jimata, 9:00 - 6:00" },
-      "email": { "title": "Imayyela Nuuf Ergi", "detail1": "support@theaterhub.com", "detail2": "info@theaterhub.com", "description": "Deebi sa'aatii 24 keessatti" },
-      "visit": { "title": "Nu Daawwadhu", "detail1": "Daandii Boole, Finfinnee", "detail2": "Itoophiyaa", "description": "Gama Milleneem Hall" },
-      "hours": { "title": "Yeroo Hoji", "detail1": "Wiixata - Jimata: 9AM - 8PM", "detail2": "Sanbata: 10AM - 6PM", "detail3": "Dilbata: cufama", "description": "24/7 Gargaarsa Iddoo" }
+      "phone": {
+        "title": "Gargaarsa Bilbilaa",
+        "detail1": "+251 911 234 567",
+        "detail2": "+251 912 345 678",
+        "description": "Wiixata - Jimata, 9:00 - 6:00"
+      },
+      "email": {
+        "title": "Imayyela Nuuf Ergi",
+        "detail1": "support@theaterhub.com",
+        "detail2": "info@theaterhub.com",
+        "description": "Deebi sa'aatii 24 keessatti"
+      },
+      "visit": {
+        "title": "Nu Daawwadhu",
+        "detail1": "Daandii Boole, Finfinnee",
+        "detail2": "Itoophiyaa",
+        "description": "Gama Milleneem Hall"
+      },
+      "hours": {
+        "title": "Yeroo Hoji",
+        "detail1": "Wiixata - Jimata: 9AM - 8PM",
+        "detail2": "Sanbata: 10AM - 6PM",
+        "detail3": "Dilbata: cufama",
+        "description": "24/7 Gargaarsa Iddoo"
+      }
     },
     "contactLink": "Quunnami",
     "form": {
-      "title": "Ergamaa Nuuf Ergi", "subtitle": "Foormii gadii guuti; yeroof isin deebisna",
-      "sendTo": "Eergamaa", "adminOption": "Bulchaa Sirnaati", "adminDesc": "Gargaarsa teekinikaa, rakkoo platformii, gaafii kaffaltii",
-      "theaterOption": "Abboobbaa Tiyaatiraa", "theaterDesc": "Buufata waajjira, kiraa tiyaatiraa, sagantaa agarsaa",
-      "selectTheater": "Tiyaatiraa Filadhu", "selectTheaterPlaceholder": "Tiyaatiraa filadhu", "loadingTheaters": "Tiyaatiraa fe'aa...",
-      "yourName": "Maqaa Keessan", "namePlaceholder": "John Doe",
-      "email": "Teessoo Imayyela", "emailPlaceholder": "john@example.com",
-      "phoneOptional": "Lakkoofsa Bilbilaa (Filannoo)", "phonePlaceholder": "+251 911 234 567",
-      "category": "Ramaddii", "subject": "Mata-duree", "subjectPlaceholder": "Akkamitti isin gargaaruu dandeenya?",
-      "message": "Ergamaa", "messagePlaceholder": "Gaafiin keessan ykn yaadaan keessan nuu himaa...",
-      "sending": "Ergamaa...", "sendButton": "Ergamaa Ergi"
+      "title": "Ergamaa Nuuf Ergi",
+      "subtitle": "Foormii gadii guuti; yeroof isin deebisna",
+      "sendTo": "Eergamaa",
+      "adminOption": "Bulchaa Sirnaati",
+      "adminDesc": "Gargaarsa teekinikaa, rakkoo platformii, gaafii kaffaltii",
+      "theaterOption": "Abboobbaa Tiyaatiraa",
+      "theaterDesc": "Buufata waajjira, kiraa tiyaatiraa, sagantaa agarsaa",
+      "selectTheater": "Tiyaatiraa Filadhu",
+      "selectTheaterPlaceholder": "Tiyaatiraa filadhu",
+      "loadingTheaters": "Tiyaatiraa fe'aa...",
+      "yourName": "Maqaa Keessan",
+      "namePlaceholder": "John Doe",
+      "email": "Teessoo Imayyela",
+      "emailPlaceholder": "john@example.com",
+      "phoneOptional": "Lakkoofsa Bilbilaa (Filannoo)",
+      "phonePlaceholder": "+251 911 234 567",
+      "category": "Ramaddii",
+      "subject": "Mata-duree",
+      "subjectPlaceholder": "Akkamitti isin gargaaruu dandeenya?",
+      "message": "Ergamaa",
+      "messagePlaceholder": "Gaafiin keessan ykn yaadaan keessan nuu himaa...",
+      "sending": "Ergamaa...",
+      "sendButton": "Ergamaa Ergi"
     },
-    "categories": { "general": "Gaafiin Waliigalaa", "booking": "Gargaarsa Buufama", "payment": "Rakkoo Kaffaltii", "technical": "Gargaarsa Teekinikaa", "feedback": "Yaada", "partnership": "Hiriyaa" },
+    "categories": {
+      "general": "Gaafiin Waliigalaa",
+      "booking": "Gargaarsa Buufama",
+      "payment": "Rakkoo Kaffaltii",
+      "technical": "Gargaarsa Teekinikaa",
+      "feedback": "Yaada",
+      "partnership": "Hiriyaa"
+    },
     "errors": {
-      "nameRequired": "Maqaan ni barbaachisa", "nameMinLength": "Maqaan xiqqaan 2 arfiitii ta'uu qaba",
-      "emailRequired": "Imayyelli ni barbaachisa", "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
-      "subjectRequired": "Mata-dureen ni barbaachisa", "messageRequired": "Ergamni ni barbaachisa",
-      "messageMinLength": "Ergamni xiqqaan 10 arfiitii ta'uu qaba", "theaterRequired": "Maaloo tiyaatiraa filadhu"
+      "nameRequired": "Maqaan ni barbaachisa",
+      "nameMinLength": "Maqaan xiqqaan 2 arfiitii ta'uu qaba",
+      "emailRequired": "Imayyelli ni barbaachisa",
+      "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
+      "subjectRequired": "Mata-dureen ni barbaachisa",
+      "messageRequired": "Ergamni ni barbaachisa",
+      "messageMinLength": "Ergamni xiqqaan 10 arfiitii ta'uu qaba",
+      "theaterRequired": "Maaloo tiyaatiraa filadhu"
     },
     "theaterDetail": {
-      "phoneSupport": "Gargaarsa Bilbilaa", "phoneHours": "Wiixata - Jimata, 9:00 - 6:00",
-      "callNow": "Amma Bilbili", "emailUs": "Imayyela Nuuf Ergi", "emailResponse": "Deebi sa'aatii 24 keessatti",
-      "sendEmail": "Imayyela Ergi", "visitUs": "Nu Daawwadhu", "nearby": "Daandii guddatti",
-      "getDirections": "Daandii Argadhu", "about": "Waa'ee"
+      "phoneSupport": "Gargaarsa Bilbilaa",
+      "phoneHours": "Wiixata - Jimata, 9:00 - 6:00",
+      "callNow": "Amma Bilbili",
+      "emailUs": "Imayyela Nuuf Ergi",
+      "emailResponse": "Deebi sa'aatii 24 keessatti",
+      "sendEmail": "Imayyela Ergi",
+      "visitUs": "Nu Daawwadhu",
+      "nearby": "Daandii guddatti",
+      "getDirections": "Daandii Argadhu",
+      "about": "Waa'ee"
     },
     "findUs": {
-      "title": "Nu Argadhu", "addressLine": "Daandii Boole, Finfinnee, Itiyoophiyaa", "landmark": "Gama Milleneem Hall",
-      "phoneNumbers": "+251 911 234 567 / +251 912 345 678", "emails": "support@theaterhub.com / info@theaterhub.com",
+      "title": "Nu Argadhu",
+      "addressLine": "Daandii Boole, Finfinnee, Itiyoophiyaa",
+      "landmark": "Gama Milleneem Hall",
+      "phoneNumbers": "+251 911 234 567 / +251 912 345 678",
+      "emails": "support@theaterhub.com / info@theaterhub.com",
       "hours": "Wiix-Jim: 9AM - 8PM | Sanbata: 10AM - 6PM"
     },
-    "theaterSocial": { "title": "{{name}} Waliin Quunnami", "followText": "Oduu haaraa, kennaa fi waajjira {{name}} waliin qabaachuuf isaan duubaa bahi" },
-    "globalSocial": { "title": "Nu Waliin Quunnami", "followText": "Oduu haaraa, kennaa fi waajjira nu waliin qabaachuuf duubaa bahi" },
+    "theaterSocial": {
+      "title": "{{name}} Waliin Quunnami",
+      "followText": "Oduu haaraa, kennaa fi waajjira {{name}} waliin qabaachuuf isaan duubaa bahi"
+    },
+    "globalSocial": {
+      "title": "Nu Waliin Quunnami",
+      "followText": "Oduu haaraa, kennaa fi waajjira nu waliin qabaachuuf duubaa bahi"
+    },
     "success": {
-      "title": "Madaallii Keessan Mifateera! 🎉", "message": "Galatoma nu quunnaniif{{#if theaterName}} {{theaterName}} dha{{/if}}. Gareen keenya sa'aatii 24 keessatti isin deebisa.",
+      "title": "Madaallii Keessan Mifateera! 🎉",
+      "message": "Galatoma nu quunnaniif{{#if theaterName}} {{theaterName}} dha{{/if}}. Gareen keenya sa'aatii 24 keessatti isin deebisa.",
       "details": {
-        "name": "Maqaa", "email": "Imayyela", "recipient": "Eergamaa", "category": "Ramaddii", "responseTime": "Yeroo deebii",
-        "notProvided": "Hin galmeessine", "adminRecipient": "Bulchaa Sirnaa", "theaterOwner": "Abboobbaa Tiyaatiraa", "responseTimeValue": "Sa'aatii 24 keessatti"
+        "name": "Maqaa",
+        "email": "Imayyela",
+        "recipient": "Eergamaa",
+        "category": "Ramaddii",
+        "responseTime": "Yeroo deebii",
+        "notProvided": "Hin galmeessine",
+        "adminRecipient": "Bulchaa Sirnaa",
+        "theaterOwner": "Abboobbaa Tiyaatiraa",
+        "responseTimeValue": "Sa'aatii 24 keessatti"
       },
-      "buttons": { "home": "Gara Manaa Deemi", "close": "Cuufi" }
+      "buttons": {
+        "home": "Gara Manaa Deemi",
+        "close": "Cuufi"
+      }
     }
   },
   "help": {
-    "hero": { "badge": "Gidduu Gargaarsaa", "title": "Akkamitti isin gargaaruu dandeenya?", "subtitle": "Deebii argadhu fi gargaarsa gaafiilee keessaniif argadhu" },
-    "search": { "resultCount_one": "Bu’aan {{count}} waan \"{{query}}\" jedhuuf argame", "resultCount_other": "Bu’aan {{count}} waan \"{{query}}\" jedhuuf argaman" },
-    "categories": { "all": "Hundaa", "tickets": "Tiikitiwwan", "payments": "Kaffaltii", "account": "Akaakuu", "wallet": "Bixweellii", "technical": "Teekinikaa" },
-    "noResults": { "title": "Waan hin argamne", "message": "Jechoota garagaraa ykn ramaddiiwwan keessa ilaali" },
+    "hero": {
+      "badge": "Gidduu Gargaarsaa",
+      "title": "Akkamitti isin gargaaruu dandeenya?",
+      "subtitle": "Deebii argadhu fi gargaarsa gaafiilee keessaniif argadhu"
+    },
+    "search": {
+      "resultCount_one": "Bu’aan {{count}} waan \"{{query}}\" jedhuuf argame",
+      "resultCount_other": "Bu’aan {{count}} waan \"{{query}}\" jedhuuf argaman"
+    },
+    "categories": {
+      "all": "Hundaa",
+      "tickets": "Tiikitiwwan",
+      "payments": "Kaffaltii",
+      "account": "Akaakuu",
+      "wallet": "Bixweellii",
+      "technical": "Teekinikaa"
+    },
+    "noResults": {
+      "title": "Waan hin argamne",
+      "message": "Jechoota garagaraa ykn ramaddiiwwan keessa ilaali"
+    },
     "faq": {
       "tickets": {
-        "bookQuestion": "Tiikiti online akkamitti naan dhaabbata?", "bookAnswer": "Tiikitii dhaabuun salphaa dha! Agartoota keenya ilaali, guyyaa fi yeroo filannoo keessan filadhaa, teessoo filadhaa, ergasii gara checkootti ce’aa. Chapa, TeleBirr, CBE Birr, ykn HelloCash fayyadamtanii kaffaluu dandeessu.",
-        "getQuestion": "Tiikiti dhaabee booda akkamitti naan argadha?", "getAnswer": "Kaffaltiin milkaa’e booda, imaayelii keessan irratti e-tiikitiwwan ni argattu. Akkasumas akaakuu keessan keessatti “Tiikitii Koo” jalatti argachuu dandeessu. Koodii QR kanneen lixxina tiyaatiraa irratti agarsiisaa.",
-        "limitQuestion": "Tiikitii meeqa dhaabuudhaan danda’a?", "limitAnswer": "Akka barbaaddan hammayyuu tiikitii dhaabuudhaan danda’u! Dhaabbannaa tokko keessatti daangaan tiikiti hin jiru. Garee gurguddaa fi waajjira addattiif tiikitii dhaabuuf bilisa.",
-        "transferQuestion": "Tiikitii koo nama biraa dabarsuu danda’aa?", "transferAnswer": "Eeyyee, tiikitii daa’immanii akaakuu keessan keessa dabarsuu dandeessu. “Tiikitii Koo” jalaa tiikitii filadhaa, “Dabarsi” jedhu tuqi. Namni itti dabarfame imaayelii waliin mallattoo tiikatii ni argata."
+        "bookQuestion": "Tiikiti online akkamitti naan dhaabbata?",
+        "bookAnswer": "Tiikitii dhaabuun salphaa dha! Agartoota keenya ilaali, guyyaa fi yeroo filannoo keessan filadhaa, teessoo filadhaa, ergasii gara checkootti ce’aa. Chapa, TeleBirr, CBE Birr, ykn HelloCash fayyadamtanii kaffaluu dandeessu.",
+        "getQuestion": "Tiikiti dhaabee booda akkamitti naan argadha?",
+        "getAnswer": "Kaffaltiin milkaa’e booda, imaayelii keessan irratti e-tiikitiwwan ni argattu. Akkasumas akaakuu keessan keessatti “Tiikitii Koo” jalatti argachuu dandeessu. Koodii QR kanneen lixxina tiyaatiraa irratti agarsiisaa.",
+        "limitQuestion": "Tiikitii meeqa dhaabuudhaan danda’a?",
+        "limitAnswer": "Akka barbaaddan hammayyuu tiikitii dhaabuudhaan danda’u! Dhaabbannaa tokko keessatti daangaan tiikiti hin jiru. Garee gurguddaa fi waajjira addattiif tiikitii dhaabuuf bilisa.",
+        "transferQuestion": "Tiikitii koo nama biraa dabarsuu danda’aa?",
+        "transferAnswer": "Eeyyee, tiikitii daa’immanii akaakuu keessan keessa dabarsuu dandeessu. “Tiikitii Koo” jalaa tiikitii filadhaa, “Dabarsi” jedhu tuqi. Namni itti dabarfame imaayelii waliin mallattoo tiikatii ni argata."
       },
-      "payments": { "methodsQuestion": "Karaa kaffaltii maalii fudhattu?", "methodsAnswer": "Karaa kaffaltii hedduu fudhanna: Chapa (Kaardii / Bank Trunsfarii), TeleBirr, CBE Birr, fi HelloCash. Kaffaltiiwwan hundi nageenyaan hojjetama." },
-      "account": { "createQuestion": "Akaakuu akkamitti naan uuma?", "createAnswer": "Fuula duraa irratti “Galmee” tuqi, odeeffannoo keessan guutaa, imaayelii keessan mirkaneessaa, ergasii dhaabuuf qophaa’a! Google’n ykn Facebook’inis galmuu dandeessu." },
-      "wallet": { "walletQuestion": "Bixweellii TheaterHUB maal?", "walletAnswer": "Bixweellii TheaterHUB bixweellii digitaalaa kan tiikiti ariifachiisaa fi salphaa bitachuuf maallaqa kuusuf si hayyama. Karaalee hedduun maallaqa dabaluu dandeessa." },
+      "payments": {
+        "methodsQuestion": "Karaa kaffaltii maalii fudhattu?",
+        "methodsAnswer": "Karaa kaffaltii hedduu fudhanna: Chapa (Kaardii / Bank Trunsfarii), TeleBirr, CBE Birr, fi HelloCash. Kaffaltiiwwan hundi nageenyaan hojjetama."
+      },
+      "account": {
+        "createQuestion": "Akaakuu akkamitti naan uuma?",
+        "createAnswer": "Fuula duraa irratti “Galmee” tuqi, odeeffannoo keessan guutaa, imaayelii keessan mirkaneessaa, ergasii dhaabuuf qophaa’a! Google’n ykn Facebook’inis galmuu dandeessu."
+      },
+      "wallet": {
+        "walletQuestion": "Bixweellii TheaterHUB maal?",
+        "walletAnswer": "Bixweellii TheaterHUB bixweellii digitaalaa kan tiikiti ariifachiisaa fi salphaa bitachuuf maallaqa kuusuf si hayyama. Karaalee hedduun maallaqa dabaluu dandeessa."
+      },
       "technical": {
-        "troubleQuestion": "Rakkoo website’iin qabdaa?", "troubleAnswer": "Kuushii daawwattii keessan balleessaa, daawwattii garaagaraan yaalaa, ykn garee gargaarsa keenya support@theaterhub.com irratti quunnamaa. Nu gargaaruu feena!",
-        "resetPasswordQuestion": "Icimii koo akkamitti nan deebisa?", "resetPasswordAnswer": "Fuula seenaa irratti “Icimii nan irraanfadhe” tuqi, teessoo imaayelii keessan galchaa, ergasii imaayelii keessanitti ergamu ajajaa duukaa bu’aa. Icimii haaraa uumuu dandeessu."
+        "troubleQuestion": "Rakkoo website’iin qabdaa?",
+        "troubleAnswer": "Kuushii daawwattii keessan balleessaa, daawwattii garaagaraan yaalaa, ykn garee gargaarsa keenya support@theaterhub.com irratti quunnamaa. Nu gargaaruu feena!",
+        "resetPasswordQuestion": "Icimii koo akkamitti nan deebisa?",
+        "resetPasswordAnswer": "Fuula seenaa irratti “Icimii nan irraanfadhe” tuqi, teessoo imaayelii keessan galchaa, ergasii imaayelii keessanitti ergamu ajajaa duukaa bu’aa. Icimii haaraa uumuu dandeessu."
       }
     }
   },
   "login": {
-    "title": "Baga nagaan deebitu", "subtitle": "Dhaabbata keessanitti fufuuf ol seeni",
-    "tabs": { "email": "Imayyela", "username": "Maqaa Fagaaraa" },
-    "labels": { "email": "Teessoo Imayyela", "username": "Maqaa Fagaaraa", "password": "Icciitii" },
-    "placeholders": { "email": "you@example.com", "username": "@maqaa", "password": "Icciitii keessan galchi" },
-    "rememberMe": "Na yaadadhu", "forgotPassword": "Icciitii irraanfatte?",
-    "signInButton": "Ol Seeni", "signingIn": "Galmaa'aa...",
-    "footer": { "text": "Ol seenuun, nu walligaltaa", "terms": "Seerota Tajaajilaa", "and": "fi", "privacy": "Icimii Bulchiinsa" },
+    "title": "Baga nagaan deebitu",
+    "subtitle": "Dhaabbata keessanitti fufuuf ol seeni",
+    "tabs": {
+      "email": "Imayyela",
+      "username": "Maqaa Fagaaraa"
+    },
+    "labels": {
+      "email": "Teessoo Imayyela",
+      "username": "Maqaa Fagaaraa",
+      "password": "Icciitii"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "username": "@maqaa",
+      "password": "Icciitii keessan galchi"
+    },
+    "rememberMe": "Na yaadadhu",
+    "forgotPassword": "Icciitii irraanfatte?",
+    "signInButton": "Ol Seeni",
+    "signingIn": "Galmaa'aa...",
+    "footer": {
+      "text": "Ol seenuun, nu walligaltaa",
+      "terms": "Seerota Tajaajilaa",
+      "and": "fi",
+      "privacy": "Icimii Bulchiinsa"
+    },
     "validation": {
-      "emailRequired": "Imayyelli ni barbaachisa", "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
-      "passwordRequired": "Icciitiin ni barbaachisa", "passwordMin": "Icciitiin xiqqaan 6 arfiitii ta'uu qaba",
-      "usernameRequired": "Maqaan fagaaraa ni barbaachisa", "usernameMin": "Maqaan fagaaraa xiqqaan 3 arfiitii ta'uu qaba"
+      "emailRequired": "Imayyelli ni barbaachisa",
+      "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
+      "passwordRequired": "Icciitiin ni barbaachisa",
+      "passwordMin": "Icciitiin xiqqaan 6 arfiitii ta'uu qaba",
+      "usernameRequired": "Maqaan fagaaraa ni barbaachisa",
+      "usernameMin": "Maqaan fagaaraa xiqqaan 3 arfiitii ta'uu qaba"
     },
     "errors": {
       "invalidCredentials": "Imayyela/maqaan fagaaraa ykn iciitiin dogoggorsa",
@@ -258,12 +633,18 @@
       "general": "Galmeessi walii hin galan. Maaloo irra deebi'ii yaali."
     },
     "roles": {
-      "superAdmin": "Akaakuu Guddaa", "superAdminDesc": "Hoji sirnaa guutuu",
-      "theaterOwner": "Abboobbaa Tiyaatiraa", "theaterOwnerDesc": "Tiyaatiraa bulchi",
-      "theaterManager": "Bulchaa Tiyaatiraa", "theaterManagerDesc": "Hoji guyyaa",
-      "salesPerson": "Gurguraa", "salesPersonDesc": "Gurguraa tiikiti",
-      "qrScanner": "Skanii QR", "qrScannerDesc": "Tiikiti mirkaneessi",
-      "customer": "Maamilaa", "customerDesc": "Tiikiti daawwadhu fi bitadhu"
+      "superAdmin": "Akaakuu Guddaa",
+      "superAdminDesc": "Hoji sirnaa guutuu",
+      "theaterOwner": "Abboobbaa Tiyaatiraa",
+      "theaterOwnerDesc": "Tiyaatiraa bulchi",
+      "theaterManager": "Bulchaa Tiyaatiraa",
+      "theaterManagerDesc": "Hoji guyyaa",
+      "salesPerson": "Gurguraa",
+      "salesPersonDesc": "Gurguraa tiikiti",
+      "qrScanner": "Skanii QR",
+      "qrScannerDesc": "Tiikiti mirkaneessi",
+      "customer": "Maamilaa",
+      "customerDesc": "Tiikiti daawwadhu fi bitadhu"
     }
   },
   "forgotPassword": {
@@ -271,104 +652,295 @@
     "subtitleStep1": "Icciitii deebisuu akka eegaltuuf mala filadhu",
     "subtitleStep2": "Koodii mirkaneessaa siif ergaman galchi",
     "subtitleStep3": "Icciitii haaraa cimaa uumi",
-    "stepLabels": { "identity": "Eenyummaa", "verify": "Mirkaneessuu", "reset": "Deebisuu" },
-    "methods": { "email": { "label": "Imayyela", "description": "Imayyela keessatti liinkiin ergama" }, "phone": { "label": "SMS", "description": "Koodiin bilbilaa keessatti ergama" } },
-    "labels": { "email": "Teessoo Imayyela", "phone": "Lakkoofsa Bilbilaa", "newPassword": "Icciitii Haaraa", "confirmPassword": "Icciitii Haaraa Mirkaneessi" },
-    "placeholders": { "email": "you@example.com", "phone": "0912345678", "newPassword": "Icciitii haaraa galchi", "confirmPassword": "Icciitii haaraa mirkaneessi" },
-    "hints": { "email": "Koodii mirkaneessaa teessoo imayyela keessatti ergina", "phone": "Koodii mirkaneessaa lakkoofsa bilbilaa keessatti ergina" },
-    "verifyTitle": "Koodii Mirkaneessaa Galchi", "verifyMessage": "Koodii 6-ciroofaa kan erginee:", "mockCodePrefix": "Koodii Mokeetaa:",
-    "resendButton": "Koodii hin argatin? Irra deebi'i", "codeResent": "Koodiin mirkaneessaa haaraa ergame!",
-    "sending": "Ergaa jira...", "verifying": "Mirkaneessa jira...", "resetting": "Deebissaa jira...",
-    "sendButton": "Liinkii Deebisaa Ergi", "verifyButton": "Koodii Mirkaneessi", "resetButton": "Icciitii Deebisi", "backToLogin": "Gara Galmaatti Deebi'i",
-    "successTitle": "Deebisi Icciitii Mifate!", "successMessage": "Icciitiin keessan milkaa'een fooyyesse. Gara galmaatti geessisa...",
+    "stepLabels": {
+      "identity": "Eenyummaa",
+      "verify": "Mirkaneessuu",
+      "reset": "Deebisuu"
+    },
+    "methods": {
+      "email": {
+        "label": "Imayyela",
+        "description": "Imayyela keessatti liinkiin ergama"
+      },
+      "phone": {
+        "label": "SMS",
+        "description": "Koodiin bilbilaa keessatti ergama"
+      }
+    },
+    "labels": {
+      "email": "Teessoo Imayyela",
+      "phone": "Lakkoofsa Bilbilaa",
+      "newPassword": "Icciitii Haaraa",
+      "confirmPassword": "Icciitii Haaraa Mirkaneessi"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "phone": "0912345678",
+      "newPassword": "Icciitii haaraa galchi",
+      "confirmPassword": "Icciitii haaraa mirkaneessi"
+    },
+    "hints": {
+      "email": "Koodii mirkaneessaa teessoo imayyela keessatti ergina",
+      "phone": "Koodii mirkaneessaa lakkoofsa bilbilaa keessatti ergina"
+    },
+    "verifyTitle": "Koodii Mirkaneessaa Galchi",
+    "verifyMessage": "Koodii 6-ciroofaa kan erginee:",
+    "mockCodePrefix": "Koodii Mokeetaa:",
+    "resendButton": "Koodii hin argatin? Irra deebi'i",
+    "codeResent": "Koodiin mirkaneessaa haaraa ergame!",
+    "sending": "Ergaa jira...",
+    "verifying": "Mirkaneessa jira...",
+    "resetting": "Deebissaa jira...",
+    "sendButton": "Liinkii Deebisaa Ergi",
+    "verifyButton": "Koodii Mirkaneessi",
+    "resetButton": "Icciitii Deebisi",
+    "backToLogin": "Gara Galmaatti Deebi'i",
+    "successTitle": "Deebisi Icciitii Mifate!",
+    "successMessage": "Icciitiin keessan milkaa'een fooyyesse. Gara galmaatti geessisa...",
     "passwordRequirements": {
-      "title": "Icciitiin of keessaa qabaachuu qaba:", "length": "8-32 arfuu", "uppercase": "Qu'ee guddaa (A-Z)", "lowercase": "Qu'ee xixiqqaa (a-z)", "number": "Lakkoofsa (0-9)", "special": "Asteessoo addaa (!@#$%^&*)", "noSpaces": "Hagarri hin qabu", "allMet": "✓ Waanti barbaachisu hundi ni raawwatame!"
+      "title": "Icciitiin of keessaa qabaachuu qaba:",
+      "length": "8-32 arfuu",
+      "uppercase": "Qu'ee guddaa (A-Z)",
+      "lowercase": "Qu'ee xixiqqaa (a-z)",
+      "number": "Lakkoofsa (0-9)",
+      "special": "Asteessoo addaa (!@#$%^&*)",
+      "noSpaces": "Hagarri hin qabu",
+      "allMet": "✓ Waanti barbaachisu hundi ni raawwatame!"
     },
     "passwordMatchSuccess": "Iciitiwwan wal siman",
     "validation": {
-      "emailRequired": "Imayyelli ni barbaachisa", "emailInvalid": "Maaloo teessoo imayyela sirrii galchi", "emailFormat": "Imayyelli akkaataa name@domain.com ta'uu qaba", "emailNotFound": "Imayyelli sirna keessatti hin argamne",
-      "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa", "phoneFormat": "Lakkoofsi bilbilaa 10-15 ciroofaa ta'uu qaba (fak. 251911234567)", "phoneEthiopian": "Maaloo lakkoofsa bilbilaa Itoophiyaa sirrii galchi", "phoneNotFound": "Lakkoofsi bilbilaa sirna keessatti hin argamne",
-      "codeRequired": "Koodiin mirkaneessaa ni barbaachisa", "codeLength": "Koodiin ciroofaa 6 ta'uu qaba", "codeDigits": "Koodiin lakkoofsa (0-9) qofa ta'uu qaba", "codeNotAllZeros": "Koodiin hunda zeeroo ta'uu hin danda'u",
-      "newPasswordRequired": "Icciitiin haaraa ni barbaachisa", "passwordMin": "Icciitiin xiqqaan 8 arfuu ta'uu qaba", "passwordMax": "Icciitiin 32 arfuu caalaa ta'uu hin danda'u",
-      "passwordUppercase": "Icciitiin qubee guddaa (A-Z) tokko of keessaa qabaachuu qaba", "passwordLowercase": "Icciitiin qubee xixiqqaa (a-z) tokko of keessaa qabaachuu qaba", "passwordNumber": "Icciitiin lakkoofsa (0-9) tokko of keessaa qabaachuu qaba", "passwordSpecial": "Icciitiin asteessoo addaa (!@#$%^&*) tokko of keessaa qabaachuu qaba", "passwordNoSpaces": "Icciitiin hagari hin qabu", "passwordNoSequential": "Icciitiin arfuu tarreemaa (123, abc) of keessaa qabaachuu hin danda'u",
-      "confirmPasswordRequired": "Maaloo iciitii keessan mirkaneessaa", "passwordsMatch": "Iciitiwwan wal simuu qabu"
+      "emailRequired": "Imayyelli ni barbaachisa",
+      "emailInvalid": "Maaloo teessoo imayyela sirrii galchi",
+      "emailFormat": "Imayyelli akkaataa name@domain.com ta'uu qaba",
+      "emailNotFound": "Imayyelli sirna keessatti hin argamne",
+      "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa",
+      "phoneFormat": "Lakkoofsi bilbilaa 10-15 ciroofaa ta'uu qaba (fak. 251911234567)",
+      "phoneEthiopian": "Maaloo lakkoofsa bilbilaa Itoophiyaa sirrii galchi",
+      "phoneNotFound": "Lakkoofsi bilbilaa sirna keessatti hin argamne",
+      "codeRequired": "Koodiin mirkaneessaa ni barbaachisa",
+      "codeLength": "Koodiin ciroofaa 6 ta'uu qaba",
+      "codeDigits": "Koodiin lakkoofsa (0-9) qofa ta'uu qaba",
+      "codeNotAllZeros": "Koodiin hunda zeeroo ta'uu hin danda'u",
+      "newPasswordRequired": "Icciitiin haaraa ni barbaachisa",
+      "passwordMin": "Icciitiin xiqqaan 8 arfuu ta'uu qaba",
+      "passwordMax": "Icciitiin 32 arfuu caalaa ta'uu hin danda'u",
+      "passwordUppercase": "Icciitiin qubee guddaa (A-Z) tokko of keessaa qabaachuu qaba",
+      "passwordLowercase": "Icciitiin qubee xixiqqaa (a-z) tokko of keessaa qabaachuu qaba",
+      "passwordNumber": "Icciitiin lakkoofsa (0-9) tokko of keessaa qabaachuu qaba",
+      "passwordSpecial": "Icciitiin asteessoo addaa (!@#$%^&*) tokko of keessaa qabaachuu qaba",
+      "passwordNoSpaces": "Icciitiin hagari hin qabu",
+      "passwordNoSequential": "Icciitiin arfuu tarreemaa (123, abc) of keessaa qabaachuu hin danda'u",
+      "confirmPasswordRequired": "Maaloo iciitii keessan mirkaneessaa",
+      "passwordsMatch": "Iciitiwwan wal simuu qabu"
     },
     "errors": {
-      "emailNotFound": "Imayyelli sirna keessatti hin argamne.", "phoneNotFound": "Lakkoofsi bilbilaa sirna keessatti hin argamne.",
-      "sessionExpired": "Yeroon qophii darbe. Maaloo irraa eegali.", "codeExpired": "Koodiin mirkaneessaa yeroo darbe. Maaloo koodii haaraa kadhadhu.",
+      "emailNotFound": "Imayyelli sirna keessatti hin argamne.",
+      "phoneNotFound": "Lakkoofsi bilbilaa sirna keessatti hin argamne.",
+      "sessionExpired": "Yeroon qophii darbe. Maaloo irraa eegali.",
+      "codeExpired": "Koodiin mirkaneessaa yeroo darbe. Maaloo koodii haaraa kadhadhu.",
       "invalidCode": "Koodiin mirkaneessaa dogoggora. Maaloo ilaaliitii irra deebi'i.",
-      "invalidSession": "Qophiin deebisaa dogoggora. Maaloo irraa eegali.", "userNotFound": "Fayyadamaan hin argamne.", "missingUserInfo": "Odeeffannoon fayyadamaa hin jiru. Maaloo irraa eegali."
+      "invalidSession": "Qophiin deebisaa dogoggora. Maaloo irraa eegali.",
+      "userNotFound": "Fayyadamaan hin argamne.",
+      "missingUserInfo": "Odeeffannoon fayyadamaa hin jiru. Maaloo irraa eegali."
     },
-    "mockAccounts": { "title": "Akaakuulee Mokeetaa" }
+    "mockAccounts": {
+      "title": "Akaakuulee Mokeetaa"
+    }
   },
   "theaterRegistration": {
-    "title": "Galmee Abbaa Tiyaatiraa", "subtitle": "TheaterHUB waliin makamii jaalattoota tiyaatiraa kumaatun quunnami", "feeNotice": "Kaffaltii galmee DEBISUU HIN DANDENYU: $299",
-    "steps": { "businessInfo": "Odeeffannoo Daldalaa", "contactInfo": "Odeeffannoo Quunnamti", "theaterDetails": "Ibsa Tiyaatiraa", "documents": "Waraqaa", "pricingPlan": "Karoora Gatii", "terms": "Shartii" },
+    "title": "Galmee Abbaa Tiyaatiraa",
+    "subtitle": "TheaterHUB waliin makamii jaalattoota tiyaatiraa kumaatun quunnami",
+    "feeNotice": "Kaffaltii galmee DEBISUU HIN DANDENYU: $299",
+    "steps": {
+      "businessInfo": "Odeeffannoo Daldalaa",
+      "contactInfo": "Odeeffannoo Quunnamti",
+      "theaterDetails": "Ibsa Tiyaatiraa",
+      "documents": "Waraqaa",
+      "pricingPlan": "Karoora Gatii",
+      "terms": "Shartii"
+    },
     "businessInfo": {
-      "title": "Odeeffannoo Daldalaa", "subtitle": "Daldala tiyaatiraa keessanii waa'ee nutti himaa",
-      "legalBusinessName": "Maqaa Seeraa Daldalaa", "legalBusinessNamePlaceholder": "Grand Theater LLC", "legalBusinessNameHint": "Akkuma waraqaa hayyama keessan irratti mul’atu",
-      "tradeName": "Maqaa Daldalaa / DBA", "tradeNamePlaceholder": "Grand Theater",
-      "businessType": "Gosa Daldalaa", "selectBusinessType": "Gosa daldalaa filadhu",
-      "businessLicense": "Lakkoofsa Hayyama Daldalaa", "businessLicensePlaceholder": "BL-2024-12345",
-      "taxId": "ID Qabala / TIN", "taxIdPlaceholder": "123456789",
-      "yearsInOperation": "Waggaa Hojiirra Jiru", "selectYears": "Waggaa filadhu",
-      "businessDescription": "Ibsa Daldalaa", "businessDescriptionPlaceholder": "Daldala tiyaatiraa keessan, seenaa, ergaa fi waan adda ta’e ibsaa...", "businessDescriptionHint": "Maalummaan keessan maal?"
+      "title": "Odeeffannoo Daldalaa",
+      "subtitle": "Daldala tiyaatiraa keessanii waa'ee nutti himaa",
+      "legalBusinessName": "Maqaa Seeraa Daldalaa",
+      "legalBusinessNamePlaceholder": "Grand Theater LLC",
+      "legalBusinessNameHint": "Akkuma waraqaa hayyama keessan irratti mul’atu",
+      "tradeName": "Maqaa Daldalaa / DBA",
+      "tradeNamePlaceholder": "Grand Theater",
+      "businessType": "Gosa Daldalaa",
+      "selectBusinessType": "Gosa daldalaa filadhu",
+      "businessLicense": "Lakkoofsa Hayyama Daldalaa",
+      "businessLicensePlaceholder": "BL-2024-12345",
+      "taxId": "ID Qabala / TIN",
+      "taxIdPlaceholder": "123456789",
+      "yearsInOperation": "Waggaa Hojiirra Jiru",
+      "selectYears": "Waggaa filadhu",
+      "businessDescription": "Ibsa Daldalaa",
+      "businessDescriptionPlaceholder": "Daldala tiyaatiraa keessan, seenaa, ergaa fi waan adda ta’e ibsaa...",
+      "businessDescriptionHint": "Maalummaan keessan maal?"
     },
     "contactInfo": {
-      "title": "Odeeffannoo Abbaa fi Quunnamti", "subtitle": "Eenyutu nu quunnamuu qaba?",
-      "primaryContact": "Quunnamti Itoophiyaa / Abbaa", "fullName": "Maqaa Guutuu", "fullNamePlaceholder": "John Doe", "position": "Muuxannoo / Waamicha", "selectPosition": "Muuxannoo filadhu",
-      "email": "Teessoo Imayyela", "emailPlaceholder": "john@example.com", "phone": "Lakkoofsa Bilbilaa", "phonePlaceholder": "+1 (555) 000-0000",
-      "secondaryContact": "Quunnamti Lammaffaa", "secondaryContactOptional": " (Filannoo)", "secondaryName": "Maqaa", "secondaryNamePlaceholder": "Jane Smith", "secondaryPosition": "Muuxannoo", "secondaryPositionPlaceholder": "Opereeshini Menejarii", "secondaryEmail": "Imayyela", "secondaryEmailPlaceholder": "jane@example.com", "secondaryPhone": "Bilbila", "secondaryPhonePlaceholder": "+1 (555) 000-0001",
-      "emergencyContact": "Quunnamti Yeroo Baay’ee", "emergencyName": "Maqaa Quunnamti", "emergencyNamePlaceholder": "Maqaa Quunnamti Yeroo Baay’ee", "emergencyPhone": "Lakkoofsa Bilbilaa", "emergencyPhonePlaceholder": "+1 (555) 000-0002", "emergencyRelation": "Walitti dhufeenya", "emergencyRelationPlaceholder": "Hiriyaa Daldalaa / Maatii"
+      "title": "Odeeffannoo Abbaa fi Quunnamti",
+      "subtitle": "Eenyutu nu quunnamuu qaba?",
+      "primaryContact": "Quunnamti Itoophiyaa / Abbaa",
+      "fullName": "Maqaa Guutuu",
+      "fullNamePlaceholder": "John Doe",
+      "position": "Muuxannoo / Waamicha",
+      "selectPosition": "Muuxannoo filadhu",
+      "email": "Teessoo Imayyela",
+      "emailPlaceholder": "john@example.com",
+      "phone": "Lakkoofsa Bilbilaa",
+      "phonePlaceholder": "+1 (555) 000-0000",
+      "secondaryContact": "Quunnamti Lammaffaa",
+      "secondaryContactOptional": " (Filannoo)",
+      "secondaryName": "Maqaa",
+      "secondaryNamePlaceholder": "Jane Smith",
+      "secondaryPosition": "Muuxannoo",
+      "secondaryPositionPlaceholder": "Opereeshini Menejarii",
+      "secondaryEmail": "Imayyela",
+      "secondaryEmailPlaceholder": "jane@example.com",
+      "secondaryPhone": "Bilbila",
+      "secondaryPhonePlaceholder": "+1 (555) 000-0001",
+      "emergencyContact": "Quunnamti Yeroo Baay’ee",
+      "emergencyName": "Maqaa Quunnamti",
+      "emergencyNamePlaceholder": "Maqaa Quunnamti Yeroo Baay’ee",
+      "emergencyPhone": "Lakkoofsa Bilbilaa",
+      "emergencyPhonePlaceholder": "+1 (555) 000-0002",
+      "emergencyRelation": "Walitti dhufeenya",
+      "emergencyRelationPlaceholder": "Hiriyaa Daldalaa / Maatii"
     },
     "theaterDetails": {
-      "title": "Ibsa Tiyaatiraa", "subtitle": "Waa’ee bakka keessanii nutti himaa",
-      "theaterName": "Maqaa Tiyaatiraa", "theaterNamePlaceholder": "Grand Theater",
-      "theaterLogo": "Asxaa Tiyaatiraa", "uploadLogo": "Asxaa Baayi", "changeLogo": "Asxaa Jijjiiri", "logoHint": "PNG, JPG hanga 2MB",
-      "theaterDescription": "Ibsa Tiyaatiraa", "theaterDescriptionPlaceholder": "Tiyaatiraa keessan, seenaa, qabeenya addaa, fi wantoota addaa kan isin addaan baasu ibsaa...",
-      "theaterEmail": "Imayyela Tiyaatiraa", "theaterEmailPlaceholder": "info@grandtheater.com", "theaterPhone": "Bilbila Tiyaatiraa", "theaterPhonePlaceholder": "+251 911 234 567",
-      "numberOfHalls": "Lakkoofsa Hallii", "numberOfHallsPlaceholder": "3", "totalSeats": "Iddoowwan Wadii", "totalSeatsPlaceholder": "500",
-      "screenTypes": "Gosoota Skiriinii Argaman", "screenTypesHelp": "Hold Ctrl/Cmd to select multiple",
-      "servicesOffered": "Tajaajilli Kennamu", "services": {
-        "ticketBooking": "Dhaabbata Tiikiti", "ticketBookingDesc": "Dhaabbata tiikiti online",
-        "refreshments": "Cinaa fi Dhugaati", "refreshmentsDesc": "Qorii fi dhugaati",
-        "premiumBar": "Baaraa Duuba", "premiumBarDesc": "Tajaajila baaraa guutuu",
-        "dining": "Nyaata", "diningDesc": "Nyaata dura ta’an",
-        "freeWifi": "Wifi Bilisaa", "freeWifiDesc": "Intarneetii bilisaa",
-        "valetParking": "Dhaaba Makiinaa Valet", "valetParkingDesc": "Tajaajila dhaaba makiinaa ammayyaa",
-        "wheelchairAccess": "Dhaqqabsiisa Pheelcharii", "wheelchairAccessDesc": "ADA with",
-        "giftCards": "Kaartii Kennaa", "giftCardsDesc": "Kennaa dijitaalaa",
-        "groupBookings": "Dhaabbata Garee", "groupBookingsDesc": "Qaallii garee addaa",
-        "privateEvents": "Taateewwan Dhuunfaa", "privateEventsDesc": "Kiraa bakka"
+      "title": "Ibsa Tiyaatiraa",
+      "subtitle": "Waa’ee bakka keessanii nutti himaa",
+      "theaterName": "Maqaa Tiyaatiraa",
+      "theaterNamePlaceholder": "Grand Theater",
+      "theaterLogo": "Asxaa Tiyaatiraa",
+      "uploadLogo": "Asxaa Baayi",
+      "changeLogo": "Asxaa Jijjiiri",
+      "logoHint": "PNG, JPG hanga 2MB",
+      "theaterDescription": "Ibsa Tiyaatiraa",
+      "theaterDescriptionPlaceholder": "Tiyaatiraa keessan, seenaa, qabeenya addaa, fi wantoota addaa kan isin addaan baasu ibsaa...",
+      "theaterEmail": "Imayyela Tiyaatiraa",
+      "theaterEmailPlaceholder": "info@grandtheater.com",
+      "theaterPhone": "Bilbila Tiyaatiraa",
+      "theaterPhonePlaceholder": "+251 911 234 567",
+      "numberOfHalls": "Lakkoofsa Hallii",
+      "numberOfHallsPlaceholder": "3",
+      "totalSeats": "Iddoowwan Wadii",
+      "totalSeatsPlaceholder": "500",
+      "screenTypes": "Gosoota Skiriinii Argaman",
+      "screenTypesHelp": "Hold Ctrl/Cmd to select multiple",
+      "servicesOffered": "Tajaajilli Kennamu",
+      "services": {
+        "ticketBooking": "Dhaabbata Tiikiti",
+        "ticketBookingDesc": "Dhaabbata tiikiti online",
+        "refreshments": "Cinaa fi Dhugaati",
+        "refreshmentsDesc": "Qorii fi dhugaati",
+        "premiumBar": "Baaraa Duuba",
+        "premiumBarDesc": "Tajaajila baaraa guutuu",
+        "dining": "Nyaata",
+        "diningDesc": "Nyaata dura ta’an",
+        "freeWifi": "Wifi Bilisaa",
+        "freeWifiDesc": "Intarneetii bilisaa",
+        "valetParking": "Dhaaba Makiinaa Valet",
+        "valetParkingDesc": "Tajaajila dhaaba makiinaa ammayyaa",
+        "wheelchairAccess": "Dhaqqabsiisa Pheelcharii",
+        "wheelchairAccessDesc": "ADA with",
+        "giftCards": "Kaartii Kennaa",
+        "giftCardsDesc": "Kennaa dijitaalaa",
+        "groupBookings": "Dhaabbata Garee",
+        "groupBookingsDesc": "Qaallii garee addaa",
+        "privateEvents": "Taateewwan Dhuunfaa",
+        "privateEventsDesc": "Kiraa bakka"
       },
-      "city": "Magaalaa", "selectCity": "Magaalaa filadhu", "region": "Naannawaa", "selectRegion": "Naannawaa filadhu",
-      "fullAddress": "Teessoo Guutuu", "fullAddressPlaceholder": "123 Bole Road, Finfinnee",
-      "latitude": "Laatitiyuud", "latitudePlaceholder": "9.0192", "longitude": "Lonjiitiyuud", "longitudePlaceholder": "38.7535"
+      "city": "Magaalaa",
+      "selectCity": "Magaalaa filadhu",
+      "region": "Naannawaa",
+      "selectRegion": "Naannawaa filadhu",
+      "fullAddress": "Teessoo Guutuu",
+      "fullAddressPlaceholder": "123 Bole Road, Finfinnee",
+      "latitude": "Laatitiyuud",
+      "latitudePlaceholder": "9.0192",
+      "longitude": "Lonjiitiyuud",
+      "longitudePlaceholder": "38.7535"
     },
     "documents": {
-      "title": "Waraqaa Barbaachisaa", "subtitle": "Waraqaa daldalaa keessanii baayisaa",
-      "license": { "name": "Hayyama Daldalaa", "desc": "Hayyama daldalaa ykn ragaa galmee hojii" },
-      "taxCertificate": { "name": "Ragaa Galmee Qabalaa", "desc": "Ragaa TIN" },
-      "ownerId": { "name": "ID Abbaa / Paaspootii", "desc": "Suura ifa ID ykn paaspootii abbaa" },
-      "theaterPhotos": { "name": "Suura Tiyaatiraa", "desc": "Suura alaa fi keessaa tiyaatiraa keessan" },
-      "fireSafety": { "name": "Ragaa Nageenya Abiddaa", "desc": "Ragaa qormaata nageenya ibiddaa" },
-      "healthPermit": { "name": "Hayyama Fayyaa", "desc": "Yoo nyaata ykn dhugaatii kennaan" },
-      "uploadButton": "Waraqaa Baayi", "replaceButton": "Waraqaa Jijjiiri",
-      "requirements": "Shartii Waraqaa", "requirementsText": "Maaloo ragaawwan hundi ifa fi dubbifamoo ta’an. Guddinni waraqaa: 10MB per file. Foormaatota fudhataman: PDF, JPG, PNG."
+      "title": "Waraqaa Barbaachisaa",
+      "subtitle": "Waraqaa daldalaa keessanii baayisaa",
+      "license": {
+        "name": "Hayyama Daldalaa",
+        "desc": "Hayyama daldalaa ykn ragaa galmee hojii"
+      },
+      "taxCertificate": {
+        "name": "Ragaa Galmee Qabalaa",
+        "desc": "Ragaa TIN"
+      },
+      "ownerId": {
+        "name": "ID Abbaa / Paaspootii",
+        "desc": "Suura ifa ID ykn paaspootii abbaa"
+      },
+      "theaterPhotos": {
+        "name": "Suura Tiyaatiraa",
+        "desc": "Suura alaa fi keessaa tiyaatiraa keessan"
+      },
+      "fireSafety": {
+        "name": "Ragaa Nageenya Abiddaa",
+        "desc": "Ragaa qormaata nageenya ibiddaa"
+      },
+      "healthPermit": {
+        "name": "Hayyama Fayyaa",
+        "desc": "Yoo nyaata ykn dhugaatii kennaan"
+      },
+      "uploadButton": "Waraqaa Baayi",
+      "replaceButton": "Waraqaa Jijjiiri",
+      "requirements": "Shartii Waraqaa",
+      "requirementsText": "Maaloo ragaawwan hundi ifa fi dubbifamoo ta’an. Guddinni waraqaa: 10MB per file. Foormaatota fudhataman: PDF, JPG, PNG."
     },
     "pricingPlan": {
-      "title": "Karoora Gatii", "subtitle": "Akkataa kaffaltii filachuu", "selectModel": "Madda Kaffaltii Filadhu",
-      "perTicket": { "name": "Gurguraa Tiikiti", "description": "Komishinii tiikiti tokko tokkoo kaffali", "rate": "5-10% tiikiti", "bestFor": "Tiyaatiraa Haaraa / Gati xinnoo", "details": "Kaffaltii ji’aa hin jiru, yeroo gurgurtu qofa kaffali" },
-      "contract": { "name": "Karoora Kubbaa", "description": "Kubbaa waliigalaa", "rate": "Dheerina kubaatiin jijjiirama", "bestFor": "Tiyaatiraa Dhaabbataa waliin gurguraa fayyessa", "details": "Kuba ji’aa, sadarkaa, waggaa filadhu" },
+      "title": "Karoora Gatii",
+      "subtitle": "Akkataa kaffaltii filachuu",
+      "selectModel": "Madda Kaffaltii Filadhu",
+      "perTicket": {
+        "name": "Gurguraa Tiikiti",
+        "description": "Komishinii tiikiti tokko tokkoo kaffali",
+        "rate": "5-10% tiikiti",
+        "bestFor": "Tiyaatiraa Haaraa / Gati xinnoo",
+        "details": "Kaffaltii ji’aa hin jiru, yeroo gurgurtu qofa kaffali"
+      },
+      "contract": {
+        "name": "Karoora Kubbaa",
+        "description": "Kubbaa waliigalaa",
+        "rate": "Dheerina kubaatiin jijjiirama",
+        "bestFor": "Tiyaatiraa Dhaabbataa waliin gurguraa fayyessa",
+        "details": "Kuba ji’aa, sadarkaa, waggaa filadhu"
+      },
       "selectContract": "Gosa Kubbaa Filadhu",
       "contractTypes": {
-        "monthly": { "name": "Kuba Ji'aa", "price": "$299/ji'a", "discount": "0%", "features": ["Ji'a-ji'a", "Yeroo kamittuu haquu", "Gargaarsa Iddoo"] },
-        "quarterly": { "name": "Kuba Sadarkaa", "price": "$249/ji'a", "discount": "15% qusadhu", "features": ["Wa’a 3 ji’aa", "Gargaarsa Duraa", "Tarreeffama Hidhii"] },
-        "yearly": { "name": "Kuba Waggaa", "price": "$199/ji'a", "discount": "33% qusadhu (2 ji'a bilisaa)", "features": ["Wa’a 12 ji’aa", "Gargaarsa Ispeeshalaa", "Tarreeffama Jabeessaa", "Ishaaloo gamma"] }
+        "monthly": {
+          "name": "Kuba Ji'aa",
+          "price": "$299/ji'a",
+          "discount": "0%",
+          "features": ["Ji'a-ji'a", "Yeroo kamittuu haquu", "Gargaarsa Iddoo"]
+        },
+        "quarterly": {
+          "name": "Kuba Sadarkaa",
+          "price": "$249/ji'a",
+          "discount": "15% qusadhu",
+          "features": ["Wa’a 3 ji’aa", "Gargaarsa Duraa", "Tarreeffama Hidhii"]
+        },
+        "yearly": {
+          "name": "Kuba Waggaa",
+          "price": "$199/ji'a",
+          "discount": "33% qusadhu (2 ji'a bilisaa)",
+          "features": ["Wa’a 12 ji’aa", "Gargaarsa Ispeeshalaa", "Tarreeffama Jabeessaa", "Ishaaloo gamma"]
+        }
       }
     },
     "terms": {
-      "title": "Shartii fi Walligaltee", "subtitle": "Maaloo shartii keenya fudhadhu", "agreementTitle": "Walligaltee Abbaa Tiyaatiraa", "intro": "Galmee kana erguun waliigalta:",
+      "title": "Shartii fi Walligaltee",
+      "subtitle": "Maaloo shartii keenya fudhadhu",
+      "agreementTitle": "Walligaltee Abbaa Tiyaatiraa",
+      "intro": "Galmee kana erguun waliigalta:",
       "clauses": [
         "Odeeffannoon kan kenne hundi sirrii fi guutuu dha",
         "Seerota biyyaa fi qajeelfamoota hunda hordofta",
@@ -383,191 +955,338 @@
       ],
       "adminReview": "Ibsa: Galmeessi keessan yeroo hoji 2-3 guyyaa keessatti admin ni ilaala. Ergasiin veerifikeeshunii booda OTP ni ergama.",
       "noRefundNotice": "KAFFALTII DEBISU HIN DANDENYU: Kaffaltiin galmee $299 HAALA KAMIIFI DEBISUU HIN DANDENYU.",
-      "accuracyCheckbox": "Odeeffannoowwan kennaman hundi sirrii fi guutuu ta'uu nan mirkaneessa", "accuracyHint": "Odeeffannoowwan sobaa kennuun diinagdee ykn adabbii fiduus ni beeka",
-      "marketingCheckbox": "Ergaa gammaa TheaterHUB irraa fudhachuun nan walligaala", "marketingHint": "Yeroo kamittuu sana dhiisuu ni dandeessa",
-      "noRefundCheckbox": "Kaffaltiin galmee $299 DEBISU HIN DANDENYU akka ta’ee nan waliigala", "noRefundHint": "Kaffaltiin yeroo galmee ergamuu dura xumuruu qaba. Haala kamiiin kaffaltiin hin deebifamu."
+      "accuracyCheckbox": "Odeeffannoowwan kennaman hundi sirrii fi guutuu ta'uu nan mirkaneessa",
+      "accuracyHint": "Odeeffannoowwan sobaa kennuun diinagdee ykn adabbii fiduus ni beeka",
+      "marketingCheckbox": "Ergaa gammaa TheaterHUB irraa fudhachuun nan walligaala",
+      "marketingHint": "Yeroo kamittuu sana dhiisuu ni dandeessa",
+      "noRefundCheckbox": "Kaffaltiin galmee $299 DEBISU HIN DANDENYU akka ta’ee nan waliigala",
+      "noRefundHint": "Kaffaltiin yeroo galmee ergamuu dura xumuruu qaba. Haala kamiiin kaffaltiin hin deebifamu."
     },
     "payment": {
-      "modalTitle": "Kaffaltii Galmee", "amountLabel": "Hamma Kaffaltii", "nonRefundable": "Kaffaltii galmee yeroo tokko (DEBISU HIN DANDENYU)",
-      "payWithChapa": "Chapaan Kaffali", "chapaDesc": "Karaa Kaffaltii Itiyoophiyaa",
+      "modalTitle": "Kaffaltii Galmee",
+      "amountLabel": "Hamma Kaffaltii",
+      "nonRefundable": "Kaffaltii galmee yeroo tokko (DEBISU HIN DANDENYU)",
+      "payWithChapa": "Chapaan Kaffali",
+      "chapaDesc": "Karaa Kaffaltii Itiyoophiyaa",
       "importantNotice": "IBAAS: Kaffalli kun DEBISU HIN DANDENYU. Haala kamiiin hin deebifamu.",
-      "processing": "Chapaan sirrii jira...", "payButton": "${{amount}} Chapaan Kaffali",
+      "processing": "Chapaan sirrii jira...",
+      "payButton": "${{amount}} Chapaan Kaffali",
       "secureNotice": "🔒 Kaffaltiin nageenyaan Chapel Hojjeta. Odeeffannoon keessaan iccitiidhaan eegama."
     },
-    "buttons": { "back": "Duuba", "continue": "Ittaansaa", "payAndSubmit": "${{amount}} (Debisu Hin Dandeenye) kaffali & Ergi", "submitForReview": "Admin mirkaneessuuf Ergi", "goHome": "Gara Fuula Duraa Deemi" },
+    "buttons": {
+      "back": "Duuba",
+      "continue": "Ittaansaa",
+      "payAndSubmit": "${{amount}} (Debisu Hin Dandeenye) kaffali & Ergi",
+      "submitForReview": "Admin mirkaneessuuf Ergi",
+      "goHome": "Gara Fuula Duraa Deemi"
+    },
     "errors": {
-      "required": "{{field}} ni barbaachisa", "validEmail": "Imayyelli sirrii ni barbaachisa", "validPhone": "Lakkoofsi bilbilaa ni barbaachisa", "validNumber": "Lakkoofsi sirrii ni barbaachisa",
-      "validLatitude": "Laatitiyuudi ni barbaachisa", "validLongitude": "Lonjiitiyuudi ni barbaachisa", "selectPricingModel": "Maaloo madda kaffaltii filadhu", "selectContractType": "Maaloo gosa kuba filadhu",
-      "agreeTerms": "Odeeffanoo sirrii ta’uu waliigalteessuu qabda", "agreeNoRefund": "Kaffaltiin debisu hin dandeenye ta’uu beekuu qabda",
-      "fileSize": "Guddinni waraqaa {{size}}MB gad ta'uu qaba", "fileType": "JPEG, PNG, ykn PDF qofaa fudhatama",
-      "logoSize": "Asxaan waraqaa 2MB gad ta'uu qaba", "logoType": "JPEG ykn PNG qofaa fudhatama"
+      "required": "{{field}} ni barbaachisa",
+      "validEmail": "Imayyelli sirrii ni barbaachisa",
+      "validPhone": "Lakkoofsi bilbilaa ni barbaachisa",
+      "validNumber": "Lakkoofsi sirrii ni barbaachisa",
+      "validLatitude": "Laatitiyuudi ni barbaachisa",
+      "validLongitude": "Lonjiitiyuudi ni barbaachisa",
+      "selectPricingModel": "Maaloo madda kaffaltii filadhu",
+      "selectContractType": "Maaloo gosa kuba filadhu",
+      "agreeTerms": "Odeeffanoo sirrii ta’uu waliigalteessuu qabda",
+      "agreeNoRefund": "Kaffaltiin debisu hin dandeenye ta’uu beekuu qabda",
+      "fileSize": "Guddinni waraqaa {{size}}MB gad ta'uu qaba",
+      "fileType": "JPEG, PNG, ykn PDF qofaa fudhatama",
+      "logoSize": "Asxaan waraqaa 2MB gad ta'uu qaba",
+      "logoType": "JPEG ykn PNG qofaa fudhatama"
     },
     "success": {
-      "title": "Galmeessi mirkaneessuuf ergame!", "message": "TheaterHUB galmeessitanif galatoma. Kaffaltiin keessan hojiirra oolee ergaan keessan garee adminitti geggeeffame. OTP yeroo guyyaa hojii 2-3 booda ni argattu.",
-      "applicationId": "ID Galmee", "paymentId": "ID Kaffaltii",
-      "nextSteps": "Tarkaanfiita Ittaansaa: Admin odeeffannoo keessan mirkaneessa dhumaa OTP mallattoo kubaatiif ni erga", "noRefundReminder": "IBAAS: Kaffaltiin galmee DEBISU HIN DANDENYU"
+      "title": "Galmeessi mirkaneessuuf ergame!",
+      "message": "TheaterHUB galmeessitanif galatoma. Kaffaltiin keessan hojiirra oolee ergaan keessan garee adminitti geggeeffame. OTP yeroo guyyaa hojii 2-3 booda ni argattu.",
+      "applicationId": "ID Galmee",
+      "paymentId": "ID Kaffaltii",
+      "nextSteps": "Tarkaanfiita Ittaansaa: Admin odeeffannoo keessan mirkaneessa dhumaa OTP mallattoo kubaatiif ni erga",
+      "noRefundReminder": "IBAAS: Kaffaltiin galmee DEBISU HIN DANDENYU"
     }
   },
   "employeeManagement": {
-    "title": "Bulchiinsa Hojjetaa", "welcomeMessage": "Baga nagaan deebite, {{name}}! Haaluma hojjetaa keessanii kan asii jira.",
-    "cards": { "totalEmployees": "Hojjetaa Waligalaa", "activeEmployees": "Hojjetaa Hojiirraa", "inactiveEmployees": "Hojjetaa Hin Hojiifne" },
-    "showingResults": "{{filtered}} hojjetaa {{total}} keessaa agarsiifame", "clearFilters": "Dirreewwan haqi",
+    "title": "Bulchiinsa Hojjetaa",
+    "welcomeMessage": "Baga nagaan deebite, {{name}}! Haaluma hojjetaa keessanii kan asii jira.",
+    "cards": {
+      "totalEmployees": "Hojjetaa Waligalaa",
+      "activeEmployees": "Hojjetaa Hojiirraa",
+      "inactiveEmployees": "Hojjetaa Hin Hojiifne"
+    },
+    "showingResults": "{{filtered}} hojjetaa {{total}} keessaa agarsiifame",
+    "clearFilters": "Dirreewwan haqi",
     "filters": {
-      "searchPlaceholder": "Maqaa, imayyela, bilbilaa, ID hojjetaa ykn maqaa fayyadamaa... barbaadi", "filterButton": "Dirree", "addEmployee": "Hojjetaa Haaraa Iddedeessi",
-      "allRoles": "Muuxannoo Hundaa", "allStatuses": "Haala Hundaa", "active": "Hojiirraa", "inactive": "Hin Hojiifne",
-      "roleLabel": "Muuxannoo", "statusLabel": "Haala", "clearFilters": "Dirreewwan Hundaa Haqi"
+      "searchPlaceholder": "Maqaa, imayyela, bilbilaa, ID hojjetaa ykn maqaa fayyadamaa... barbaadi",
+      "filterButton": "Dirree",
+      "addEmployee": "Hojjetaa Haaraa Iddedeessi",
+      "allRoles": "Muuxannoo Hundaa",
+      "allStatuses": "Haala Hundaa",
+      "active": "Hojiirraa",
+      "inactive": "Hin Hojiifne",
+      "roleLabel": "Muuxannoo",
+      "statusLabel": "Haala",
+      "clearFilters": "Dirreewwan Hundaa Haqi"
     },
     "table": {
-      "loading": "Hojjetaa fe'aa...", "noEmployees": "Hojjetaan hin argamne", "noEmployeesMessage": "Hojjetaan filannoo keessan waliin hin deemne.", "currency": "Br",
-      "headers": { "employee": "Hojjetaa", "employeeId": "ID", "contact": "Quunnamti", "role": "Muuxannoo", "salary": "Mindaa (Birrii)", "status": "Haala", "hireDate": "Guyyaa Mirgaa", "actions": "Gochii" },
-      "actions": { "view": "Ilaali", "edit": "Fooyyessi", "deactivate": "Dhiibaa", "reactivate": "Deebisi", "delete": "Balleessi" }
+      "loading": "Hojjetaa fe'aa...",
+      "noEmployees": "Hojjetaan hin argamne",
+      "noEmployeesMessage": "Hojjetaan filannoo keessan waliin hin deemne.",
+      "currency": "Br",
+      "headers": {
+        "employee": "Hojjetaa",
+        "employeeId": "ID",
+        "contact": "Quunnamti",
+        "role": "Muuxannoo",
+        "salary": "Mindaa (Birrii)",
+        "status": "Haala",
+        "hireDate": "Guyyaa Mirgaa",
+        "actions": "Gochii"
+      },
+      "actions": {
+        "view": "Ilaali",
+        "edit": "Fooyyessi",
+        "deactivate": "Dhiibaa",
+        "reactivate": "Deebisi",
+        "delete": "Balleessi"
+      }
     },
-    "status": { "active": "Hojiirraa", "inactive": "Hin Hojiifne" },
-    "roles": { "theaterManager": "Bulchaa Tiyaatiraa", "salesPerson": "Gurguraa", "qrScanner": "Skanii QR" },
-    "deactivateReasons": { "resigned": "Hojii irraa ba'e", "terminated": "Hojii irraa buufame", "performance": "Rakkoo hojii", "attendance": "Rakkoo argama", "other": "Kan biraa" },
-    "deleteModal": { "title": "Hojjetaa Balleessi", "message": "Mirkaneeffataa {{name}} balleessuu barbaaddu? Gochi kun deebifamuu hin danda'u.", "confirmButton": "Balleessi" },
-    "deactivateModal": { "title": "Hojjetaa Dhiibaa", "message": "Mirkaneeffataa {{name}} dhiibuuf barbaaddu?", "reasonLabel": "Sababa dhiibbaaf", "selectReason": "Sababa filadhu", "confirmButton": "Dhiibaa" },
-    "reactivateModal": { "title": "Hojjetaa Deebisi", "message": "Mirkaneeffataa {{name}} deebisuu barbaaddu?", "confirmButton": "Deebisi" },
+    "status": {
+      "active": "Hojiirraa",
+      "inactive": "Hin Hojiifne"
+    },
+    "roles": {
+      "theaterManager": "Bulchaa Tiyaatiraa",
+      "salesPerson": "Gurguraa",
+      "qrScanner": "Skanii QR"
+    },
+    "deactivateReasons": {
+      "resigned": "Hojii irraa ba'e",
+      "terminated": "Hojii irraa buufame",
+      "performance": "Rakkoo hojii",
+      "attendance": "Rakkoo argama",
+      "other": "Kan biraa"
+    },
+    "deleteModal": {
+      "title": "Hojjetaa Balleessi",
+      "message": "Mirkaneeffataa {{name}} balleessuu barbaaddu? Gochi kun deebifamuu hin danda'u.",
+      "confirmButton": "Balleessi"
+    },
+    "deactivateModal": {
+      "title": "Hojjetaa Dhiibaa",
+      "message": "Mirkaneeffataa {{name}} dhiibuuf barbaaddu?",
+      "reasonLabel": "Sababa dhiibbaaf",
+      "selectReason": "Sababa filadhu",
+      "confirmButton": "Dhiibaa"
+    },
+    "reactivateModal": {
+      "title": "Hojjetaa Deebisi",
+      "message": "Mirkaneeffataa {{name}} deebisuu barbaaddu?",
+      "confirmButton": "Deebisi"
+    },
     "popup": {
-      "deleteSuccess": { "title": "Hojjetaa Balleeffame!", "message": "{{name}} milkaa'een balleeffame" }, "deleteError": { "title": "Balleessuun Hin Milkoofne!", "message": "" },
-      "deactivateSuccess": { "title": "Hojjetaa Dhiibame!", "message": "{{name}} milkaa'een dhiibame" }, "deactivateError": { "title": "Dhiibun Hin Milkoofne!", "message": "" },
-      "reactivateSuccess": { "title": "Hojjetaa Deebifame!", "message": "{{name}} milkaa'een deebifame" }, "reactivateError": { "title": "Deebisuun Hin Milkoofne!", "message": "" },
-      "addSuccess": { "title": "Hojjetaa Iddedeesse!", "message": "Hojjetaan milkaa'een iddedeesse" }, "updateSuccess": { "title": "Hojjetaa Fooyyesse!", "message": "Hojjetaan milkaa'een fooyyesse" }
+      "deleteSuccess": {
+        "title": "Hojjetaa Balleeffame!",
+        "message": "{{name}} milkaa'een balleeffame"
+      },
+      "deleteError": {
+        "title": "Balleessuun Hin Milkoofne!",
+        "message": ""
+      },
+      "deactivateSuccess": {
+        "title": "Hojjetaa Dhiibame!",
+        "message": "{{name}} milkaa'een dhiibame"
+      },
+      "deactivateError": {
+        "title": "Dhiibun Hin Milkoofne!",
+        "message": ""
+      },
+      "reactivateSuccess": {
+        "title": "Hojjetaa Deebifame!",
+        "message": "{{name}} milkaa'een deebifame"
+      },
+      "reactivateError": {
+        "title": "Deebisuun Hin Milkoofne!",
+        "message": ""
+      },
+      "addSuccess": {
+        "title": "Hojjetaa Iddedeesse!",
+        "message": "Hojjetaan milkaa'een iddedeesse"
+      },
+      "updateSuccess": {
+        "title": "Hojjetaa Fooyyesse!",
+        "message": "Hojjetaan milkaa'een fooyyesse"
+      }
     }
   },
   "employeeComponents": {
     "addNew": {
-      "titleAdd": "Hojjetaa Haaraa Iddedeessi", "titleEdit": "Hojjetaa Fooyyessi",
-      "subtitleAdd": "Odeeffannoo hojjetaa gadii guutaa", "subtitleEdit": "Odeeffannoo hojjetaa gadii fooyyessi",
-      "labels": { "name": "Maqaa Guutuu", "email": "Teessoo Imayyela", "phone": "Lakkoofsa Bilbilaa", "password": "Icciitii", "role": "Muuxannoo", "salary": "Mindaa (Birrii)" },
-      "placeholders": { "name": "Maqaa guutuu galchi", "email": "Teessoo imayyela galchi", "phone": "Lakkoofsa bilbilaa galchi", "password": "Icciitii galchi", "role": "Muuxannoo filadhu", "salary": "Mindaa Birriin galchi" },
+      "titleAdd": "Hojjetaa Haaraa Iddedeessi",
+      "titleEdit": "Hojjetaa Fooyyessi",
+      "subtitleAdd": "Odeeffannoo hojjetaa gadii guutaa",
+      "subtitleEdit": "Odeeffannoo hojjetaa gadii fooyyessi",
+      "labels": {
+        "name": "Maqaa Guutuu",
+        "email": "Teessoo Imayyela",
+        "phone": "Lakkoofsa Bilbilaa",
+        "password": "Icciitii",
+        "role": "Muuxannoo",
+        "salary": "Mindaa (Birrii)"
+      },
+      "placeholders": {
+        "name": "Maqaa guutuu galchi",
+        "email": "Teessoo imayyela galchi",
+        "phone": "Lakkoofsa bilbilaa galchi",
+        "password": "Icciitii galchi",
+        "role": "Muuxannoo filadhu",
+        "salary": "Mindaa Birriin galchi"
+      },
       "validation": {
-        "nameRequired": "Maqaan guutuu ni barbaachisa", "nameMin": "Maqaan xiqqaan 2 arfii ta'uu qaba",
-        "emailRequired": "Imayyelli ni barbaachisa", "emailInvalid": "Teessoo imayyela dogoggora",
-        "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa", "roleRequired": "Muuxannoon ni barbaachisa",
-        "salaryNumber": "Mindaan lakkoofsa ta'uu qaba", "salaryMin": "Mindaan negaatiiv ta'uu hin danda'u"
+        "nameRequired": "Maqaan guutuu ni barbaachisa",
+        "nameMin": "Maqaan xiqqaan 2 arfii ta'uu qaba",
+        "emailRequired": "Imayyelli ni barbaachisa",
+        "emailInvalid": "Teessoo imayyela dogoggora",
+        "phoneRequired": "Lakkoofsi bilbilaa ni barbaachisa",
+        "roleRequired": "Muuxannoon ni barbaachisa",
+        "salaryNumber": "Mindaan lakkoofsa ta'uu qaba",
+        "salaryMin": "Mindaan negaatiiv ta'uu hin danda'u"
       },
       "errors": {
-        "emailExists": "Imayyelli {{email}} duraan galmaa'eera.", "phoneExists": "Lakkoofsi bilbilaa {{phone}} duraan galmaa'eera.",
-        "generic": "Hojjetaan {{action}} hin milkoofne. Maaloo irra deebi'ii yaali.", "fieldsMissing": "Maaloo bakkeewwan barbaachisoo hunda guuti",
+        "emailExists": "Imayyelli {{email}} duraan galmaa'eera.",
+        "phoneExists": "Lakkoofsi bilbilaa {{phone}} duraan galmaa'eera.",
+        "generic": "Hojjetaan {{action}} hin milkoofne. Maaloo irra deebi'ii yaali.",
+        "fieldsMissing": "Maaloo bakkeewwan barbaachisoo hunda guuti",
         "passwordMissing": "Icciitiin hojjetaa haaraa eegaluuf ni barbaachisa"
       },
-      "createButton": "Hojjetaa Uumi", "updateButton": "Hojjetaa Fooyyessi"
+      "createButton": "Hojjetaa Uumi",
+      "updateButton": "Hojjetaa Fooyyessi"
     }
   },
   "viewEmployee": {
-    "loading": { "title": "Ibsa Hojjetaa", "subtitle": "Odeeffannoo hojjetaa fe'aa...", "message": "Ibsa hojjetaa fe'aa jira..." },
-    "accessDenied": { "title": "Seenmuun ittifame", "subtitle": "Hayyamni hin qabdu", "noAccess": "Seenmuun hin jiru", "message": "Odeeffannoo hojjetaa kanaa ilaaluuf hayyamni hin qabdu." },
-    "mainTitle": "Ibsa Hojjetaa", "mainSubtitle": "Odeeffannoo hojjetaa ilaali",
-    "actions": { "edit": "Gulaali", "print": "Maxxansi", "download": "Buufadhu" },
-    "sections": { "personalInfo": "Odeeffannoo Dhuunfaa", "employmentInfo": "Odeeffannoo Hoji", "assignedTheater": "Tiyaatiraa Kenname", "permissions": "Hayyamoota" },
-    "labels": { "fullName": "Maqaa Guutuu", "username": "Maqaa Fagaaraa", "email": "Imayyela", "phone": "Bilbila", "role": "Muuxannoo", "salary": "Mindaa", "hireDate": "Guyyaa Muudatama", "department": "Waajjira", "position": "Iddoo Hoji", "employeeId": "ID" },
-    "status": { "active": "Hojiirra", "inactive": "Hojiirra Hin jirre" },
+    "loading": {
+      "title": "Ibsa Hojjetaa",
+      "subtitle": "Odeeffannoo hojjetaa fe'aa...",
+      "message": "Ibsa hojjetaa fe'aa jira..."
+    },
+    "accessDenied": {
+      "title": "Seenmuun ittifame",
+      "subtitle": "Hayyamni hin qabdu",
+      "noAccess": "Seenmuun hin jiru",
+      "message": "Odeeffannoo hojjetaa kanaa ilaaluuf hayyamni hin qabdu."
+    },
+    "mainTitle": "Ibsa Hojjetaa",
+    "mainSubtitle": "Odeeffannoo hojjetaa ilaali",
+    "actions": {
+      "edit": "Gulaali",
+      "print": "Maxxansi",
+      "download": "Buufadhu"
+    },
+    "sections": {
+      "personalInfo": "Odeeffannoo Dhuunfaa",
+      "employmentInfo": "Odeeffannoo Hoji",
+      "assignedTheater": "Tiyaatiraa Kenname",
+      "permissions": "Hayyamoota"
+    },
+    "labels": {
+      "fullName": "Maqaa Guutuu",
+      "username": "Maqaa Fagaaraa",
+      "email": "Imayyela",
+      "phone": "Bilbila",
+      "role": "Muuxannoo",
+      "salary": "Mindaa",
+      "hireDate": "Guyyaa Muudatama",
+      "department": "Waajjira",
+      "position": "Iddoo Hoji",
+      "employeeId": "ID"
+    },
+    "status": {
+      "active": "Hojiirra",
+      "inactive": "Hojiirra Hin jirre"
+    },
     "roles": {
-      "superAdmin": { "label": "Bulchaa Guddaa", "description": "Hoji sirnaa guutuu", "permissions": [ "Tiyaatiraa hunda bulchi", "Fayyadamtoota hunda bulchi", "Sirneewwan sirnaa", "Gabaasa hunda ilaali" ] },
-      "theaterOwner": { "label": "Abboobbaa Tiyaatiraa", "description": "Tiyaatiraa fi hojiwwan waligalaa bulchi", "permissions": [ "Tiyaatiraa ofii bulchi", "Hojjetaa qaxxaamura", "Gabaasa gurguraa ilaali", "Taateewwan bulchi" ] },
-      "theaterManager": { "label": "Menejaa", "description": "Taateewwan fi hojiwwan guyyaa bulchi", "permissions": [ "Taateewwan bulchi", "Yeroo hojjetaa bulchi", "Gabaasa guyyaa ilaali", "Rakkoo maamilaa furi" ] },
-      "salesPerson": { "label": "Gurguraa", "description": "Gurguraa tiikitiifi tajaajila maamilaa bulchi", "permissions": [ "Tiikiti gurguri", "Deebisa hojjechi", "Gaafiilee maamilaa deebisi", "Maddi ilaali" ] },
-      "qrScanner": { "label": "QR Skanii", "description": "Tiikiti taatee irratti mirkaneessi", "permissions": [ "Tiikiti skanii", "Galmee mirkaneessi", "Odeeffannoo taatee ilaali" ] }
-    },
-    "errors": { "notAuthenticated": "Fayyadamaan mirkaneessaa miti", "loadFailed": "Odeeffannoo fayyadamaa fe'un hin milkoofne", "permissionDenied": "Hojjetaa kana ilaaluuf hayyamni hin qabdu", "accessDenied": "Seenmuun ittifame" }
-  },"about": {
-  "hero": {
-    "badge": "Waa’ee Keenya",
-    "title": "Itoophiyaa’s Modern Theater Booking Platform",
-    "subtitle": "Buufata bu’uuraa ariifachiisa, ittigaafannaa amansiisaa, fi muuxannoo tiyaatiraa hin irraanfanne guutuu Itoophiyaatti",
-    "contactButton": "Nu Quunnami"
-  },
-  "stats": {
-    "theatersValue": "50+",
-    "theatersLabel": "Tiyaatiraa Hiriyaa",
-    "customersValue": "100K+",
-    "customersLabel": "Nama Itti Gammadan"
-  },
-  "missionVision": {
-    "title": "Ergafi Mul’ata Keenya",
-    "subtitle": "Guyyaa fulmaanaaf tiyaatiraa akka bal’inaatti namaaf mijeessuuf"
-  },
-  "mission": "Erga Kee",
-  "missionText": "Rifeensa salphaa, amansiisaa fi hojiirra oola ta’e kan tiyaatiraa sanaa taasisuuf karaa online guutuu Itiyoophiyaa hawaasaaf mijeessu.",
-  "vision": "Mul’ata",
-  "visionText": "Itoophiyaa’s platform tiyaatiraa ergaafi ittigaafannaa keessatti leenjisuuf, akka hawaasiin salphaattu beeluuf, buufachuuf, fi itti gammaduuf.",
-  "values": {
-    "title": "Akaakuwaa Jijjiiramoo",
-    "subtitle": "Isaan karaa nuti ittiin hojjenna geggefessu",
-    "trust": {
-      "title": "Amantii fi Sirna",
-      "description": "Detaa keessanifi kaffaltiin gara jabessa enterprise‑qabameen eegama."
-    },
-    "innovation": {
-      "title": "Shakileemaa",
-      "description": "Guyyaa guutuu fooyyessuu akka muuxannoon keessan gaggaarii ta’uuf."
-    },
-    "customerFirst": {
-      "title": "Dura Maqaa",
-      "description": "Gammachuun keessan duraantuma. Garaa 24/7 nuu ni argama."
-    }
-  },
-  "features": {
-    "title": "Maaliif TheaterHUB",
-    "subtitle": "Nu muuxannoo tiyaatiraan Itoophiyaa keessatti gaarii taasisuuf waadaa galeerra",
-    "easyBooking": {
-      "title": "Buufata Safuu",
-      "description": "Tiikitii dhaquu muraasa tuquun"
-    },
-    "multipleVenues": {
-      "title": "Bakkeewwan Hedduu",
-      "description": "Qunnamti tiyaatiraa Itoophiyaa guutuu"
-    },
-    "mobileTickets": {
-      "title": "Tiikitii Bilbilaa",
-      "description": "Tiikitiidijitaalaa bilbilaa keessanirratti"
-    },
-    "bestSelection": {
-      "title": "Filannoo Garaa",
-      "description": "Addunyaa agartootaa fi raawwiiwwan hedduu"
-    },
-    "support247": {
-      "title": "24/7 Gargaarsa",
-      "description": "Tajaajila maamilaa guyyaa fi halkan"
-    },
-    "securePayments": {
-      "title": "Kaffaltii Amansiisaa",
-      "description": "Gadda ife galma galmeeffame"
-    }
-  },
-  "team": {
-    "title": "Garee Keenya",
-    "subtitle": "Abbootii ogummaa Theatre Hub Ethiopia duuba jiran waliin wal argaa",
-    "memberDesc": "Ogummaa isaa of kennee fi hojiirratti milkaa’uu {{role}} keessatti dhaabbata.",
-    "members": {
-      "birehanu": {
-        "name": "Birehanu Kassa",
-        "role": "Hojiin Bulchaa",
-        "responsibility": "Karoora hojii, walitti hidhii, galmee fi gulaaluu"
+      "superAdmin": {
+        "label": "Bulchaa Guddaa",
+        "description": "Hoji sirnaa guutuu",
+        "permissions": [
+          "Tiyaatiraa hunda bulchi",
+          "Fayyadamtoota hunda bulchi",
+          "Sirneewwan sirnaa",
+          "Gabaasa hunda ilaali"
+        ]
       },
-      "gebreslassie": {
-        "name": "Gebreslassie Desie",
-        "role": "Hojii Duuba",
-        "responsibility": "Logikii biraa, API, walitti hidhii sirnaa"
+      "theaterOwner": {
+        "label": "Abboobbaa Tiyaatiraa",
+        "description": "Tiyaatiraa fi hojiwwan waligalaa bulchi",
+        "permissions": [
+          "Tiyaatiraa ofii bulchi",
+          "Hojjetaa qaxxaamura",
+          "Gabaasa gurguraa ilaali",
+          "Taateewwan bulchi"
+        ]
       },
-      "gemechis": {
-        "name": "Gemechis Debelo",
-        "role": "Hojii Fuula Duraa",
-        "responsibility": "Ijaarsa ilaalcha fayyadamaa fi hojiin fuula duraa"
+      "theaterManager": {
+        "label": "Menejaa",
+        "description": "Taateewwan fi hojiwwan guyyaa bulchi",
+        "permissions": [
+          "Taateewwan bulchi",
+          "Yeroo hojjetaa bulchi",
+          "Gabaasa guyyaa ilaali",
+          "Rakkoo maamilaa furi"
+        ]
       },
-      "lelisa": {
-        "name": "Lelisa Abraham",
-        "role": "Ijaarsa Koombiyuutaraa fi Mirkaneessaa",
-        "responsibility": "Ijaarsa koombiyuutaraa fi mirkaneessaa sirnaa"
+      "salesPerson": {
+        "label": "Gurguraa",
+        "description": "Gurguraa tiikitiifi tajaajila maamilaa bulchi",
+        "permissions": [
+          "Tiikiti gurguri",
+          "Deebisa hojjechi",
+          "Gaafiilee maamilaa deebisi",
+          "Maddi ilaali"
+        ]
+      },
+      "qrScanner": {
+        "label": "QR Skanii",
+        "description": "Tiikiti taatee irratti mirkaneessi",
+        "permissions": [
+          "Tiikiti skanii",
+          "Galmee mirkaneessi",
+          "Odeeffannoo taatee ilaali"
+        ]
       }
+    },
+    "errors": {
+      "notAuthenticated": "Fayyadamaan mirkaneessaa miti",
+      "loadFailed": "Odeeffannoo fayyadamaa fe'un hin milkoofne",
+      "permissionDenied": "Hojjetaa kana ilaaluuf hayyamni hin qabdu",
+      "accessDenied": "Seenmuun ittifame"
     }
+  },"blog": {
+  "hero": {
+    "title": "Oduu Haaraa fi Fooyya'insi",
+    "subtitle": "Oduu haaraa tiyaatiraa Itoophiyaa keessaa wajjin haaraa ta'aa"
   },
-  "cta": {
-    "title": "Akkasuma Tiikitii Keessan Buufachuuf Qophaa’a?",
-    "subtitle": "Hedduu jaalattoota tiyaatiraa Itoophiyaa irratti nu amanan waliin gadi yaadi.",
-    "findTheaters": "Bakkeewwan Buna Keessan Barbaadi",
-    "contactUs": "Nu Quunnami"
-  }
+  "categories": {
+    "all": "Blogii Hundaa",
+    "latest": "Oduu Haaraa",
+    "events": "Taateewwan",
+    "updates": "Fooyya'insa"
+  },
+  "search": {
+    "placeholder": "Oduu barbaadi...",
+    "clear": "Dirreewwan haqi"
+  },
+  "sort": {
+    "label": "Akkasitti:",
+    "newest": "Haaraa Dura",
+    "oldest": "Moofaa Dura"
+  },
+  "noArticles": {
+    "title": "Barruuleen hin argamne",
+    "message": "Barbaadisa ykn dirreewwan keessan jijjiirraa"
+  },
+  "pagination": {
+    "showing": "Artikilii {{start}} - {{end}} kanneen {{total}} keessaa agarsiifame"
+  },
+  "loading": "Artikiliiwwan fe'aa jira...",
+  "loadingError": "Blogiiwwan fe'un hin milkoofne"
 }
 }

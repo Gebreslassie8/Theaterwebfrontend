@@ -221,12 +221,7 @@ const BlogShowCard: React.FC<BlogShowCardProps> = ({ post, compact = false }) =>
             </div>
 
             {/* Read More Link */}
-            <div className="group/link">
-              <span className="flex items-center gap-1 text-deepTeal text-xs font-semibold transition-all duration-300 group-hover/link:gap-2 cursor-pointer">
-                Read More
-                <ArrowRight className="h-3 w-3 transition-transform group-hover/link:translate-x-0.5" />
-              </span>
-            </div>
+
           </div>
         </div>
 

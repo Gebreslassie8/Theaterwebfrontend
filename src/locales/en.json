@@ -1302,5 +1302,67 @@
     "findTheaters": "Find Theaters Near You",
     "contactUs": "Contact Us"
   }
+},"gallery": {
+  "hero": {
+    "title": "Theater Gallery",
+    "subtitle": "Explore performances, behind‑the‑scenes moments, venues, and audience experiences from our organized theater collection."
+  },
+  "categories": {
+    "all": "All",
+    "performances": "Performances",
+    "behindScenes": "Behind Scenes",
+    "venues": "Venues",
+    "audience": "Audience",
+    "costumes": "Costumes"
+  },
+  "noImages": {
+    "title": "No images found",
+    "message": "Try selecting a different category"
+  },
+  "pagination": {
+    "prev": "Previous page",
+    "next": "Next page",
+    "goToPage": "Go to page {{page}}",
+    "showing": "Showing {{start}} - {{end}} of {{total}} images"
+  },
+  "modal": {
+    "photographer": "Photographer: {{name}}",
+    "publishedBy": "Published by: {{name}}",
+    "share": "Share",
+    "download": "Download",
+    "close": "Close modal",
+    "like": "Like",
+    "linkCopied": "Link copied to clipboard!"
+  },
+  "scrollToTop": "Scroll to top"
+},"blog": {
+  "hero": {
+    "title": "Latest News & Updates",
+    "subtitle": "Stay updated with the latest stories from Ethiopia's vibrant theater scene"
+  },
+  "categories": {
+    "all": "All Blogs",
+    "latest": "Latest News",
+    "events": "Events",
+    "updates": "Updates"
+  },
+  "search": {
+    "placeholder": "Search news...",
+    "clear": "Clear filters"
+  },
+  "sort": {
+    "label": "Sort by:",
+    "newest": "Newest First",
+    "oldest": "Oldest First"
+  },
+  "noArticles": {
+    "title": "No articles found",
+    "message": "Try adjusting your search or filter"
+  },
+  "pagination": {
+    "showing": "Showing {{start}} - {{end}} of {{total}} articles"
+  },
+  "loading": "Loading articles...",
+  "loadingError": "Failed to load blogs"
 }
 }

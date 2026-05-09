@@ -1301,5 +1301,67 @@
     "findTheaters": "በአቅራቢያዎ ቲያትሮች ያግኙ",
     "contactUs": "አግኙን"
   }
+},"gallery": {
+  "hero": {
+    "title": "የቲያትር ማሳያ",
+    "subtitle": "ትርኢቶችን፣ ከመድረክ በስተጀርባ ያሉ ቅጽበቶችን፣ ቦታዎችን እና የተመልካች ልምዶችን ከተደራጀ የቲያትር ስብስባችን ያስሱ።"
+  },
+  "categories": {
+    "all": "ሁሉም",
+    "performances": "ትርኢቶች",
+    "behindScenes": "ከመድረክ በስተጀርባ",
+    "venues": "ቦታዎች",
+    "audience": "ተመልካቾች",
+    "costumes": "አልባሳት"
+  },
+  "noImages": {
+    "title": "ምንም ምስሎች አልተገኙም",
+    "message": "እባክዎ የተለየ ምድብ ይምረጡ"
+  },
+  "pagination": {
+    "prev": "ቀዳሚ ገጽ",
+    "next": "ቀጣይ ገጽ",
+    "goToPage": "ወደ ገጽ {{page}} ሂድ",
+    "showing": "ከ{{total}} ምስሎች ውስጥ {{start}} - {{end}} በማሳየት ላይ"
+  },
+  "modal": {
+    "photographer": "ፎቶግራፍ አንሺ: {{name}}",
+    "publishedBy": "የታተመው በ: {{name}}",
+    "share": "አጋራ",
+    "download": "አውርድ",
+    "close": "ዝጋ",
+    "like": "ውደድ",
+    "linkCopied": "ሊንኩ በክሊፕቦርድ ተቀምጧል!"
+  },
+  "scrollToTop": "ወደ ላይ ማሸብለል"
+},"blog": {
+  "hero": {
+    "title": "የቅርብ ጊዜ ዜናዎች እና ዝማኔዎች",
+    "subtitle": "ከኢትዮጵያ ታዋቂ የቲያትር ትዕይንት የቅርብ ጊዜ ታሪኮችን ይከታተሉ"
+  },
+  "categories": {
+    "all": "ሁሉም ብሎጎች",
+    "latest": "የቅርብ ጊዜ ዜና",
+    "events": "ዝግጅቶች",
+    "updates": "ዝማኔዎች"
+  },
+  "search": {
+    "placeholder": "ዜና ፈልግ...",
+    "clear": "ማጣሪያዎችን አጽዳ"
+  },
+  "sort": {
+    "label": "ደርድር በ:",
+    "newest": "አዲሱ በመጀመሪያ",
+    "oldest": "አሮጌው በመጀመሪያ"
+  },
+  "noArticles": {
+    "title": "ምንም ጽሁፎች አልተገኙም",
+    "message": "እባክዎ ፍለጋዎን ወይም ማጣሪያዎን ያስተካክሉ"
+  },
+  "pagination": {
+    "showing": "ከ{{total}} ጽሁፎች ውስጥ {{start}} - {{end}} በማሳየት ላይ"
+  },
+  "loading": "ጽሁፎችን በማጫን ላይ...",
+  "loadingError": "ብሎጎችን መጫን አልተቻለም"
 }
 }

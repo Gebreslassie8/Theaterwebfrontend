@@ -2,6 +2,7 @@
 import supabase from "@/config/supabaseClient";
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslation } from "react-i18next";
 import {
   Search,
   Calendar,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 import BlogShowCard from "../components/UI/BlogShowCard";
 
-// Types for Blog from Supabase
+// Types remain unchanged
 interface Author {
   id: string;
   name: string;
@@ -50,7 +51,6 @@ interface BlogPost {
   isFeatured?: boolean;
 }
 
-// Mock authors for now (you can replace with real authors later)
 const mockAuthors: Author[] = [
   {
     id: "1",
@@ -90,6 +90,7 @@ const mockAuthors: Author[] = [
 ];
 
 const Blog = () => {
+  const { t } = useTranslation();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,7 +101,6 @@ const Blog = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const itemsPerPage = 6;
 
-  // Fetch real data from Supabase
   useEffect(() => {
     fetchBlogs();
   }, []);
@@ -109,46 +109,41 @@ const Blog = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("blog_posts") // Changed from "blogs" to "blog_posts" to match your schema
+        .from("blog_posts")
         .select("*")
-        .eq("is_active", true) // Changed from "status" to "is_active" to match your schema
-        .order("published_at", { ascending: false }); // Changed from "created_at" to "published_at"
+        .eq("is_active", true)
+        .order("published_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching blogs:", error);
-        alert("Failed to load blogs");
+        alert(t("blog.loadingError") || "Failed to load blogs");
       } else if (data) {
-        // Transform Supabase data to match BlogPost format
         const transformedPosts = data.map((blog: any) => ({
           id: blog.id,
           title: blog.title,
           content: blog.content,
-          image_url: blog.featured_image || blog.image_url, // Use featured_image from schema
+          image_url: blog.featured_image || blog.image_url,
           status: blog.is_active ? "published" : "draft",
           views: blog.views || 0,
           created_at: blog.published_at || blog.created_at,
           updated_at: blog.updated_at,
           user_id: blog.published_by,
-          // Generate excerpt from content (first 150 characters)
           excerpt:
             blog.excerpt ||
             blog.content.substring(0, 150) +
               (blog.content.length > 150 ? "..." : ""),
           slug: blog.slug,
-          category: blog.category, // This will be one of: latest, events, updates
-          // Calculate read time (average 200 words per minute)
+          category: blog.category,
           readTime:
             blog.read_time ||
             Math.max(1, Math.ceil(blog.content.split(" ").length / 200)),
           likes: blog.likes || 0,
           comments: blog.comments_count || 0,
-          // Determine if new (within last 7 days)
           isNew:
             new Date(blog.published_at || blog.created_at) >
             new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           isTrending: blog.is_trending || false,
           isFeatured: blog.is_featured || false,
-          // Assign random author for demo (you can replace with real author data)
           author: {
             id: blog.published_by || "unknown",
             name:
@@ -158,30 +153,24 @@ const Blog = () => {
             role: blog.published_by_role || "Contributor",
           },
         }));
-
         setPosts(transformedPosts);
         setFilteredPosts(transformedPosts);
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to load blogs");
+      alert(t("blog.loadingError") || "Failed to load blogs");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Scroll to top button visibility
   useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500);
-    };
+    const handleScroll = () => setShowScrollTop(window.scrollY > 500);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
   useEffect(() => {
     let filtered = [...posts];
@@ -192,7 +181,7 @@ const Blog = () => {
         (post) =>
           post.title.toLowerCase().includes(query) ||
           (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
-          post.content.toLowerCase().includes(query),
+          post.content.toLowerCase().includes(query)
       );
     }
 
@@ -200,16 +189,11 @@ const Blog = () => {
       filtered = filtered.filter((post) => post.category === selectedCategory);
     }
 
-    // Apply sorting - only newest and oldest by date
     filtered.sort((a, b) => {
       if (sortBy === "newest") {
-        return (
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       } else {
-        return (
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        );
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
       }
     });
 
@@ -220,7 +204,7 @@ const Blog = () => {
   const totalPages = Math.ceil(filteredPosts.length / itemsPerPage);
   const paginatedPosts = filteredPosts.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   const handleClearFilters = () => {
@@ -229,25 +213,32 @@ const Blog = () => {
     setSortBy("newest");
   };
 
-  // Get category badge color and label
   const getCategoryBadge = (category?: string) => {
     switch (category) {
       case "latest":
         return {
           bg: "bg-blue-100",
           text: "text-blue-700",
-          label: "Latest News",
+          label: t("blog.categories.latest"),
         };
       case "events":
-        return { bg: "bg-green-100", text: "text-green-700", label: "Events" };
+        return {
+          bg: "bg-green-100",
+          text: "text-green-700",
+          label: t("blog.categories.events"),
+        };
       case "updates":
         return {
           bg: "bg-purple-100",
           text: "text-purple-700",
-          label: "Updates",
+          label: t("blog.categories.updates"),
         };
       default:
-        return { bg: "bg-gray-100", text: "text-gray-700", label: "Blog Post" };
+        return {
+          bg: "bg-gray-100",
+          text: "text-gray-700",
+          label: t("blog.categories.all"),
+        };
     }
   };
 
@@ -293,12 +284,11 @@ const Blog = () => {
             </motion.div>
 
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-3">
-              Latest News & Updates
+              {t("blog.hero.title")}
             </h1>
 
             <p className="text-lg text-white/90 mb-6 max-w-2xl mx-auto">
-              Stay updated with the latest stories from Ethiopia's vibrant
-              theater scene
+              {t("blog.hero.subtitle")}
             </p>
           </motion.div>
         </div>
@@ -306,7 +296,6 @@ const Blog = () => {
 
       {/* Blog Content */}
       <div className="w-full px-4 sm:px-6 lg:px-8 py-10" id="blog-content">
-        {/* Category Filters and Sort */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -316,10 +305,10 @@ const Blog = () => {
           {/* Category Buttons */}
           <div className="flex flex-wrap justify-center gap-3 mb-6">
             {[
-              { id: "all", label: "All Blogs", icon: Newspaper },
-              { id: "latest", label: "Latest News", icon: Sparkles },
-              { id: "events", label: "Events", icon: Calendar },
-              { id: "updates", label: "Updates", icon: Clock },
+              { id: "all", label: t("blog.categories.all"), icon: Newspaper },
+              { id: "latest", label: t("blog.categories.latest"), icon: Sparkles },
+              { id: "events", label: t("blog.categories.events"), icon: Calendar },
+              { id: "updates", label: t("blog.categories.updates"), icon: Clock },
             ].map((category) => {
               const Icon = category.icon;
               const isActive = selectedCategory === category.id;
@@ -339,9 +328,7 @@ const Blog = () => {
                 >
                   <Icon className="h-4 w-4" />
                   <span>{category.label}</span>
-                  <span
-                    className={`text-xs ${isActive ? "text-white/80" : "text-gray-400"}`}
-                  >
+                  <span className={`text-xs ${isActive ? "text-white/80" : "text-gray-400"}`}>
                     ({categoryCount})
                   </span>
                 </button>
@@ -349,58 +336,50 @@ const Blog = () => {
             })}
           </div>
 
-          {/* Search Bar and Sort Dropdown */}
+          {/* Search and Sort */}
           <div className="flex flex-wrap justify-center items-center gap-4">
             <div className="relative w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search news..."
+                placeholder={t("blog.search.placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
             </div>
 
-            {/* Sort Dropdown - Only Newest and Oldest */}
             <div className="flex items-center gap-2 bg-white rounded-xl border border-gray-200 px-4 py-2 shadow-sm">
               <SortDesc className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-500 font-medium">
-                Sort by:
-              </span>
+              <span className="text-sm text-gray-500 font-medium">{t("blog.sort.label")}</span>
               <select
                 value={sortBy}
-                onChange={(e) =>
-                  setSortBy(e.target.value as "newest" | "oldest")
-                }
+                onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
                 className="text-sm text-gray-700 bg-transparent focus:outline-none cursor-pointer"
               >
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
+                <option value="newest">{t("blog.sort.newest")}</option>
+                <option value="oldest">{t("blog.sort.oldest")}</option>
               </select>
             </div>
 
-            {(searchQuery ||
-              selectedCategory !== "all" ||
-              sortBy !== "newest") && (
+            {(searchQuery || selectedCategory !== "all" || sortBy !== "newest") && (
               <button
                 onClick={handleClearFilters}
                 className="text-sm text-red-500 hover:text-red-600 flex items-center gap-1"
               >
                 <X className="h-4 w-4" />
-                Clear filters
+                {t("blog.search.clear")}
               </button>
             )}
           </div>
         </motion.div>
 
-        {/* Posts Grid - USING BlogShowCard COMPONENT */}
+        {/* Posts Grid */}
         {paginatedPosts.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {paginatedPosts.map((post, index) => {
                 const categoryBadge = getCategoryBadge(post.category);
-                // Transform the post to match BlogShowCard's expected format
                 const cardPost = {
                   id: post.id,
                   title: post.title,
@@ -451,18 +430,11 @@ const Blog = () => {
                 <div className="flex gap-2">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-
+                    if (totalPages <= 5) pageNum = i + 1;
+                    else if (currentPage <= 3) pageNum = i + 1;
+                    else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
+                    else pageNum = currentPage - 2 + i;
                     if (pageNum > totalPages) return null;
-
                     return (
                       <button
                         key={pageNum}
@@ -495,33 +467,32 @@ const Blog = () => {
               </div>
             )}
 
-            {/* Showing info */}
             <div className="text-center mt-6 text-sm text-gray-500">
-              Showing {(currentPage - 1) * itemsPerPage + 1} -{" "}
-              {Math.min(currentPage * itemsPerPage, filteredPosts.length)} of{" "}
-              {filteredPosts.length} articles
+              {t("blog.pagination.showing", {
+                start: (currentPage - 1) * itemsPerPage + 1,
+                end: Math.min(currentPage * itemsPerPage, filteredPosts.length),
+                total: filteredPosts.length,
+              })}
             </div>
           </>
         ) : (
           <div className="text-center py-16">
             <Newspaper className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No articles found
+              {t("blog.noArticles.title")}
             </h3>
-            <p className="text-gray-500 mb-4">
-              Try adjusting your search or filter
-            </p>
+            <p className="text-gray-500 mb-4">{t("blog.noArticles.message")}</p>
             <button
               onClick={handleClearFilters}
               className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
             >
-              Clear all filters
+              {t("blog.search.clear")}
             </button>
           </div>
         )}
       </div>
 
-      {/* SCROLL TO TOP BUTTON */}
+      {/* Scroll to top */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button

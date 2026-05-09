@@ -18,6 +18,7 @@ import {
   ChevronUp,
   Award,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import GalleryCard from "../components/UI/GalleryCard";
 import supabase from "../config/supabaseClient";
 
@@ -62,12 +63,13 @@ interface GalleryCardImage {
 
 interface Category {
   id: string;
-  name: string;
+  nameKey: string;      // translation key for category name
   icon: React.ElementType;
   count: number;
 }
 
 const Gallery: React.FC = () => {
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,36 +105,36 @@ const Gallery: React.FC = () => {
     fetchGalleryImages();
   }, [fetchGalleryImages]);
 
-  // Categories with dynamic counts
+  // Categories with dynamic counts and translation keys
   const categories: Category[] = [
-    { id: "all", name: "All", icon: Grid, count: images.length },
+    { id: "all", nameKey: "gallery.categories.all", icon: Grid, count: images.length },
     {
       id: "performances",
-      name: "Performances",
+      nameKey: "gallery.categories.performances",
       icon: Theater,
       count: images.filter((i) => i.category === "performances").length,
     },
     {
       id: "behind-scenes",
-      name: "Behind Scenes",
+      nameKey: "gallery.categories.behindScenes",
       icon: Camera,
       count: images.filter((i) => i.category === "behind-scenes").length,
     },
     {
       id: "venues",
-      name: "Venues",
+      nameKey: "gallery.categories.venues",
       icon: MapPin,
       count: images.filter((i) => i.category === "venues").length,
     },
     {
       id: "audience",
-      name: "Audience",
+      nameKey: "gallery.categories.audience",
       icon: Users,
       count: images.filter((i) => i.category === "audience").length,
     },
     {
       id: "costumes",
-      name: "Costumes",
+      nameKey: "gallery.categories.costumes",
       icon: Award,
       count: images.filter((i) => i.category === "costumes").length,
     },
@@ -174,7 +176,6 @@ const Gallery: React.FC = () => {
 
   const closeModal = () => {
     setIsModalOpen(false);
-    // Delay clearing selected image to allow exit animation
     setTimeout(() => {
       setSelectedImage(null);
     }, 300);
@@ -193,7 +194,6 @@ const Gallery: React.FC = () => {
 
       if (error) throw error;
 
-      // Update local state
       setImages((prevImages) =>
         prevImages.map((img) =>
           img.id === imageId ? { ...img, likes: currentLikes + 1 } : img,
@@ -211,7 +211,7 @@ const Gallery: React.FC = () => {
     const shareUrl = `${window.location.origin}/gallery/${image.id}`;
     try {
       await navigator.clipboard.writeText(shareUrl);
-      alert("Link copied to clipboard!");
+      alert(t("gallery.modal.linkCopied") || "Link copied to clipboard!");
     } catch (error) {
       console.error("Error copying link:", error);
     }
@@ -244,7 +244,7 @@ const Gallery: React.FC = () => {
 
   // Transform database image to GalleryCard expected format
   const transformImageForCard = (image: GalleryImage): GalleryCardImage => ({
-    id: parseInt(image.id, 10), // Convert string id to number
+    id: parseInt(image.id, 10),
     src: image.image_url,
     title: image.title,
     description: image.description,
@@ -277,8 +277,7 @@ const Gallery: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Hero Section                 <div className="bg-gradient-to-br from-deepTeal via-deepBlue to-deepTeal text-white relative overflow-hidden">
-*/}
+      {/* Hero Section */}
       <section className="bg-gradient-to-br from-deepTeal via-deepBlue to-deepTeal text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-24">
@@ -300,12 +299,11 @@ const Gallery: React.FC = () => {
             </motion.div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-4">
-              Theater Gallery
+              {t("gallery.hero.title")}
             </h1>
 
             <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-              Explore performances, behind-the-scenes moments, venues, and
-              audience experiences from our organized theater collection.
+              {t("gallery.hero.subtitle")}
             </p>
           </motion.div>
         </div>
@@ -335,7 +333,7 @@ const Gallery: React.FC = () => {
                   }`}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{category.name}</span>
+                  <span>{t(category.nameKey)}</span>
                   <span
                     className={`text-xs ${isActive ? "text-white/80" : "text-gray-400"}`}
                   >
@@ -378,7 +376,7 @@ const Gallery: React.FC = () => {
                     }}
                     disabled={currentPage === 1}
                     className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-                    aria-label="Previous page"
+                    aria-label={t("gallery.pagination.prev")}
                   >
                     <ChevronLeft className="h-5 w-5" />
                   </button>
@@ -403,7 +401,7 @@ const Gallery: React.FC = () => {
                               ? "bg-teal-600 text-white shadow-md"
                               : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                           }`}
-                          aria-label={`Go to page ${page}`}
+                          aria-label={t("gallery.pagination.goToPage", { page })}
                         >
                           {page}
                         </button>
@@ -417,7 +415,7 @@ const Gallery: React.FC = () => {
                     }}
                     disabled={currentPage === totalPages}
                     className="p-2 rounded-lg bg-white border border-gray-200 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
-                    aria-label="Next page"
+                    aria-label={t("gallery.pagination.next")}
                   >
                     <ChevronRight className="h-5 w-5" />
                   </button>
@@ -427,9 +425,11 @@ const Gallery: React.FC = () => {
               {/* Showing info */}
               {filteredImages.length > itemsPerPage && (
                 <div className="text-center mt-4 text-sm text-gray-500">
-                  Showing {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                  {Math.min(currentPage * itemsPerPage, filteredImages.length)}{" "}
-                  of {filteredImages.length} images
+                  {t("gallery.pagination.showing", {
+                    start: (currentPage - 1) * itemsPerPage + 1,
+                    end: Math.min(currentPage * itemsPerPage, filteredImages.length),
+                    total: filteredImages.length,
+                  })}
                 </div>
               )}
             </motion.div>
@@ -443,10 +443,10 @@ const Gallery: React.FC = () => {
             >
               <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No images found
+                {t("gallery.noImages.title")}
               </h3>
               <p className="text-gray-500">
-                Try selecting a different category
+                {t("gallery.noImages.message")}
               </p>
             </motion.div>
           )}
@@ -474,7 +474,7 @@ const Gallery: React.FC = () => {
               <button
                 onClick={closeModal}
                 className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition"
-                aria-label="Close modal"
+                aria-label={t("gallery.modal.close")}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -514,13 +514,15 @@ const Gallery: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-2 text-gray-500">
                       <Camera className="h-4 w-4" />
-                      <span>Photographer: {selectedImage.photographer}</span>
+                      <span>
+                        {t("gallery.modal.photographer", { name: selectedImage.photographer })}
+                      </span>
                     </div>
                     {selectedImage.published_by_name && (
                       <div className="flex items-center gap-2 text-gray-500">
                         <Users className="h-4 w-4" />
                         <span>
-                          Published by: {selectedImage.published_by_name}
+                          {t("gallery.modal.publishedBy", { name: selectedImage.published_by_name })}
                         </span>
                       </div>
                     )}
@@ -530,7 +532,7 @@ const Gallery: React.FC = () => {
                           handleLike(selectedImage.id, selectedImage.likes)
                         }
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
-                        aria-label="Like image"
+                        aria-label={t("gallery.modal.like")}
                       >
                         <Heart className="h-4 w-4 text-red-500" />
                         <span>{selectedImage.likes}</span>
@@ -538,19 +540,19 @@ const Gallery: React.FC = () => {
                       <button
                         onClick={() => handleShare(selectedImage)}
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
-                        aria-label="Share image"
+                        aria-label={t("gallery.modal.share")}
                       >
                         <Share2 className="h-4 w-4" />
-                        <span>Share</span>
+                        <span>{t("gallery.modal.share")}</span>
                       </button>
                       <a
                         href={selectedImage.image_url}
                         download
                         className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 transition"
-                        aria-label="Download image"
+                        aria-label={t("gallery.modal.download")}
                       >
                         <Download className="h-4 w-4" />
-                        <span>Download</span>
+                        <span>{t("gallery.modal.download")}</span>
                       </a>
                     </div>
                   </div>
@@ -572,7 +574,7 @@ const Gallery: React.FC = () => {
             whileTap={{ scale: 0.9 }}
             onClick={scrollToTop}
             className="fixed bottom-6 right-6 z-50 p-3 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition-all duration-200"
-            aria-label="Scroll to top"
+            aria-label={t("gallery.scrollToTop")}
           >
             <ChevronUp className="h-5 w-5" />
           </motion.button>
