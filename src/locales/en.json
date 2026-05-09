@@ -1204,5 +1204,103 @@
       "permissionDenied": "You don't have permission to view this employee",
       "accessDenied": "Access denied"
     }
+  },"about": {
+  "hero": {
+    "badge": "About Us",
+    "title": "Ethiopia’s Modern Theater Booking Platform",
+    "subtitle": "Seamless booking, secure reservations, and unforgettable theater experiences across Ethiopia",
+    "contactButton": "Contact Us"
+  },
+  "stats": {
+    "theatersValue": "50+",
+    "theatersLabel": "Partner Theaters",
+    "customersValue": "100K+",
+    "customersLabel": "Happy Customers"
+  },
+  "missionVision": {
+    "title": "Our Mission & Vision",
+    "subtitle": "Dedicated to making theater booking and reservation seamless for everyone in Ethiopia"
+  },
+  "mission": "Our Mission",
+  "missionText": "To provide a seamless, secure, and innovative platform for booking and reserving theater experiences, making online accessible to everyone across Ethiopia. Simple booking, secure reservations.",
+  "vision": "Our Vision",
+  "visionText": "To become Ethiopia's leading theater booking and reservation platform, revolutionizing how audiences discover, book, and experience performances with ease and confidence.",
+  "values": {
+    "title": "Our Core Values",
+    "subtitle": "The principles that guide our booking and reservation platform",
+    "trust": {
+      "title": "Trust & Security",
+      "description": "Your data and payments are protected with enterprise‑grade security."
+    },
+    "innovation": {
+      "title": "Innovation",
+      "description": "Constantly improving to bring you the best booking experience."
+    },
+    "customerFirst": {
+      "title": "Customer First",
+      "description": "Your satisfaction is our top priority. We're here for you 24/7."
+    }
+  },
+  "features": {
+    "title": "Why Choose TheaterHUB",
+    "subtitle": "We're dedicated to providing the best theater booking and reservation experience in Ethiopia",
+    "easyBooking": {
+      "title": "Easy Booking",
+      "description": "Book tickets in just a few clicks"
+    },
+    "multipleVenues": {
+      "title": "Multiple Venues",
+      "description": "Access to theaters across Ethiopia"
+    },
+    "mobileTickets": {
+      "title": "Mobile Tickets",
+      "description": "Digital tickets on your phone"
+    },
+    "bestSelection": {
+      "title": "Best Selection",
+      "description": "Wide variety of shows and performances"
+    },
+    "support247": {
+      "title": "24/7 Support",
+      "description": "Round‑the‑clock customer service"
+    },
+    "securePayments": {
+      "title": "Secure Payments",
+      "description": "Safe and encrypted transactions"
+    }
+  },
+  "team": {
+    "title": "Our Team",
+    "subtitle": "Meet the talented individuals behind Theatre Hub Ethiopia",
+    "memberDesc": "Dedicated professional committed to delivering excellence in {{role}}.",
+    "members": {
+      "birehanu": {
+        "name": "Birehanu Kassa",
+        "role": "Project Manager",
+        "responsibility": "Project planning, coordination, documentation, and review"
+      },
+      "gebreslassie": {
+        "name": "Gebreslassie Desie",
+        "role": "Backend Developer",
+        "responsibility": "Server‑side logic, APIs, system integration"
+      },
+      "gemechis": {
+        "name": "Gemechis Debelo",
+        "role": "Frontend Developer",
+        "responsibility": "User interface design and client‑side development"
+      },
+      "lelisa": {
+        "name": "Lelisa Abraham",
+        "role": "Database Designer & Tester",
+        "responsibility": "Database design and system testing"
+      }
+    }
+  },
+  "cta": {
+    "title": "Ready to Book Your Next Theater Experience?",
+    "subtitle": "Join thousands of theater lovers across Ethiopia who trust TheaterHUB for seamless booking and secure reservations.",
+    "findTheaters": "Find Theaters Near You",
+    "contactUs": "Contact Us"
   }
+}
 }

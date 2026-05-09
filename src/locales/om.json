@@ -471,5 +471,103 @@
       "qrScanner": { "label": "QR Skanii", "description": "Tiikiti taatee irratti mirkaneessi", "permissions": [ "Tiikiti skanii", "Galmee mirkaneessi", "Odeeffannoo taatee ilaali" ] }
     },
     "errors": { "notAuthenticated": "Fayyadamaan mirkaneessaa miti", "loadFailed": "Odeeffannoo fayyadamaa fe'un hin milkoofne", "permissionDenied": "Hojjetaa kana ilaaluuf hayyamni hin qabdu", "accessDenied": "Seenmuun ittifame" }
+  },"about": {
+  "hero": {
+    "badge": "Waa’ee Keenya",
+    "title": "Itoophiyaa’s Modern Theater Booking Platform",
+    "subtitle": "Buufata bu’uuraa ariifachiisa, ittigaafannaa amansiisaa, fi muuxannoo tiyaatiraa hin irraanfanne guutuu Itoophiyaatti",
+    "contactButton": "Nu Quunnami"
+  },
+  "stats": {
+    "theatersValue": "50+",
+    "theatersLabel": "Tiyaatiraa Hiriyaa",
+    "customersValue": "100K+",
+    "customersLabel": "Nama Itti Gammadan"
+  },
+  "missionVision": {
+    "title": "Ergafi Mul’ata Keenya",
+    "subtitle": "Guyyaa fulmaanaaf tiyaatiraa akka bal’inaatti namaaf mijeessuuf"
+  },
+  "mission": "Erga Kee",
+  "missionText": "Rifeensa salphaa, amansiisaa fi hojiirra oola ta’e kan tiyaatiraa sanaa taasisuuf karaa online guutuu Itiyoophiyaa hawaasaaf mijeessu.",
+  "vision": "Mul’ata",
+  "visionText": "Itoophiyaa’s platform tiyaatiraa ergaafi ittigaafannaa keessatti leenjisuuf, akka hawaasiin salphaattu beeluuf, buufachuuf, fi itti gammaduuf.",
+  "values": {
+    "title": "Akaakuwaa Jijjiiramoo",
+    "subtitle": "Isaan karaa nuti ittiin hojjenna geggefessu",
+    "trust": {
+      "title": "Amantii fi Sirna",
+      "description": "Detaa keessanifi kaffaltiin gara jabessa enterprise‑qabameen eegama."
+    },
+    "innovation": {
+      "title": "Shakileemaa",
+      "description": "Guyyaa guutuu fooyyessuu akka muuxannoon keessan gaggaarii ta’uuf."
+    },
+    "customerFirst": {
+      "title": "Dura Maqaa",
+      "description": "Gammachuun keessan duraantuma. Garaa 24/7 nuu ni argama."
+    }
+  },
+  "features": {
+    "title": "Maaliif TheaterHUB",
+    "subtitle": "Nu muuxannoo tiyaatiraan Itoophiyaa keessatti gaarii taasisuuf waadaa galeerra",
+    "easyBooking": {
+      "title": "Buufata Safuu",
+      "description": "Tiikitii dhaquu muraasa tuquun"
+    },
+    "multipleVenues": {
+      "title": "Bakkeewwan Hedduu",
+      "description": "Qunnamti tiyaatiraa Itoophiyaa guutuu"
+    },
+    "mobileTickets": {
+      "title": "Tiikitii Bilbilaa",
+      "description": "Tiikitiidijitaalaa bilbilaa keessanirratti"
+    },
+    "bestSelection": {
+      "title": "Filannoo Garaa",
+      "description": "Addunyaa agartootaa fi raawwiiwwan hedduu"
+    },
+    "support247": {
+      "title": "24/7 Gargaarsa",
+      "description": "Tajaajila maamilaa guyyaa fi halkan"
+    },
+    "securePayments": {
+      "title": "Kaffaltii Amansiisaa",
+      "description": "Gadda ife galma galmeeffame"
+    }
+  },
+  "team": {
+    "title": "Garee Keenya",
+    "subtitle": "Abbootii ogummaa Theatre Hub Ethiopia duuba jiran waliin wal argaa",
+    "memberDesc": "Ogummaa isaa of kennee fi hojiirratti milkaa’uu {{role}} keessatti dhaabbata.",
+    "members": {
+      "birehanu": {
+        "name": "Birehanu Kassa",
+        "role": "Hojiin Bulchaa",
+        "responsibility": "Karoora hojii, walitti hidhii, galmee fi gulaaluu"
+      },
+      "gebreslassie": {
+        "name": "Gebreslassie Desie",
+        "role": "Hojii Duuba",
+        "responsibility": "Logikii biraa, API, walitti hidhii sirnaa"
+      },
+      "gemechis": {
+        "name": "Gemechis Debelo",
+        "role": "Hojii Fuula Duraa",
+        "responsibility": "Ijaarsa ilaalcha fayyadamaa fi hojiin fuula duraa"
+      },
+      "lelisa": {
+        "name": "Lelisa Abraham",
+        "role": "Ijaarsa Koombiyuutaraa fi Mirkaneessaa",
+        "responsibility": "Ijaarsa koombiyuutaraa fi mirkaneessaa sirnaa"
+      }
+    }
+  },
+  "cta": {
+    "title": "Akkasuma Tiikitii Keessan Buufachuuf Qophaa’a?",
+    "subtitle": "Hedduu jaalattoota tiyaatiraa Itoophiyaa irratti nu amanan waliin gadi yaadi.",
+    "findTheaters": "Bakkeewwan Buna Keessan Barbaadi",
+    "contactUs": "Nu Quunnami"
   }
+}
 }

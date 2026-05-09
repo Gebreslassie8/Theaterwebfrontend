@@ -1,22 +1,42 @@
 // src/components/content/ReplyContactReusable.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  Send, 
-  Mail, 
-  User, 
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Send,
+  Mail,
+  User,
   Calendar,
   MessageSquare,
   CheckCircle,
   AlertCircle,
   Loader2,
   Reply,
-  Theater
-} from 'lucide-react';
+  Theater,
+} from "lucide-react";
 
 // ============= Types =============
-export interface ContactMessage {
+// More flexible type that accepts both admin and theater messages
+export interface FlexibleContactMessage {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: string;
+  message: string;
+  category?: string;
+  recipientType: string;
+  theaterId?: string;
+  theaterName?: string;
+  status?: string;
+  createdAt: string;
+  repliedAt?: string;
+  replyMessage?: string;
+  repliedBy?: string;
+}
+
+// Strict type for internal use
+interface InternalContactMessage {
   id: string;
   name: string;
   email: string;
@@ -24,10 +44,10 @@ export interface ContactMessage {
   subject: string;
   message: string;
   category: string;
-  recipientType: 'theater';
+  recipientType: "theater";
   theaterId: string;
   theaterName: string;
-  status: 'read' | 'unread' | 'replied';
+  status: "read" | "unread" | "replied";
   createdAt: string;
   repliedAt?: string;
   replyMessage?: string;
@@ -42,39 +62,76 @@ export interface ReplyData {
 }
 
 interface ReplyContactReusableProps {
-  message: ContactMessage;
+  message: FlexibleContactMessage;
   onReply: (messageId: string, replyContent: string, ccSelf?: boolean) => void;
   theaterName?: string;
   isSubmitting?: boolean;
 }
 
+// Helper to convert flexible message to internal format
+const normalizeMessage = (
+  msg: FlexibleContactMessage,
+  defaultTheaterName?: string,
+): InternalContactMessage | null => {
+  // Only theater messages can be replied to
+  if (msg.recipientType !== "theater") {
+    return null;
+  }
+
+  return {
+    id: msg.id,
+    name: msg.name,
+    email: msg.email,
+    phone: msg.phone || "",
+    subject: msg.subject,
+    message: msg.message,
+    category: msg.category || "general",
+    recipientType: "theater",
+    theaterId: msg.theaterId || "",
+    theaterName: msg.theaterName || defaultTheaterName || "Theater",
+    status: (msg.status as "read" | "unread" | "replied") || "unread",
+    createdAt: msg.createdAt,
+    repliedAt: msg.repliedAt,
+    replyMessage: msg.replyMessage,
+    repliedBy: msg.repliedBy,
+  };
+};
+
 // ============= Helper Functions =============
 const formatDate = (dateString: string): string => {
   const d = new Date(dateString);
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return d.toLocaleString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 // ============= Main Component =============
-const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({ 
-  message, 
+const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
+  message,
   onReply,
-  theaterName = 'Theater',
-  isSubmitting: externalSubmitting = false
+  theaterName = "Theater",
+  isSubmitting: externalSubmitting = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [replyText, setReplyText] = useState('');
+  const [replyText, setReplyText] = useState("");
   const [ccSelf, setCcSelf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [charCount, setCharCount] = useState(0);
+
+  // Normalize the message for internal use
+  const normalizedMessage = normalizeMessage(message, theaterName);
+
+  // Only render if it's a theater message
+  if (!normalizedMessage) {
+    return null;
+  }
 
   // Auto focus textarea when modal opens
   useEffect(() => {
@@ -88,7 +145,7 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
   // Reset form when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setReplyText('');
+      setReplyText("");
       setCcSelf(false);
       setError(null);
       setSuccessMessage(null);
@@ -104,17 +161,17 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
   const handleSubmit = async () => {
     // Validation
     if (!replyText.trim()) {
-      setError('Please enter a reply message');
+      setError("Please enter a reply message");
       return;
     }
 
     if (replyText.length < 10) {
-      setError('Reply message must be at least 10 characters');
+      setError("Reply message must be at least 10 characters");
       return;
     }
 
     if (replyText.length > 5000) {
-      setError('Reply message cannot exceed 5000 characters');
+      setError("Reply message cannot exceed 5000 characters");
       return;
     }
 
@@ -123,33 +180,33 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      onReply(message.id, replyText, ccSelf);
-      setSuccessMessage('Reply sent successfully!');
-      
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      onReply(normalizedMessage.id, replyText, ccSelf);
+      setSuccessMessage("Reply sent successfully!");
+
       // Close modal after 1.5 seconds
       setTimeout(() => {
         setIsOpen(false);
         setSuccessMessage(null);
       }, 1500);
     } catch (err) {
-      setError('Failed to send reply. Please try again.');
+      setError("Failed to send reply. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.ctrlKey && e.key === 'Enter') {
+    if (e.ctrlKey && e.key === "Enter") {
       handleSubmit();
     }
   };
 
   const getCharacterColor = () => {
-    if (charCount > 4500) return 'text-orange-500';
-    if (charCount > 4000) return 'text-yellow-500';
-    return 'text-gray-500';
+    if (charCount > 4500) return "text-orange-500";
+    if (charCount > 4000) return "text-yellow-500";
+    return "text-gray-500";
   };
 
   return (
@@ -192,9 +249,11 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                       <Reply className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold text-white">Reply to Customer</h2>
+                      <h2 className="text-xl font-bold text-white">
+                        Reply to Customer
+                      </h2>
                       <p className="text-sm text-white/80 mt-0.5">
-                        Respond to {message.name}
+                        Respond to {normalizedMessage.name}
                       </p>
                     </div>
                   </div>
@@ -218,7 +277,9 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                       <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className="font-medium text-green-800">Success!</p>
-                        <p className="text-sm text-green-700">{successMessage}</p>
+                        <p className="text-sm text-green-700">
+                          {successMessage}
+                        </p>
                       </div>
                     </motion.div>
                   )}
@@ -244,19 +305,27 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                       <div className="p-1.5 bg-teal-100 rounded-lg">
                         <Theater className="w-4 h-4 text-teal-600" />
                       </div>
-                      <h3 className="font-semibold text-gray-900">{theaterName}</h3>
+                      <h3 className="font-semibold text-gray-900">
+                        {normalizedMessage.theaterName}
+                      </h3>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div className="flex items-start gap-2 text-sm">
                         <div className="p-1 bg-blue-100 rounded-lg mt-0.5">
                           <User className="w-3 h-3 text-blue-600" />
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">From:</span>{' '}
-                          <span className="text-gray-900">{message.name}</span>
-                          {message.email && (
-                            <span className="text-gray-500 ml-1">&lt;{message.email}&gt;</span>
+                          <span className="font-medium text-gray-700">
+                            From:
+                          </span>{" "}
+                          <span className="text-gray-900">
+                            {normalizedMessage.name}
+                          </span>
+                          {normalizedMessage.email && (
+                            <span className="text-gray-500 ml-1">
+                              &lt;{normalizedMessage.email}&gt;
+                            </span>
                           )}
                         </div>
                       </div>
@@ -266,8 +335,12 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                           <MessageSquare className="w-3 h-3 text-purple-600" />
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Subject:</span>{' '}
-                          <span className="text-gray-900">{message.subject}</span>
+                          <span className="font-medium text-gray-700">
+                            Subject:
+                          </span>{" "}
+                          <span className="text-gray-900">
+                            {normalizedMessage.subject}
+                          </span>
                         </div>
                       </div>
 
@@ -276,21 +349,39 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                           <Calendar className="w-3 h-3 text-green-600" />
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700">Received:</span>{' '}
-                          <span className="text-gray-600">{formatDate(message.createdAt)}</span>
+                          <span className="font-medium text-gray-700">
+                            Received:
+                          </span>{" "}
+                          <span className="text-gray-600">
+                            {formatDate(normalizedMessage.createdAt)}
+                          </span>
                         </div>
                       </div>
 
-                      {message.phone && (
+                      {normalizedMessage.phone && (
                         <div className="flex items-start gap-2 text-sm">
                           <div className="p-1 bg-yellow-100 rounded-lg mt-0.5">
-                            <svg className="w-3 h-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                            <svg
+                              className="w-3 h-3 text-yellow-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                              />
                             </svg>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Phone:</span>{' '}
-                            <span className="text-gray-600">{message.phone}</span>
+                            <span className="font-medium text-gray-700">
+                              Phone:
+                            </span>{" "}
+                            <span className="text-gray-600">
+                              {normalizedMessage.phone}
+                            </span>
                           </div>
                         </div>
                       )}
@@ -298,11 +389,13 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                       <div className="mt-4 pt-4 border-t border-gray-200">
                         <div className="flex items-center gap-2 mb-2">
                           <Mail className="w-4 h-4 text-gray-500" />
-                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Original Message</span>
+                          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Original Message
+                          </span>
                         </div>
                         <div className="bg-white rounded-lg p-4 border border-gray-200">
                           <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-                            {message.message}
+                            {normalizedMessage.message}
                           </p>
                         </div>
                       </div>
@@ -324,21 +417,30 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                         className={`
                           w-full px-4 py-3 rounded-lg border transition-all duration-200
                           focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none
-                          ${error && !successMessage
-                            ? 'border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-teal-500'
+                          ${
+                            error && !successMessage
+                              ? "border-red-500 focus:ring-red-500"
+                              : "border-gray-300 focus:border-teal-500"
                           }
                         `}
-                        placeholder={`Dear ${message.name},\n\nThank you for contacting ${theaterName}...`}
+                        placeholder={`Dear ${normalizedMessage.name},\n\nThank you for contacting ${normalizedMessage.theaterName}...`}
                         disabled={!!successMessage}
                       />
                       <div className="mt-2 flex justify-between items-center">
                         <span className="text-xs text-gray-500">
-                          Press <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">Ctrl</kbd> + <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">Enter</kbd> to send
+                          Press{" "}
+                          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">
+                            Ctrl
+                          </kbd>{" "}
+                          +{" "}
+                          <kbd className="px-1.5 py-0.5 bg-gray-100 rounded text-xs font-mono">
+                            Enter
+                          </kbd>{" "}
+                          to send
                         </span>
                         <span className={`text-xs ${getCharacterColor()}`}>
                           {charCount} / 5000 characters
-                          {charCount > 4500 && ' (approaching limit)'}
+                          {charCount > 4500 && " (approaching limit)"}
                         </span>
                       </div>
                     </div>
@@ -352,20 +454,34 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                         className="w-4 h-4 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
                         disabled={!!successMessage}
                       />
-                      <label htmlFor="ccSelf" className="text-sm text-gray-700 cursor-pointer">
+                      <label
+                        htmlFor="ccSelf"
+                        className="text-sm text-gray-700 cursor-pointer"
+                      >
                         Send a copy to my email address
                       </label>
                     </div>
 
                     {/* Quick Reply Templates */}
                     <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">Quick Templates</p>
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Quick Templates
+                      </p>
                       <div className="flex flex-wrap gap-2">
-                        {['Thank you for your message', 'We will get back to you soon', 'Ticket information sent'].map((template) => (
+                        {[
+                          "Thank you for your message",
+                          "We will get back to you soon",
+                          "Ticket information sent",
+                        ].map((template) => (
                           <button
                             key={template}
                             type="button"
-                            onClick={() => setReplyText(prev => prev + (prev ? '\n\n' : '') + template)}
+                            onClick={() =>
+                              setReplyText(
+                                (prev) =>
+                                  prev + (prev ? "\n\n" : "") + template,
+                              )
+                            }
                             className="text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                             disabled={!!successMessage}
                           >
@@ -388,10 +504,15 @@ const ReplyContactReusable: React.FC<ReplyContactReusableProps> = ({
                       <button
                         type="button"
                         onClick={handleSubmit}
-                        disabled={isSubmitting || externalSubmitting || !!successMessage || !replyText.trim()}
+                        disabled={
+                          isSubmitting ||
+                          externalSubmitting ||
+                          !!successMessage ||
+                          !replyText.trim()
+                        }
                         className="flex-1 px-4 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg hover:from-teal-700 hover:to-emerald-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
                       >
-                        {(isSubmitting || externalSubmitting) ? (
+                        {isSubmitting || externalSubmitting ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
                             Sending...
