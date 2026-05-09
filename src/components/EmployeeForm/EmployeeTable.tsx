@@ -1,6 +1,7 @@
 // frontend/src/components/EmployeeForm/EmployeeTable.tsx
 import React from "react";
-import { Eye, Edit, Ban, RefreshCw, Trash2, Mail, Phone, LayoutGrid, UsersRound,} from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Eye, Edit, Ban, RefreshCw, Trash2, Mail, Phone, LayoutGrid, UsersRound } from "lucide-react";
 import ReusableTable from "../Reusable/ReusableTable";
 import { Employee } from "../../pages/Owner/employes/employee.types";
 import { roleConfig, statusConfig } from "../../pages/Owner/employes/employeeConstants";
@@ -26,6 +27,8 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   onReactivate,
   onDelete,
 }) => {
+  const { t } = useTranslation();
+
   const canDeactivate = (employee: Employee): boolean =>
     employee.status === "Active";
 
@@ -40,18 +43,17 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
 
   const columns = [
     {
-      Header: "Employee",
+      Header: t("employeeManagement.table.headers.employee"),
       accessor: "name",
       sortable: true,
       Cell: (row: Employee) => (
         <div className="flex items-center gap-3">
-          
           <div>
             <p className="font-medium text-gray-900">{row.name}</p>
             <p className="text-xs text-gray-500">@{row.username}</p>
             {row.employee_id && (
               <p className="text-xs text-gray-400 font-mono">
-                ID: {row.employee_id}
+                {t("employeeManagement.table.headers.employeeId")}: {row.employee_id}
               </p>
             )}
           </div>
@@ -59,7 +61,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       ),
     },
     {
-      Header: "Contact",
+      Header: t("employeeManagement.table.headers.contact"),
       accessor: "email",
       sortable: true,
       Cell: (row: Employee) => (
@@ -76,55 +78,67 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       ),
     },
     {
-      Header: "Role",
+      Header: t("employeeManagement.table.headers.role"),
       accessor: "assignedRole",
       sortable: true,
       Cell: (row: Employee) => {
         const config = roleConfig[row.assignedRole] || roleConfig.sales_person;
         const Icon = config.icon;
+        let roleLabel = config.label;
+        if (row.assignedRole === "theater_manager") roleLabel = t("employeeManagement.roles.theaterManager");
+        else if (row.assignedRole === "sales_person") roleLabel = t("employeeManagement.roles.salesPerson");
+        else if (row.assignedRole === "qr_scanner") roleLabel = t("employeeManagement.roles.qrScanner");
+        else roleLabel = config.label;
         return (
           <span
             className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
           >
             <Icon className="h-3 w-3" />
-            {config.label}
+            {roleLabel}
           </span>
         );
       },
     },
     {
-      Header: "Salary (ETB)",
+      Header: t("employeeManagement.table.headers.salary"),
       accessor: "salary",
       sortable: true,
       Cell: (row: Employee) => (
         <span className="font-semibold text-green-600">
-          Br {row.salary.toLocaleString()}
+          {t("employeeManagement.table.currency")} {row.salary.toLocaleString()}
         </span>
       ),
     },
     {
-      Header: "Status",
+      Header: t("employeeManagement.table.headers.status"),
       accessor: "status",
       sortable: true,
       Cell: (row: Employee) => {
         const config = statusConfig[row.status];
         const Icon = config.icon;
+        const statusLabel = row.status === "Active" 
+          ? t("employeeManagement.status.active") 
+          : t("employeeManagement.status.inactive");
         return (
           <span
             className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
           >
             <Icon className="h-3 w-3" />
-            {config.label}
+            {statusLabel}
           </span>
         );
       },
     },
   ];
 
-
   const renderActions = (row: Employee) => (
     <div className="flex items-center justify-start gap-2">
-      <button onClick={() => onView(row)} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group" title="View Details" type="button" >
+      <button
+        onClick={() => onView(row)}
+        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group"
+        title={t("employeeManagement.table.actions.view")}
+        type="button"
+      >
         <Eye className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
       </button>
 
@@ -132,7 +146,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <button
           onClick={() => onEdit(row)}
           className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200 group"
-          title="Edit Employee"
+          title={t("employeeManagement.table.actions.edit")}
           type="button"
         >
           <Edit className="h-4 w-4 text-teal-600 group-hover:scale-110 transition-transform" />
@@ -143,7 +157,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <button
           onClick={() => onDeactivate(row)}
           className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-200 group"
-          title="Deactivate Employee"
+          title={t("employeeManagement.table.actions.deactivate")}
           type="button"
         >
           <Ban className="h-4 w-4 text-orange-600 group-hover:scale-110 transition-transform" />
@@ -154,7 +168,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <button
           onClick={() => onReactivate(row)}
           className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-200 group"
-          title="Reactivate Employee"
+          title={t("employeeManagement.table.actions.reactivate")}
           type="button"
         >
           <RefreshCw className="h-4 w-4 text-green-600 group-hover:scale-110 transition-transform" />
@@ -165,7 +179,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
         <button
           onClick={() => onDelete(row)}
           className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all duration-200 group"
-          title="Delete Employee"
+          title={t("employeeManagement.table.actions.delete")}
           type="button"
         >
           <Trash2 className="h-4 w-4 text-red-600 group-hover:scale-110 transition-transform" />
@@ -177,7 +191,7 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   const columnsWithActions = [
     ...columns,
     {
-      Header: "Actions",
+      Header: t("employeeManagement.table.headers.actions"),
       accessor: "actions",
       Cell: renderActions,
       width: "280px",
@@ -192,9 +206,9 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
           className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"
           role="status"
         >
-          <span className="sr-only">Loading employees...</span>
+          <span className="sr-only">{t("employeeManagement.table.loading")}</span>
         </div>
-        <p className="mt-4 text-gray-500">Loading employees...</p>
+        <p className="mt-4 text-gray-500">{t("employeeManagement.table.loading")}</p>
       </div>
     );
   }
@@ -204,10 +218,10 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
       <div className="text-center py-12 bg-white rounded-xl shadow-md">
         <UsersRound className="h-16 w-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">
-          No Employees Found
+          {t("employeeManagement.table.noEmployees")}
         </h3>
         <p className="text-gray-500 mb-4">
-          No employees match your search criteria.
+          {t("employeeManagement.table.noEmployeesMessage")}
         </p>
       </div>
     );

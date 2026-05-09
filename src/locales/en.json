@@ -18,7 +18,9 @@
     "clearFilters": "Clear all filters",
     "loadingEvents": "Loading events...",
     "errorLoadingEvents": "Error Loading Events",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "cancel": "Cancel",
+    "close": "Close"
   },
   "sortOptions": {
     "date": "Date",
@@ -47,69 +49,1162 @@
     "customerDesc": "Book tickets & enjoy shows",
     "theaterOwnerAccount": "Theater Owner Account",
     "theaterOwnerDesc": "List & manage your theater"
-  },"footer": {
-  "brand": {
-    "name": "Ethiopian TheaterHUB",
-    "tagline": "Modern entertainment platform"
+  },
+  "footer": {
+    "brand": {
+      "name": "Ethiopian TheaterHUB",
+      "tagline": "Modern entertainment platform"
+    },
+    "contact": {
+      "locationLabel": "LOCATION",
+      "locationValue": "Bole Medhanealem, Addis Ababa, Ethiopia",
+      "phoneLabel": "PHONE",
+      "phoneValue": "+251-11-558-1234",
+      "supportHours": "Support: 24/7",
+      "emailLabel": "EMAIL",
+      "emailValue": "info@theaterhubethiopia.com",
+      "responseTime": "Response within 24h"
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "about": "About Us",
+      "blog": "Blog",
+      "gallery": "Gallery"
+    },
+    "support": {
+      "title": "Support",
+      "helpCenter": "Help Center",
+      "contactUs": "Contact Us"
+    },
+    "legal": {
+      "title": "Legal",
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "cookies": "Cookie Policy"
+    },
+    "newsletter": {
+      "title": "Newsletter",
+      "description": "Subscribe to get exclusive offers, early bird tickets",
+      "placeholder": "Your email address",
+      "subscribe": "Subscribe",
+      "subscribing": "Subscribing..."
+    },
+    "social": {
+      "title": "Connect With Us"
+    },
+    "copyright": "Ethiopian TheaterHUB System",
+    "bottomLinks": {
+      "terms": "Terms",
+      "privacy": "Privacy",
+      "cookies": "Cookies",
+      "accessibility": "Accessibility"
+    },
+    "popup": {
+      "successTitle": "🎉 Welcome to TheaterHUB Family!",
+      "successMessage": "You've successfully subscribed! Get ready for exclusive deals, early bird tickets, and amazing giveaways delivered straight to your inbox.",
+      "successBadge": "🎁 You've successfully subscribed!",
+      "buttonSuccess": "Start Exploring 🎭",
+      "errorTitle": "❌ Oops! Something went wrong",
+      "buttonError": "Try Again"
+    },
+    "errors": {
+      "emailRequired": "Please enter your email address to receive amazing offers!",
+      "invalidEmail": "Please enter a valid email address. Example: name@domain.com",
+      "alreadySubscribed": "This email is already subscribed! You're already part of our VIP family 🎭"
+    }
+  },
+  "about": {
+    "hero": {
+      "badge": "About Us",
+      "title": "Ethiopia’s Modern Theater Booking Platform",
+      "subtitle": "Seamless booking, secure reservations, and unforgettable theater experiences across Ethiopia",
+      "contactButton": "Contact Us"
+    },
+    "stats": {
+      "theatersValue": "50+",
+      "theatersLabel": "Partner Theaters",
+      "customersValue": "100K+",
+      "customersLabel": "Happy Customers"
+    },
+    "missionVision": {
+      "title": "Our Mission & Vision",
+      "subtitle": "Dedicated to making theater booking and reservation seamless for everyone in Ethiopia"
+    },
+    "mission": "Our Mission",
+    "missionText": "To provide a seamless, secure, and innovative platform for booking and reserving theater experiences, making online accessible to everyone across Ethiopia. Simple booking, secure reservations.",
+    "vision": "Our Vision",
+    "visionText": "To become Ethiopia's leading theater booking and reservation platform, revolutionizing how audiences discover, book, and experience performances with ease and confidence.",
+    "values": {
+      "title": "Our Core Values",
+      "subtitle": "The principles that guide our booking and reservation platform",
+      "trust": {
+        "title": "Trust & Security",
+        "description": "Your data and payments are protected with enterprise-grade security."
+      },
+      "innovation": {
+        "title": "Innovation",
+        "description": "Constantly improving to bring you the best booking experience."
+      },
+      "customerFirst": {
+        "title": "Customer First",
+        "description": "Your satisfaction is our top priority. We're here for you 24/7."
+      }
+    },
+    "features": {
+      "title": "Why Choose TheaterHUB",
+      "subtitle": "We're dedicated to providing the best theater booking and reservation experience in Ethiopia",
+      "easyBooking": {
+        "title": "Easy Booking",
+        "description": "Book tickets in just a few clicks"
+      },
+      "multipleVenues": {
+        "title": "Multiple Venues",
+        "description": "Access to theaters across Ethiopia"
+      },
+      "mobileTickets": {
+        "title": "Mobile Tickets",
+        "description": "Digital tickets on your phone"
+      },
+      "bestSelection": {
+        "title": "Best Selection",
+        "description": "Wide variety of shows and performances"
+      },
+      "support247": {
+        "title": "24/7 Support",
+        "description": "Round-the-clock customer service"
+      },
+      "securePayments": {
+        "title": "Secure Payments",
+        "description": "Safe and encrypted transactions"
+      }
+    },
+    "team": {
+      "title": "Meet Our Leadership",
+      "subtitle": "Passionate professionals dedicated to bringing you the best theater booking experience in Ethiopia",
+      "alexRole": "Founder & CEO",
+      "alexBio": "Visionary leader with 15+ years in entertainment industry",
+      "sarahRole": "Head of Operations",
+      "sarahBio": "Operations expert ensuring smooth theater experiences",
+      "michaelRole": "Technical Director",
+      "michaelBio": "Tech innovator building cutting-edge platforms",
+      "emilyRole": "Customer Experience",
+      "emilyBio": "Passionate about creating memorable experiences"
+    },
+    "cta": {
+      "title": "Ready to Book Your Next Theater Experience?",
+      "subtitle": "Join thousands of theater lovers across Ethiopia who trust TheaterHUB for seamless booking and secure reservations.",
+      "findTheaters": "Find Theaters Near You",
+      "contactUs": "Contact Us"
+    }
+  },
+  "bookingModal": {
+    "brand": "Theatre Hub Ethiopia",
+    "progress": {
+      "selectSeats": "Select Seats",
+      "yourInfo": "Your Info",
+      "payment": "Payment"
+    },
+    "buttons": {
+      "back": "Back",
+      "next": "Next",
+      "done": "Done"
+    },
+    "seatSections": {
+      "vip": "VIP",
+      "premium": "Premium",
+      "standard": "Standard"
+    },
+    "seatSelection": {
+      "title": "Select Your Seats",
+      "selectedSeats": "Selected Seats:",
+      "seatsCount": "seats",
+      "total": "Total:",
+      "stage": "STAGE",
+      "selectedSeatsList": "Selected Seats ({{count}})"
+    },
+    "seatLegend": {
+      "selected": "Selected",
+      "reserved": "Reserved"
+    },
+    "customerInfo": {
+      "title": "Your Information",
+      "fullName": "Full Name",
+      "namePlaceholder": "Enter your full name",
+      "email": "Email Address",
+      "emailPlaceholder": "Enter your email",
+      "phone": "Ethiopian Phone Number",
+      "phonePlaceholder": "09XXXXXXXX or 07XXXXXXXX"
+    },
+    "validation": {
+      "nameTooShort": "Name must be at least 2 characters",
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPhone": "Please enter a valid Ethiopian phone number (09XXXXXXXX or 07XXXXXXXX)"
+    },
+    "payment": {
+      "title": "Complete Payment",
+      "totalAmount": "Total Amount:",
+      "tickets": "Tickets:",
+      "seats": "Seats:",
+      "chapaTitle": "Pay with Chapa",
+      "chapaSubtitle": "Secure payment gateway",
+      "chapaFeature1": "Accepts Telebirr, CBE Birr, and all cards",
+      "chapaFeature2": "Secure SSL encrypted payment",
+      "chapaFeature3": "Instant ticket delivery after payment",
+      "processing": "Processing Payment...",
+      "payButton": "Pay {{amount}} with Chapa",
+      "terms": "By completing this payment, you agree to our terms and conditions"
+    },
+    "errors": {
+      "noSeats": "Please select at least one seat",
+      "incompleteInfo": "Please fill in all customer information correctly",
+      "paymentFailed": "Failed to initialize payment. Please try again."
+    },
+    "ticketModal": {
+      "title": "Your Tickets",
+      "ticketCount": "ticket(s) for",
+      "paymentSuccess": "Payment Successful! Booking ID: {{bookingId}} | Total: {{total}}",
+      "ticketOf": "Ticket {{current}} of {{total}}",
+      "seat": "Seat",
+      "ticketHolder": "Ticket Holder",
+      "seatType": "Seat Type",
+      "price": "Price",
+      "share": "Share",
+      "shared": "Shared!",
+      "copyQR": "Copy QR",
+      "copied": "Copied!",
+      "download": "Download",
+      "print": "Print",
+      "printAll": "Print All ({{count}})",
+      "scanMessage": "Scan this unique QR code at venue entrance",
+      "rowSeat": "Row {{row}}, Seat {{number}}",
+      "printTitle": "Theatre Hub Ticket"
+    },
+    "share": {
+      "title": "Theatre Hub Ethiopia - Ticket for {{seat}}",
+      "text": "🎭 Theatre Hub Ethiopia Ticket\n\nShow: {{show}}\nSeat: {{seat}} (Row {{row}}, Seat {{number}})\nTicket Holder: {{customerName}}\nTicket ID: {{ticketId}}",
+      "copiedFallback": "Share info copied to clipboard!"
+    },
+    "ticketHtml": {
+      "title": "Theatre Hub Ethiopia Ticket",
+      "filenamePrefix": "TheatreHub_Ticket"
+    }
+  },
+  "eventCard": {
+    "unknownVenue": "Unknown Theater",
+    "seatsAvailable": "seats available",
+    "bookNow": "Book Now",
+    "minutes": "min"
+  },
+  "customerRegistration": {
+    "title": "Create Account",
+    "subtitle": "Join Theatre Hub Ethiopia and start your journey",
+    "form": {
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your full name",
+      "email": "Email Address",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+251 911 234 567",
+      "username": "Username",
+      "usernamePlaceholder": "Choose a username",
+      "password": "Password",
+      "passwordPlaceholder": "Create a password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password"
+    },
+    "validation": {
+      "fullNameRequired": "Full name is required",
+      "fullNameMin": "Name must be at least 3 characters",
+      "fullNameMax": "Name is too long",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "phoneRequired": "Phone number is required",
+      "phoneInvalid": "Please enter a valid phone number",
+      "usernameRequired": "Username is required",
+      "usernameMin": "Username must be at least 3 characters",
+      "usernameMax": "Username is too long",
+      "usernamePattern": "Username can only contain letters, numbers, and underscores",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 8 characters",
+      "passwordStrength": "Password must contain uppercase, lowercase and number",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsMatch": "Passwords must match",
+      "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
+    },
+    "passwordStrength": {
+      "title": "Password strength:",
+      "weak": "Weak",
+      "medium": "Medium",
+      "strong": "Strong"
+    },
+    "passwordRequirements": {
+      "length": "At least 8 characters",
+      "lowercase": "Lowercase letter",
+      "uppercase": "Uppercase letter",
+      "number": "Number"
+    },
+    "terms": {
+      "prefix": "I agree to the",
+      "termsLink": "Terms of Service",
+      "and": "and",
+      "privacyLink": "Privacy Policy"
+    },
+    "usernameAvailable": "Username is available",
+    "createAccount": "Create Account",
+    "creatingAccount": "Creating Account...",
+    "alreadyHaveAccount": "Already have an account?",
+    "signInLink": "Sign In",
+    "errors": {
+      "emailExists": "Email already registered. Please use a different email or login.",
+      "phoneExists": "Phone number already registered. Please use a different number.",
+      "unexpected": "Registration failed. Please try again."
+    },
+    "success": {
+      "title": "Registration Successful! 🎉",
+      "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
+      "redirectMessage": "Registration successful! Please login."
+    }
   },
   "contact": {
-    "locationLabel": "LOCATION",
-    "locationValue": "Bole Medhanealem, Addis Ababa, Ethiopia",
-    "phoneLabel": "PHONE",
-    "phoneValue": "+251-11-558-1234",
-    "supportHours": "Support: 24/7",
-    "emailLabel": "EMAIL",
-    "emailValue": "info@theaterhubethiopia.com",
-    "responseTime": "Response within 24h"
+    "hero": {
+      "badge": "Get in Touch",
+      "title": "Contact Us",
+      "subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
+    },
+    "info": {
+      "phone": {
+        "title": "Phone Support",
+        "detail1": "+251 911 234 567",
+        "detail2": "+251 912 345 678",
+        "description": "Mon-Fri, 9:00 AM - 6:00 PM"
+      },
+      "email": {
+        "title": "Email Us",
+        "detail1": "support@theaterhub.com",
+        "detail2": "info@theaterhub.com",
+        "description": "Response within 24 hours"
+      },
+      "visit": {
+        "title": "Visit Us",
+        "detail1": "Bole Road, Addis Ababa",
+        "detail2": "Ethiopia",
+        "description": "Next to Millennium Hall"
+      },
+      "hours": {
+        "title": "Office Hours",
+        "detail1": "Monday - Friday: 9AM - 8PM",
+        "detail2": "Saturday: 10AM - 6PM",
+        "detail3": "Sunday: Closed",
+        "description": "24/7 Online Support"
+      }
+    },
+    "contactLink": "Contact",
+    "form": {
+      "title": "Send us a Message",
+      "subtitle": "Fill out the form below and we'll get back to you soon",
+      "sendTo": "Send To",
+      "adminOption": "System Administrator",
+      "adminDesc": "Technical support, platform issues, billing inquiries",
+      "theaterOption": "Theater Owner",
+      "theaterDesc": "Event booking, hall rental, show scheduling",
+      "selectTheater": "Select Theater",
+      "selectTheaterPlaceholder": "Select a theater",
+      "loadingTheaters": "Loading theaters...",
+      "yourName": "Your Name",
+      "namePlaceholder": "John Doe",
+      "email": "Email Address",
+      "emailPlaceholder": "john@example.com",
+      "phoneOptional": "Phone Number (Optional)",
+      "phonePlaceholder": "+251 911 234 567",
+      "category": "Category",
+      "subject": "Subject",
+      "subjectPlaceholder": "How can we help you?",
+      "message": "Message",
+      "messagePlaceholder": "Tell us about your question or concern...",
+      "sending": "Sending...",
+      "sendButton": "Send Message"
+    },
+    "categories": {
+      "general": "General Inquiry",
+      "booking": "Booking Support",
+      "payment": "Payment Issues",
+      "technical": "Technical Support",
+      "feedback": "Feedback",
+      "partnership": "Partnership"
+    },
+    "errors": {
+      "nameRequired": "Name is required",
+      "nameMinLength": "Name must be at least 2 characters",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "subjectRequired": "Subject is required",
+      "messageRequired": "Message is required",
+      "messageMinLength": "Message must be at least 10 characters",
+      "theaterRequired": "Please select a theater"
+    },
+    "theaterDetail": {
+      "phoneSupport": "Phone Support",
+      "phoneHours": "Mon-Fri, 9:00 AM - 6:00 PM",
+      "callNow": "Call Now",
+      "emailUs": "Email Us",
+      "emailResponse": "Response within 24 hours",
+      "sendEmail": "Send Email",
+      "visitUs": "Visit Us",
+      "nearby": "Next to main road",
+      "getDirections": "Get Directions",
+      "about": "About"
+    },
+    "findUs": {
+      "title": "Find Us",
+      "addressLine": "Bole Road, Addis Ababa, Ethiopia",
+      "landmark": "Next to Millennium Hall",
+      "phoneNumbers": "+251 911 234 567 / +251 912 345 678",
+      "emails": "support@theaterhub.com / info@theaterhub.com",
+      "hours": "Mon-Fri: 9AM - 8PM | Sat: 10AM - 6PM"
+    },
+    "theaterSocial": {
+      "title": "Connect With {{name}}",
+      "followText": "Follow {{name}} for updates, offers, and events"
+    },
+    "globalSocial": {
+      "title": "Connect With Us",
+      "followText": "Follow us for updates, offers, and events"
+    },
+    "success": {
+      "title": "Message Sent Successfully! 🎉",
+      "message": "Thank you for reaching out{{#if theaterName}} to {{theaterName}}{{/if}}. Our team will get back to you within 24 hours.",
+      "details": {
+        "name": "Name",
+        "email": "Email",
+        "recipient": "Recipient",
+        "category": "Category",
+        "responseTime": "Response Time",
+        "notProvided": "Not provided",
+        "adminRecipient": "System Administrator",
+        "theaterOwner": "Theater Owner",
+        "responseTimeValue": "Within 24 hours"
+      },
+      "buttons": {
+        "home": "Go to Home",
+        "close": "Close"
+      }
+    }
   },
-  "quickLinks": {
-    "title": "Quick Links",
-    "about": "About Us",
-    "blog": "Blog",
-    "gallery": "Gallery"
+  "help": {
+    "hero": {
+      "badge": "Help Center",
+      "title": "How can we help you?",
+      "subtitle": "Find answers and get support for your questions"
+    },
+    "search": {
+      "resultCount_one": "Found {{count}} result for \"{{query}}\"",
+      "resultCount_other": "Found {{count}} results for \"{{query}}\""
+    },
+    "categories": {
+      "all": "All",
+      "tickets": "Tickets",
+      "payments": "Payments",
+      "account": "Account",
+      "wallet": "Wallet",
+      "technical": "Technical"
+    },
+    "noResults": {
+      "title": "No results found",
+      "message": "Try different keywords or browse our categories"
+    },
+    "faq": {
+      "tickets": {
+        "bookQuestion": "How do I book tickets online?",
+        "bookAnswer": "Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using Chapa, TeleBirr, CBE Birr, or HelloCash.",
+        "getQuestion": "How do I get my tickets after booking?",
+        "getAnswer": "After successful payment, you'll receive an email with your e-tickets. You can also access them in your account under \"My Tickets\". Simply show the QR code at the venue entrance.",
+        "limitQuestion": "How many tickets can I book?",
+        "limitAnswer": "You can book as many tickets as you want! There is no limit on the number of tickets per booking. Feel free to book tickets for large groups and special events.",
+        "transferQuestion": "Can I transfer my tickets to someone else?",
+        "transferAnswer": "Yes, you can transfer tickets through your account dashboard. Go to \"My Tickets\", select the ticket, and click \"Transfer\". The recipient will receive an email with the ticket details."
+      },
+      "payments": {
+        "methodsQuestion": "What payment methods do you accept?",
+        "methodsAnswer": "We accept multiple payment methods including: Chapa (Card/Bank Transfer), TeleBirr, CBE Birr, and HelloCash. All payments are processed securely."
+      },
+      "account": {
+        "createQuestion": "How do I create an account?",
+        "createAnswer": "Click \"Sign Up\" on the homepage, fill in your details, verify your email, and you're ready to start booking! You can also sign up using Google or Facebook."
+      },
+      "wallet": {
+        "walletQuestion": "What is TheaterHUB Wallet?",
+        "walletAnswer": "TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods."
+      },
+      "technical": {
+        "troubleQuestion": "Having trouble with the website?",
+        "troubleAnswer": "Clear your browser cache, try a different browser, or contact our support team at support@theaterhub.com. We're here to help!",
+        "resetPasswordQuestion": "How do I reset my password?",
+        "resetPasswordAnswer": "Click \"Forgot Password\" on the login page, enter your email address, and follow the instructions sent to your inbox. You'll be able to create a new password."
+      }
+    }
   },
-  "support": {
-    "title": "Support",
-    "helpCenter": "Help Center",
-    "contactUs": "Contact Us"
+  "login": {
+    "title": "Welcome Back",
+    "subtitle": "Sign in to continue to your dashboard",
+    "tabs": {
+      "email": "Email",
+      "username": "Username"
+    },
+    "labels": {
+      "email": "Email Address",
+      "username": "Username",
+      "password": "Password"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "username": "@username",
+      "password": "Enter your password"
+    },
+    "rememberMe": "Remember me",
+    "forgotPassword": "Forgot Password?",
+    "signInButton": "Sign In",
+    "signingIn": "Signing in...",
+    "footer": {
+      "text": "By signing in, you agree to our",
+      "terms": "Terms of Service",
+      "and": "and",
+      "privacy": "Privacy Policy"
+    },
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Password is required",
+      "passwordMin": "Password must be at least 6 characters",
+      "usernameRequired": "Username is required",
+      "usernameMin": "Username must be at least 3 characters"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email/username or password",
+      "accountInactive": "Your account is inactive or suspended. Please contact support.",
+      "general": "Login failed. Please try again."
+    },
+    "roles": {
+      "superAdmin": "Super Admin",
+      "superAdminDesc": "Full system access",
+      "theaterOwner": "Theater Owner",
+      "theaterOwnerDesc": "Manage theaters",
+      "theaterManager": "Theater Manager",
+      "theaterManagerDesc": "Daily operations",
+      "salesPerson": "Salesperson",
+      "salesPersonDesc": "Ticket sales",
+      "qrScanner": "QR Scanner",
+      "qrScannerDesc": "Validate tickets",
+      "customer": "Customer",
+      "customerDesc": "Browse and purchase tickets"
+    }
   },
-  "legal": {
-    "title": "Legal",
-    "terms": "Terms of Service",
-    "privacy": "Privacy Policy",
-    "cookies": "Cookie Policy"
+  "forgotPassword": {
+    "title": "Reset Password",
+    "subtitleStep1": "Select a recovery method to continue",
+    "subtitleStep2": "Enter the verification code sent to you",
+    "subtitleStep3": "Create a strong new password",
+    "stepLabels": {
+      "identity": "Identity",
+      "verify": "Verify",
+      "reset": "Reset"
+    },
+    "methods": {
+      "email": { "label": "Email", "description": "Reset link sent to your email" },
+      "phone": { "label": "SMS", "description": "Code sent to your phone" }
+    },
+    "labels": {
+      "email": "Email Address",
+      "phone": "Phone Number",
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm New Password"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "phone": "0912345678",
+      "newPassword": "Enter new password",
+      "confirmPassword": "Confirm new password"
+    },
+    "hints": {
+      "email": "We'll send a verification code to this email address",
+      "phone": "We'll send a verification code to this phone number"
+    },
+    "verifyTitle": "Enter Verification Code",
+    "verifyMessage": "We sent a 6-digit code to",
+    "mockCodePrefix": "Mock Code:",
+    "resendButton": "Didn't receive code? Resend",
+    "codeResent": "New verification code sent!",
+    "sending": "Sending...",
+    "verifying": "Verifying...",
+    "resetting": "Resetting...",
+    "sendButton": "Send Reset Link",
+    "verifyButton": "Verify Code",
+    "resetButton": "Reset Password",
+    "backToLogin": "Back to Login",
+    "successTitle": "Password Reset Successful!",
+    "successMessage": "Your password has been updated successfully. Redirecting to login...",
+    "passwordRequirements": {
+      "title": "Password must contain:",
+      "length": "8-32 characters",
+      "uppercase": "Uppercase letter (A-Z)",
+      "lowercase": "Lowercase letter (a-z)",
+      "number": "Number (0-9)",
+      "special": "Special character (!@#$%^&*)",
+      "noSpaces": "No spaces",
+      "allMet": "✓ All requirements met!"
+    },
+    "passwordMatchSuccess": "Passwords match",
+    "validation": {
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email address",
+      "emailFormat": "Email must be in format: name@domain.com",
+      "emailNotFound": "Email not found in our system",
+      "phoneRequired": "Phone number is required",
+      "phoneFormat": "Phone number must be 10-15 digits (e.g., 251911234567 or +251911234567)",
+      "phoneEthiopian": "Please enter a valid Ethiopian phone number",
+      "phoneNotFound": "Phone number not found in our system",
+      "codeRequired": "Verification code is required",
+      "codeLength": "Code must be exactly 6 digits",
+      "codeDigits": "Code must contain only numbers (0-9)",
+      "codeNotAllZeros": "Code cannot be all zeros",
+      "newPasswordRequired": "New password is required",
+      "passwordMin": "Password must be at least 8 characters long",
+      "passwordMax": "Password cannot exceed 32 characters",
+      "passwordUppercase": "Password must contain at least one uppercase letter (A-Z)",
+      "passwordLowercase": "Password must contain at least one lowercase letter (a-z)",
+      "passwordNumber": "Password must contain at least one number (0-9)",
+      "passwordSpecial": "Password must contain at least one special character (!@#$%^&*)",
+      "passwordNoSpaces": "Password cannot contain spaces",
+      "passwordNoSequential": "Password cannot contain sequential characters (123, abc)",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsMatch": "Passwords must match"
+    },
+    "errors": {
+      "emailNotFound": "Email not found in our system.",
+      "phoneNotFound": "Phone number not found in our system.",
+      "sessionExpired": "Session expired. Please start over.",
+      "codeExpired": "Verification code has expired. Please request a new code.",
+      "invalidCode": "Invalid verification code. Please check and try again.",
+      "invalidSession": "Invalid reset session. Please start over.",
+      "userNotFound": "User not found.",
+      "missingUserInfo": "User information missing. Please start over."
+    },
+    "mockAccounts": {
+      "title": "Mock Test Accounts"
+    }
   },
-  "newsletter": {
-    "title": "Newsletter",
-    "description": "Subscribe to get exclusive offers, early bird tickets",
-    "placeholder": "Your email address",
-    "subscribe": "Subscribe",
-    "subscribing": "Subscribing..."
+  "theaterRegistration": {
+    "title": "Theater Owner Registration",
+    "subtitle": "Join TheaterHUB and reach thousands of theater lovers",
+    "feeNotice": "NON-REFUNDABLE registration fee: $299",
+    "steps": {
+      "businessInfo": "Business Info",
+      "contactInfo": "Contact Info",
+      "theaterDetails": "Theater Details",
+      "documents": "Documents",
+      "pricingPlan": "Pricing Plan",
+      "terms": "Terms"
+    },
+    "businessInfo": {
+      "title": "Business Information",
+      "subtitle": "Tell us about your theater business",
+      "legalBusinessName": "Legal Business Name",
+      "legalBusinessNamePlaceholder": "Grand Theater LLC",
+      "legalBusinessNameHint": "As it appears on your business license",
+      "tradeName": "Trade Name / DBA",
+      "tradeNamePlaceholder": "Grand Theater",
+      "businessType": "Business Type",
+      "selectBusinessType": "Select business type",
+      "businessLicense": "Business License Number",
+      "businessLicensePlaceholder": "BL-2024-12345",
+      "taxId": "Tax ID / TIN",
+      "taxIdPlaceholder": "123456789",
+      "yearsInOperation": "Years in Operation",
+      "selectYears": "Select years",
+      "businessDescription": "Business Description",
+      "businessDescriptionPlaceholder": "Describe your theater business, history, mission...",
+      "businessDescriptionHint": "What makes you unique?"
+    },
+    "contactInfo": {
+      "title": "Owner & Contact Information",
+      "subtitle": "Who should we contact?",
+      "primaryContact": "Primary Contact / Owner",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "position": "Position/Title",
+      "selectPosition": "Select position",
+      "email": "Email Address",
+      "emailPlaceholder": "john@example.com",
+      "phone": "Phone Number",
+      "phonePlaceholder": "+1 (555) 000-0000",
+      "secondaryContact": "Secondary Contact",
+      "secondaryContactOptional": " (Optional)",
+      "secondaryName": "Name",
+      "secondaryNamePlaceholder": "Jane Smith",
+      "secondaryPosition": "Position",
+      "secondaryPositionPlaceholder": "Operations Manager",
+      "secondaryEmail": "Email",
+      "secondaryEmailPlaceholder": "jane@example.com",
+      "secondaryPhone": "Phone",
+      "secondaryPhonePlaceholder": "+1 (555) 000-0001",
+      "emergencyContact": "Emergency Contact",
+      "emergencyName": "Contact Name",
+      "emergencyNamePlaceholder": "Emergency Contact Name",
+      "emergencyPhone": "Phone Number",
+      "emergencyPhonePlaceholder": "+1 (555) 000-0002",
+      "emergencyRelation": "Relationship",
+      "emergencyRelationPlaceholder": "Business Partner / Family Member"
+    },
+    "theaterDetails": {
+      "title": "Theater Details",
+      "subtitle": "Tell us about your venue",
+      "theaterName": "Theater Name",
+      "theaterNamePlaceholder": "Grand Theater",
+      "theaterLogo": "Theater Logo",
+      "uploadLogo": "Upload Logo",
+      "changeLogo": "Change Logo",
+      "logoHint": "PNG, JPG up to 2MB",
+      "theaterDescription": "Theater Description",
+      "theaterDescriptionPlaceholder": "Describe your theater, its history, unique features...",
+      "theaterEmail": "Theater Email",
+      "theaterEmailPlaceholder": "info@grandtheater.com",
+      "theaterPhone": "Theater Phone",
+      "theaterPhonePlaceholder": "+251 911 234 567",
+      "numberOfHalls": "Number of Halls",
+      "numberOfHallsPlaceholder": "3",
+      "totalSeats": "Total Seats",
+      "totalSeatsPlaceholder": "500",
+      "screenTypes": "Screen Types Available",
+      "screenTypesHelp": "Hold Ctrl/Cmd to select multiple",
+      "servicesOffered": "Services Offered",
+      "services": {
+        "ticketBooking": "Ticket Booking",
+        "ticketBookingDesc": "Online ticket reservation",
+        "refreshments": "Refreshments",
+        "refreshmentsDesc": "Snacks and beverages",
+        "premiumBar": "Premium Bar",
+        "premiumBarDesc": "Full bar service",
+        "dining": "Dining",
+        "diningDesc": "Pre-show dining",
+        "freeWifi": "Free WiFi",
+        "freeWifiDesc": "Complimentary internet",
+        "valetParking": "Valet Parking",
+        "valetParkingDesc": "Professional parking service",
+        "wheelchairAccess": "Wheelchair Access",
+        "wheelchairAccessDesc": "ADA compliant",
+        "giftCards": "Gift Cards",
+        "giftCardsDesc": "Digital gift certificates",
+        "groupBookings": "Group Bookings",
+        "groupBookingsDesc": "Special group rates",
+        "privateEvents": "Private Events",
+        "privateEventsDesc": "Venue rental"
+      },
+      "city": "City",
+      "selectCity": "Select city",
+      "region": "Region",
+      "selectRegion": "Select region",
+      "fullAddress": "Full Address",
+      "fullAddressPlaceholder": "123 Bole Road, Addis Ababa",
+      "latitude": "Latitude",
+      "latitudePlaceholder": "9.0192",
+      "longitude": "Longitude",
+      "longitudePlaceholder": "38.7535"
+    },
+    "documents": {
+      "title": "Required Documents",
+      "subtitle": "Upload your business documents",
+      "license": {
+        "name": "Business License",
+        "desc": "Valid business license or registration certificate"
+      },
+      "taxCertificate": {
+        "name": "Tax Registration Certificate",
+        "desc": "Tax Identification Number (TIN) certificate"
+      },
+      "ownerId": {
+        "name": "Owner ID / Passport",
+        "desc": "Clear photo of owner's ID or passport"
+      },
+      "theaterPhotos": {
+        "name": "Theater Photos",
+        "desc": "Interior and exterior photos of your theater"
+      },
+      "fireSafety": {
+        "name": "Fire Safety Certificate",
+        "desc": "Fire safety inspection certificate"
+      },
+      "healthPermit": {
+        "name": "Health Permit",
+        "desc": "If you serve food/drinks"
+      },
+      "uploadButton": "Upload Document",
+      "replaceButton": "Replace File",
+      "requirements": "Document Requirements",
+      "requirementsText": "Please ensure all documents are clear and legible. Maximum file size: 10MB per file. Accepted formats: PDF, JPG, PNG."
+    },
+    "pricingPlan": {
+      "title": "Pricing Plan",
+      "subtitle": "Choose your preferred payment model",
+      "selectModel": "Select Pricing Model",
+      "perTicket": {
+        "name": "Per Ticket Selling",
+        "description": "Pay commission on each ticket sold",
+        "rate": "5-10% per ticket",
+        "bestFor": "New / Low Volume Theaters",
+        "details": "No monthly fees, pay only when you sell"
+      },
+      "contract": {
+        "name": "Contract Plan",
+        "description": "Fixed contract with flexible terms",
+        "rate": "Varies by contract length",
+        "bestFor": "Established Theaters with consistent sales",
+        "details": "Choose monthly, quarterly, or yearly contract"
+      },
+      "selectContract": "Select Contract Type",
+      "contractTypes": {
+        "monthly": {
+          "name": "Monthly Contract",
+          "price": "$299/month",
+          "discount": "0%",
+          "features": ["Month-to-month", "Cancel anytime", "Standard support"]
+        },
+        "quarterly": {
+          "name": "Quarterly Contract",
+          "price": "$249/month",
+          "discount": "Save 15%",
+          "features": ["3-month term", "Priority support", "Featured listing"]
+        },
+        "yearly": {
+          "name": "Yearly Contract",
+          "price": "$199/month",
+          "discount": "Save 33% (2 months free)",
+          "features": ["12-month term", "Premium support", "Top featured listing", "Marketing boost"]
+        }
+      }
+    },
+    "terms": {
+      "title": "Terms & Agreement",
+      "subtitle": "Please review and accept our terms",
+      "agreementTitle": "Theater Owner Agreement",
+      "intro": "By submitting this registration, you agree to the following terms:",
+      "clauses": [
+        "All information provided is accurate and complete",
+        "You will comply with all local laws and regulations",
+        "Commission rates will apply as per selected pricing plan",
+        "For per-ticket model: 5-10% commission on each ticket sold",
+        "For contract model: Fixed monthly/quarterly/yearly fee applies",
+        "Holdback policy applies for refunds and chargebacks",
+        "TheaterHUB reserves the right to verify submitted documents",
+        "You are authorized to represent the business",
+        "You will maintain accurate show schedules and pricing",
+        "You will honor all ticket sales processed through TheaterHUB"
+      ],
+      "adminReview": "Important: Your registration will be reviewed by our admin team within 2-3 business days. After verification, you will receive an OTP to complete the registration process.",
+      "noRefundNotice": "NO REFUND POLICY: The registration fee of $299 is NON-REFUNDABLE under any circumstances, including but not limited to application rejection, withdrawal, or any other reason.",
+      "accuracyCheckbox": "I confirm that all information provided is accurate and complete",
+      "accuracyHint": "I understand that providing false information may result in rejection or termination",
+      "marketingCheckbox": "I agree to receive marketing communications from TheaterHUB",
+      "marketingHint": "You can unsubscribe at any time",
+      "noRefundCheckbox": "I understand that the registration fee of $299 is NON-REFUNDABLE",
+      "noRefundHint": "Payment must be completed before registration submission. No refunds will be issued for any reason."
+    },
+    "payment": {
+      "modalTitle": "Registration Fee",
+      "amountLabel": "Amount to Pay",
+      "nonRefundable": "One-time registration fee (NON-REFUNDABLE)",
+      "payWithChapa": "Pay with Chapa",
+      "chapaDesc": "Ethiopian Payment Gateway",
+      "importantNotice": "IMPORTANT: This payment is NON-REFUNDABLE. No refunds will be issued under any circumstances.",
+      "processing": "Processing with Chapa...",
+      "payButton": "Pay ${{amount}} via Chapa",
+      "secureNotice": "🔒 Secure payment powered by Chapa. Your payment information is encrypted and secure."
+    },
+    "buttons": {
+      "back": "Back",
+      "continue": "Continue",
+      "payAndSubmit": "Pay ${{amount}} (Non-Refundable) & Submit",
+      "submitForReview": "Submit for Admin Review",
+      "goHome": "Go to Homepage"
+    },
+    "errors": {
+      "required": "{{field}} is required",
+      "validEmail": "Valid email is required",
+      "validPhone": "Phone number is required",
+      "validNumber": "Valid number is required",
+      "validLatitude": "Latitude is required",
+      "validLongitude": "Longitude is required",
+      "selectPricingModel": "Please select a pricing model",
+      "selectContractType": "Please select a contract type",
+      "agreeTerms": "You must agree to the accuracy of information",
+      "agreeNoRefund": "You must acknowledge the no-refund policy",
+      "fileSize": "File size must be less than {{size}}MB",
+      "fileType": "Only JPEG, PNG, or PDF files are allowed",
+      "logoSize": "Logo must be less than 2MB",
+      "logoType": "Only JPEG or PNG files are allowed"
+    },
+    "success": {
+      "title": "Registration Submitted for Review!",
+      "message": "Thank you for registering with TheaterHUB. Your payment has been processed and your application has been sent to our admin team for review. You'll receive an OTP via email within 2-3 business days after verification.",
+      "applicationId": "Application ID",
+      "paymentId": "Payment ID",
+      "nextSteps": "Next Steps: Admin will verify your information and send OTP for contract signing",
+      "noRefundReminder": "IMPORTANT: Registration fees are NON-REFUNDABLE"
+    }
   },
-  "social": {
-    "title": "Connect With Us"
+  "employeeManagement": {
+    "title": "Employee Management",
+    "welcomeMessage": "Welcome back, {{name}}! Here's your employee overview.",
+    "cards": {
+      "totalEmployees": "Total Employees",
+      "activeEmployees": "Active Employees",
+      "inactiveEmployees": "Inactive Employees"
+    },
+    "showingResults": "Showing {{filtered}} of {{total}} employees",
+    "clearFilters": "Clear filters",
+    "filters": {
+      "searchPlaceholder": "Search by name, email, phone, employee ID or username...",
+      "filterButton": "Filters",
+      "addEmployee": "Add New Employee",
+      "allRoles": "All Roles",
+      "allStatuses": "All Status",
+      "active": "Active",
+      "inactive": "Inactive",
+      "roleLabel": "Role",
+      "statusLabel": "Status",
+      "clearFilters": "Clear All Filters"
+    },
+    "table": {
+      "loading": "Loading employees...",
+      "noEmployees": "No employees found",
+      "noEmployeesMessage": "No employees match your search criteria.",
+      "currency": "Br",
+      "headers": {
+        "employee": "Employee",
+        "employeeId": "ID",
+        "contact": "Contact",
+        "role": "Role",
+        "salary": "Salary (ETB)",
+        "status": "Status",
+        "hireDate": "Hire Date",
+        "actions": "Actions"
+      },
+      "actions": {
+        "view": "View",
+        "edit": "Edit",
+        "deactivate": "Deactivate",
+        "reactivate": "Reactivate",
+        "delete": "Delete"
+      }
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "roles": {
+      "theaterManager": "Theater Manager",
+      "salesPerson": "Sales Person",
+      "qrScanner": "QR Scanner"
+    },
+    "deactivateReasons": {
+      "resigned": "Resigned",
+      "terminated": "Terminated",
+      "performance": "Performance issues",
+      "attendance": "Attendance problems",
+      "other": "Other"
+    },
+    "deleteModal": {
+      "title": "Delete Employee",
+      "message": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+      "confirmButton": "Delete"
+    },
+    "deactivateModal": {
+      "title": "Deactivate Employee",
+      "message": "Are you sure you want to deactivate {{name}}?",
+      "reasonLabel": "Reason for deactivation",
+      "selectReason": "Select reason",
+      "confirmButton": "Deactivate"
+    },
+    "reactivateModal": {
+      "title": "Reactivate Employee",
+      "message": "Are you sure you want to reactivate {{name}}?",
+      "confirmButton": "Reactivate"
+    },
+    "popup": {
+      "deleteSuccess": {
+        "title": "Employee Deleted!",
+        "message": "{{name}} has been removed successfully"
+      },
+      "deleteError": {
+        "title": "Delete Failed!",
+        "message": ""
+      },
+      "deactivateSuccess": {
+        "title": "Employee Deactivated!",
+        "message": "{{name}} has been deactivated successfully"
+      },
+      "deactivateError": {
+        "title": "Deactivation Failed!",
+        "message": ""
+      },
+      "reactivateSuccess": {
+        "title": "Employee Reactivated!",
+        "message": "{{name}} has been reactivated successfully"
+      },
+      "reactivateError": {
+        "title": "Reactivation Failed!",
+        "message": ""
+      },
+      "addSuccess": {
+        "title": "Employee Added!",
+        "message": "Employee has been added successfully"
+      },
+      "updateSuccess": {
+        "title": "Employee Updated!",
+        "message": "Employee has been updated successfully"
+      }
+    }
   },
-  "copyright": "Ethiopian TheaterHUB System",
-  "bottomLinks": {
-    "terms": "Terms",
-    "privacy": "Privacy",
-    "cookies": "Cookies",
-    "accessibility": "Accessibility"
+  "employeeComponents": {
+    "addNew": {
+      "titleAdd": "Add New Employee",
+      "titleEdit": "Edit Employee",
+      "subtitleAdd": "Fill in the employee information below",
+      "subtitleEdit": "Update employee information below",
+      "labels": {
+        "name": "Full Name",
+        "email": "Email Address",
+        "phone": "Phone Number",
+        "password": "Password",
+        "role": "Role",
+        "salary": "Salary (ETB)"
+      },
+      "placeholders": {
+        "name": "Enter full name",
+        "email": "Enter email address",
+        "phone": "Enter phone number",
+        "password": "Enter password",
+        "role": "Select a role",
+        "salary": "Enter salary in Birr"
+      },
+      "validation": {
+        "nameRequired": "Full name is required",
+        "nameMin": "Name must be at least 2 characters",
+        "emailRequired": "Email is required",
+        "emailInvalid": "Invalid email address",
+        "phoneRequired": "Phone number is required",
+        "roleRequired": "Role is required",
+        "salaryNumber": "Salary must be a number",
+        "salaryMin": "Salary cannot be negative"
+      },
+      "errors": {
+        "emailExists": "Email {{email}} is already registered.",
+        "phoneExists": "Phone number {{phone}} is already registered.",
+        "generic": "Failed to {{action}} employee. Please try again.",
+        "fieldsMissing": "Please fill in all required fields",
+        "passwordMissing": "Password is required for new employees"
+      },
+      "createButton": "Create Employee",
+      "updateButton": "Update Employee"
+    }
   },
-  "popup": {
-    "successTitle": "🎉 Welcome to TheaterHUB Family!",
-    "successMessage": "You've successfully subscribed! Get ready for exclusive deals, early bird tickets, and amazing giveaways delivered straight to your inbox.",
-    "successBadge": "🎁 You've successfully subscribed!",
-    "buttonSuccess": "Start Exploring 🎭",
-    "errorTitle": "❌ Oops! Something went wrong",
-    "buttonError": "Try Again"
-  },
-  "errors": {
-    "emailRequired": "Please enter your email address to receive amazing offers!",
-    "invalidEmail": "Please enter a valid email address. Example: name@domain.com",
-    "alreadySubscribed": "This email is already subscribed! You're already part of our VIP family 🎭"
-  }
-},"about": {
+  "viewEmployee": {
+    "loading": {
+      "title": "Employee Details",
+      "subtitle": "Loading employee information...",
+      "message": "Loading employee details..."
+    },
+    "accessDenied": {
+      "title": "Access Denied",
+      "subtitle": "You don't have permission",
+      "noAccess": "No Access",
+      "message": "You don't have permission to view this employee's information."
+    },
+    "mainTitle": "Employee Details",
+    "mainSubtitle": "View employee information",
+    "actions": {
+      "edit": "Edit",
+      "print": "Print",
+      "download": "Download"
+    },
+    "sections": {
+      "personalInfo": "Personal Information",
+      "employmentInfo": "Employment Information",
+      "assignedTheater": "Assigned Theater",
+      "permissions": "Permissions"
+    },
+    "labels": {
+      "fullName": "Full Name",
+      "username": "Username",
+      "email": "Email",
+      "phone": "Phone",
+      "role": "Role",
+      "salary": "Salary",
+      "hireDate": "Hire Date",
+      "department": "Department",
+      "position": "Position",
+      "employeeId": "ID"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "roles": {
+      "superAdmin": {
+        "label": "Super Admin",
+        "description": "Full system access and control",
+        "permissions": [
+          "Manage all theaters",
+          "Manage all users",
+          "System settings",
+          "View all reports"
+        ]
+      },
+      "theaterOwner": {
+        "label": "Theater Owner",
+        "description": "Manage theaters and overall operations",
+        "permissions": [
+          "Manage own theaters",
+          "Hire employees",
+          "View sales reports",
+          "Manage events"
+        ]
+      },
+      "theaterManager": {
+        "label": "Manager",
+        "description": "Manage events and daily operations",
+        "permissions": [
+          "Manage events",
+          "Manage staff schedules",
+          "View daily reports",
+          "Handle customer issues"
+        ]
+      },
+      "salesPerson": {
+        "label": "Sales Person",
+        "description": "Handle ticket sales and customer service",
+        "permissions": [
+          "Sell tickets",
+          "Process refunds",
+          "Handle customer inquiries",
+          "View inventory"
+        ]
+      },
+      "qrScanner": {
+        "label": "Scanner",
+        "description": "Validate tickets at events",
+        "permissions": [
+          "Scan tickets",
+          "Validate entries",
+          "View event information"
+        ]
+      }
+    },
+    "errors": {
+      "notAuthenticated": "User not authenticated",
+      "loadFailed": "Failed to load user information",
+      "permissionDenied": "You don't have permission to view this employee",
+      "accessDenied": "Access denied"
+    }
+  },"about": {
   "hero": {
     "badge": "About Us",
     "title": "Ethiopia’s Modern Theater Booking Platform",
@@ -135,7 +1230,7 @@
     "subtitle": "The principles that guide our booking and reservation platform",
     "trust": {
       "title": "Trust & Security",
-      "description": "Your data and payments are protected with enterprise-grade security."
+      "description": "Your data and payments are protected with enterprise‑grade security."
     },
     "innovation": {
       "title": "Innovation",
@@ -167,7 +1262,7 @@
     },
     "support247": {
       "title": "24/7 Support",
-      "description": "Round-the-clock customer service"
+      "description": "Round‑the‑clock customer service"
     },
     "securePayments": {
       "title": "Secure Payments",
@@ -175,570 +1270,37 @@
     }
   },
   "team": {
-    "title": "Meet Our Leadership",
-    "subtitle": "Passionate professionals dedicated to bringing you the best theater booking experience in Ethiopia",
-    "alexRole": "Founder & CEO",
-    "alexBio": "Visionary leader with 15+ years in entertainment industry",
-    "sarahRole": "Head of Operations",
-    "sarahBio": "Operations expert ensuring smooth theater experiences",
-    "michaelRole": "Technical Director",
-    "michaelBio": "Tech innovator building cutting-edge platforms",
-    "emilyRole": "Customer Experience",
-    "emilyBio": "Passionate about creating memorable experiences"
+    "title": "Our Team",
+    "subtitle": "Meet the talented individuals behind Theatre Hub Ethiopia",
+    "memberDesc": "Dedicated professional committed to delivering excellence in {{role}}.",
+    "members": {
+      "birehanu": {
+        "name": "Birehanu Kassa",
+        "role": "Project Manager",
+        "responsibility": "Project planning, coordination, documentation, and review"
+      },
+      "gebreslassie": {
+        "name": "Gebreslassie Desie",
+        "role": "Backend Developer",
+        "responsibility": "Server‑side logic, APIs, system integration"
+      },
+      "gemechis": {
+        "name": "Gemechis Debelo",
+        "role": "Frontend Developer",
+        "responsibility": "User interface design and client‑side development"
+      },
+      "lelisa": {
+        "name": "Lelisa Abraham",
+        "role": "Database Designer & Tester",
+        "responsibility": "Database design and system testing"
+      }
+    }
   },
   "cta": {
     "title": "Ready to Book Your Next Theater Experience?",
     "subtitle": "Join thousands of theater lovers across Ethiopia who trust TheaterHUB for seamless booking and secure reservations.",
     "findTheaters": "Find Theaters Near You",
     "contactUs": "Contact Us"
-  }
-},"bookingModal": {
-  "brand": "Theatre Hub Ethiopia",
-  "progress": {
-    "selectSeats": "Select Seats",
-    "yourInfo": "Your Info",
-    "payment": "Payment"
-  },
-  "buttons": {
-    "back": "Back",
-    "next": "Next",
-    "done": "Done"
-  },
-  "seatSections": {
-    "vip": "VIP",
-    "premium": "Premium",
-    "standard": "Standard"
-  },
-  "seatSelection": {
-    "title": "Select Your Seats",
-    "selectedSeats": "Selected Seats:",
-    "seatsCount": "seats",
-    "total": "Total:",
-    "stage": "STAGE",
-    "selectedSeatsList": "Selected Seats ({{count}})"
-  },
-  "seatLegend": {
-    "selected": "Selected",
-    "reserved": "Reserved"
-  },
-  "customerInfo": {
-    "title": "Your Information",
-    "fullName": "Full Name",
-    "namePlaceholder": "Enter your full name",
-    "email": "Email Address",
-    "emailPlaceholder": "Enter your email",
-    "phone": "Ethiopian Phone Number",
-    "phonePlaceholder": "09XXXXXXXX or 07XXXXXXXX"
-  },
-  "validation": {
-    "nameTooShort": "Name must be at least 2 characters",
-    "invalidEmail": "Please enter a valid email address",
-    "invalidPhone": "Please enter a valid Ethiopian phone number (09XXXXXXXX or 07XXXXXXXX)"
-  },
-  "payment": {
-    "title": "Complete Payment",
-    "totalAmount": "Total Amount:",
-    "tickets": "Tickets:",
-    "seats": "Seats:",
-    "chapaTitle": "Pay with Chapa",
-    "chapaSubtitle": "Secure payment gateway",
-    "chapaFeature1": "Accepts Telebirr, CBE Birr, and all cards",
-    "chapaFeature2": "Secure SSL encrypted payment",
-    "chapaFeature3": "Instant ticket delivery after payment",
-    "processing": "Processing Payment...",
-    "payButton": "Pay {{amount}} with Chapa",
-    "terms": "By completing this payment, you agree to our terms and conditions"
-  },
-  "errors": {
-    "noSeats": "Please select at least one seat",
-    "incompleteInfo": "Please fill in all customer information correctly",
-    "paymentFailed": "Failed to initialize payment. Please try again."
-  },
-  "ticketModal": {
-    "title": "Your Tickets",
-    "ticketCount": "ticket(s) for",
-    "paymentSuccess": "Payment Successful! Booking ID: {{bookingId}} | Total: {{total}}",
-    "ticketOf": "Ticket {{current}} of {{total}}",
-    "seat": "Seat",
-    "ticketHolder": "Ticket Holder",
-    "seatType": "Seat Type",
-    "price": "Price",
-    "share": "Share",
-    "shared": "Shared!",
-    "copyQR": "Copy QR",
-    "copied": "Copied!",
-    "download": "Download",
-    "print": "Print",
-    "printAll": "Print All ({{count}})",
-    "scanMessage": "Scan this unique QR code at venue entrance",
-    "rowSeat": "Row {{row}}, Seat {{number}}",
-    "printTitle": "Theatre Hub Ticket"
-  },
-  "share": {
-    "title": "Theatre Hub Ethiopia - Ticket for {{seat}}",
-    "text": "🎭 Theatre Hub Ethiopia Ticket\n\nShow: {{show}}\nSeat: {{seat}} (Row {{row}}, Seat {{number}})\nTicket Holder: {{customerName}}\nTicket ID: {{ticketId}}",
-    "copiedFallback": "Share info copied to clipboard!"
-  },
-  "ticketHtml": {
-    "title": "Theatre Hub Ethiopia Ticket",
-    "filenamePrefix": "TheatreHub_Ticket"
-  }
-},"eventCard": {
-  "unknownVenue": "Unknown Theater",
-  "seatsAvailable": "seats available",
-  "bookNow": "Book Now",
-  "minutes": "min"
-},"customerRegistration": {
-  "title": "Create Account",
-  "subtitle": "Join Theatre Hub Ethiopia and start your journey",
-  "form": {
-    "fullName": "Full Name",
-    "fullNamePlaceholder": "Enter your full name",
-    "email": "Email Address",
-    "emailPlaceholder": "Enter your email",
-    "phone": "Phone Number",
-    "phonePlaceholder": "+251 911 234 567",
-    "username": "Username (Optional)",
-    "usernamePlaceholder": "Choose a username",
-    "password": "Password",
-    "passwordPlaceholder": "Create a password",
-    "confirmPassword": "Confirm Password",
-    "confirmPasswordPlaceholder": "Confirm your password"
-  },
-  "validation": {
-    "fullNameRequired": "Full name is required",
-    "fullNameMin": "Name must be at least 3 characters",
-    "fullNameMax": "Name is too long",
-    "emailRequired": "Email is required",
-    "emailInvalid": "Please enter a valid email address",
-    "phoneRequired": "Phone number is required",
-    "phoneInvalid": "Please enter a valid phone number",
-    "usernameMin": "Username must be at least 3 characters",
-    "usernameMax": "Username is too long",
-    "usernamePattern": "Username can only contain letters, numbers, and underscores",
-    "passwordRequired": "Password is required",
-    "passwordMin": "Password must be at least 8 characters",
-    "passwordStrength": "Password must contain uppercase, lowercase and number",
-    "confirmPasswordRequired": "Please confirm your password",
-    "passwordsMatch": "Passwords must match",
-    "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
-  },
-  "passwordRequirements": {
-    "title": "Password must contain:",
-    "length": "At least 8 characters",
-    "lowercase": "Lowercase letter",
-    "uppercase": "Uppercase letter",
-    "number": "Number"
-  },
-  "terms": {
-    "prefix": "I agree to the",
-    "termsLink": "Terms of Service",
-    "and": "and",
-    "privacyLink": "Privacy Policy"
-  },
-  "submitButton": "Create Account",
-  "alreadyHaveAccount": "Already have an account?",
-  "signInLink": "Sign In",
-  "errors": {
-    "registrationFailed": "Registration failed. Please try again.",
-    "unexpected": "An unexpected error occurred"
-  },
-  "success": {
-    "title": "Registration Successful! 🎉",
-    "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
-    "redirectMessage": "Registration successful! Please login."
-  }
-},"contact": {
-  "hero": {
-    "badge": "Get in Touch",
-    "title": "Contact Us",
-    "subtitle": "Have questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible."
-  },
-  "info": {
-    "phone": {
-      "title": "Phone Support",
-      "detail1": "+251 911 234 567",
-      "detail2": "+251 912 345 678",
-      "description": "Mon-Fri, 9:00 AM - 6:00 PM"
-    },
-    "email": {
-      "title": "Email Us",
-      "detail1": "support@theaterhub.com",
-      "detail2": "info@theaterhub.com",
-      "description": "Response within 24 hours"
-    },
-    "visit": {
-      "title": "Visit Us",
-      "detail1": "Bole Road, Addis Ababa",
-      "detail2": "Ethiopia",
-      "description": "Next to Millennium Hall"
-    },
-    "hours": {
-      "title": "Office Hours",
-      "detail1": "Monday - Friday: 9AM - 8PM",
-      "detail2": "Saturday: 10AM - 6PM",
-      "detail3": "Sunday: Closed",
-      "description": "24/7 Online Support"
-    }
-  },
-  "contactLink": "Contact",
-  "form": {
-    "title": "Send us a Message",
-    "subtitle": "Fill out the form below and we'll get back to you soon",
-    "sendTo": "Send To",
-    "adminOption": "System Administrator",
-    "adminDesc": "Technical support, platform issues, billing inquiries",
-    "theaterOption": "Theater Owner",
-    "theaterDesc": "Event booking, hall rental, show scheduling",
-    "selectTheater": "Select Theater",
-    "selectTheaterPlaceholder": "Select a theater",
-    "loadingTheaters": "Loading theaters...",
-    "yourName": "Your Name",
-    "namePlaceholder": "John Doe",
-    "email": "Email Address",
-    "emailPlaceholder": "john@example.com",
-    "phoneOptional": "Phone Number (Optional)",
-    "phonePlaceholder": "+251 911 234 567",
-    "category": "Category",
-    "subject": "Subject",
-    "subjectPlaceholder": "How can we help you?",
-    "message": "Message",
-    "messagePlaceholder": "Tell us about your question or concern...",
-    "sending": "Sending...",
-    "sendButton": "Send Message"
-  },
-  "categories": {
-    "general": "General Inquiry",
-    "booking": "Booking Support",
-    "payment": "Payment Issues",
-    "technical": "Technical Support",
-    "feedback": "Feedback",
-    "partnership": "Partnership"
-  },
-  "errors": {
-    "nameRequired": "Name is required",
-    "nameMinLength": "Name must be at least 2 characters",
-    "emailRequired": "Email is required",
-    "emailInvalid": "Please enter a valid email address",
-    "subjectRequired": "Subject is required",
-    "messageRequired": "Message is required",
-    "messageMinLength": "Message must be at least 10 characters",
-    "theaterRequired": "Please select a theater"
-  },
-  "theaterDetail": {
-    "phoneSupport": "Phone Support",
-    "phoneHours": "Mon-Fri, 9:00 AM - 6:00 PM",
-    "callNow": "Call Now",
-    "emailUs": "Email Us",
-    "emailResponse": "Response within 24 hours",
-    "sendEmail": "Send Email",
-    "visitUs": "Visit Us",
-    "nearby": "Next to main road",
-    "getDirections": "Get Directions",
-    "about": "About"
-  },
-  "findUs": {
-    "title": "Find Us",
-    "addressLine": "Bole Road, Addis Ababa, Ethiopia",
-    "landmark": "Next to Millennium Hall",
-    "phoneNumbers": "+251 911 234 567 / +251 912 345 678",
-    "emails": "support@theaterhub.com / info@theaterhub.com",
-    "hours": "Mon-Fri: 9AM - 8PM | Sat: 10AM - 6PM"
-  },
-  "theaterSocial": {
-    "title": "Connect With {{name}}",
-    "followText": "Follow {{name}} for updates, offers, and events"
-  },
-  "globalSocial": {
-    "title": "Connect With Us",
-    "followText": "Follow us for updates, offers, and events"
-  },
-  "success": {
-    "title": "Message Sent Successfully! 🎉",
-    "message": "Thank you for reaching out{{#if theaterName}} to {{theaterName}}{{/if}}. Our team will get back to you within 24 hours.",
-    "details": {
-      "name": "Name",
-      "email": "Email",
-      "recipient": "Recipient",
-      "category": "Category",
-      "responseTime": "Response Time",
-      "notProvided": "Not provided",
-      "adminRecipient": "System Administrator",
-      "theaterOwner": "Theater Owner",
-      "responseTimeValue": "Within 24 hours"
-    },
-    "buttons": {
-      "home": "Go to Home",
-      "close": "Close"
-    }
-  }
-},"help": {
-  "hero": {
-    "badge": "Help Center",
-    "title": "How can we help you?",
-    "subtitle": "Find answers and get support for your questions"
-  },
-  "search": {
-    "resultCount_one": "Found {{count}} result for \"{{query}}\"",
-    "resultCount_other": "Found {{count}} results for \"{{query}}\""
-  },
-  "categories": {
-    "all": "All",
-    "tickets": "Tickets",
-    "payments": "Payments",
-    "account": "Account",
-    "wallet": "Wallet",
-    "technical": "Technical"
-  },
-  "noResults": {
-    "title": "No results found",
-    "message": "Try different keywords or browse our categories"
-  },
-  "faq": {
-    "tickets": {
-      "bookQuestion": "How do I book tickets online?",
-      "bookAnswer": "Booking tickets is easy! Simply browse our shows, select your preferred date and time, choose your seats, and proceed to checkout. You can pay using Chapa, TeleBirr, CBE Birr, or HelloCash.",
-      "getQuestion": "How do I get my tickets after booking?",
-      "getAnswer": "After successful payment, you'll receive an email with your e-tickets. You can also access them in your account under \"My Tickets\". Simply show the QR code at the venue entrance.",
-      "limitQuestion": "How many tickets can I book?",
-      "limitAnswer": "You can book as many tickets as you want! There is no limit on the number of tickets per booking. Feel free to book tickets for large groups and special events.",
-      "transferQuestion": "Can I transfer my tickets to someone else?",
-      "transferAnswer": "Yes, you can transfer tickets through your account dashboard. Go to \"My Tickets\", select the ticket, and click \"Transfer\". The recipient will receive an email with the ticket details."
-    },
-    "payments": {
-      "methodsQuestion": "What payment methods do you accept?",
-      "methodsAnswer": "We accept multiple payment methods including: Chapa (Card/Bank Transfer), TeleBirr, CBE Birr, and HelloCash. All payments are processed securely."
-    },
-    "account": {
-      "createQuestion": "How do I create an account?",
-      "createAnswer": "Click \"Sign Up\" on the homepage, fill in your details, verify your email, and you're ready to start booking! You can also sign up using Google or Facebook."
-    },
-    "wallet": {
-      "walletQuestion": "What is TheaterHUB Wallet?",
-      "walletAnswer": "TheaterHUB Wallet is our digital wallet that allows you to store funds for quick and easy ticket purchases. You can add funds using various payment methods."
-    },
-    "technical": {
-      "troubleQuestion": "Having trouble with the website?",
-      "troubleAnswer": "Clear your browser cache, try a different browser, or contact our support team at support@theaterhub.com. We're here to help!",
-      "resetPasswordQuestion": "How do I reset my password?",
-      "resetPasswordAnswer": "Click \"Forgot Password\" on the login page, enter your email address, and follow the instructions sent to your inbox. You'll be able to create a new password."
-    }
-  }
-},"login": {
-  "title": "Welcome Back",
-  "subtitle": "Sign in to continue to your dashboard",
-  "tabs": {
-    "email": "Email",
-    "username": "Username"
-  },
-  "labels": {
-    "email": "Email Address",
-    "username": "Username",
-    "password": "Password"
-  },
-  "placeholders": {
-    "email": "you@example.com",
-    "username": "@username",
-    "password": "Enter your password"
-  },
-  "rememberMe": "Remember me",
-  "forgotPassword": "Forgot Password?",
-  "signInButton": "Sign In",
-  "signingIn": "Signing in...",
-  "footer": {
-    "text": "By signing in, you agree to our",
-    "terms": "Terms of Service",
-    "and": "and",
-    "privacy": "Privacy Policy"
-  },
-  "validation": {
-    "emailRequired": "Email is required",
-    "emailInvalid": "Please enter a valid email address",
-    "passwordRequired": "Password is required",
-    "passwordMin": "Password must be at least 6 characters",
-    "usernameRequired": "Username is required",
-    "usernameMin": "Username must be at least 3 characters"
-  },
-  "errors": {
-    "invalidCredentials": "Invalid email/username or password",
-    "accountInactive": "Your account is inactive or suspended. Please contact support.",
-    "general": "Login failed. Please try again."
-  },
-  "roles": {
-    "superAdmin": "Super Admin",
-    "superAdminDesc": "Full system access",
-    "theaterOwner": "Theater Owner",
-    "theaterOwnerDesc": "Manage theaters",
-    "theaterManager": "Theater Manager",
-    "theaterManagerDesc": "Daily operations",
-    "salesPerson": "Salesperson",
-    "salesPersonDesc": "Ticket sales",
-    "qrScanner": "QR Scanner",
-    "qrScannerDesc": "Validate tickets",
-    "customer": "Customer",
-    "customerDesc": "Browse and purchase tickets"
-  }
-},"forgotPassword": {
-  "title": "Reset Password",
-  "subtitleStep1": "Select a recovery method to continue",
-  "subtitleStep2": "Enter the verification code sent to you",
-  "subtitleStep3": "Create a strong new password",
-  "stepLabels": {
-    "identity": "Identity",
-    "verify": "Verify",
-    "reset": "Reset"
-  },
-  "methods": {
-    "email": { "label": "Email", "description": "Reset link sent to your email" },
-    "phone": { "label": "SMS", "description": "Code sent to your phone" }
-  },
-  "labels": {
-    "email": "Email Address",
-    "phone": "Phone Number",
-    "newPassword": "New Password",
-    "confirmPassword": "Confirm New Password"
-  },
-  "placeholders": {
-    "email": "you@example.com",
-    "phone": "0912345678",
-    "newPassword": "Enter new password",
-    "confirmPassword": "Confirm new password"
-  },
-  "hints": {
-    "email": "We'll send a verification code to this email address",
-    "phone": "We'll send a verification code to this phone number"
-  },
-  "verifyTitle": "Enter Verification Code",
-  "verifyMessage": "We sent a 6-digit code to",
-  "mockCodePrefix": "Mock Code:",
-  "resendButton": "Didn't receive code? Resend",
-  "codeResent": "New verification code sent!",
-  "sending": "Sending...",
-  "verifying": "Verifying...",
-  "resetting": "Resetting...",
-  "sendButton": "Send Reset Link",
-  "verifyButton": "Verify Code",
-  "resetButton": "Reset Password",
-  "backToLogin": "Back to Login",
-  "successTitle": "Password Reset Successful!",
-  "successMessage": "Your password has been updated successfully. Redirecting to login...",
-  "passwordRequirements": {
-    "title": "Password must contain:",
-    "length": "8-32 characters",
-    "uppercase": "Uppercase letter (A-Z)",
-    "lowercase": "Lowercase letter (a-z)",
-    "number": "Number (0-9)",
-    "special": "Special character (!@#$%^&*)",
-    "noSpaces": "No spaces",
-    "allMet": "✓ All requirements met!"
-  },
-  "passwordMatchSuccess": "Passwords match",
-  "validation": {
-    "emailRequired": "Email is required",
-    "emailInvalid": "Please enter a valid email address",
-    "emailFormat": "Email must be in format: name@domain.com",
-    "emailNotFound": "Email not found in our system",
-    "phoneRequired": "Phone number is required",
-    "phoneFormat": "Phone number must be 10-15 digits (e.g., 251911234567 or +251911234567)",
-    "phoneEthiopian": "Please enter a valid Ethiopian phone number",
-    "phoneNotFound": "Phone number not found in our system",
-    "codeRequired": "Verification code is required",
-    "codeLength": "Code must be exactly 6 digits",
-    "codeDigits": "Code must contain only numbers (0-9)",
-    "codeNotAllZeros": "Code cannot be all zeros",
-    "newPasswordRequired": "New password is required",
-    "passwordMin": "Password must be at least 8 characters long",
-    "passwordMax": "Password cannot exceed 32 characters",
-    "passwordUppercase": "Password must contain at least one uppercase letter (A-Z)",
-    "passwordLowercase": "Password must contain at least one lowercase letter (a-z)",
-    "passwordNumber": "Password must contain at least one number (0-9)",
-    "passwordSpecial": "Password must contain at least one special character (!@#$%^&*)",
-    "passwordNoSpaces": "Password cannot contain spaces",
-    "passwordNoSequential": "Password cannot contain sequential characters (123, abc)",
-    "confirmPasswordRequired": "Please confirm your password",
-    "passwordsMatch": "Passwords must match"
-  },
-  "errors": {
-    "emailNotFound": "Email not found in our system.",
-    "phoneNotFound": "Phone number not found in our system.",
-    "sessionExpired": "Session expired. Please start over.",
-    "codeExpired": "Verification code has expired. Please request a new code.",
-    "invalidCode": "Invalid verification code. Please check and try again.",
-    "invalidSession": "Invalid reset session. Please start over.",
-    "userNotFound": "User not found.",
-    "missingUserInfo": "User information missing. Please start over."
-  },
-  "mockAccounts": {
-    "title": "Mock Test Accounts"
-  }
-},"customerRegistration": {
-  "title": "Create Account",
-  "subtitle": "Join Theatre Hub Ethiopia and start your journey",
-  "form": {
-    "fullName": "Full Name",
-    "fullNamePlaceholder": "Enter your full name",
-    "email": "Email Address",
-    "emailPlaceholder": "you@example.com",
-    "phone": "Phone Number",
-    "phonePlaceholder": "+251 911 234 567",
-    "username": "Username",
-    "usernamePlaceholder": "Choose a username",
-    "password": "Password",
-    "passwordPlaceholder": "Create a password",
-    "confirmPassword": "Confirm Password",
-    "confirmPasswordPlaceholder": "Confirm your password"
-  },
-  "validation": {
-    "fullNameRequired": "Full name is required",
-    "fullNameMin": "Name must be at least 3 characters",
-    "fullNameMax": "Name is too long",
-    "emailRequired": "Email is required",
-    "emailInvalid": "Please enter a valid email address",
-    "phoneRequired": "Phone number is required",
-    "phoneInvalid": "Please enter a valid phone number",
-    "usernameRequired": "Username is required",
-    "usernameMin": "Username must be at least 3 characters",
-    "usernameMax": "Username is too long",
-    "usernamePattern": "Username can only contain letters, numbers, and underscores",
-    "passwordRequired": "Password is required",
-    "passwordMin": "Password must be at least 8 characters",
-    "passwordStrength": "Password must contain uppercase, lowercase and number",
-    "confirmPasswordRequired": "Please confirm your password",
-    "passwordsMatch": "Passwords must match",
-    "agreeToTermsRequired": "You must agree to the Terms of Service and Privacy Policy"
-  },
-  "passwordStrength": {
-    "title": "Password strength:",
-    "weak": "Weak",
-    "medium": "Medium",
-    "strong": "Strong"
-  },
-  "passwordRequirements": {
-    "length": "At least 8 characters",
-    "lowercase": "Lowercase letter",
-    "uppercase": "Uppercase letter",
-    "number": "Number"
-  },
-  "terms": {
-    "prefix": "I agree to the",
-    "termsLink": "Terms of Service",
-    "and": "and",
-    "privacyLink": "Privacy Policy"
-  },
-  "usernameAvailable": "Username is available",
-  "createAccount": "Create Account",
-  "creatingAccount": "Creating Account...",
-  "alreadyHaveAccount": "Already have an account?",
-  "signInLink": "Sign In",
-  "errors": {
-    "emailExists": "Email already registered. Please use a different email or login.",
-    "phoneExists": "Phone number already registered. Please use a different number.",
-    "unexpected": "Registration failed. Please try again."
-  },
-  "success": {
-    "title": "Registration Successful! 🎉",
-    "message": "Welcome to Theatre Hub Ethiopia! Redirecting you to login page...",
-    "redirectMessage": "Registration successful! Please login."
   }
 }
 }

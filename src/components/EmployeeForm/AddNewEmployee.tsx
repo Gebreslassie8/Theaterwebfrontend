@@ -15,19 +15,27 @@ import {
 } from "lucide-react";
 import * as Yup from "yup";
 import supabase from "@/config/supabaseClient";
+import { useTranslation } from "react-i18next";
 
-// Form validation schema
-const validationSchema = Yup.object({
-  name: Yup.string()
-    .required("Full name is required")
-    .min(2, "Name must be at least 2 characters"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-  phone: Yup.string().required("Phone number is required"),
-  assignedRole: Yup.string().required("Role is required"),
-  salary: Yup.number()
-    .min(0, "Salary cannot be negative")
-    .typeError("Salary must be a number"),
-});
+// Form validation schema – will use translation messages inside component
+const getValidationSchema = (t: (key: string) => string) =>
+  Yup.object({
+    name: Yup.string()
+      .required(t("employeeComponents.addNew.validation.nameRequired"))
+      .min(2, t("employeeComponents.addNew.validation.nameMin")),
+    email: Yup.string()
+      .email(t("employeeComponents.addNew.validation.emailInvalid"))
+      .required(t("employeeComponents.addNew.validation.emailRequired")),
+    phone: Yup.string().required(
+      t("employeeComponents.addNew.validation.phoneRequired")
+    ),
+    assignedRole: Yup.string().required(
+      t("employeeComponents.addNew.validation.roleRequired")
+    ),
+    salary: Yup.number()
+      .min(0, t("employeeComponents.addNew.validation.salaryMin"))
+      .typeError(t("employeeComponents.addNew.validation.salaryNumber")),
+  });
 
 interface AddNewEmployeeProps {
   isOpen: boolean;
@@ -58,13 +66,14 @@ const getFields = (
   showPassword: boolean,
   setShowPassword: (value: boolean) => void,
   isEditMode: boolean,
+  t: (key: string) => string
 ): FieldConfig[] => {
   const fields: FieldConfig[] = [
     {
       name: "name",
       type: "text",
-      label: "Full Name",
-      placeholder: "Enter full name",
+      label: t("employeeComponents.addNew.labels.name"),
+      placeholder: t("employeeComponents.addNew.placeholders.name"),
       required: true,
       icon: React.createElement(User, { size: 16 }),
       colSpan: 1,
@@ -72,8 +81,8 @@ const getFields = (
     {
       name: "email",
       type: "email",
-      label: "Email Address",
-      placeholder: "Enter email address",
+      label: t("employeeComponents.addNew.labels.email"),
+      placeholder: t("employeeComponents.addNew.placeholders.email"),
       required: true,
       icon: React.createElement(Mail, { size: 16 }),
       colSpan: 1,
@@ -81,8 +90,8 @@ const getFields = (
     {
       name: "phone",
       type: "tel",
-      label: "Phone Number",
-      placeholder: "Enter phone number",
+      label: t("employeeComponents.addNew.labels.phone"),
+      placeholder: t("employeeComponents.addNew.placeholders.phone"),
       required: true,
       icon: React.createElement(Phone, { size: 16 }),
       colSpan: 1,
@@ -94,8 +103,8 @@ const getFields = (
     fields.push({
       name: "password",
       type: showPassword ? "text" : "password",
-      label: "Password",
-      placeholder: "Enter password",
+      label: t("employeeComponents.addNew.labels.password"),
+      placeholder: t("employeeComponents.addNew.placeholders.password"),
       required: true,
       icon: React.createElement(Shield, { size: 16 }),
       rightIcon: showPassword
@@ -110,8 +119,8 @@ const getFields = (
     {
       name: "assignedRole",
       type: "select",
-      label: "Role",
-      placeholder: "Select a role",
+      label: t("employeeComponents.addNew.labels.role"),
+      placeholder: t("employeeComponents.addNew.placeholders.role"),
       required: true,
       options: roles.map((r: any) => ({ value: r.id, label: r.label })),
       icon: React.createElement(Briefcase, { size: 16 }),
@@ -120,12 +129,12 @@ const getFields = (
     {
       name: "salary",
       type: "number",
-      label: "Salary (ETB)",
-      placeholder: "Enter salary in Birr",
+      label: t("employeeComponents.addNew.labels.salary"),
+      placeholder: t("employeeComponents.addNew.placeholders.salary"),
       required: true,
       icon: React.createElement(Coins, { size: 16 }),
       colSpan: 1,
-    },
+    }
   );
 
   return fields;
@@ -141,6 +150,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
   theaterId = null,
   currentUserRole = "theater_owner",
 }) => {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
   const [resetTrigger, setResetTrigger] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -152,6 +162,9 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
     assignedRole: "",
     salary: "",
   });
+
+  // Validation schema with translation
+  const validationSchema = getValidationSchema(t);
 
   // Generate unique employee ID for new employees
   const generateUniqueEmployeeId = async (): Promise<string> => {
@@ -198,7 +211,6 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
   // Populate form with edit data when in edit mode
   useEffect(() => {
     if (isOpen && isEdit && editData) {
-      console.log("Populating edit form with:", editData);
       setFormValues({
         name: editData.name || "",
         email: editData.email || "",
@@ -238,7 +250,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
 
   const handleSubmit = async (
     values: any,
-    { setSubmitting, resetForm }: any,
+    { setSubmitting, resetForm }: any
   ) => {
     setIsSubmitting(true);
 
@@ -290,7 +302,9 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
           .maybeSingle();
 
         if (existingEmail) {
-          throw new Error(`Email ${values.email} is already registered.`);
+          throw new Error(
+            t("employeeComponents.addNew.errors.emailExists", { email: values.email })
+          );
         }
 
         // Check if phone already exists
@@ -302,7 +316,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
 
         if (existingPhone) {
           throw new Error(
-            `Phone number ${values.phone} is already registered.`,
+            t("employeeComponents.addNew.errors.phoneExists", { phone: values.phone })
           );
         }
 
@@ -353,9 +367,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error saving employee:", error);
-      alert(
-        `Failed to ${isEdit ? "update" : "add"} employee: ${error.message}`,
-      );
+      alert(error.message || t("employeeComponents.addNew.errors.generic", { action: isEdit ? "update" : "add" }));
     } finally {
       setIsSubmitting(false);
       setSubmitting(false);
@@ -366,7 +378,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
     onClose();
   };
 
-  const fields = getFields(roles, showPassword, setShowPassword, isEdit);
+  const fields = getFields(roles, showPassword, setShowPassword, isEdit, t);
 
   return (
     <div
@@ -388,12 +400,14 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isEdit ? "Edit Employee" : "Add New Employee"}
+                {isEdit
+                  ? t("employeeComponents.addNew.titleEdit")
+                  : t("employeeComponents.addNew.titleAdd")}
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
                 {isEdit
-                  ? "Update employee information below"
-                  : "Fill in the employee information below"}
+                  ? t("employeeComponents.addNew.subtitleEdit")
+                  : t("employeeComponents.addNew.subtitleAdd")}
               </p>
             </div>
           </div>
@@ -427,12 +441,12 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                 !values.assignedRole ||
                 !values.salary
               ) {
-                alert("Please fill in all required fields");
+                alert(t("employeeComponents.addNew.errors.fieldsMissing"));
                 return;
               }
 
               if (!isEdit && !values.password) {
-                alert("Password is required for new employees");
+                alert(t("employeeComponents.addNew.errors.passwordMissing"));
                 return;
               }
 
@@ -457,8 +471,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                       <select
                         name={field.name}
                         defaultValue={
-                          formValues[field.name as keyof typeof formValues] ||
-                          ""
+                          formValues[field.name as keyof typeof formValues] || ""
                         }
                         required={field.required}
                         className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
@@ -507,7 +520,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                   onClick={handleCancel}
                   className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
@@ -519,7 +532,9 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                   ) : (
                     <>
                       <UserPlus className="h-4 w-4" />
-                      {isEdit ? "Update Employee" : "Create Employee"}
+                      {isEdit
+                        ? t("employeeComponents.addNew.updateButton")
+                        : t("employeeComponents.addNew.createButton")}
                     </>
                   )}
                 </button>

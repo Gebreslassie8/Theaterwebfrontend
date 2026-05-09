@@ -2,6 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, ChevronDown, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { roleOptions } from "../../pages/Owner/employes/employeeConstants";
 
 interface EmployeeFiltersProps {
@@ -29,11 +30,13 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
   onClearFilters,
   onAddEmployee,
 }) => {
-  // Status options
+  const { t } = useTranslation();
+
+  // Status options – translate labels
   const statusOptions = [
-    { value: "all", label: "All Status" },
-    { value: "Active", label: "Active" },
-    { value: "Inactive", label: "Inactive" },
+    { value: "all", label: t("employeeManagement.filters.allStatuses") },
+    { value: "Active", label: t("employeeManagement.filters.active") },
+    { value: "Inactive", label: t("employeeManagement.filters.inactive") },
   ];
 
   return (
@@ -48,7 +51,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by name, email, phone, employee ID or username..."
+              placeholder={t("employeeManagement.filters.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
@@ -59,7 +62,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
             className="px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
           >
             <Filter className="h-4 w-4" />
-            Filters
+            {t("employeeManagement.filters.filterButton")}
             <ChevronDown
               className={`h-4 w-4 transition-transform ${
                 showFilters ? "rotate-180" : ""
@@ -72,7 +75,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
           className="px-5 py-2.5 text-sm whitespace-nowrap bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all rounded-xl font-medium flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
-          Add New Employee
+          {t("employeeManagement.filters.addEmployee")}
         </button>
       </div>
 
@@ -88,7 +91,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
             onChange={(e) => onRoleChange(e.target.value)}
             className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
           >
-            <option value="all">All Roles</option>
+            <option value="all">{t("employeeManagement.filters.allRoles")}</option>
             {roleOptions && roleOptions.length > 0 ? (
               roleOptions.map((role) => (
                 <option key={role.id} value={role.id}>
@@ -97,9 +100,9 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
               ))
             ) : (
               <>
-                <option value="theater_manager">Theater Manager</option>
-                <option value="sales_person">Sales Person</option>
-                <option value="qr_scanner">QR Scanner</option>
+                <option value="theater_manager">{t("employeeManagement.roles.theaterManager")}</option>
+                <option value="sales_person">{t("employeeManagement.roles.salesPerson")}</option>
+                <option value="qr_scanner">{t("employeeManagement.roles.qrScanner")}</option>
               </>
             )}
           </select>
@@ -119,7 +122,7 @@ export const EmployeeFilters: React.FC<EmployeeFiltersProps> = ({
             onClick={onClearFilters}
             className="px-4 py-2 text-sm text-gray-600 hover:text-teal-600 transition-colors"
           >
-            Clear All Filters
+            {t("employeeManagement.filters.clearFilters")}
           </button>
         </motion.div>
       )}
