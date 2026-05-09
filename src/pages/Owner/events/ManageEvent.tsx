@@ -987,7 +987,7 @@ const ManageEvent: React.FC = () => {
           />
         )}
 
-        {/* Delete Modal */}
+        {/* Delete Modal - Using the updated DeleteConfirmModal with title prop */}
         <DeleteConfirmModal
           employee={
             selectedEventForDelete
@@ -997,7 +997,6 @@ const ManageEvent: React.FC = () => {
                 }
               : null
           }
-          title="Delete Event"
           onConfirm={handleDeleteEvent}
           onCancel={() => closeAllModals()}
         />
