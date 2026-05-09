@@ -1,9 +1,7 @@
 // Frontend/src/pages/Blog.tsx
 import supabase from "@/config/supabaseClient";
-
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
 import {
   Search,
   Calendar,
@@ -12,28 +10,13 @@ import {
   TrendingUp,
   Heart,
   Bookmark,
-  LayoutGrid,
-  List,
-  CheckCircle,
-  ChevronDown,
-  Star,
-  Users,
-  Zap,
-  Lightbulb,
-  HeartHandshake,
-  Newspaper,
   X,
-  ArrowRight,
-  BookOpen,
-  Sparkles,
-  Filter,
-  SortAsc,
-  SortDesc,
-  Theater,
   ChevronLeft,
   ChevronRight,
-  MessageCircle,
   ChevronUp,
+  Newspaper,
+  Sparkles,
+  SortDesc,
 } from "lucide-react";
 import BlogShowCard from "../components/UI/BlogShowCard";
 
@@ -55,7 +38,6 @@ interface BlogPost {
   created_at: string;
   updated_at: string;
   user_id: string;
-  // Additional fields for UI
   slug?: string;
   excerpt?: string;
   author?: Author;
@@ -127,50 +109,54 @@ const Blog = () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
-        .from("blogs")
+        .from("blog_posts") // Changed from "blogs" to "blog_posts" to match your schema
         .select("*")
-        .eq("status", "published") // Only get published blogs
-        .order("created_at", { ascending: false });
+        .eq("is_active", true) // Changed from "status" to "is_active" to match your schema
+        .order("published_at", { ascending: false }); // Changed from "created_at" to "published_at"
 
       if (error) {
         console.error("Error fetching blogs:", error);
         alert("Failed to load blogs");
       } else if (data) {
         // Transform Supabase data to match BlogPost format
-        const transformedPosts = data.map((blog: any, index: number) => ({
-          id: blog.id.toString(),
+        const transformedPosts = data.map((blog: any) => ({
+          id: blog.id,
           title: blog.title,
           content: blog.content,
-          image_url: blog.image_url,
-          status: blog.status,
+          image_url: blog.featured_image || blog.image_url, // Use featured_image from schema
+          status: blog.is_active ? "published" : "draft",
           views: blog.views || 0,
-          created_at: blog.created_at,
+          created_at: blog.published_at || blog.created_at,
           updated_at: blog.updated_at,
-          user_id: blog.user_id,
+          user_id: blog.published_by,
           // Generate excerpt from content (first 150 characters)
           excerpt:
+            blog.excerpt ||
             blog.content.substring(0, 150) +
-            (blog.content.length > 150 ? "..." : ""),
-          slug: blog.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
-          // Assign category based on some logic or random for now
-          category: getCategoryForBlog(index),
+              (blog.content.length > 150 ? "..." : ""),
+          slug: blog.slug,
+          category: blog.category, // This will be one of: latest, events, updates
           // Calculate read time (average 200 words per minute)
-          readTime: Math.max(
-            1,
-            Math.ceil(blog.content.split(" ").length / 200),
-          ),
-          // Random likes and comments for demo (you can remove this)
-          likes: Math.floor(Math.random() * 500) + 50,
-          comments: Math.floor(Math.random() * 100) + 10,
+          readTime:
+            blog.read_time ||
+            Math.max(1, Math.ceil(blog.content.split(" ").length / 200)),
+          likes: blog.likes || 0,
+          comments: blog.comments_count || 0,
           // Determine if new (within last 7 days)
           isNew:
-            new Date(blog.created_at) >
+            new Date(blog.published_at || blog.created_at) >
             new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-          // Random trending/featured for demo
-          isTrending: blog.views > 1000,
-          isFeatured: blog.views > 2000,
-          // Assign random author for demo
-          author: mockAuthors[Math.floor(Math.random() * mockAuthors.length)],
+          isTrending: blog.is_trending || false,
+          isFeatured: blog.is_featured || false,
+          // Assign random author for demo (you can replace with real author data)
+          author: {
+            id: blog.published_by || "unknown",
+            name:
+              blog.published_by_name ||
+              mockAuthors[Math.floor(Math.random() * mockAuthors.length)].name,
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(blog.published_by_name || "Author")}&background=007590&color=fff`,
+            role: blog.published_by_role || "Contributor",
+          },
         }));
 
         setPosts(transformedPosts);
@@ -182,19 +168,6 @@ const Blog = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Helper function to assign categories based on content or random
-  const getCategoryForBlog = (
-    index: number,
-  ): "latest" | "events" | "updates" => {
-    const categories: ("latest" | "events" | "updates")[] = [
-      "latest",
-      "events",
-      "updates",
-    ];
-    // Use index to distribute evenly
-    return categories[index % categories.length];
   };
 
   // Scroll to top button visibility
@@ -278,16 +251,6 @@ const Blog = () => {
     }
   };
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -309,7 +272,7 @@ const Blog = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-deepTeal to-deepBlue">
+      <section className="relative overflow-hidden bg-gradient-to-r from-teal-600 to-emerald-600">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1507924538820-ede1c7f7a8a9?w=1600')] bg-cover bg-center opacity-10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
           <motion.div
@@ -355,6 +318,7 @@ const Blog = () => {
             {[
               { id: "all", label: "All Blogs", icon: Newspaper },
               { id: "latest", label: "Latest News", icon: Sparkles },
+              { id: "events", label: "Events", icon: Calendar },
               { id: "updates", label: "Updates", icon: Clock },
             ].map((category) => {
               const Icon = category.icon;
@@ -369,7 +333,7 @@ const Blog = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`px-5 py-2 rounded-xl font-medium transition-all duration-300 flex items-center gap-2 ${
                     isActive
-                      ? "bg-gradient-to-r from-deepTeal to-deepBlue text-white shadow-lg"
+                      ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-lg"
                       : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
                   }`}
                 >
@@ -394,7 +358,7 @@ const Blog = () => {
                 placeholder="Search news..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-deepTeal focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl bg-white text-sm focus:ring-2 focus:ring-teal-600 focus:border-transparent"
               />
             </div>
 
@@ -485,25 +449,6 @@ const Blog = () => {
                 </button>
 
                 <div className="flex gap-2">
-                  {currentPage > 3 && (
-                    <>
-                      <button
-                        onClick={() => {
-                          setCurrentPage(1);
-                          scrollToTop();
-                        }}
-                        className="w-9 h-9 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
-                      >
-                        1
-                      </button>
-                      {currentPage > 4 && (
-                        <span className="w-9 h-9 flex items-center justify-center text-gray-400">
-                          ...
-                        </span>
-                      )}
-                    </>
-                  )}
-
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum;
                     if (totalPages <= 5) {
@@ -527,7 +472,7 @@ const Blog = () => {
                         }}
                         className={`w-9 h-9 rounded-lg font-medium transition ${
                           currentPage === pageNum
-                            ? "bg-deepTeal text-white shadow-md"
+                            ? "bg-teal-600 text-white shadow-md"
                             : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
                         }`}
                       >
@@ -535,25 +480,6 @@ const Blog = () => {
                       </button>
                     );
                   })}
-
-                  {currentPage < totalPages - 2 && (
-                    <>
-                      {currentPage < totalPages - 3 && (
-                        <span className="w-9 h-9 flex items-center justify-center text-gray-400">
-                          ...
-                        </span>
-                      )}
-                      <button
-                        onClick={() => {
-                          setCurrentPage(totalPages);
-                          scrollToTop();
-                        }}
-                        className="w-9 h-9 rounded-lg font-medium bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
-                      >
-                        {totalPages}
-                      </button>
-                    </>
-                  )}
                 </div>
 
                 <button
@@ -587,7 +513,7 @@ const Blog = () => {
             </p>
             <button
               onClick={handleClearFilters}
-              className="px-4 py-2 bg-deepTeal text-white rounded-lg"
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
             >
               Clear all filters
             </button>
@@ -603,7 +529,7 @@ const Blog = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 right-6 z-50 p-3 bg-deepTeal text-white rounded-full shadow-lg hover:bg-deepTeal/80 transition-all duration-200"
+            className="fixed bottom-6 right-6 z-50 p-3 bg-teal-600 text-white rounded-full shadow-lg hover:bg-teal-700 transition-all duration-200"
           >
             <ChevronUp className="h-5 w-5" />
           </motion.button>
