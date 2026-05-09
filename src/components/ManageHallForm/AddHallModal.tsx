@@ -1,161 +1,788 @@
 // src/components/ManageHallForm/AddHallModal.tsx
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Save,
   AlertCircle,
   Building,
-  Layout,
-  Hash,
-  Tag,
-  DollarSign,
-  Info,
-  Users,
-  Layers,
+  Grid,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Settings,
 } from "lucide-react";
-import * as Yup from "yup";
+
+// ============================================
+// TYPES
+// ============================================
+interface SeatLevel {
+  id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  start_row: string;
+  end_row: string;
+  start_col: number;
+  end_col: number;
+}
+
+interface HallInfo {
+  name: string;
+  num_of_rows: number | null;
+  num_of_cols: number | null;
+}
 
 interface AddHallModalProps {
   onSubmit: (data: any) => void;
   onCancel: () => void;
 }
 
-// Yup Validation Schema based on database schema
-const hallValidationSchema = Yup.object({
-  hall_number: Yup.number()
-    .required("Hall number is required")
-    .min(1, "Hall number must be at least 1")
-    .max(999, "Hall number cannot exceed 999"),
-  name: Yup.string().max(100, "Hall name cannot exceed 100 characters"),
-  capacity: Yup.number()
-    .required("Capacity is required")
-    .min(1, "Capacity must be at least 1")
-    .max(5000, "Capacity cannot exceed 5000"),
-  rows: Yup.string().max(50, "Rows description too long"),
-  seating_layout: Yup.string()
-    .required("Seating layout is required")
-    .oneOf(
-      ["Standard", "Compact", "Premium", "VIP", "Balcony"],
-      "Invalid seating layout",
-    ),
-  price_multiplier: Yup.number()
-    .required("Price multiplier is required")
-    .min(0.5, "Price multiplier must be at least 0.5")
-    .max(5, "Price multiplier cannot exceed 5"),
-  has_dynamic_seating: Yup.boolean(),
-  description: Yup.string().max(
-    500,
-    "Description cannot exceed 500 characters",
-  ),
-});
+// ============================================
+// UTILITIES
+// ============================================
+const numberToRowLetter = (num: number): string => {
+  let result = "";
+  let n = num;
+  while (n > 0) {
+    n--;
+    result = String.fromCharCode(65 + (n % 26)) + result;
+    n = Math.floor(n / 26);
+  }
+  return result;
+};
 
+const generateRowLetters = (numOfRows: number): string[] => {
+  const letters = [];
+  for (let i = 1; i <= numOfRows; i++) {
+    letters.push(numberToRowLetter(i));
+  }
+  return letters;
+};
+
+// ============================================
+// STEP 1: BASIC INFORMATION
+// ============================================
+interface BasicInfoStepProps {
+  formData: HallInfo;
+  errors: Record<string, string>;
+  touched: Record<string, boolean>;
+  totalCapacity: number;
+  onUpdate: (data: Partial<HallInfo>) => void;
+  onBlur: (field: string) => void;
+  onNext: () => void;
+}
+
+const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
+  formData,
+  errors,
+  touched,
+  totalCapacity,
+  onUpdate,
+  onBlur,
+  onNext,
+}) => {
+  const isDisabled =
+    !formData.name || !formData.num_of_rows || !formData.num_of_cols;
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Hall Name <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.name}
+          onChange={(e) => onUpdate({ name: e.target.value })}
+          onBlur={() => onBlur("name")}
+          className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+            errors.name && touched.name ? "border-red-500" : "border-gray-200"
+          }`}
+          placeholder="e.g., Grand Hall"
+        />
+        {errors.name && touched.name && (
+          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Number of Rows <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={formData.num_of_rows === null ? "" : formData.num_of_rows}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? null
+                  : Math.max(1, parseInt(e.target.value) || 0);
+              onUpdate({ num_of_rows: value });
+            }}
+            onBlur={() => onBlur("num_of_rows")}
+            className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+              errors.num_of_rows && touched.num_of_rows
+                ? "border-red-500"
+                : "border-gray-200"
+            }`}
+            placeholder="e.g., 10"
+            min="1"
+            step="1"
+          />
+          {errors.num_of_rows && touched.num_of_rows && (
+            <p className="text-red-500 text-xs mt-1">{errors.num_of_rows}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            Rows labeled A, B, C, ... (unlimited)
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Number of Columns <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            value={formData.num_of_cols === null ? "" : formData.num_of_cols}
+            onChange={(e) => {
+              const value =
+                e.target.value === ""
+                  ? null
+                  : Math.max(1, parseInt(e.target.value) || 0);
+              onUpdate({ num_of_cols: value });
+            }}
+            onBlur={() => onBlur("num_of_cols")}
+            className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+              errors.num_of_cols && touched.num_of_cols
+                ? "border-red-500"
+                : "border-gray-200"
+            }`}
+            placeholder="e.g., 15"
+            min="1"
+            step="1"
+          />
+          {errors.num_of_cols && touched.num_of_cols && (
+            <p className="text-red-500 text-xs mt-1">{errors.num_of_cols}</p>
+          )}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Total Capacity
+        </label>
+        <input
+          type="text"
+          value={
+            totalCapacity > 0
+              ? `${totalCapacity.toLocaleString()} seats`
+              : "Enter rows and columns"
+          }
+          disabled
+          className="w-full p-2.5 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+        />
+      </div>
+
+      <button
+        onClick={onNext}
+        disabled={isDisabled}
+        className="w-full px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        Continue to Seat Levels <ArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+};
+
+// ============================================
+// SEAT LEVEL EDITOR COMPONENT
+// ============================================
+interface SeatLevelEditorProps {
+  level: SeatLevel;
+  rowLetters: string[];
+  maxCols: number;
+  isExpanded: boolean;
+  errors: Record<string, string>;
+  onToggle: () => void;
+  onUpdate: (field: keyof SeatLevel, value: any) => void;
+  onRemove?: () => void;
+  isStandard?: boolean;
+}
+
+const SeatLevelEditor: React.FC<SeatLevelEditorProps> = ({
+  level,
+  rowLetters,
+  maxCols,
+  isExpanded,
+  errors,
+  onToggle,
+  onUpdate,
+  onRemove,
+  isStandard = false,
+}) => {
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <button
+        onClick={onToggle}
+        className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex justify-between items-center transition"
+      >
+        <div className="flex items-center gap-2">
+          <span className="font-medium">
+            {level.display_name ||
+              (isStandard ? "Standard (Default)" : "New Level")}
+          </span>
+          {isStandard && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
+              All seats
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {!isStandard && onRemove && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="p-1 text-red-500 hover:bg-red-50 rounded transition"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
+          {isExpanded ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          )}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="p-4 space-y-3 border-t"
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Level Name {!isStandard && "*"}
+                </label>
+                <input
+                  type="text"
+                  value={level.display_name}
+                  onChange={(e) => onUpdate("display_name", e.target.value)}
+                  placeholder={isStandard ? "Standard" : "e.g., VIP, Premium"}
+                  className="w-full p-2 border rounded-lg text-sm"
+                  disabled={isStandard}
+                />
+                {errors[`level_${level.id}_name`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[`level_${level.id}_name`]}
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Price (ETB) {!isStandard && "*"}
+                </label>
+                <input
+                  type="number"
+                  value={level.price}
+                  onChange={(e) => {
+                    let value = parseFloat(e.target.value);
+                    if (isNaN(value)) value = 0;
+                    if (value < 0) value = 0;
+                    onUpdate("price", value);
+                  }}
+                  className="w-full p-2 border rounded-lg text-sm"
+                  min="0"
+                  step="1"
+                />
+                {errors[`level_${level.id}_price`] && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {errors[`level_${level.id}_price`]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {!isStandard && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Row Range
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={level.start_row}
+                        onChange={(e) => onUpdate("start_row", e.target.value)}
+                        className="p-2 border rounded-lg text-sm"
+                      >
+                        {rowLetters.map((row) => (
+                          <option key={row} value={row}>
+                            {row}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={level.end_row}
+                        onChange={(e) => onUpdate("end_row", e.target.value)}
+                        className="p-2 border rounded-lg text-sm"
+                      >
+                        <option value="">Select</option>
+                        {rowLetters.map((row) => (
+                          <option key={row} value={row}>
+                            {row}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {errors[`level_${level.id}_row`] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`level_${level.id}_row`]}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Column Range
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="number"
+                        value={level.start_col}
+                        onChange={(e) => {
+                          let value = parseInt(e.target.value);
+                          if (isNaN(value)) value = 1;
+                          if (value < 1) value = 1;
+                          if (value > maxCols) value = maxCols;
+                          onUpdate("start_col", value);
+                        }}
+                        className="p-2 border rounded-lg text-sm"
+                        min="1"
+                        max={maxCols}
+                      />
+                      <input
+                        type="number"
+                        value={level.end_col === 0 ? "" : level.end_col}
+                        onChange={(e) => {
+                          const value =
+                            e.target.value === ""
+                              ? 0
+                              : parseInt(e.target.value);
+                          let finalValue = value;
+                          if (finalValue < 0) finalValue = 0;
+                          if (finalValue > maxCols) finalValue = maxCols;
+                          onUpdate("end_col", finalValue);
+                        }}
+                        className="p-2 border rounded-lg text-sm"
+                        min="1"
+                        max={maxCols}
+                        placeholder="End"
+                      />
+                    </div>
+                    {errors[`level_${level.id}_col`] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`level_${level.id}_col`]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// ============================================
+// STEP 2: SEAT LEVELS CONFIGURATION
+// ============================================
+interface SeatLevelsStepProps {
+  seatLevels: SeatLevel[];
+  rowLetters: string[];
+  maxCols: number;
+  totalRows: number;
+  totalCols: number;
+  totalCapacity: number;
+  errors: Record<string, string>;
+  expandedLevels: Record<string, boolean>;
+  onAddLevel: () => void;
+  onRemoveLevel: (id: string) => void;
+  onUpdateLevel: (id: string, field: keyof SeatLevel, value: any) => void;
+  onToggleExpand: (id: string) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+}
+
+const SeatLevelsStep: React.FC<SeatLevelsStepProps> = ({
+  seatLevels,
+  rowLetters,
+  maxCols,
+  totalRows,
+  totalCols,
+  totalCapacity,
+  errors,
+  expandedLevels,
+  onAddLevel,
+  onRemoveLevel,
+  onUpdateLevel,
+  onToggleExpand,
+  onBack,
+  onSubmit,
+}) => {
+  const isLargeHall = totalRows > 10;
+
+  return (
+    <div className="space-y-5">
+      {/* Info Box */}
+      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+        <p className="text-xs text-blue-700">
+          <Settings className="h-3 w-3 inline mr-1" />
+          All seats start as "Standard". Add premium levels and define their row
+          and column ranges.
+          <br />
+          <strong>Hall size:</strong> {totalRows} rows ({rowLetters[0]}-
+          {rowLetters[rowLetters.length - 1]}) × {totalCols} columns
+        </p>
+      </div>
+
+      {/* Seat Levels List */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+            <Grid className="h-4 w-4 text-teal-600" />
+            Seat Levels
+          </h3>
+          <button
+            onClick={onAddLevel}
+            className="px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition text-sm flex items-center gap-1"
+          >
+            <Plus className="h-4 w-4" />
+            Add Level
+          </button>
+        </div>
+
+        {seatLevels.map((level) => (
+          <SeatLevelEditor
+            key={level.id}
+            level={level}
+            rowLetters={rowLetters}
+            maxCols={maxCols}
+            isExpanded={expandedLevels[level.id] || false}
+            errors={errors}
+            onToggle={() => onToggleExpand(level.id)}
+            onUpdate={(field, value) => onUpdateLevel(level.id, field, value)}
+            onRemove={
+              level.name !== "standard"
+                ? () => onRemoveLevel(level.id)
+                : undefined
+            }
+            isStandard={level.name === "standard"}
+          />
+        ))}
+      </div>
+
+      {/* Large Hall Warning */}
+      {isLargeHall && (
+        <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+          <p className="text-xs text-yellow-700">
+            <AlertCircle className="h-3 w-3 inline mr-1" />
+            Large hall detected ({totalRows} rows × {totalCols} columns ={" "}
+            {totalCapacity.toLocaleString()} seats). Seat layout will be
+            generated efficiently.
+          </p>
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="flex gap-3 pt-4">
+        <button
+          onClick={onBack}
+          className="flex-1 px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+        >
+          Back
+        </button>
+        <button
+          onClick={onSubmit}
+          className="flex-1 px-6 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition flex items-center justify-center gap-2"
+        >
+          <Save className="h-4 w-4" />
+          Create Hall
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 const AddHallModal: React.FC<AddHallModalProps> = ({ onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    hall_number: 1,
+  // State
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<HallInfo>({
     name: "",
-    capacity: 0,
-    rows: "",
-    seating_layout: "Standard",
-    price_multiplier: 1.0,
-    has_dynamic_seating: true,
-    description: "",
-    seat_configuration: {
-      levels: ["standard", "vip", "vvip"],
-      default_pricing: {
-        standard: 50,
-        vip: 120,
-        vvip: 250,
-      },
-    },
+    num_of_rows: null,
+    num_of_cols: null,
   });
-
+  const [seatLevels, setSeatLevels] = useState<SeatLevel[]>([
+    {
+      id: "standard",
+      name: "standard",
+      display_name: "Standard",
+      price: 50,
+      start_row: "A",
+      end_row: "",
+      start_col: 1,
+      end_col: 0,
+    },
+  ]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [expandedLevels, setExpandedLevels] = useState<Record<string, boolean>>(
+    { standard: true },
+  );
 
-  // Get current user from session (synchronous - no async needed)
+  // Derived values
+  const totalCapacity =
+    (formData.num_of_rows || 0) * (formData.num_of_cols || 0);
+  const rowLetters = generateRowLetters(formData.num_of_rows || 0);
+  const maxRowLetter =
+    rowLetters.length > 0 ? rowLetters[rowLetters.length - 1] : "A";
+
+  // Initialize user
   useEffect(() => {
     try {
       const userStr =
         localStorage.getItem("user") || sessionStorage.getItem("user");
-
       if (userStr) {
         const user = JSON.parse(userStr);
-        console.log("User found:", user); // Debug log
         setCurrentUserId(user.id);
-        setCurrentUserRole(user.role);
-
-        // Verify user has permission (Manager or Owner)
-        if (
-          user.role !== "theater_manager" &&
-          user.role !== "theater_owner" &&
-          user.role !== "super_admin"
-        ) {
-          alert(
-            "You don't have permission to create halls. Only Managers and Owners can create halls.",
-          );
-          onCancel();
-        }
       } else {
-        console.error("No user found in storage");
         alert("User not authenticated. Please log in again.");
         onCancel();
       }
     } catch (error) {
       console.error("Error getting user:", error);
-      alert("Error loading user information. Please refresh the page.");
       onCancel();
     } finally {
       setLoading(false);
     }
   }, [onCancel]);
 
-  const handleBlur = async (field: string, value: any) => {
+  // ============================================
+  // VALIDATION
+  // ============================================
+  const validateBasicInfo = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (!formData.name?.trim()) newErrors.name = "Hall name is required";
+    if (!formData.num_of_rows || formData.num_of_rows < 1)
+      newErrors.num_of_rows = "Number of rows must be at least 1";
+    if (!formData.num_of_cols || formData.num_of_cols < 1)
+      newErrors.num_of_cols = "Number of columns must be at least 1";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateSeatLevels = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    for (const level of seatLevels) {
+      if (!level.display_name?.trim()) {
+        newErrors[`level_${level.id}_name`] = "Level name required";
+      }
+
+      if (level.name !== "standard") {
+        if (!level.end_row)
+          newErrors[`level_${level.id}_row`] = "Please select end row";
+        if (!level.end_col || level.end_col === 0)
+          newErrors[`level_${level.id}_col`] = "Please select end column";
+
+        // Validate row range
+        if (level.end_row && level.start_row) {
+          const startIndex = rowLetters.indexOf(level.start_row);
+          const endIndex = rowLetters.indexOf(level.end_row);
+          if (startIndex !== -1 && endIndex !== -1 && endIndex < startIndex) {
+            newErrors[`level_${level.id}_row`] =
+              "End row cannot be before start row";
+          }
+          if (endIndex >= formData.num_of_rows!) {
+            newErrors[`level_${level.id}_row`] =
+              `End row cannot exceed ${maxRowLetter}`;
+          }
+        }
+
+        // Validate column range
+        if (
+          level.end_col &&
+          level.start_col &&
+          level.end_col < level.start_col
+        ) {
+          newErrors[`level_${level.id}_col`] =
+            "End column cannot be before start column";
+        }
+        if (
+          level.end_col &&
+          formData.num_of_cols &&
+          level.end_col > formData.num_of_cols
+        ) {
+          newErrors[`level_${level.id}_col`] =
+            `End column cannot exceed ${formData.num_of_cols}`;
+        }
+      }
+
+      if (level.price <= 0) {
+        newErrors[`level_${level.id}_price`] = "Price must be greater than 0";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBlur = (field: string) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
-    try {
-      await hallValidationSchema.validateAt(field, { [field]: value });
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    } catch (err: any) {
-      setErrors((prev) => ({ ...prev, [field]: err.message }));
-    }
+    validateBasicInfo();
   };
 
-  const validateForm = async () => {
-    try {
-      await hallValidationSchema.validate(formData, { abortEarly: false });
-      setErrors({});
-      return true;
-    } catch (err: any) {
-      const newErrors: Record<string, string> = {};
-      err.inner.forEach((error: any) => {
-        newErrors[error.path] = error.message;
-      });
-      setErrors(newErrors);
-      return false;
-    }
+  // ============================================
+  // STEP HANDLERS
+  // ============================================
+  const handleNext = () => {
+    setTouched({ name: true, num_of_rows: true, num_of_cols: true });
+    if (!validateBasicInfo()) return;
+    if (!formData.num_of_rows || !formData.num_of_cols) return;
+
+    // Auto-set standard level ranges
+    const updatedLevels = seatLevels.map((level) => {
+      if (level.name === "standard") {
+        return {
+          ...level,
+          end_row: maxRowLetter,
+          end_col: formData.num_of_cols || 0,
+        };
+      }
+      return level;
+    });
+    setSeatLevels(updatedLevels);
+    setCurrentStep(2);
   };
 
-  const handleSubmit = async () => {
-    const isValid = await validateForm();
-    if (isValid && currentUserId) {
-      onSubmit({
-        ...formData,
+  const handleBack = () => setCurrentStep(1);
+
+  const handleSubmit = () => {
+    if (!validateSeatLevels()) return;
+    if (!currentUserId || !formData.num_of_rows || !formData.num_of_cols)
+      return;
+
+    // Generate seat layout
+    const seatLayout = [];
+    for (let rowIdx = 0; rowIdx < formData.num_of_rows; rowIdx++) {
+      const rowName = rowLetters[rowIdx];
+      for (let col = 1; col <= formData.num_of_cols; col++) {
+        let matchedLevel = seatLevels[0];
+        for (const level of seatLevels) {
+          if (level.name !== "standard" && level.end_row && level.end_col) {
+            const startIdx = rowLetters.indexOf(level.start_row);
+            const endIdx = rowLetters.indexOf(level.end_row);
+            if (
+              startIdx !== -1 &&
+              endIdx !== -1 &&
+              rowIdx >= startIdx &&
+              rowIdx <= endIdx &&
+              col >= level.start_col &&
+              col <= level.end_col
+            ) {
+              matchedLevel = level;
+              break;
+            }
+          }
+        }
+        seatLayout.push({
+          seat_row: rowName,
+          seat_number: col,
+          seat_level_name: matchedLevel.name,
+          price_multiplier:
+            matchedLevel.name === "standard" ? 1.0 : matchedLevel.price / 50,
+          seat_status: "free",
+        });
+      }
+    }
+
+    onSubmit({
+      hallInfo: {
+        name: formData.name,
+        num_of_rows: formData.num_of_rows,
+        num_of_cols: formData.num_of_cols,
+        capacity: totalCapacity,
         published_by: currentUserId,
-      });
+      },
+      seatLevels,
+      seatLayout,
+    });
+  };
+
+  // ============================================
+  // SEAT LEVEL CRUD
+  // ============================================
+  const addSeatLevel = () => {
+    const newId = `level_${Date.now()}`;
+    setSeatLevels([
+      ...seatLevels,
+      {
+        id: newId,
+        name: "",
+        display_name: "",
+        price: 0,
+        start_row: "A",
+        end_row: "",
+        start_col: 1,
+        end_col: 0,
+      },
+    ]);
+    setExpandedLevels({ ...expandedLevels, [newId]: true });
+  };
+
+  const removeSeatLevel = (id: string) => {
+    if (seatLevels.length <= 1) return;
+    setSeatLevels(seatLevels.filter((level) => level.id !== id));
+    const newExpanded = { ...expandedLevels };
+    delete newExpanded[id];
+    setExpandedLevels(newExpanded);
+  };
+
+  const updateSeatLevel = (id: string, field: keyof SeatLevel, value: any) => {
+    setSeatLevels((levels) =>
+      levels.map((level) =>
+        level.id === id ? { ...level, [field]: value } : level,
+      ),
+    );
+    if (errors[`level_${id}_${field}`]) {
+      setErrors((prev) => ({ ...prev, [`level_${id}_${field}`]: "" }));
     }
   };
 
-  const seatingLayoutOptions = [
-    { value: "Standard", label: "Standard" },
-    { value: "Compact", label: "Compact" },
-    { value: "Premium", label: "Premium" },
-    { value: "VIP", label: "VIP" },
-    { value: "Balcony", label: "Balcony" },
-  ];
+  const toggleLevelExpand = (id: string) => {
+    setExpandedLevels((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
+  // ============================================
+  // RENDER
+  // ============================================
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -175,377 +802,74 @@ const AddHallModal: React.FC<AddHallModalProps> = ({ onSubmit, onCancel }) => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto"
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 flex justify-between items-center text-white rounded-t-2xl z-10">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white/20 rounded-lg">
-              <Building className="h-5 w-5" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Add New Hall</h2>
-              <p className="text-white/80 text-sm">
-                Fill in the hall details below
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onCancel}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="p-6 space-y-6">
-          {/* Creator Info */}
-          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-center gap-2">
-              <Info className="h-4 w-4 text-blue-600" />
-              <p className="text-sm text-blue-700">
-                Creating as:{" "}
-                <strong>
-                  {currentUserRole?.replace("_", " ").toUpperCase() || "USER"}
-                </strong>
-              </p>
-            </div>
-          </div>
-
-          {/* Basic Information */}
-          <div className="border-b pb-3">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Building className="h-5 w-5 text-teal-600" />
-              Basic Information
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hall Number <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.hall_number}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      hall_number: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  onBlur={() => handleBlur("hall_number", formData.hall_number)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.hall_number && touched.hall_number
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="e.g., 1, 2, 3"
-                />
+        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 text-white rounded-t-2xl z-10">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg">
+                <Building className="h-5 w-5" />
               </div>
-              {errors.hall_number && touched.hall_number && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.hall_number}
+              <div>
+                <h2 className="text-xl font-bold">Add New Hall</h2>
+                <p className="text-white/80 text-sm">
+                  Step {currentStep} of 2:{" "}
+                  {currentStep === 1
+                    ? "Basic Information"
+                    : "Seat Levels Configuration"}
                 </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Hall Name
-              </label>
-              <div className="relative">
-                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  onBlur={() => handleBlur("name", formData.name)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.name && touched.name
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="e.g., Grand Hall, Premier Hall"
-                />
-              </div>
-              {errors.name && touched.name && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.name}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Capacity <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  value={formData.capacity}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      capacity: parseInt(e.target.value) || 0,
-                    })
-                  }
-                  onBlur={() => handleBlur("capacity", formData.capacity)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.capacity && touched.capacity
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="Total number of seats"
-                />
-              </div>
-              {errors.capacity && touched.capacity && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.capacity}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Seating Layout <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <Layout className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={formData.seating_layout}
-                  onChange={(e) =>
-                    setFormData({ ...formData, seating_layout: e.target.value })
-                  }
-                  onBlur={() =>
-                    handleBlur("seating_layout", formData.seating_layout)
-                  }
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.seating_layout && touched.seating_layout
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                >
-                  {seatingLayoutOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {errors.seating_layout && touched.seating_layout && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.seating_layout}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price Multiplier <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="number"
-                  step="0.1"
-                  value={formData.price_multiplier}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      price_multiplier: parseFloat(e.target.value),
-                    })
-                  }
-                  onBlur={() =>
-                    handleBlur("price_multiplier", formData.price_multiplier)
-                  }
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.price_multiplier && touched.price_multiplier
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="1.0"
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Base price × multiplier = final ticket price
-              </p>
-              {errors.price_multiplier && touched.price_multiplier && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.price_multiplier}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rows Configuration
-              </label>
-              <div className="relative">
-                <Info className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={formData.rows}
-                  onChange={(e) =>
-                    setFormData({ ...formData, rows: e.target.value })
-                  }
-                  onBlur={() => handleBlur("rows", formData.rows)}
-                  className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                    errors.rows && touched.rows
-                      ? "border-red-500 bg-red-50"
-                      : "border-gray-200 hover:border-teal-300"
-                  }`}
-                  placeholder="e.g., A-Z (20 rows)"
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Describe the row arrangement (e.g., A-Z for 26 rows)
-              </p>
-              {errors.rows && touched.rows && (
-                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                  <AlertCircle className="h-3 w-3" /> {errors.rows}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Dynamic Seating */}
-          <div className="border-b pb-3 mt-4">
-            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-              <Layers className="h-5 w-5 text-teal-600" />
-              Seating Configuration
-            </h3>
-          </div>
-
-          <div>
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.has_dynamic_seating}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    has_dynamic_seating: e.target.checked,
-                  })
-                }
-                className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-              />
-              <span className="text-sm text-gray-700">
-                Enable Dynamic Seating
-              </span>
-            </label>
-            <p className="text-xs text-gray-400 mt-1 ml-7">
-              Dynamic pricing adjusts ticket prices based on demand
-            </p>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              onBlur={() => handleBlur("description", formData.description)}
-              rows={3}
-              className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                errors.description && touched.description
-                  ? "border-red-500 bg-red-50"
-                  : "border-gray-200 hover:border-teal-300"
-              }`}
-              placeholder="Additional information about this hall (e.g., location, amenities, special features...)"
-            />
-            {errors.description && touched.description && (
-              <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3" /> {errors.description}
-              </p>
-            )}
-          </div>
-
-          {/* Info Box */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start gap-2">
-              <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-xs text-blue-700">
-                <p className="font-medium mb-1">What is Price Multiplier?</p>
-                <p>
-                  The price multiplier affects ticket pricing for this hall. For
-                  example:
-                </p>
-                <ul className="list-disc list-inside mt-1 space-y-0.5">
-                  <li>Base price for standard seat: 50 ETB</li>
-                  <li>With multiplier 1.5 → Price becomes 75 ETB</li>
-                  <li>With multiplier 0.8 → Price becomes 40 ETB</li>
-                </ul>
               </div>
             </div>
-          </div>
-
-          {/* Preview Section */}
-          {formData.capacity > 0 && (
-            <div className="p-4 bg-teal-50 rounded-lg border border-teal-200">
-              <h4 className="text-sm font-semibold text-teal-800 mb-2">
-                Hall Summary Preview
-              </h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-gray-600">Hall:</span>{" "}
-                  {formData.name || `Hall ${formData.hall_number}`}
-                </div>
-                <div>
-                  <span className="text-gray-600">Layout:</span>{" "}
-                  {formData.seating_layout}
-                </div>
-                <div>
-                  <span className="text-gray-600">Capacity:</span>{" "}
-                  {formData.capacity.toLocaleString()} seats
-                </div>
-                <div>
-                  <span className="text-gray-600">Multiplier:</span>{" "}
-                  {formData.price_multiplier}x
-                </div>
-                <div>
-                  <span className="text-gray-600">Dynamic Seating:</span>{" "}
-                  {formData.has_dynamic_seating ? "Enabled" : "Disabled"}
-                </div>
-                <div className="col-span-2">
-                  <span className="text-gray-600">Created by:</span>{" "}
-                  <span className="font-medium">
-                    {currentUserRole?.replace("_", " ").toUpperCase() || "USER"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t mt-4">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             >
-              Cancel
-            </button>
-            <button
-              onClick={handleSubmit}
-              className="flex-1 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all font-medium flex items-center justify-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              Create Hall
+              <X className="h-5 w-5" />
             </button>
           </div>
+          {/* Progress Bar */}
+          <div className="mt-4 h-2 bg-white/20 rounded-full">
+            <div
+              className="h-full bg-white rounded-full transition-all"
+              style={{ width: `${(currentStep / 2) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="p-6">
+          {currentStep === 1 && (
+            <BasicInfoStep
+              formData={formData}
+              errors={errors}
+              touched={touched}
+              totalCapacity={totalCapacity}
+              onUpdate={(data) => setFormData({ ...formData, ...data })}
+              onBlur={handleBlur}
+              onNext={handleNext}
+            />
+          )}
+
+          {currentStep === 2 &&
+            formData.num_of_rows &&
+            formData.num_of_cols && (
+              <SeatLevelsStep
+                seatLevels={seatLevels}
+                rowLetters={rowLetters}
+                maxCols={formData.num_of_cols}
+                totalRows={formData.num_of_rows}
+                totalCols={formData.num_of_cols}
+                totalCapacity={totalCapacity}
+                errors={errors}
+                expandedLevels={expandedLevels}
+                onAddLevel={addSeatLevel}
+                onRemoveLevel={removeSeatLevel}
+                onUpdateLevel={updateSeatLevel}
+                onToggleExpand={toggleLevelExpand}
+                onBack={handleBack}
+                onSubmit={handleSubmit}
+              />
+            )}
         </div>
       </motion.div>
     </div>

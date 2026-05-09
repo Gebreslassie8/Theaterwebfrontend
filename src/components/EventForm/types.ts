@@ -28,7 +28,7 @@ export interface EventData {
   poster_url: string;
   price_min: number;
   price_max: number;
-  status: "coming-soon" | "now-showing" | "ended";
+  status: "coming-soon" | "now-showing" | "ended" | "cancelled";
   is_featured: boolean;
   rating: number;
   review_count: number;
@@ -66,7 +66,7 @@ export interface FormData {
   poster_url: string;
   price_min: number;
   price_max: number;
-  status: "coming-soon" | "now-showing" | "ended";
+  status: "coming-soon" | "now-showing" | "ended" | "cancelled";
   is_featured: boolean;
   theater_id?: string;
   published_by?: string;
