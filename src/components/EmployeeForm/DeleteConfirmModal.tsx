@@ -2,6 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface DeleteConfirmModalProps {
   employee: { id: string; name: string } | null;
@@ -20,6 +21,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   onConfirm,
   onCancel,
 }) => {
+  const { t } = useTranslation();
+
   if (!employee) return null;
 
   return (
@@ -35,24 +38,25 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <div className="p-2 bg-red-100 rounded-lg">
             <AlertCircle className="h-6 w-6 text-red-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900">Delete Employee</h3>
+          <h3 className="text-xl font-bold text-gray-900">
+            {t("employeeManagement.deleteModal.title")}
+          </h3>
         </div>
         <p className="text-gray-600 mb-6">
-          Are you sure you want to delete <strong>{employee.name}</strong>? This
-          action cannot be undone.
+          {t("employeeManagement.deleteModal.message", { name: employee.name })}
         </p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
           >
-            Delete
+            {t("employeeManagement.deleteModal.confirmButton")}
           </button>
         </div>
       </motion.div>

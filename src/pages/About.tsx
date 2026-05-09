@@ -43,7 +43,7 @@ const About: React.FC = () => {
             social: { facebook: '#', telegram: '#', phone: '+251-11-558-1235' }
         },
         {
-            name: 'Michael Rodriguez',
+            name: 'bire',
             roleKey: 'about.team.michaelRole',
             bioKey: 'about.team.michaelBio',
             image: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop',

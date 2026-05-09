@@ -1,4 +1,4 @@
-// frontend/src/layouts/Navbar.tsx
+// frontend/src/layouts/Navbar.tsx (original, with language selector)
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,11 +17,8 @@ import {
   Star,
   Building2,
 } from "lucide-react";
-
-// --- i18n import ---
 import { useTranslation } from "react-i18next";
 
-// Types
 interface Language {
   code: string;
   name: string;
@@ -30,12 +27,12 @@ interface Language {
 
 interface NavLink {
   to: string;
-  labelKey: string;     // changed from label to translation key
+  labelKey: string;
   icon: React.ElementType;
 }
 
 const Navbar: React.FC = () => {
-  const { t, i18n } = useTranslation();   // <-- use i18n hook
+  const { t, i18n } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isLangOpen, setIsLangOpen] = useState<boolean>(false);
   const [isJoinOpen, setIsJoinOpen] = useState<boolean>(false);
@@ -50,19 +47,16 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu when route changes
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location]);
 
-  // Languages: codes remain same, names are fixed (not translated for clarity)
   const languages: Language[] = [
     { code: "en", name: "English", flag: "🇬🇧" },
     { code: "am", name: "አማርኛ", flag: "🇪🇹" },
     { code: "om", name: "Oromoo", flag: "🇪🇹" },
   ];
 
-  // Use translation keys instead of hardcoded labels
   const navLinks: NavLink[] = [
     { to: "/", labelKey: "nav.home", icon: Home },
     { to: "/about", labelKey: "nav.about", icon: Info },
@@ -74,13 +68,11 @@ const Navbar: React.FC = () => {
 
   const isActive = (path: string): boolean => location.pathname === path;
 
-  // Get current language flag based on i18n language
   const getCurrentLangFlag = (): string => {
     const lang = languages.find((l) => l.code === i18n.language);
     return lang?.flag || "🇬🇧";
   };
 
-  // Change language handler
   const changeLanguage = (code: string) => {
     i18n.changeLanguage(code);
     setIsLangOpen(false);
@@ -187,7 +179,7 @@ const Navbar: React.FC = () => {
               <span>{t("nav.signIn")}</span>
             </Link>
 
-            {/* Join Now Dropdown - Hoverable */}
+            {/* Join Now Dropdown */}
             <div
               className="relative hidden md:block"
               onMouseEnter={() => setIsJoinOpen(true)}
@@ -210,10 +202,8 @@ const Navbar: React.FC = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
                     className="absolute right-0 mt-2 bg-white shadow-xl rounded-xl w-64 z-50 border border-gray-100 overflow-hidden"
                   >
-                    {/* Customer Account Option */}
                     <Link
                       to="/customer-registration"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-teal-50 hover:to-transparent transition-all group"
@@ -230,10 +220,7 @@ const Navbar: React.FC = () => {
                         </p>
                       </div>
                     </Link>
-
                     <div className="h-px bg-gray-100 my-1"></div>
-
-                    {/* Theater Owner Account Option */}
                     <Link
                       to="/theater-registration"
                       className="flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-teal-50 hover:to-transparent transition-all group"
@@ -277,11 +264,9 @@ const Navbar: React.FC = () => {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
               className="md:hidden mt-3 pb-4 overflow-hidden"
             >
               <div className="flex flex-col space-y-2">
-                {/* Navigation Links */}
                 {navLinks.map((link) => {
                   const Icon = link.icon;
                   return (
@@ -300,11 +285,7 @@ const Navbar: React.FC = () => {
                     </Link>
                   );
                 })}
-
-                {/* Divider */}
                 <div className="border-t border-gray-100 my-2"></div>
-
-                {/* Sign In - Mobile */}
                 <Link
                   to="/login"
                   className="flex items-center space-x-3 px-4 py-3 rounded-xl border-2 border-gray-300 text-gray-700 hover:bg-gray-50 transition"
@@ -313,8 +294,6 @@ const Navbar: React.FC = () => {
                   <LogIn className="h-5 w-5" />
                   <span className="font-medium">{t("nav.signIn")}</span>
                 </Link>
-
-                {/* Join Now - Mobile */}
                 <Link
                   to="/customer-registration"
                   className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-teal-600 to-teal-500 text-white shadow-md hover:shadow-lg transition-all duration-300"

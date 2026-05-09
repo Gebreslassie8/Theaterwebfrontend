@@ -1,5 +1,5 @@
 // frontend/src/components/Booking/BookingModal.tsx
-import React, { useState, useEffect, } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -22,17 +22,29 @@ import {
   Copy,
   Check,
   Wallet,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useTranslation } from "react-i18next";   // <-- add translation hook
+import { useTranslation } from "react-i18next";
 
 // Types
+interface Schedule {
+  id: string;
+  date: string;
+  time: string;
+  day: string;
+  year: number;
+  availableSeats?: number;
+}
+
 interface Show {
   id: string;
   title: string;
   venue: string;
   images?: { poster?: string };
   priceRange?: { min: number; max: number };
+  schedules?: Schedule[];
 }
 
 interface Seat {
@@ -90,6 +102,7 @@ interface Ticket {
   customerPhone: string;
   venue: string;
   qrData: any;
+  schedule?: Schedule;
 }
 
 interface BookingInfo {
@@ -112,6 +125,7 @@ interface BookingInfo {
   status: string;
   venue: string;
   tickets: Ticket[];
+  selectedSchedule: Schedule;
 }
 
 interface BookingModalProps {
@@ -121,12 +135,12 @@ interface BookingModalProps {
   onConfirm: (booking: BookingInfo) => void;
 }
 
-// Seat Sections with pricing tiers (section names will be translated later)
+// Seat Sections
 const SEAT_SECTIONS = {
   VIP: {
     rows: ["A", "B"],
     multiplier: 2.5,
-    nameKey: "bookingModal.seatSections.vip",    // translation key
+    nameKey: "bookingModal.seatSections.vip",
     color: "from-amber-400 to-orange-500",
     icon: Crown,
     bgColor: "bg-amber-50",
@@ -154,13 +168,11 @@ const SEAT_SECTIONS = {
 
 type SeatSectionKey = keyof typeof SEAT_SECTIONS;
 
-// Ethiopian phone number validation
 const validateEthiopianPhone = (phone: string): boolean => {
   const ethiopianPhoneRegex = /^(?:\+251|0)?[97]\d{8}$/;
   return ethiopianPhoneRegex.test(phone);
 };
 
-// Format Ethiopian Birr
 const formatEthiopianBirr = (amount: number): string => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -189,10 +201,48 @@ const generateUniqueQRData = (ticket: Ticket, index: number): any => {
     customerPhone: ticket.customerPhone,
     venue: ticket.venue,
     price: ticket.price,
+    schedule: ticket.schedule,
     verificationCode: `${ticket.ticketId}-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     timestamp: new Date().toISOString(),
     verificationUrl: `https://theatrehubethiopia.com/verify/${ticket.ticketId}`,
   };
+};
+
+const generateMockSchedules = (showTitle: string): Schedule[] => {
+  return [
+    {
+      id: "sched-1",
+      day: "Friday",
+      date: "May 8, 2026",
+      time: "3:00 PM",
+      year: 2026,
+      availableSeats: 80,
+    },
+    {
+      id: "sched-2",
+      day: "Friday",
+      date: "May 8, 2026",
+      time: "7:30 PM",
+      year: 2026,
+      availableSeats: 120,
+    },
+    {
+      id: "sched-3",
+      day: "Saturday",
+      date: "May 9, 2026",
+      time: "2:00 PM",
+      year: 2026,
+      availableSeats: 95,
+    },
+    {
+      id: "sched-4",
+      day: "Saturday",
+      date: "May 9, 2026",
+      time: "8:00 PM",
+      year: 2026,
+      availableSeats: 110,
+    },
+  ];
 };
 
 const BookingModal: React.FC<BookingModalProps> = ({
@@ -201,7 +251,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
   onConfirm,
 }) => {
-  const { t } = useTranslation();   // <-- translation hook
+  const { t } = useTranslation();
 
   const [step, setStep] = useState<number>(1);
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -219,8 +269,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [sharedStates, setSharedStates] = useState<Record<number, boolean>>({});
   const [hoveredSeat, setHoveredSeat] = useState<string | null>(null);
   const [seats, setSeats] = useState<Seat[]>([]);
+  const [availableSchedules, setAvailableSchedules] = useState<Schedule[]>([]);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
 
-  // Validation states
   const [validation, setValidation] = useState<Validation>({
     name: { isValid: true, message: "", touched: false },
     email: { isValid: true, message: "", touched: false },
@@ -241,7 +292,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
             row,
             number: i,
             section: section as SeatSectionKey,
-            sectionName: t(config.nameKey),   // translate section name
+            sectionName: t(config.nameKey),
             price: seatPrice,
             isReserved,
             icon: config.icon,
@@ -255,8 +306,18 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   useEffect(() => {
     setSeats(generateSeats());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]); // re‑generate seats when language changes (so section names update)
+    if (show.schedules && show.schedules.length > 0) {
+      setAvailableSchedules(show.schedules);
+    } else {
+      setAvailableSchedules(generateMockSchedules(show.title));
+    }
+    setSelectedSchedule(null);
+  }, [t, show]);
+
+  useEffect(() => {
+    setSelectedSeats([]);
+    setSeatDetails({});
+  }, [selectedSchedule]);
 
   const handleSeatSelect = (seatId: string): void => {
     const seat = seats.find((s) => s.id === seatId);
@@ -342,9 +403,15 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   const handleNext = (): void => {
-    if (step === 1 && selectedSeats.length === 0) {
-      setError(t("bookingModal.errors.noSeats"));
-      return;
+    if (step === 1) {
+      if (!selectedSchedule) {
+        setError(t("bookingModal.errors.noSchedule"));
+        return;
+      }
+      if (selectedSeats.length === 0) {
+        setError(t("bookingModal.errors.noSeats"));
+        return;
+      }
     }
     if (step === 2) {
       if (
@@ -368,7 +435,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setError("");
   };
 
-  const generateTickets = (tx_ref: string): Ticket[] => {
+  const generateTickets = (tx_ref: string, schedule: Schedule): Ticket[] => {
     const bookingId = `TKT${Date.now()}${Math.random().toString(36).substring(2, 10)}`;
     const totalSeatsCount = selectedSeats.length;
 
@@ -393,6 +460,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         customerPhone: customerInfo.phone,
         venue: show.venue,
         qrData: null,
+        schedule: schedule,
       };
       ticketData.qrData = generateUniqueQRData(ticketData, index);
       return ticketData;
@@ -400,6 +468,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   const initializeChapaPayment = async (): Promise<void> => {
+    if (!selectedSchedule) {
+      setError(t("bookingModal.errors.noSchedule"));
+      return;
+    }
     setIsProcessing(true);
     setError("");
 
@@ -418,7 +490,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       return_url: `${window.location.origin}/payment-success`,
       customization: {
         title: `Theatre Hub - ${show.title}`,
-        description: `${selectedSeats.length} ticket(s) for ${show.title}`,
+        description: `${selectedSeats.length} ticket(s) for ${show.title} on ${selectedSchedule.day}, ${selectedSchedule.date} at ${selectedSchedule.time}`,
       },
       meta: {
         booking_seats: selectedSeats.join(","),
@@ -428,6 +500,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         customer_phone: customerInfo.phone,
         total_tickets: selectedSeats.length,
         seat_details: JSON.stringify(seatDetails),
+        schedule_id: selectedSchedule.id,
       },
     };
 
@@ -446,8 +519,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
     await new Promise((resolve) => setTimeout(resolve, 2000));
     const isSuccessful = true;
 
-    if (isSuccessful) {
-      const tickets = generateTickets(paymentData.tx_ref);
+    if (isSuccessful && selectedSchedule) {
+      const tickets = generateTickets(paymentData.tx_ref, selectedSchedule);
       const bookingId = tickets[0]?.bookingId || `TKT${Date.now()}`;
 
       const bookingInfo: BookingInfo = {
@@ -470,6 +543,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         status: "confirmed",
         venue: show.venue,
         tickets: tickets,
+        selectedSchedule: selectedSchedule,
       };
 
       setBookingData(bookingInfo);
@@ -533,7 +607,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
       <!DOCTYPE html>
       <html>
         <head><meta charset="UTF-8"><title>${t("bookingModal.ticketHtml.title")}</title>
-        <style>/* ... same styling as before ... */</style></head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .ticket { max-width: 400px; margin: 0 auto; border: 1px solid #ccc; border-radius: 16px; overflow: hidden; }
+          .ticket-header { background: linear-gradient(135deg, #0f766e, #1e3a8a); color: white; padding: 16px; text-align: center; }
+          .ticket-content { padding: 16px; text-align: center; }
+          .qr-code { margin: 16px auto; }
+          .details { text-align: left; margin-top: 16px; }
+          .detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+        </style>
+        </head>
         <body>
           <div class="ticket">
             <div class="ticket-header"><h2>${t("bookingModal.brand")}</h2></div>
@@ -544,6 +627,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <div class="detail"><div class="detail-label">${t("bookingModal.ticketModal.seat")}</div><div class="detail-value">${ticket.seat}</div></div>
                 <div class="detail"><div class="detail-label">${t("bookingModal.ticketModal.ticketHolder")}</div><div class="detail-value">${ticket.customerName}</div></div>
                 <div class="detail"><div class="detail-label">${t("bookingModal.ticketModal.price")}</div><div class="detail-value">${formatEthiopianBirr(ticket.price)}</div></div>
+                <div class="detail"><div class="detail-label">${t("bookingModal.schedule.showtime")}</div><div class="detail-value">${ticket.schedule?.day}, ${ticket.schedule?.date} at ${ticket.schedule?.time}</div></div>
               </div>
             </div>
           </div>
@@ -565,27 +649,35 @@ const BookingModal: React.FC<BookingModalProps> = ({
     if (!bookingData) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-
-    let allTicketsHtml = "";
-    bookingData.tickets.forEach((ticket, idx) => {
-      allTicketsHtml += `
-        <div style="margin-bottom:20px; max-width:450px; margin:0 auto; background:white;">
-          <h3>${ticket.seat}</h3>
-          <div id="qr-print-${idx}"></div>
-          <p>${ticket.customerName}</p>
-        </div>
-      `;
-    });
     printWindow.document.write(`
       <html><head><title>${t("bookingModal.printAll.title")}</title>
-      <script src="https://cdn.jsdelivr.net/npm/qrcodejs2-fix/qrcode.min.js"><\/script></head>
-      <body>${allTicketsHtml}
-      <script>${bookingData.tickets.map((_, i) => `
-        new QRCode(document.getElementById("qr-print-${i}"), { text: ${JSON.stringify(JSON.stringify(bookingData.tickets[i].qrData))}, width: 150, height: 150 });
-      `).join("")}<\/script>
-      </body></html>
+      <script src="https://cdn.jsdelivr.net/npm/qrcodejs2-fix/qrcode.min.js"><\/script>
+      <style>body{font-family:sans-serif;padding:20px;} .ticket{margin-bottom:30px;border:1px solid #ddd;border-radius:12px;padding:16px;max-width:400px;margin:0 auto 20px;}</style>
+      </head><body>
     `);
+    bookingData.tickets.forEach((ticket, idx) => {
+      printWindow.document.write(`
+        <div class="ticket">
+          <h3>${ticket.show}</h3>
+          <div id="qr-print-${idx}"></div>
+          <p><strong>${t("bookingModal.ticketModal.seat")}:</strong> ${ticket.seat}</p>
+          <p><strong>${t("bookingModal.ticketModal.ticketHolder")}:</strong> ${ticket.customerName}</p>
+          <p><strong>${t("bookingModal.schedule.showtime")}:</strong> ${ticket.schedule?.day}, ${ticket.schedule?.date} at ${ticket.schedule?.time}</p>
+        </div>
+      `);
+    });
+    printWindow.document.write(`</body></html>`);
     printWindow.document.close();
+    bookingData.tickets.forEach((_, i) => {
+      const qrDiv = printWindow.document.getElementById(`qr-print-${i}`);
+      if (qrDiv) {
+        new (printWindow as any).QRCode(qrDiv, {
+          text: JSON.stringify(bookingData.tickets[i].qrData),
+          width: 150,
+          height: 150,
+        });
+      }
+    });
     printWindow.print();
   };
 
@@ -609,6 +701,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setSelectedSeats([]);
     setSeatDetails({});
     setCustomerInfo({ name: "", email: "", phone: "" });
+    setSelectedSchedule(null);
   };
 
   if (!isOpen) return null;
@@ -678,79 +771,158 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </div>
                   )}
 
-                  {/* Step 1: Seat Selection */}
+                  {/* Step 1: Schedule + Seat Selection */}
                   {step === 1 && (
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">{t("bookingModal.seatSelection.title")}</h3>
-                      <div className="mb-6 p-4 bg-gradient-to-r from-deepTeal/10 to-deepBlue/5 rounded-xl border border-deepTeal/20 max-w-md mx-auto">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-600 dark:text-gray-400">{t("bookingModal.seatSelection.selectedSeats")}</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">{selectedSeats.length} {t("bookingModal.seatSelection.seatsCount")}</span>
-                        </div>
-                        {selectedSeats.length > 0 && (
-                          <div className="flex items-center justify-between font-bold border-t border-deepTeal/20 pt-2 mt-2">
-                            <span>{t("bookingModal.seatSelection.total")}</span>
-                            <span className="text-deepTeal text-xl">{formatEthiopianBirr(calculateTotal())}</span>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* LEFT COLUMN: Seat Map */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center">
+                          {t("bookingModal.seatSelection.title")}
+                        </h3>
+                        <div className="p-4 bg-gradient-to-r from-deepTeal/10 to-deepBlue/5 rounded-xl border border-deepTeal/20">
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-600 dark:text-gray-400">{t("bookingModal.seatSelection.selectedSeats")}</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{selectedSeats.length} {t("bookingModal.seatSelection.seatsCount")}</span>
                           </div>
-                        )}
-                      </div>
-
-                      {/* Seat Legend */}
-                      <div className="flex flex-wrap items-center justify-center gap-6 mb-6">
-                        {Object.entries(SEAT_SECTIONS).map(([key, config]) => (
-                          <div key={key} className="flex items-center gap-2">
-                            <div className={`w-5 h-5 rounded ${key === "VIP" ? "bg-amber-100 border-2 border-amber-300" : key === "PREMIUM" ? "bg-purple-100 border-2 border-purple-300" : "bg-deepTeal/10 border-2 border-deepTeal/30"}`}></div>
-                            <span className="text-xs text-gray-600">{t(config.nameKey)}</span>
-                          </div>
-                        ))}
-                        <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-deepTeal ring-2 ring-deepTeal ring-offset-1"></div><span className="text-xs text-gray-600">{t("bookingModal.seatLegend.selected")}</span></div>
-                        <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-200 border-2 border-gray-300"></div><span className="text-xs text-gray-600">{t("bookingModal.seatLegend.reserved")}</span></div>
-                      </div>
-
-                      <div className="mb-8 text-center"><div className="relative"><div className="w-64 h-1.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent rounded-full mx-auto"></div><div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-[10px] text-gray-400 uppercase tracking-wider">{t("bookingModal.seatSelection.stage")}</div></div></div>
-
-                      <div className="flex justify-center overflow-x-auto">
-                        <div className="inline-block min-w-[600px]">
-                          {["A","B","C","D","E","F","G","H"].map((row) => {
-                            const rowSeats = seats.filter(seat => seat.row === row).sort((a,b)=>a.number-b.number);
-                            if(rowSeats.length===0) return null;
-                            const section = rowSeats[0]?.section;
-                            return (
-                              <div key={row} className="flex items-center mb-2">
-                                <div className="w-8 text-center font-mono font-bold text-gray-400 text-sm">{row}</div>
-                                <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
-                                  {rowSeats.map(seat => (
-                                    <button key={seat.id} onClick={()=>handleSeatSelect(seat.id)} disabled={seat.isReserved}
-                                      onMouseEnter={()=>setHoveredSeat(seat.id)} onMouseLeave={()=>setHoveredSeat(null)}
-                                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${getSeatColor(seat)} ${hoveredSeat===seat.id && !seat.isReserved && !selectedSeats.includes(seat.id) ? "shadow-lg transform scale-105" : ""} ${seat.isReserved ? "cursor-not-allowed" : "cursor-pointer"}`}
-                                      title={t("bookingModal.seatSelection.seatTooltip", { section: seat.sectionName, id: seat.id, price: formatEthiopianBirr(seat.price) })}>
-                                      {seat.number}
-                                    </button>
-                                  ))}
-                                </div>
-                                <div className="w-20 text-right"><span className={`text-[10px] px-2 py-0.5 rounded-full ${section==="VIP"?"bg-amber-100 text-amber-700":section==="PREMIUM"?"bg-purple-100 text-purple-700":"bg-deepTeal/10 text-deepTeal"}`}>{t(SEAT_SECTIONS[section]?.nameKey || "bookingModal.seatSections.standard")}</span></div>
-                              </div>
-                            );
-                          })}
+                          {selectedSeats.length > 0 && (
+                            <div className="flex items-center justify-between font-bold border-t border-deepTeal/20 pt-2 mt-2">
+                              <span>{t("bookingModal.seatSelection.total")}</span>
+                              <span className="text-deepTeal text-xl">{formatEthiopianBirr(calculateTotal())}</span>
+                            </div>
+                          )}
                         </div>
-                      </div>
 
-                      {selectedSeats.length > 0 && (
-                        <div className="mt-8 p-5 bg-gray-50 dark:bg-dark-700 rounded-xl">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2"><Ticket className="h-4 w-4 text-deepTeal" />{t("bookingModal.seatSelection.selectedSeatsList", { count: selectedSeats.length })}</h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                            {selectedSeats.map(seatId => {
-                              const seat = seats.find(s=>s.id===seatId);
+                        {/* Seat Legend */}
+                        <div className="flex flex-wrap items-center justify-center gap-4">
+                          {Object.entries(SEAT_SECTIONS).map(([key, config]) => (
+                            <div key={key} className="flex items-center gap-2">
+                              <div className={`w-5 h-5 rounded ${key === "VIP" ? "bg-amber-100 border-2 border-amber-300" : key === "PREMIUM" ? "bg-purple-100 border-2 border-purple-300" : "bg-deepTeal/10 border-2 border-deepTeal/30"}`}></div>
+                              <span className="text-xs text-gray-600">{t(config.nameKey)}</span>
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-deepTeal ring-2 ring-deepTeal ring-offset-1"></div><span className="text-xs text-gray-600">{t("bookingModal.seatLegend.selected")}</span></div>
+                          <div className="flex items-center gap-2"><div className="w-5 h-5 rounded bg-gray-200 border-2 border-gray-300"></div><span className="text-xs text-gray-600">{t("bookingModal.seatLegend.reserved")}</span></div>
+                        </div>
+
+                        {/* Stage */}
+                        <div className="text-center">
+                          <div className="relative">
+                            <div className="w-64 h-1.5 bg-gradient-to-r from-transparent via-gray-400 to-transparent rounded-full mx-auto"></div>
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-[10px] text-gray-400 uppercase tracking-wider">{t("bookingModal.seatSelection.stage")}</div>
+                          </div>
+                        </div>
+
+                        {/* Seat Grid - FIXED: removed invalid 'seat' reference */}
+                        <div className="overflow-x-auto">
+                          <div className="inline-block min-w-[500px]">
+                            {["A","B","C","D","E","F","G","H"].map((row) => {
+                              const rowSeats = seats.filter(seat => seat.row === row).sort((a,b)=>a.number-b.number);
+                              if(rowSeats.length===0) return null;
+                              // Determine section based on row letter
+                              const sectionKey: SeatSectionKey = row === 'A' || row === 'B' ? 'VIP' : row === 'C' || row === 'D' ? 'PREMIUM' : 'STANDARD';
+                              const sectionName = t(SEAT_SECTIONS[sectionKey].nameKey);
                               return (
-                                <div key={seatId} className="flex items-center justify-between p-2 bg-white dark:bg-dark-800 rounded-lg border border-gray-200">
-                                  <div><p className="font-medium text-gray-900 dark:text-white">{seatId}</p><p className="text-xs text-gray-500">{seat?.sectionName}</p></div>
-                                  <p className="text-sm font-semibold text-deepTeal">{formatEthiopianBirr(seat?.price || 0)}</p>
+                                <div key={row} className="flex items-center mb-2">
+                                  <div className="w-8 text-center font-mono font-bold text-gray-400 text-sm">{row}</div>
+                                  <div className="flex gap-1.5 sm:gap-2 flex-wrap justify-center">
+                                    {rowSeats.map(seat => (
+                                      <button
+                                        key={seat.id}
+                                        onClick={()=>handleSeatSelect(seat.id)}
+                                        disabled={seat.isReserved}
+                                        onMouseEnter={()=>setHoveredSeat(seat.id)}
+                                        onMouseLeave={()=>setHoveredSeat(null)}
+                                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 ${getSeatColor(seat)} ${hoveredSeat===seat.id && !seat.isReserved && !selectedSeats.includes(seat.id) ? "shadow-lg transform scale-105" : ""} ${seat.isReserved ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                        title={t("bookingModal.seatSelection.seatTooltip", { section: seat.sectionName, id: seat.id, price: formatEthiopianBirr(seat.price) })}>
+                                        {seat.number}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <div className="w-20 text-right hidden sm:block">
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                                      sectionKey === 'VIP' ? "bg-amber-100 text-amber-700" :
+                                      sectionKey === 'PREMIUM' ? "bg-purple-100 text-purple-700" :
+                                      "bg-deepTeal/10 text-deepTeal"
+                                    }`}>
+                                      {sectionName}
+                                    </span>
+                                  </div>
                                 </div>
                               );
                             })}
                           </div>
                         </div>
-                      )}
+
+                        {selectedSeats.length > 0 && (
+                          <div className="mt-4 p-4 bg-gray-50 dark:bg-dark-700 rounded-xl">
+                            <h4 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><Ticket className="h-4 w-4 text-deepTeal" />{t("bookingModal.seatSelection.selectedSeatsList", { count: selectedSeats.length })}</h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                              {selectedSeats.map(seatId => {
+                                const seat = seats.find(s=>s.id===seatId);
+                                return (
+                                  <div key={seatId} className="flex items-center justify-between p-2 bg-white dark:bg-dark-800 rounded-lg border border-gray-200">
+                                    <div><p className="font-medium text-gray-900 dark:text-white">{seatId}</p><p className="text-xs text-gray-500">{seat?.sectionName}</p></div>
+                                    <p className="text-sm font-semibold text-deepTeal">{formatEthiopianBirr(seat?.price || 0)}</p>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* RIGHT COLUMN: Schedule Cards */}
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white text-center mb-4">
+                          {t("bookingModal.schedule.selectSchedule")}
+                        </h3>
+                        <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                          {availableSchedules.map((schedule) => (
+                            <div
+                              key={schedule.id}
+                              onClick={() => setSelectedSchedule(schedule)}
+                              className={`p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                                selectedSchedule?.id === schedule.id
+                                  ? "border-deepTeal bg-deepTeal/5 shadow-md ring-2 ring-deepTeal/20"
+                                  : "border-gray-200 dark:border-dark-600 hover:border-deepTeal/50 hover:shadow"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`p-2 rounded-full ${selectedSchedule?.id === schedule.id ? "bg-deepTeal text-white" : "bg-gray-100 dark:bg-dark-700"}`}>
+                                    <Calendar className="h-5 w-5" />
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-gray-900 dark:text-white">{schedule.day}</p>
+                                    <p className="text-sm text-gray-500">{schedule.date}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className="flex items-center gap-1 text-gray-700 dark:text-gray-300">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="font-medium">{schedule.time}</span>
+                                  </div>
+                                  {schedule.availableSeats !== undefined && (
+                                    <p className="text-xs text-gray-400 mt-1">{schedule.availableSeats} {t("bookingModal.schedule.seatsAvailable")}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {selectedSchedule && (
+                          <div className="mt-5 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                            <p className="text-sm text-green-700 dark:text-green-300 flex items-center gap-2">
+                              <CheckCircle className="h-4 w-4" />
+                              {t("bookingModal.schedule.selected", {
+                                day: selectedSchedule.day,
+                                date: selectedSchedule.date,
+                                time: selectedSchedule.time,
+                              })}
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -789,7 +961,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="mb-6 p-6 bg-gradient-to-r from-deepTeal/10 to-deepBlue/5 rounded-xl border border-deepTeal/20">
                           <div className="flex justify-between items-center mb-4"><span className="text-gray-600 font-medium">{t("bookingModal.payment.totalAmount")}</span><span className="text-3xl font-bold text-deepTeal">{formatEthiopianBirr(calculateTotal())}</span></div>
                           <div className="border-t border-deepTeal/20 pt-4"><div className="flex justify-between text-sm"><span className="text-gray-500">{t("bookingModal.payment.tickets")}</span><span className="font-medium">{selectedSeats.length} {t("bookingModal.seatSelection.seatsCount")}</span></div>
-                          <div className="flex justify-between text-sm mt-1"><span className="text-gray-500">{t("bookingModal.payment.seats")}</span><span className="font-mono text-sm">{selectedSeats.join(", ")}</span></div></div>
+                          <div className="flex justify-between text-sm mt-1"><span className="text-gray-500">{t("bookingModal.payment.seats")}</span><span className="font-mono text-sm">{selectedSeats.join(", ")}</span></div>
+                          {selectedSchedule && (
+                            <div className="flex justify-between text-sm mt-2"><span className="text-gray-500">{t("bookingModal.schedule.showtime")}</span><span className="text-sm">{selectedSchedule.day}, {selectedSchedule.date} at {selectedSchedule.time}</span></div>
+                          )}
+                          </div>
                         </div>
                         <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-6">
                           <div className="flex items-center gap-3 mb-4"><div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center"><Wallet className="h-6 w-6 text-white" /></div><div><h4 className="font-bold text-green-800">{t("bookingModal.payment.chapaTitle")}</h4><p className="text-sm text-green-600">{t("bookingModal.payment.chapaSubtitle")}</p></div></div>
@@ -848,6 +1024,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                         <div className="bg-deepTeal/5 p-3 rounded-xl"><div className="text-xs text-gray-500">{t("bookingModal.ticketModal.ticketHolder")}</div><p className="font-semibold">{ticket.customerName}</p></div>
                         <div className="bg-deepTeal/5 p-3 rounded-xl"><div className="text-xs text-gray-500">{t("bookingModal.ticketModal.seatType")}</div><p className="font-semibold">{ticket.section}</p></div>
                         <div className="bg-deepTeal/5 p-3 rounded-xl"><div className="text-xs text-gray-500">{t("bookingModal.ticketModal.price")}</div><p className="font-bold text-deepTeal">{formatEthiopianBirr(ticket.price)}</p></div>
+                        <div className="bg-deepTeal/5 p-3 rounded-xl col-span-2"><div className="text-xs text-gray-500">{t("bookingModal.schedule.showtime")}</div><p className="font-medium">{ticket.schedule?.day}, {ticket.schedule?.date} at {ticket.schedule?.time}</p></div>
                       </div>
                       <div className="text-center pt-2 border-t"><p className="text-[10px] text-gray-400">{t("bookingModal.ticketModal.scanMessage")}</p></div>
                     </div>
