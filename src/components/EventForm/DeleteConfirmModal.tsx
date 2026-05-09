@@ -32,19 +32,6 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
 }) => {
   if (!employee) return null;
 
-  const getDefaultMessage = () => {
-    if (employee.type === "event") {
-      return `Are you sure you want to delete the event "${employee.name}"? This action cannot be undone and will also delete all associated schedules and bookings.`;
-    }
-    if (employee.type === "hall") {
-      return `Are you sure you want to delete the hall "${employee.name}"? This action cannot be undone and will also delete all seat layouts.`;
-    }
-    if (employee.type === "schedule") {
-      return `Are you sure you want to delete this show schedule? This action cannot be undone and will affect all bookings for this show time.`;
-    }
-    return `Are you sure you want to delete "${employee.name}"? This action cannot be undone.`;
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <motion.div
@@ -60,7 +47,10 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           </div>
           <h3 className="text-xl font-bold text-gray-900">{title}</h3>
         </div>
-        <p className="text-gray-600 mb-6">{message || getDefaultMessage()}</p>
+        <p className="text-gray-600 mb-6">
+          {message ||
+            `Are you sure you want to delete "${employee.name}"? This action cannot be undone.`}
+        </p>
         <div className="flex gap-3">
           <button
             onClick={onCancel}
