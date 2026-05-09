@@ -1203,5 +1203,103 @@
       "permissionDenied": "ይህን ሰራተኛ ለማየት ፈቃድ የለዎትም",
       "accessDenied": "መድረስ አልተፈቀደም"
     }
+  },"about": {
+  "hero": {
+    "badge": "ስለ እኛ",
+    "title": "ዘመናዊ የቲያትር ቦኪንግ መድረክ",
+    "subtitle": "ቀልጣፋ ቦኪንግ፣ ደህንነቱ የተጠበቀ መጫኛ እና በመላ ኢትዮጵያ የማይረሱ ቲያትር ልምዶች",
+    "contactButton": "አግኙን"
+  },
+  "stats": {
+    "theatersValue": "50+",
+    "theatersLabel": "አጋር ቲያትሮች",
+    "customersValue": "100K+",
+    "customersLabel": "ደስተኛ ደንበኞች"
+  },
+  "missionVision": {
+    "title": "ተልዕኮአችን እና ራዕያችን",
+    "subtitle": "ለሁሉም በኢትዮጵያ የቲያትር ቦኪንግ እና መጫኛ ቀልጣፋ ለማድረግ ቁርጠኞች"
+  },
+  "mission": "ተልዕኮአችን",
+  "missionText": "ቀልጣፋ፣ ደህንነቱ የተጠበቀ እና አዲስ የሆነ የቲያትር ልምዶችን ለማስመዝገቢያ መድረክ ማቅረብ፣ መስመር ላይ መድረስ ለሁሉም በኢትዮጵያ እንዲቻል።",
+  "vision": "ራዕያችን",
+  "visionText": "የኢትዮጵያ መሪ የቲያትር ቦኪንግ እና መጫኛ መድረክ ለመሆን፣ ተመልካቾች ትርኢቶችን እንዲያገኙ፣ እንዲያስመዘግቡ እና በቀላሉ እንዲዝናኑ አብዮት ማድረግ።",
+  "values": {
+    "title": "ዋና እሴቶቻችን",
+    "subtitle": "መድረኮቻችንን የሚመሩ መርሆች",
+    "trust": {
+      "title": "መተማመን እና ደህንነት",
+      "description": "ውሂብዎ እና ክፍያዎችዎ በደረጃ በተጠበቀ ሁኔታ ተጠብቀዋል።"
+    },
+    "innovation": {
+      "title": "ፈጠራ",
+      "description": "ምርጥ የቲኬት አሰራር ልምድ ለማምጣት ያለማቋረጥ ማሻሻል።"
+    },
+    "customerFirst": {
+      "title": "ደንበኛ ቀዳሚ",
+      "description": "እርካታዎ ቀዳሚያችን ነው። እዚህ ሰዓት 24/7 አለን።"
+    }
+  },
+  "features": {
+    "title": "ለምን TheaterHUB ይምረጡ",
+    "subtitle": "በኢትዮጵያ ምርጥ የቲያትር ቦኪንግ እና ምዝገባ ለማቅረብ ቁርጠኞች ነን",
+    "easyBooking": {
+      "title": "ቀላል ቦኪንግ",
+      "description": "ቲኬቶች በጥቂት ጠቅታዎች ብቻ"
+    },
+    "multipleVenues": {
+      "title": "በርካታ ቦታዎች",
+      "description": "በመላ ኢትዮጵያ ወደሚገኙ ቲያትሮች መድረስ"
+    },
+    "mobileTickets": {
+      "title": "የሞባይል ቲኬቶች",
+      "description": "ዲጂታል ቲኬቶች በስልክዎ ላይ"
+    },
+    "bestSelection": {
+      "title": "ምርጥ ምርጫ",
+      "description": "የተለያዩ ዝግጅቶች እና ትርኢቶች"
+    },
+    "support247": {
+      "title": "24/7 ድጋፍ",
+      "description": "ምላሽ በማንኛውም ሰዓት የደንበኛ እንክብካቤ"
+    },
+    "securePayments": {
+      "title": "ደህንነቱ የተጠበቀ ክፍያ",
+      "description": "ኢንክሪፕት የተደረጉ ግብይቶች"
+    }
+  },
+  "team": {
+    "title": "ቡድናችን",
+    "subtitle": "ከ Theatre Hub Ethiopia በስተጀርባ ያሉትን ጥሩ ሰዎች ይወቁ",
+    "memberDesc": "በ{{role}} ዘርፍ የላቀ አፈጻጸም ለማምጣት የቆመ ባለሙያ።",
+    "members": {
+      "birehanu": {
+        "name": "ብርሃኑ ካሳ",
+        "role": "የፕሮጀክት አስተዳዳሪ",
+        "responsibility": "የፕሮጀክት እቅድ፣ ቅንጅት፣ ሰነድ እና ግምገማ"
+      },
+      "gebreslassie": {
+        "name": "ገብረስላሴ ደሴ",
+        "role": "የኋላ ጫፍ ገንቢ",
+        "responsibility": "የአገልጋይ አመክንዮ፣ ኤፒአይ፣ የሲስተም ውህደት"
+      },
+      "gemechis": {
+        "name": "ገመቺስ ደበሎ",
+        "role": "የፊት ጫፍ ገንቢ",
+        "responsibility": "የተጠቃሚ በይነገጽ ዲዛይን እና የደንበኛ ጎን ልማት"
+      },
+      "lelisa": {
+        "name": "ሌሊሳ አብርሃም",
+        "role": "የውሂብ ጎታ ዲዛይነር እና ሞካሪ",
+        "responsibility": "የውሂብ ጎታ ዲዛይን እና የሲስተም ሙከራ"
+      }
+    }
+  },
+  "cta": {
+    "title": "ቀጣዩን የቲያትር ልምድዎን ለማስያዝ ዝግጁ ነዎት?",
+    "subtitle": "በኢትዮጵያ ውስጥ ለቀልጣፋ ቦኪንግ እና ደህንነቱ ለተጠበቀ ምዝገባ TheaterHUB ከሚያምኑ በሺዎች የሚቆጠሩ የቲያትር አፍቃሪዎችን ይቀላቀሉ።",
+    "findTheaters": "በአቅራቢያዎ ቲያትሮች ያግኙ",
+    "contactUs": "አግኙን"
   }
+}
 }
