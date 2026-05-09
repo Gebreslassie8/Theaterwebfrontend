@@ -1,4 +1,4 @@
-// src/pages/Owner/events/UpdateEventForm.tsx
+// src/components/EventForm/UpdateEventForm.tsx
 import React, { useState, useEffect } from "react";
 import {
   X,
@@ -14,13 +14,26 @@ import {
   Mail,
   Phone,
   Tag,
+  Users,
+  Building,
+  Info,
+  Plus,
 } from "lucide-react";
 import { EventData, FormData, halls, categories } from "./types";
+import supabase from "@/config/supabaseClient";
 
 interface UpdateEventFormProps {
   event: EventData;
   onSubmit: (data: FormData) => void;
   onCancel: () => void;
+}
+
+interface Schedule {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  hallId: string;
 }
 
 const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
@@ -37,8 +50,6 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
     director: "",
     cast: [],
     poster_url: "",
-    price_min: 0,
-    price_max: 0,
     status: "coming-soon",
     is_featured: false,
     timeSlots: [],
@@ -51,12 +62,28 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
     organizer: "",
     contractDate: "",
     contractReference: "",
+    event_provider: "",
+    event_provider_email: "",
+    event_provider_phone: "",
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  const [availableHalls, setAvailableHalls] = useState<any[]>([]);
+  const [loadingHalls, setLoadingHalls] = useState(false);
+
+  // Load halls when component mounts
+  useEffect(() => {
+    if (event.theater_id) {
+      loadHallsForTheater(event.theater_id);
+    }
+  }, [event.theater_id]);
 
   useEffect(() => {
+    // Find hall object
     const hallObj = halls.find((h) => h.name === event.hall);
+
     setFormData({
       title: event.title,
       description: event.description || "",
@@ -66,11 +93,8 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
       director: event.director || "",
       cast: event.cast || [],
       poster_url: event.poster_url || "",
-      price_min: event.price_min || 0,
-      price_max: event.price_max || 0,
-      status: event.status || "coming-soon",
-      /**Type '"coming-soon" | "now-showing" | "ended" | "cancelled"' is not assignable to type '"coming-soon" | "now-showing" | "ended"'.
-  Type '"cancelled"' is not assignable to type '"coming-soon" | "now-showing" | "ended"'.*/
+      status:
+        event.status === "cancelled" ? "ended" : event.status || "coming-soon",
       is_featured: event.is_featured || false,
       timeSlots:
         event.timeSlots?.map((slot) => ({
@@ -86,8 +110,56 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
       organizer: event.organizer || "",
       contractDate: event.contractDate || "",
       contractReference: event.contractReference || "",
+      event_provider: (event as any).event_provider || "",
+      event_provider_email: (event as any).event_provider_email || "",
+      event_provider_phone: (event as any).event_provider_phone || "",
     });
+
+    // Load schedules from event if available
+    if ((event as any).schedules) {
+      setSchedules((event as any).schedules);
+    } else if (event.timeSlots) {
+      setSchedules(
+        event.timeSlots.map((slot) => ({
+          id: slot.id,
+          date: slot.date,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          hallId: hallObj?.id || "",
+        })),
+      );
+    }
   }, [event]);
+
+  const loadHallsForTheater = async (theaterId: string) => {
+    setLoadingHalls(true);
+    try {
+      const { data, error } = await supabase
+        .from("halls")
+        .select("id, name, capacity, num_of_row, num_of_col")
+        .eq("theater_id", theaterId)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      setAvailableHalls(data || []);
+    } catch (error) {
+      console.error("Error loading halls:", error);
+    } finally {
+      setLoadingHalls(false);
+    }
+  };
+
+  const calculateEndTime = (
+    startTime: string,
+    durationMinutes: number,
+  ): string => {
+    if (!startTime || !durationMinutes) return "";
+    const [hours, minutes] = startTime.split(":").map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+    return `${String(endHours).padStart(2, "0")}:${String(endMinutes).padStart(2, "0")}`;
+  };
 
   const updateSeatField = (
     id: string,
@@ -119,6 +191,43 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
     }));
     if (value && errors[`slot_${id}_${field}`]) {
       setErrors((prev) => ({ ...prev, [`slot_${id}_${field}`]: "" }));
+    }
+  };
+
+  const updateSchedule = (id: string, field: string, value: string) => {
+    setSchedules((prev) =>
+      prev.map((s) => {
+        if (s.id === id) {
+          const updated = { ...s, [field]: value };
+          if (field === "startTime" && formData.duration_minutes && value) {
+            updated.endTime = calculateEndTime(
+              value,
+              formData.duration_minutes,
+            );
+          }
+          return updated;
+        }
+        return s;
+      }),
+    );
+  };
+
+  const addSchedule = () => {
+    setSchedules([
+      ...schedules,
+      {
+        id: Date.now().toString(),
+        date: "",
+        startTime: "",
+        endTime: "",
+        hallId: "",
+      },
+    ]);
+  };
+
+  const removeSchedule = (id: string) => {
+    if (schedules.length > 1) {
+      setSchedules(schedules.filter((s) => s.id !== id));
     }
   };
 
@@ -177,6 +286,9 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
     } else if (formData.description.length < 20) {
       newErrors.description = "Description must be at least 20 characters";
     }
+    if (!formData.duration_minutes || formData.duration_minutes <= 0) {
+      newErrors.duration_minutes = "Duration must be greater than 0";
+    }
 
     formData.seatCategories?.forEach((cat) => {
       if (cat.price <= 0)
@@ -191,9 +303,17 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
         newErrors[`slot_${slot.id}_endTime`] = "End time is required";
     });
 
+    schedules.forEach((schedule, idx) => {
+      if (!schedule.date)
+        newErrors[`schedule_${idx}_date`] = "Date is required";
+      if (!schedule.startTime)
+        newErrors[`schedule_${idx}_start`] = "Start time is required";
+      if (!schedule.hallId)
+        newErrors[`schedule_${idx}_hall`] = "Hall is required";
+    });
+
     setErrors(newErrors);
 
-    // Mark all fields as touched to show errors
     setTouched((prev) => ({
       ...prev,
       title: true,
@@ -203,6 +323,7 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
       contactEmail: true,
       contactPhone: true,
       description: true,
+      duration_minutes: true,
     }));
     formData.timeSlots?.forEach((slot) => {
       setTouched((prev) => ({
@@ -218,13 +339,17 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
 
   const handleSubmit = () => {
     if (validateForm()) {
-      onSubmit(formData);
+      const submitData = {
+        ...formData,
+        schedules: schedules,
+      };
+      onSubmit(submitData);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 shrink-0">
           <div className="flex justify-between items-center">
@@ -308,7 +433,7 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Genre *
+                Genre
               </label>
               <input
                 type="text"
@@ -370,21 +495,31 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Duration (minutes)
+                Duration (minutes) *
               </label>
               <input
                 type="number"
-                min="0"
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                min="1"
+                className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition ${
+                  errors.duration_minutes && touched.duration_minutes
+                    ? "border-red-500"
+                    : "border-gray-200"
+                }`}
                 value={formData.duration_minutes || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    duration_minutes: parseInt(e.target.value) || 0,
-                  })
-                }
+                onBlur={() => handleBlur("duration_minutes")}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value) || 0;
+                  setFormData({ ...formData, duration_minutes: val });
+                  if (errors.duration_minutes)
+                    setErrors((prev) => ({ ...prev, duration_minutes: "" }));
+                }}
                 placeholder="e.g., 120"
               />
+              {errors.duration_minutes && touched.duration_minutes && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.duration_minutes}
+                </p>
+              )}
             </div>
           </div>
 
@@ -409,37 +544,67 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Price Range (ETB)
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="number"
-                min="0"
-                placeholder="Min Price"
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                value={formData.price_min || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    price_min: parseInt(e.target.value) || 0,
-                  })
-                }
-              />
-              <input
-                type="number"
-                min="0"
-                placeholder="Max Price"
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                value={formData.price_max || ""}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    price_max: parseInt(e.target.value) || 0,
-                  })
-                }
-              />
+          {/* Event Provider Information */}
+          <div className="border-t pt-4 mt-2">
+            <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-3">
+              <Users className="h-5 w-5 text-teal-600" />
+              Event Provider Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Provider Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., ABC Productions"
+                  className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                  value={formData.event_provider || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, event_provider: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Provider Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="email"
+                    placeholder="provider@example.com"
+                    className="w-full pl-10 pr-4 p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                    value={formData.event_provider_email || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        event_provider_email: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Provider Phone
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="tel"
+                    placeholder="+251-XXX-XXXXXX"
+                    className="w-full pl-10 pr-4 p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                    value={formData.event_provider_phone || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        event_provider_phone: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -474,95 +639,170 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Age Restriction
-            </label>
-            <select
-              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-              value={formData.ageRestriction}
-              onChange={(e) =>
-                setFormData({ ...formData, ageRestriction: e.target.value })
-              }
-            >
-              <option value="">All Ages</option>
-              <option value="12+">12+</option>
-              <option value="16+">16+</option>
-              <option value="18+">18+</option>
-            </select>
-          </div>
-
-          {/* Seat Types & Pricing */}
-          {formData.seatCategories && formData.seatCategories.length > 0 && (
-            <div>
-              <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-800">
-                <Layers className="h-4 w-4 text-teal-600" /> Seat Types &
-                Pricing
+          {/* Show Schedules Section */}
+          <div className="border-t pt-4 mt-2">
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-teal-600" />
+                Show Schedules
               </h3>
-              {formData.seatCategories.map((cat) => (
-                <div
-                  key={cat.id}
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg mb-3"
-                >
+              <button
+                onClick={addSchedule}
+                className="px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add Schedule
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">
+              Manage show dates and times for this event
+            </p>
+
+            {schedules.map((schedule, idx) => (
+              <div
+                key={schedule.id}
+                className="bg-gray-50 rounded-lg p-4 mb-3 border border-gray-200"
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-medium text-gray-700">
+                    Schedule #{idx + 1}
+                  </h4>
+                  {schedules.length > 1 && (
+                    <button
+                      onClick={() => removeSchedule(schedule.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="text-xs text-gray-500">Seat Type</label>
-                    <div className="p-2 bg-gray-200 rounded font-medium text-sm">
-                      {cat.name}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500">Capacity</label>
-                    <div className="p-2 bg-gray-200 rounded text-sm">
-                      {cat.capacity.toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500">
-                      Price (ETB) *
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Date *
                     </label>
                     <input
-                      type="number"
-                      min="1"
-                      className="w-full p-2 border rounded"
-                      value={cat.price || ""}
+                      type="date"
+                      value={schedule.date}
                       onChange={(e) =>
-                        updateSeatField(
-                          cat.id,
-                          "price",
-                          parseInt(e.target.value) || 0,
-                        )
+                        updateSchedule(schedule.id, "date", e.target.value)
                       }
+                      className="w-full p-2 border rounded-lg text-sm border-gray-200"
                     />
-                    {errors[`seat_${cat.id}_price`] && (
-                      <p className="text-red-500 text-xs flex items-center gap-1 mt-1">
-                        <AlertCircle className="h-3 w-3" />{" "}
-                        {errors[`seat_${cat.id}_price`]}
+                    {errors[`schedule_${idx}_date`] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`schedule_${idx}_date`]}
                       </p>
                     )}
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500">
-                      Commission (%)
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Start Time *
                     </label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      className="w-full p-2 border rounded"
-                      value={cat.commissionPercent}
+                      type="time"
+                      value={schedule.startTime}
                       onChange={(e) =>
-                        updateSeatField(
-                          cat.id,
-                          "commissionPercent",
-                          parseInt(e.target.value) || 0,
-                        )
+                        updateSchedule(schedule.id, "startTime", e.target.value)
                       }
+                      className="w-full p-2 border rounded-lg text-sm border-gray-200"
+                    />
+                    {errors[`schedule_${idx}_start`] && (
+                      <p className="text-red-500 text-xs mt-1">
+                        {errors[`schedule_${idx}_start`]}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      End Time
+                    </label>
+                    <input
+                      type="time"
+                      value={schedule.endTime}
+                      disabled
+                      className="w-full p-2 border rounded-lg text-sm bg-gray-100 text-gray-500"
                     />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Hall *
+                  </label>
+                  <select
+                    value={schedule.hallId}
+                    onChange={(e) =>
+                      updateSchedule(schedule.id, "hallId", e.target.value)
+                    }
+                    className="w-full p-2 border rounded-lg text-sm border-gray-200"
+                    disabled={loadingHalls}
+                  >
+                    <option value="">Select Hall</option>
+                    {availableHalls.map((hall) => (
+                      <option key={hall.id} value={hall.id}>
+                        {hall.name} (Capacity: {hall.capacity})
+                      </option>
+                    ))}
+                  </select>
+                  {errors[`schedule_${idx}_hall`] && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors[`schedule_${idx}_hall`]}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {formData.duration_minutes > 0 && schedules.length > 0 && (
+              <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
+                <Info className="h-4 w-4 inline mr-1" />
+                End times are automatically calculated based on{" "}
+                {formData.duration_minutes} minutes duration.
+              </div>
+            )}
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Event Status
+            </label>
+            <select
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+              value={formData.status}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  status: e.target.value as
+                    | "coming-soon"
+                    | "now-showing"
+                    | "ended",
+                })
+              }
+            >
+              <option value="coming-soon">Coming Soon</option>
+              <option value="now-showing">Now Showing</option>
+              <option value="ended">Ended</option>
+            </select>
+          </div>
+
+          {/* Featured */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="is_featured"
+              checked={formData.is_featured}
+              onChange={(e) =>
+                setFormData({ ...formData, is_featured: e.target.checked })
+              }
+              className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+            />
+            <label
+              htmlFor="is_featured"
+              className="text-sm font-medium text-gray-700"
+            >
+              Feature this event (highlight on homepage)
+            </label>
+          </div>
 
           {/* Contact Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -618,190 +858,6 @@ const UpdateEventForm: React.FC<UpdateEventFormProps> = ({
                 </p>
               )}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Website
-            </label>
-            <input
-              type="url"
-              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-              value={formData.website}
-              onChange={(e) =>
-                setFormData({ ...formData, website: e.target.value })
-              }
-              placeholder="https://example.com"
-            />
-          </div>
-
-          {/* Contract Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t pt-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <File className="h-4 w-4 text-teal-600" /> Contract Date
-              </label>
-              <input
-                type="date"
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                value={formData.contractDate}
-                onChange={(e) =>
-                  setFormData({ ...formData, contractDate: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <Copy className="h-4 w-4 text-teal-600" /> Contract Reference
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., CTR-2025-001"
-                className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                value={formData.contractReference}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    contractReference: e.target.value,
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          {/* Time Slots */}
-          <div>
-            <h3 className="font-semibold mb-3 flex items-center gap-2 text-gray-800">
-              <Clock className="h-4 w-4 text-teal-600" /> Time Slots
-            </h3>
-            {formData.timeSlots && formData.timeSlots.length > 0 ? (
-              formData.timeSlots.map((slot) => (
-                <div
-                  key={slot.id}
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-gray-50 rounded-lg mb-3"
-                >
-                  <div>
-                    <label className="text-sm text-gray-600">Date *</label>
-                    <input
-                      type="date"
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                        errors[`slot_${slot.id}_date`] &&
-                        touched[`slot_${slot.id}_date`]
-                          ? "border-red-500"
-                          : "border-gray-200"
-                      }`}
-                      value={slot.date}
-                      onBlur={() => handleBlur("", slot.id, "date")}
-                      onChange={(e) =>
-                        updateTimeSlot(slot.id, "date", e.target.value)
-                      }
-                    />
-                    {errors[`slot_${slot.id}_date`] &&
-                      touched[`slot_${slot.id}_date`] && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />{" "}
-                          {errors[`slot_${slot.id}_date`]}
-                        </p>
-                      )}
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">
-                      Start Time *
-                    </label>
-                    <input
-                      type="time"
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                        errors[`slot_${slot.id}_startTime`] &&
-                        touched[`slot_${slot.id}_startTime`]
-                          ? "border-red-500"
-                          : "border-gray-200"
-                      }`}
-                      value={slot.startTime}
-                      onBlur={() => handleBlur("", slot.id, "startTime")}
-                      onChange={(e) =>
-                        updateTimeSlot(slot.id, "startTime", e.target.value)
-                      }
-                    />
-                    {errors[`slot_${slot.id}_startTime`] &&
-                      touched[`slot_${slot.id}_startTime`] && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />{" "}
-                          {errors[`slot_${slot.id}_startTime`]}
-                        </p>
-                      )}
-                  </div>
-                  <div>
-                    <label className="text-sm text-gray-600">End Time *</label>
-                    <input
-                      type="time"
-                      className={`w-full p-2 border rounded focus:ring-2 focus:ring-teal-500 outline-none transition ${
-                        errors[`slot_${slot.id}_endTime`] &&
-                        touched[`slot_${slot.id}_endTime`]
-                          ? "border-red-500"
-                          : "border-gray-200"
-                      }`}
-                      value={slot.endTime}
-                      onBlur={() => handleBlur("", slot.id, "endTime")}
-                      onChange={(e) =>
-                        updateTimeSlot(slot.id, "endTime", e.target.value)
-                      }
-                    />
-                    {errors[`slot_${slot.id}_endTime`] &&
-                      touched[`slot_${slot.id}_endTime`] && (
-                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />{" "}
-                          {errors[`slot_${slot.id}_endTime`]}
-                        </p>
-                      )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500 text-sm">No time slots available</p>
-            )}
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Event Status
-            </label>
-            <select
-              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-              value={formData.status}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  status: e.target.value as
-                    | "coming-soon"
-                    | "now-showing"
-                    | "ended",
-                })
-              }
-            >
-              <option value="coming-soon">Coming Soon</option>
-              <option value="now-showing">Now Showing</option>
-              <option value="ended">Ended</option>
-            </select>
-          </div>
-
-          {/* Featured */}
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="is_featured"
-              checked={formData.is_featured}
-              onChange={(e) =>
-                setFormData({ ...formData, is_featured: e.target.checked })
-              }
-              className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-            />
-            <label
-              htmlFor="is_featured"
-              className="text-sm font-medium text-gray-700"
-            >
-              Feature this event (highlight on homepage)
-            </label>
           </div>
 
           {/* Description */}

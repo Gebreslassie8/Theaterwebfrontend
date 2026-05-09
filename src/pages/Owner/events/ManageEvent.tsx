@@ -18,6 +18,7 @@ import {
   Trash2,
   Building,
   AlertCircle,
+  Clock,
 } from "lucide-react";
 import ReusableTable from "../../../components/Reusable/ReusableTable";
 import SuccessPopup from "../../../components/Reusable/SuccessPopup";
@@ -25,17 +26,42 @@ import CreateEventForm from "../../../components/EventForm/CreateEventForm";
 import UpdateEventForm from "../../../components/EventForm/UpdateEventForm";
 import { DeleteConfirmModal } from "../../../components/EmployeeForm/DeleteConfirmModal";
 import { ViewEventModal } from "../../../components/EventForm/ViewEventModals";
-import {
-  EventData,
-  halls,
-  FormData,
-} from "../../../components/EventForm/types";
 import supabase from "@/config/supabaseClient";
 
-interface Column {
-  Header: string;
-  accessor: string;
-  Cell?: (row: EventData) => React.ReactNode;
+interface Event {
+  id: string;
+  title: string;
+  description: string | null;
+  genre: string | null;
+  category: string | null;
+  duration_minutes: number | null;
+  director: string | null;
+  cast: string[];
+  poster_url: string | null;
+  status: "coming-soon" | "now-showing" | "ended" | "cancelled";
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  view_count: number;
+  theater_id: string;
+  created_at: string;
+  updated_at: string;
+  published_by: string | null;
+  schedules?: Schedule[];
+}
+
+interface Schedule {
+  id: string;
+  event_id: string;
+  hall_id: string;
+  show_date: string;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  hall?: {
+    id: string;
+    name: string;
+  };
 }
 
 interface UserData {
@@ -43,6 +69,12 @@ interface UserData {
   email?: string;
   role?: string;
   theater_id?: string;
+}
+
+interface Column {
+  Header: string;
+  accessor: string;
+  Cell?: (row: Event) => React.ReactNode;
 }
 
 const containerVariants = {
@@ -56,7 +88,7 @@ const itemVariants = {
 };
 
 const ManageEvent: React.FC = () => {
-  const [events, setEvents] = useState<EventData[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +97,6 @@ const ManageEvent: React.FC = () => {
     name: string;
   } | null>(null);
   const [currentUser, setCurrentUser] = useState<UserData | null>(null);
-  const [userRole, setUserRole] = useState<string>("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -73,37 +104,42 @@ const ManageEvent: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // Separate states for different actions
   const [selectedEventForView, setSelectedEventForView] =
-    useState<EventData | null>(null);
+    useState<Event | null>(null);
   const [selectedEventForEdit, setSelectedEventForEdit] =
-    useState<EventData | null>(null);
+    useState<Event | null>(null);
   const [selectedEventForDelete, setSelectedEventForDelete] =
-    useState<EventData | null>(null);
+    useState<Event | null>(null);
   const [selectedEventForReactivate, setSelectedEventForReactivate] =
-    useState<EventData | null>(null);
-  const [eventToCancel, setEventToCancel] = useState<EventData | null>(null);
+    useState<Event | null>(null);
+  const [eventToCancel, setEventToCancel] = useState<Event | null>(null);
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [showReasonModal, setShowReasonModal] = useState(false);
 
-  // Get current user from session/local storage
+  // Helper functions
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return dateString;
+    }
+  };
+
+  const formatTime = (timeString: string) => {
+    return timeString.substring(0, 5);
+  };
+
+  // Get current user from storage
   const getCurrentUser = useCallback(async () => {
     try {
       const userStr =
         localStorage.getItem("user") || sessionStorage.getItem("user");
-
-      if (!userStr) {
-        console.error("No user found in storage");
-        return null;
-      }
-
+      if (!userStr) return null;
       const user = JSON.parse(userStr) as UserData;
-      console.log("User found:", user);
       setCurrentUser(user);
-      setUserRole(user.role || "");
       return user;
     } catch (error) {
       console.error("Error getting user info:", error);
@@ -114,105 +150,61 @@ const ManageEvent: React.FC = () => {
   // Get theater ID based on user role
   const getTheaterIdByRole = useCallback(async (user: UserData) => {
     const role = user.role;
-    console.log("User role:", role);
 
-    // Case 1: Admin - can access all theaters (for now, return first theater or handle differently)
     if (role === "admin") {
-      console.log("Admin user - fetching first available theater");
-      const { data: theater, error } = await supabase
+      const { data: theater } = await supabase
         .from("theaters")
         .select("id")
         .limit(1)
         .maybeSingle();
-
-      if (error) {
-        console.error("Error fetching theater for admin:", error);
-        return null;
-      }
       return theater?.id || null;
     }
 
-    // Case 2: Theater Owner or Owner - get theater_id from theaters table using owner_user_id
     if (role === "theater_owner" || role === "owner") {
-      console.log(
-        "Theater owner user - fetching from theaters table using owner_user_id",
-      );
-      const { data: theaterData, error: theaterError } = await supabase
+      const { data: theaterData } = await supabase
         .from("theaters")
-        .select("id, legal_business_name")
+        .select("id")
         .eq("owner_user_id", user.id)
         .maybeSingle();
-
-      if (theaterError) {
-        console.error("Error fetching theater for owner:", theaterError);
-      }
-
-      if (theaterData?.id) {
-        console.log("Found theater_id from theaters table:", theaterData.id);
-        // Also store the theater name for later use
-        return theaterData.id;
-      }
+      return theaterData?.id || null;
     }
 
-    // Case 3: Manager, Sales, QR Scanner, or other employees - get theater_id from employees table
-    if (["manager", "sales", "qr_scanner", "employee"].includes(role || "")) {
-      console.log("Employee user - fetching from employees table");
-      const { data: employeeData, error: employeeError } = await supabase
+    if (
+      [
+        "manager",
+        "sales",
+        "qr_scanner",
+        "employee",
+        "theater_manager",
+      ].includes(role || "")
+    ) {
+      const { data: employeeData } = await supabase
         .from("employees")
         .select("theater_id")
         .eq("user_id", user.id)
         .maybeSingle();
-
-      if (employeeError) {
-        console.error("Error fetching employee:", employeeError);
-      }
-
-      if (employeeData?.theater_id) {
-        console.log(
-          "Found theater_id from employees table:",
-          employeeData.theater_id,
-        );
-        return employeeData.theater_id;
-      }
+      return employeeData?.theater_id || user.theater_id || null;
     }
 
-    // Fallback: Check if user object has theater_id directly
-    if (user.theater_id) {
-      console.log("Found theater_id in user session:", user.theater_id);
-      return user.theater_id;
-    }
-
-    console.warn("No theater ID found for user with role:", role);
-    return null;
+    return user.theater_id || null;
   }, []);
 
-  // Fetch theater details by ID
+  // Fetch theater details
   const fetchTheaterDetails = useCallback(async (theaterId: string) => {
-    try {
-      const { data: theater, error } = await supabase
-        .from("theaters")
-        .select("id, legal_business_name")
-        .eq("id", theaterId)
-        .single();
-
-      if (error) {
-        console.error("Error fetching theater details:", error);
-        return null;
-      }
-
-      return {
-        id: theater.id,
-        name: theater.legal_business_name,
-      };
-    } catch (error) {
-      console.error("Error fetching theater details:", error);
-      return null;
-    }
+    const { data: theater } = await supabase
+      .from("theaters")
+      .select("id, legal_business_name")
+      .eq("id", theaterId)
+      .single();
+    return theater
+      ? { id: theater.id, name: theater.legal_business_name }
+      : null;
   }, []);
 
-  // Fetch events for a theater
-  const fetchEventsForTheater = useCallback(async (theaterId: string) => {
+  // Fetch events with their schedules
+  const fetchEventsWithSchedules = useCallback(async (theaterId: string) => {
     try {
+      // Fetch events
       const { data: eventsData, error: eventsError } = await supabase
         .from("events")
         .select("*")
@@ -221,55 +213,38 @@ const ManageEvent: React.FC = () => {
 
       if (eventsError) throw eventsError;
 
-      // Transform to EventData format with UI fields
-      return (eventsData || []).map((event) => ({
+      if (!eventsData || eventsData.length === 0) return [];
+
+      // Fetch schedules for all events
+      const eventIds = eventsData.map((e) => e.id);
+      const { data: schedulesData } = await supabase
+        .from("show_schedules")
+        .select(
+          `
+          *,
+          hall:halls(id, name)
+        `,
+        )
+        .in("event_id", eventIds)
+        .eq("is_active", true)
+        .order("show_date", { ascending: true });
+
+      // Group schedules by event_id
+      const schedulesMap = new Map<string, Schedule[]>();
+      schedulesData?.forEach((schedule: any) => {
+        if (!schedulesMap.has(schedule.event_id)) {
+          schedulesMap.set(schedule.event_id, []);
+        }
+        schedulesMap.get(schedule.event_id)!.push({
+          ...schedule,
+          hall: schedule.hall,
+        });
+      });
+
+      // Combine events with their schedules
+      return eventsData.map((event) => ({
         ...event,
-        id: event.id,
-        title: event.title,
-        description: event.description || "",
-        genre: event.genre || "",
-        category: event.category || "",
-        duration_minutes: event.duration_minutes || 0,
-        director: event.director || "",
-        cast: event.cast || [],
-        poster_url: event.poster_url || "",
-        price_min: event.price_min || 0,
-        price_max: event.price_max || 0,
-        status: event.status || "coming-soon",
-        is_featured: event.is_featured || false,
-        rating: event.rating || 0,
-        review_count: event.review_count || 0,
-        view_count: event.view_count || 0,
-        theater_id: event.theater_id,
-        created_at: event.created_at,
-        updated_at: event.updated_at,
-        timeSlots: [
-          {
-            id: "1",
-            date: new Date().toISOString().split("T")[0],
-            startTime: "19:00",
-            endTime: "22:00",
-          },
-        ],
-        hall: "Grand Hall",
-        seatCategories:
-          halls[0]?.seatTypes.map((st, idx) => ({
-            id: `seat-${idx}`,
-            name: st.name,
-            price: event.price_min || 50,
-            capacity: st.capacity,
-            booked: Math.floor(Math.random() * st.capacity),
-            commissionPercent: 10,
-          })) || [],
-        ageRestriction: "All Ages",
-        contactEmail: "contact@example.com",
-        contactPhone: "+251-11-123-4567",
-        website: "",
-        organizer: event.director || "Theater Owner",
-        contractDate: new Date().toISOString().split("T")[0],
-        contractReference: `CTR-${event.id?.slice(0, 8)}`,
-        totalBookedSeats: Math.floor(Math.random() * 500),
-        totalRevenue: Math.floor(Math.random() * 50000),
+        schedules: schedulesMap.get(event.id) || [],
       }));
     } catch (error) {
       console.error("Error fetching events:", error);
@@ -281,48 +256,30 @@ const ManageEvent: React.FC = () => {
   const fetchUserAndEvents = useCallback(async () => {
     try {
       setIsLoading(true);
-
-      // Get user from storage
       const user = await getCurrentUser();
       if (!user) {
-        console.log("No user found, skipping fetch");
         setUserTheater(null);
         setEvents([]);
-        setIsLoading(false);
         return;
       }
 
-      // Get theater ID based on role
       const theaterId = await getTheaterIdByRole(user);
-
       if (!theaterId) {
-        console.log("No theater assigned to this user");
         setUserTheater(null);
         setEvents([]);
-        setIsLoading(false);
         return;
       }
 
-      // Update user session with theater_id if not present
       if (!user.theater_id) {
         const updatedUser = { ...user, theater_id: theaterId };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setCurrentUser(updatedUser);
       }
 
-      // Fetch theater details
       const theater = await fetchTheaterDetails(theaterId);
-      if (theater) {
-        setUserTheater(theater);
-      } else {
-        setUserTheater(null);
-        setEvents([]);
-        setIsLoading(false);
-        return;
-      }
+      setUserTheater(theater);
 
-      // Fetch events for this theater
-      const eventsList = await fetchEventsForTheater(theaterId);
+      const eventsList = await fetchEventsWithSchedules(theaterId);
       setEvents(eventsList);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -335,25 +292,28 @@ const ManageEvent: React.FC = () => {
     getCurrentUser,
     getTheaterIdByRole,
     fetchTheaterDetails,
-    fetchEventsForTheater,
+    fetchEventsWithSchedules,
   ]);
 
   useEffect(() => {
     fetchUserAndEvents();
   }, [fetchUserAndEvents]);
 
-  const filteredEvents = events.filter((e) => {
-    const matchSearch = e.title
+  // Filter events
+  const filteredEvents = events.filter((event) => {
+    const matchSearch = event.title
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
-    const matchStatus = filterStatus === "all" || e.status === filterStatus;
+    const matchStatus = filterStatus === "all" || event.status === filterStatus;
     return matchSearch && matchStatus;
   });
 
+  // Stats
   const stats = {
     total: events.length,
-    ongoing: events.filter((e) => e.status === "now-showing").length,
-    completed: events.filter((e) => e.status === "ended").length,
+    nowShowing: events.filter((e) => e.status === "now-showing").length,
+    comingSoon: events.filter((e) => e.status === "coming-soon").length,
+    ended: events.filter((e) => e.status === "ended").length,
     cancelled: events.filter((e) => e.status === "cancelled").length,
   };
 
@@ -372,23 +332,8 @@ const ManageEvent: React.FC = () => {
     setCancelReason("");
   };
 
-  const handleCreateEventSubmit = async (formData: FormData) => {
-    if (!userTheater) {
-      setSuccessMessage(
-        "No theater assigned to your account. Please contact administrator.",
-      );
-      setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 3000);
-      return;
-    }
-    const posterUrl = formData.poster_url || null;
-    await handleCreateEvent(formData, posterUrl);
-  };
-
-  const handleCreateEvent = async (
-    formData: FormData,
-    posterUrl: string | null,
-  ) => {
+  // Create event handler
+  const handleCreateEvent = async (formData: any, posterUrl: string | null) => {
     if (!userTheater || !currentUser) {
       setSuccessMessage(
         "Cannot create event: No theater assigned or user not found.",
@@ -399,19 +344,20 @@ const ManageEvent: React.FC = () => {
     }
 
     try {
+      const { schedules: eventSchedules, ...eventData } = formData;
+
+      // Create the event
       const newEvent = {
-        title: formData.title,
-        description: formData.description,
-        genre: formData.genre,
-        category: formData.category,
-        duration_minutes: formData.duration_minutes,
-        director: formData.director,
-        cast: formData.cast,
-        poster_url: posterUrl || formData.poster_url,
-        price_min: formData.price_min,
-        price_max: formData.price_max,
-        status: formData.status,
-        is_featured: formData.is_featured,
+        title: eventData.title,
+        description: eventData.description || null,
+        genre: eventData.genre || null,
+        category: eventData.category || null,
+        duration_minutes: eventData.duration_minutes || null,
+        director: eventData.director || null,
+        cast: eventData.cast || [],
+        poster_url: posterUrl || eventData.poster_url || null,
+        status: eventData.status || "coming-soon",
+        is_featured: eventData.is_featured || false,
         theater_id: userTheater.id,
         published_by: currentUser.id,
         rating: 0,
@@ -419,13 +365,37 @@ const ManageEvent: React.FC = () => {
         view_count: 0,
       };
 
-      const { error } = await supabase.from("events").insert([newEvent]);
+      const { data: createdEvent, error: eventError } = await supabase
+        .from("events")
+        .insert([newEvent])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (eventError) throw eventError;
+
+      // Create show schedules
+      if (eventSchedules && eventSchedules.length > 0) {
+        const scheduleRecords = eventSchedules.map((schedule: any) => ({
+          event_id: createdEvent.id,
+          hall_id: schedule.hallId,
+          show_date: schedule.date,
+          start_time: schedule.startTime,
+          end_time: schedule.endTime,
+          is_active: true,
+        }));
+
+        const { error: scheduleError } = await supabase
+          .from("show_schedules")
+          .insert(scheduleRecords);
+
+        if (scheduleError) {
+          console.error("Error creating schedules:", scheduleError);
+        }
+      }
 
       await fetchUserAndEvents();
       closeAllModals();
-      setSuccessMessage(`✨ Event "${formData.title}" created successfully!`);
+      setSuccessMessage(`✨ Event "${eventData.title}" created successfully!`);
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error) {
@@ -436,33 +406,74 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  const handleUpdateEvent = async (formData: FormData) => {
+  const handleCreateEventSubmit = async (formData: any) => {
+    if (!userTheater) {
+      setSuccessMessage("No theater assigned to your account.");
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+      return;
+    }
+    const posterUrl = formData.poster_url || null;
+    await handleCreateEvent(formData, posterUrl);
+  };
+
+  // Update event handler
+  const handleUpdateEvent = async (formData: any) => {
     if (!selectedEventForEdit) return;
 
     try {
-      const { error } = await supabase
+      const { schedules: eventSchedules, ...eventData } = formData;
+
+      // Update event
+      const { error: eventError } = await supabase
         .from("events")
         .update({
-          title: formData.title,
-          description: formData.description,
-          genre: formData.genre,
-          category: formData.category,
-          duration_minutes: formData.duration_minutes,
-          director: formData.director,
-          cast: formData.cast,
-          price_min: formData.price_min,
-          price_max: formData.price_max,
-          status: formData.status,
-          is_featured: formData.is_featured,
+          title: eventData.title,
+          description: eventData.description || null,
+          genre: eventData.genre || null,
+          category: eventData.category || null,
+          duration_minutes: eventData.duration_minutes || null,
+          director: eventData.director || null,
+          cast: eventData.cast || [],
+          poster_url: eventData.poster_url || null,
+          status: eventData.status,
+          is_featured: eventData.is_featured || false,
           updated_at: new Date().toISOString(),
         })
         .eq("id", selectedEventForEdit.id);
 
-      if (error) throw error;
+      if (eventError) throw eventError;
+
+      // Delete existing schedules and recreate
+      if (eventSchedules) {
+        await supabase
+          .from("show_schedules")
+          .delete()
+          .eq("event_id", selectedEventForEdit.id);
+
+        if (eventSchedules.length > 0) {
+          const scheduleRecords = eventSchedules.map((schedule: any) => ({
+            event_id: selectedEventForEdit.id,
+            hall_id: schedule.hallId,
+            show_date: schedule.date,
+            start_time: schedule.startTime,
+            end_time: schedule.endTime,
+            is_active: true,
+          }));
+
+          const { error: scheduleError } = await supabase
+            .from("show_schedules")
+            .insert(scheduleRecords);
+
+          if (scheduleError) {
+            console.error("Error updating schedules:", scheduleError);
+          }
+        }
+      }
 
       await fetchUserAndEvents();
       closeAllModals();
-      setSuccessMessage(`✏️ Event "${formData.title}" updated successfully!`);
+      setSuccessMessage(`✏️ Event "${eventData.title}" updated successfully!`);
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error) {
@@ -473,10 +484,18 @@ const ManageEvent: React.FC = () => {
     }
   };
 
+  // Delete event handler
   const handleDeleteEvent = async () => {
     if (!selectedEventForDelete) return;
 
     try {
+      // Delete schedules first
+      await supabase
+        .from("show_schedules")
+        .delete()
+        .eq("event_id", selectedEventForDelete.id);
+
+      // Delete event
       const { error } = await supabase
         .from("events")
         .delete()
@@ -499,13 +518,17 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  const handleCancelWithReason = async () => {
+  // Cancel event handler
+  const handleCancelEvent = async () => {
     if (!eventToCancel) return;
 
     try {
       const { error } = await supabase
         .from("events")
-        .update({ status: "cancelled", updated_at: new Date().toISOString() })
+        .update({
+          status: "cancelled",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", eventToCancel.id);
 
       if (error) throw error;
@@ -513,7 +536,7 @@ const ManageEvent: React.FC = () => {
       await fetchUserAndEvents();
       closeAllModals();
       setSuccessMessage(
-        `⚠️ Event "${eventToCancel.title}" has been cancelled. Reason: ${cancelReason}`,
+        `⚠️ Event "${eventToCancel.title}" has been cancelled.`,
       );
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
@@ -525,13 +548,17 @@ const ManageEvent: React.FC = () => {
     }
   };
 
+  // Reactivate event handler
   const handleReactivateEvent = async () => {
     if (!selectedEventForReactivate) return;
 
     try {
       const { error } = await supabase
         .from("events")
-        .update({ status: "coming-soon", updated_at: new Date().toISOString() })
+        .update({
+          status: "coming-soon",
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", selectedEventForReactivate.id);
 
       if (error) throw error;
@@ -551,42 +578,44 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  const openViewModal = (event: EventData) => {
+  // Modal handlers
+  const openViewModal = (event: Event) => {
     setSelectedEventForView(event);
     setShowViewModal(true);
   };
 
-  const openEditModal = (event: EventData) => {
+  const openEditModal = (event: Event) => {
     setSelectedEventForEdit(event);
     setShowUpdateModal(true);
   };
 
-  const openCancelModal = (event: EventData) => {
+  const openCancelModal = (event: Event) => {
     setEventToCancel(event);
     setCancelReason("");
     setShowReasonModal(true);
   };
 
-  const openReactivateModal = (event: EventData) => {
+  const openReactivateModal = (event: Event) => {
     setSelectedEventForReactivate(event);
     setShowCancelModal(true);
   };
 
-  const openDeleteModal = (event: EventData) => {
+  const openDeleteModal = (event: Event) => {
     setSelectedEventForDelete(event);
     setShowDeleteModal(true);
   };
 
+  // UI helpers
   const getStatusColor = (status: string) => {
     switch (status) {
       case "now-showing":
         return "bg-green-100 text-green-700";
+      case "coming-soon":
+        return "bg-blue-100 text-blue-700";
       case "ended":
         return "bg-gray-100 text-gray-700";
       case "cancelled":
         return "bg-red-100 text-red-700";
-      case "coming-soon":
-        return "bg-blue-100 text-blue-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -596,12 +625,12 @@ const ManageEvent: React.FC = () => {
     switch (status) {
       case "now-showing":
         return <Activity className="h-3 w-3" />;
+      case "coming-soon":
+        return <Calendar className="h-3 w-3" />;
       case "ended":
         return <CheckCircle className="h-3 w-3" />;
       case "cancelled":
         return <XCircle className="h-3 w-3" />;
-      case "coming-soon":
-        return <Calendar className="h-3 w-3" />;
       default:
         return null;
     }
@@ -611,22 +640,23 @@ const ManageEvent: React.FC = () => {
     switch (status) {
       case "now-showing":
         return "Now Showing";
+      case "coming-soon":
+        return "Coming Soon";
       case "ended":
         return "Ended";
       case "cancelled":
         return "Cancelled";
-      case "coming-soon":
-        return "Coming Soon";
       default:
         return status;
     }
   };
 
+  // Table columns
   const columns: Column[] = [
     {
-      Header: "Event Name",
+      Header: "Event",
       accessor: "title",
-      Cell: (row: EventData) => (
+      Cell: (row: Event) => (
         <div className="flex items-center gap-3">
           {row.poster_url ? (
             <img
@@ -640,54 +670,66 @@ const ManageEvent: React.FC = () => {
             </div>
           )}
           <div>
-            <p className="font-medium">{row.title}</p>
-            <p className="text-xs text-gray-500">{row.genre}</p>
+            <p className="font-medium text-gray-900">{row.title}</p>
+            <p className="text-xs text-gray-500">{row.genre || "No genre"}</p>
           </div>
         </div>
       ),
     },
     {
       Header: "Schedule",
-      accessor: "timeSlots",
-      Cell: (row: EventData) => (
-        <div>
-          {row.timeSlots && row.timeSlots[0] ? (
-            <>
-              {new Date(row.timeSlots[0].date).toLocaleDateString()}
-              <br />
-              <span className="text-xs text-gray-500">
-                {row.timeSlots[0].startTime} - {row.timeSlots[0].endTime}
+      accessor: "schedules",
+      Cell: (row: Event) => {
+        const schedules = row.schedules || [];
+        if (schedules.length === 0)
+          return <span className="text-gray-400">No schedule</span>;
+        const first = schedules[0];
+        return (
+          <div className="text-sm">
+            <div className="flex items-center gap-1 text-gray-600">
+              <Calendar className="h-3 w-3" />
+              <span>{formatDate(first.show_date)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-gray-500 text-xs mt-0.5">
+              <Clock className="h-3 w-3" />
+              <span>
+                {formatTime(first.start_time)} - {formatTime(first.end_time)}
               </span>
-            </>
-          ) : (
-            "TBD"
-          )}
-        </div>
-      ),
+            </div>
+            {schedules.length > 1 && (
+              <span className="text-xs text-gray-400">
+                +{schedules.length - 1} more
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       Header: "Venue",
-      accessor: "hall",
-      Cell: (row: EventData) => (
-        <div className="flex items-center gap-2">
-          <MapPin className="h-4 w-4 text-gray-400" />
-          <span>{row.hall || "Main Hall"}</span>
-        </div>
-      ),
+      accessor: "schedules",
+      Cell: (row: Event) => {
+        const schedules = row.schedules || [];
+        const firstHall = schedules[0]?.hall?.name;
+        return (
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-gray-400" />
+            <span className="text-sm">{firstHall || "TBD"}</span>
+          </div>
+        );
+      },
     },
     {
-      Header: "Revenue",
-      accessor: "totalRevenue",
-      Cell: (row: EventData) => (
-        <span className="text-green-600 font-semibold">
-          ETB {(row.totalRevenue || 0).toLocaleString()}
-        </span>
+      Header: "Duration",
+      accessor: "duration_minutes",
+      Cell: (row: Event) => (
+        <span className="text-sm">{row.duration_minutes || 0} min</span>
       ),
     },
     {
       Header: "Status",
       accessor: "status",
-      Cell: (row: EventData) => (
+      Cell: (row: Event) => (
         <span
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}
         >
@@ -698,7 +740,7 @@ const ManageEvent: React.FC = () => {
     {
       Header: "Actions",
       accessor: "actions",
-      Cell: (row: EventData) => (
+      Cell: (row: Event) => (
         <div className="flex gap-2">
           <button
             onClick={() => openViewModal(row)}
@@ -745,6 +787,7 @@ const ManageEvent: React.FC = () => {
     },
   ];
 
+  // Stat Card Component
   const StatCard = ({ title, value, icon: Icon, color }: any) => (
     <motion.div
       variants={itemVariants}
@@ -764,7 +807,7 @@ const ManageEvent: React.FC = () => {
     </motion.div>
   );
 
-  // Show loading state
+  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -773,7 +816,7 @@ const ManageEvent: React.FC = () => {
     );
   }
 
-  // Show no theater assigned message
+  // No theater assigned state
   if (!userTheater) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -785,14 +828,9 @@ const ManageEvent: React.FC = () => {
             No Theater Assigned
           </h2>
           <p className="text-gray-600 mb-4">
-            Your account doesn't have a theater assigned yet. Please contact
-            your administrator to assign a theater to your account.
+            Your account doesn't have a theater assigned yet.
           </p>
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg text-left">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-yellow-600" />
-              <span className="font-semibold text-yellow-800">Need Help?</span>
-            </div>
             <p className="text-sm text-yellow-700">
               Contact your system administrator to get your account linked to a
               theater.
@@ -811,7 +849,7 @@ const ManageEvent: React.FC = () => {
       className="min-h-screen bg-gray-50"
     >
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header with Theater Info */}
+        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -837,7 +875,7 @@ const ManageEvent: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
           <StatCard
             title="Total Events"
             value={stats.total}
@@ -846,15 +884,21 @@ const ManageEvent: React.FC = () => {
           />
           <StatCard
             title="Now Showing"
-            value={stats.ongoing}
+            value={stats.nowShowing}
             icon={Activity}
             color="from-green-500 to-emerald-600"
           />
           <StatCard
+            title="Coming Soon"
+            value={stats.comingSoon}
+            icon={Calendar}
+            color="from-blue-500 to-cyan-600"
+          />
+          <StatCard
             title="Ended"
-            value={stats.completed}
+            value={stats.ended}
             icon={CheckCircle}
-            color="from-purple-500 to-pink-600"
+            color="from-gray-500 to-gray-600"
           />
           <StatCard
             title="Cancelled"
@@ -864,7 +908,7 @@ const ManageEvent: React.FC = () => {
           />
         </div>
 
-        {/* Search, Filter, and Create Event */}
+        {/* Search, Filter, and Create */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-[250px]">
@@ -891,22 +935,24 @@ const ManageEvent: React.FC = () => {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-medium transition flex items-center gap-2 shadow-sm"
+            className="px-5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-xl font-medium flex items-center gap-2 shadow-md hover:shadow-lg transition-all"
           >
-            <Plus className="h-4 w-4" />
-            Create Event
+            <Plus className="h-4 w-4" /> Create Event
           </button>
         </div>
 
         {/* Events Table */}
-        <ReusableTable
-          columns={columns}
-          data={filteredEvents}
-          icon={LayoutGrid}
-          showSearch={false}
-          showExport={false}
-          itemsPerPage={10}
-        />
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <ReusableTable
+            columns={columns}
+            data={filteredEvents}
+            icon={LayoutGrid}
+            showSearch={false}
+            showExport={false}
+            showPrint={false}
+            itemsPerPage={10}
+          />
+        </div>
 
         {/* Modals */}
         {showCreateModal && (
@@ -927,7 +973,7 @@ const ManageEvent: React.FC = () => {
 
         {showUpdateModal && selectedEventForEdit && (
           <UpdateEventForm
-            event={selectedEventForEdit}
+            event={selectedEventForEdit as any}
             onSubmit={handleUpdateEvent}
             onCancel={() => closeAllModals()}
           />
@@ -935,7 +981,7 @@ const ManageEvent: React.FC = () => {
 
         {showViewModal && selectedEventForView && (
           <ViewEventModal
-            event={selectedEventForView}
+            event={selectedEventForView as any}
             isOpen={showViewModal}
             onClose={() => closeAllModals()}
           />
@@ -951,6 +997,7 @@ const ManageEvent: React.FC = () => {
                 }
               : null
           }
+          title="Delete Event"
           onConfirm={handleDeleteEvent}
           onCancel={() => closeAllModals()}
         />
@@ -979,8 +1026,8 @@ const ManageEvent: React.FC = () => {
                   rows={3}
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Please provide a reason for cancelling this event..."
-                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                  placeholder="Please provide a reason..."
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
                 />
               </div>
               <div className="flex gap-3">
@@ -991,7 +1038,7 @@ const ManageEvent: React.FC = () => {
                   Cancel
                 </button>
                 <button
-                  onClick={handleCancelWithReason}
+                  onClick={handleCancelEvent}
                   disabled={!cancelReason.trim()}
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition"
                 >
@@ -1002,7 +1049,7 @@ const ManageEvent: React.FC = () => {
           </div>
         )}
 
-        {/* Reactivate/Restore Modal */}
+        {/* Reactivate Modal */}
         {showCancelModal && selectedEventForReactivate && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">

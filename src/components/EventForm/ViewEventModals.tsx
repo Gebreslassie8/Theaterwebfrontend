@@ -22,8 +22,10 @@ import {
   Wallet,
   Film,
   Theater,
+  Users,
+  Building,
 } from "lucide-react";
-import { EventData } from "../EventForm/types";
+import { EventData } from "../../components/EventForm/types";
 
 interface ViewEventModalProps {
   event: EventData | null;
@@ -87,6 +89,9 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
       return dateString;
     }
   };
+
+  // Get schedules from event (supports both timeSlots and schedules property)
+  const schedules = (event as any).schedules || event.timeSlots || [];
 
   return (
     <div
@@ -175,9 +180,9 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Director</p>
-                <p className="font-semibold text-gray-800">
-                  {event.director || "—"}
+                <p className="text-xs text-gray-500 mb-1">Category</p>
+                <p className="font-semibold text-gray-800 capitalize">
+                  {event.category || "—"}
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
@@ -187,27 +192,9 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Venue / Hall</p>
-                <div className="flex items-center gap-2">
-                  <Theater className="h-4 w-4 text-gray-400" />
-                  <p className="font-semibold text-gray-800">
-                    {event.hall || "Main Hall"}
-                  </p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Category</p>
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-gray-400" />
-                  <p className="font-semibold text-gray-800 capitalize">
-                    {event.category || "—"}
-                  </p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Age Restriction</p>
+                <p className="text-xs text-gray-500 mb-1">Director</p>
                 <p className="font-semibold text-gray-800">
-                  {event.ageRestriction || "All Ages"}
+                  {event.director || "—"}
                 </p>
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
@@ -216,18 +203,48 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
                   {event.is_featured ? "Yes" : "No"}
                 </p>
               </div>
-              {event.contractReference && (
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-1">
-                    Contract Reference
-                  </p>
-                  <p className="font-semibold text-gray-800">
-                    {event.contractReference}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Event Provider Information */}
+          {(event as any).event_provider && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Users className="h-5 w-5 text-teal-600" />
+                Event Provider
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Provider Name</p>
+                  <p className="font-semibold text-gray-800">
+                    {(event as any).event_provider}
+                  </p>
+                </div>
+                {(event as any).event_provider_email && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Provider Email</p>
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                      <p className="font-semibold text-gray-800">
+                        {(event as any).event_provider_email}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {(event as any).event_provider_phone && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Provider Phone</p>
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gray-400" />
+                      <p className="font-semibold text-gray-800">
+                        {(event as any).event_provider_phone}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Cast */}
           {event.cast && event.cast.length > 0 && (
@@ -251,8 +268,82 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
             </div>
           )}
 
+          {/* Show Schedules */}
+          {schedules.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-teal-600" />
+                Show Schedules
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm border rounded-lg">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="p-3 text-left text-gray-600">#</th>
+                      <th className="p-3 text-left text-gray-600">Date</th>
+                      <th className="p-3 text-left text-gray-600">
+                        Start Time
+                      </th>
+                      <th className="p-3 text-left text-gray-600">End Time</th>
+                      <th className="p-3 text-left text-gray-600">Hall</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {schedules.map((slot: any, idx: number) => (
+                      <tr
+                        key={slot.id || idx}
+                        className="border-t border-gray-200 hover:bg-gray-50"
+                      >
+                        <td className="p-3 text-gray-600">{idx + 1}</td>
+                        <td className="p-3 font-medium">
+                          {formatDate(slot.date)}
+                        </td>
+                        <td className="p-3">{slot.startTime}</td>
+                        <td className="p-3">{slot.endTime}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <Building className="h-3 w-3 text-gray-400" />
+                            {slot.hallName || slot.hall || "Main Hall"}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Venue / Hall Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Theater className="h-5 w-5 text-teal-600" />
+              Venue Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Venue / Hall</p>
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <p className="font-semibold text-gray-800">
+                    {event.hall || "Main Hall"}
+                  </p>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Age Restriction</p>
+                <p className="font-semibold text-gray-800">
+                  {event.ageRestriction || "All Ages"}
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Contact Information */}
-          {(event.contactEmail || event.contactPhone || event.organizer) && (
+          {(event.contactEmail ||
+            event.contactPhone ||
+            event.website ||
+            event.organizer) && (
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <User className="h-5 w-5 text-teal-600" />
@@ -304,41 +395,32 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
             </div>
           )}
 
-          {/* Schedule */}
-          {event.timeSlots && event.timeSlots.length > 0 && (
+          {/* Contract Information */}
+          {(event.contractDate || event.contractReference) && (
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Clock className="h-5 w-5 text-teal-600" />
-                Event Schedule
+                <FileText className="h-5 w-5 text-teal-600" />
+                Contract Information
               </h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm border rounded-lg">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th className="p-3 text-left text-gray-600">#</th>
-                      <th className="p-3 text-left text-gray-600">Date</th>
-                      <th className="p-3 text-left text-gray-600">
-                        Start Time
-                      </th>
-                      <th className="p-3 text-left text-gray-600">End Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {event.timeSlots.map((slot, idx) => (
-                      <tr
-                        key={slot.id}
-                        className="border-t border-gray-200 hover:bg-gray-50"
-                      >
-                        <td className="p-3 text-gray-600">{idx + 1}</td>
-                        <td className="p-3 font-medium">
-                          {formatDate(slot.date)}
-                        </td>
-                        <td className="p-3">{slot.startTime}</td>
-                        <td className="p-3">{slot.endTime}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {event.contractDate && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">Contract Date</p>
+                    <p className="font-semibold text-gray-800">
+                      {formatDate(event.contractDate)}
+                    </p>
+                  </div>
+                )}
+                {event.contractReference && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs text-gray-500 mb-1">
+                      Contract Reference
+                    </p>
+                    <p className="font-semibold text-gray-800">
+                      {event.contractReference}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -403,10 +485,6 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="text-center">
                   <p className="text-sm text-gray-500">Price Range</p>
-                  <p className="text-xl font-bold text-gray-800">
-                    ETB {event.price_min?.toLocaleString() || 0} -{" "}
-                    {event.price_max?.toLocaleString() || 0}
-                  </p>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-gray-500">Total Booked Seats</p>
@@ -511,7 +589,8 @@ export const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
         </div>
         <p className="text-gray-600 mb-6">
           Are you sure you want to delete "<strong>{event.title}</strong>"? This
-          action cannot be undone.
+          action cannot be undone and will also delete all associated schedules
+          and bookings.
         </p>
         <div className="flex gap-3">
           <button
@@ -549,7 +628,7 @@ export const CancelEventModal: React.FC<CancelEventModalProps> = ({
   if (!isOpen || !event) return null;
 
   // Check if event is cancelled (status can be 'cancelled')
-  const isRestore = event.status === "ended";
+  const isRestore = event.status === "cancelled";
 
   const handleModalClick = (e: React.MouseEvent) => {
     e.stopPropagation();

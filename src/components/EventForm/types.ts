@@ -5,6 +5,18 @@ export interface TimeSlot {
   date: string;
   startTime: string;
   endTime: string;
+  hallId?: string;
+  hallName?: string;
+}
+
+export interface Schedule {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  hallId: string;
+  hallName?: string;
+  customPrices?: Record<string, number>;
 }
 
 export interface SeatCategory {
@@ -14,6 +26,12 @@ export interface SeatCategory {
   capacity: number;
   booked?: number;
   commissionPercent: number;
+}
+
+export interface EventProvider {
+  name: string;
+  email: string;
+  phone: string;
 }
 
 export interface EventData {
@@ -26,8 +44,6 @@ export interface EventData {
   director: string;
   cast: string[];
   poster_url: string;
-  price_min: number;
-  price_max: number;
   status: "coming-soon" | "now-showing" | "ended" | "cancelled";
   is_featured: boolean;
   rating: number;
@@ -40,8 +56,13 @@ export interface EventData {
   theater_name?: string;
   publisher_name?: string;
   publisher_role?: string;
+  // Event Provider fields
+  event_provider?: string;
+  event_provider_email?: string;
+  event_provider_phone?: string;
   // UI-specific fields
   timeSlots?: TimeSlot[];
+  schedules?: Schedule[];
   hall?: string;
   seatCategories?: SeatCategory[];
   ageRestriction?: string;
@@ -64,14 +85,17 @@ export interface FormData {
   director: string;
   cast: string[];
   poster_url: string;
-  price_min: number;
-  price_max: number;
   status: "coming-soon" | "now-showing" | "ended" | "cancelled";
   is_featured: boolean;
   theater_id?: string;
   published_by?: string;
+  // Event Provider fields
+  event_provider?: string;
+  event_provider_email?: string;
+  event_provider_phone?: string;
   // Extended fields
   timeSlots?: TimeSlot[];
+  schedules?: Schedule[];
   hall?: string;
   seatCategories?: SeatCategory[];
   ageRestriction?: string;
@@ -88,9 +112,33 @@ export interface Theater {
   legal_business_name: string;
   trade_name: string;
   city: string;
+  address?: string;
+  phone?: string;
+  email?: string;
 }
 
-// Halls configuration
+export interface Hall {
+  id: string;
+  theater_id: string;
+  name: string;
+  capacity: number;
+  num_of_row: number;
+  num_of_col: number;
+  description?: string;
+  is_active: boolean;
+}
+
+export interface SeatLevel {
+  id: string;
+  hall_id: string;
+  name: string;
+  display_name: string;
+  price: number;
+  color: string;
+  is_active: boolean;
+}
+
+// Halls configuration (mock data for UI fallback)
 export const halls = [
   {
     id: "hall-a",
@@ -190,6 +238,52 @@ export const genres = [
   "War",
 ];
 
-// Generate unique ID
-export const generateId = () =>
-  `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+// Helper functions
+export const generateId = (): string => {
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+};
+
+export const formatEventStatus = (status: string): string => {
+  switch (status) {
+    case "coming-soon":
+      return "Coming Soon";
+    case "now-showing":
+      return "Now Showing";
+    case "ended":
+      return "Ended";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+};
+
+export const getEventStatusColor = (status: string): string => {
+  switch (status) {
+    case "now-showing":
+      return "bg-green-100 text-green-700";
+    case "coming-soon":
+      return "bg-blue-100 text-blue-700";
+    case "ended":
+      return "bg-gray-100 text-gray-700";
+    case "cancelled":
+      return "bg-red-100 text-red-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+};
+
+export const getEventStatusIcon = (status: string): string => {
+  switch (status) {
+    case "now-showing":
+      return "Activity";
+    case "coming-soon":
+      return "Calendar";
+    case "ended":
+      return "CheckCircle";
+    case "cancelled":
+      return "XCircle";
+    default:
+      return "Calendar";
+  }
+};
