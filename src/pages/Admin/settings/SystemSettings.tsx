@@ -7,7 +7,7 @@ import {
     Globe, Mail, Phone, MapPin, Users, Award,
     AlertCircle, CheckCircle, Eye, EyeOff, Plus,
     Trash2, Edit, X, ChevronDown, TrendingUp,
-    Star, Gift, Zap, Image, UploadCloud, FileImage, Camera, Loader2
+    Star, Gift, Zap, Image, UploadCloud, FileImage, Camera, Loader2, FileText
 } from 'lucide-react';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
 
@@ -36,27 +36,22 @@ interface BusinessProfile {
     copyrightText?: string;
 }
 
-interface TicketType {
+interface CommissionAgreement {
     id: string;
-    name: string;
-    code: 'vip' | 'standard' | 'balcony';
     commissionRate: number;
     serviceCharge: number;
     description: string;
     isActive: boolean;
-    color: string;
 }
 
 interface PeriodicRental {
     id: string;
     name: string;
     durationMonths: number;
-    discountRate: number;
-    serviceCharge: number;
+    rentalFee: number;
     description: string;
     isActive: boolean;
     popular?: boolean;
-    savings?: number;
 }
 
 // Default data
@@ -84,97 +79,55 @@ const defaultBusinessProfile: BusinessProfile = {
     copyrightText: '© 2024 Theatre Hub Ethiopia. All rights reserved.'
 };
 
-const defaultTicketTypes: TicketType[] = [
-    {
-        id: '1',
-        name: 'VIP',
-        code: 'vip',
-        commissionRate: 10,
-        serviceCharge: 150,
-        description: 'Premium seating with exclusive benefits',
-        isActive: true,
-        color: 'from-yellow-500 to-amber-600'
-    },
-    {
-        id: '2',
-        name: 'Standard',
-        code: 'standard',
-        commissionRate: 8,
-        serviceCharge: 100,
-        description: 'Regular comfortable seating',
-        isActive: true,
-        color: 'from-blue-500 to-cyan-600'
-    },
-    {
-        id: '3',
-        name: 'Balcony',
-        code: 'balcony',
-        commissionRate: 6,
-        serviceCharge: 80,
-        description: 'Upper level seating with great view',
-        isActive: true,
-        color: 'from-purple-500 to-pink-600'
-    }
-];
+const defaultCommissionAgreement: CommissionAgreement = {
+    id: '1',
+    commissionRate: 8,
+    serviceCharge: 100,
+    description: 'Standard commission agreement for all ticket sales',
+    isActive: true
+};
 
 const defaultPeriodicRentals: PeriodicRental[] = [
     {
         id: '1',
-        name: 'Monthly',
+        name: 'Monthly Rental',
         durationMonths: 1,
-        discountRate: 0,
-        serviceCharge: 500,
-        description: '1 month rental period',
+        rentalFee: 6000,
+        description: 'Month-to-month rental agreement for theater space',
         isActive: true
     },
     {
         id: '2',
-        name: '3 Months',
+        name: 'Quarterly Rental',
         durationMonths: 3,
-        discountRate: 5,
-        serviceCharge: 1425,
-        description: 'Save 5% with quarterly rental',
+        rentalFee: 8000,
+        description: '3-month rental agreement for theater space',
         isActive: true,
-        popular: true,
-        savings: 75
+        popular: true
     },
     {
         id: '3',
-        name: '6 Months',
-        durationMonths: 6,
-        discountRate: 10,
-        serviceCharge: 2700,
-        description: 'Save 10% with half-year rental',
-        isActive: true,
-        savings: 300
-    },
-    {
-        id: '4',
-        name: 'Yearly',
+        name: 'Yearly Rental',
         durationMonths: 12,
-        discountRate: 15,
-        serviceCharge: 5100,
-        description: 'Save 15% with annual rental',
-        isActive: true,
-        savings: 900
+        rentalFee: 6000,
+        description: 'Annual rental agreement for theater space',
+        isActive: true
     }
 ];
 
-type TabType = 'business' | 'ticket' | 'rental';
+type TabType = 'business' | 'commission' | 'rental';
 
 const SystemSettings: React.FC = () => {
     const [activeTab, setActiveTab] = useState<TabType>('business');
     const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(defaultBusinessProfile);
-    const [ticketTypes, setTicketTypes] = useState<TicketType[]>(defaultTicketTypes);
+    const [commissionAgreement, setCommissionAgreement] = useState<CommissionAgreement>(defaultCommissionAgreement);
     const [periodicRentals, setPeriodicRentals] = useState<PeriodicRental[]>(defaultPeriodicRentals);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
-    const [editingTicket, setEditingTicket] = useState<TicketType | null>(null);
     const [editingRental, setEditingRental] = useState<PeriodicRental | null>(null);
-    const [showTicketModal, setShowTicketModal] = useState(false);
     const [showRentalModal, setShowRentalModal] = useState(false);
-    const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'ticket' | 'rental'; id: string } | null>(null);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'rental'; id: string } | null>(null);
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [previewLogo, setPreviewLogo] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -255,7 +208,7 @@ const SystemSettings: React.FC = () => {
         
         const settingsData = {
             businessProfile,
-            ticketTypes,
+            commissionAgreement,
             periodicRentals,
             lastUpdated: new Date().toISOString()
         };
@@ -273,7 +226,7 @@ const SystemSettings: React.FC = () => {
 
     const handleResetSettings = () => {
         setBusinessProfile(defaultBusinessProfile);
-        setTicketTypes(defaultTicketTypes);
+        setCommissionAgreement(defaultCommissionAgreement);
         setPeriodicRentals(defaultPeriodicRentals);
         setPreviewLogo(null);
         setPopupMessage({
@@ -284,56 +237,11 @@ const SystemSettings: React.FC = () => {
         setShowSuccessPopup(true);
     };
 
-    // Ticket Type CRUD
-    const handleAddTicket = (ticket: Omit<TicketType, 'id'>) => {
-        const newTicket: TicketType = {
-            ...ticket,
-            id: Date.now().toString()
-        };
-        setTicketTypes([...ticketTypes, newTicket]);
-        setShowTicketModal(false);
-        setPopupMessage({
-            title: 'Ticket Type Added',
-            message: `${ticket.name} ticket type has been added successfully.`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-    };
-
-    const handleUpdateTicket = (ticket: TicketType) => {
-        setTicketTypes(ticketTypes.map(t => t.id === ticket.id ? ticket : t));
-        setEditingTicket(null);
-        setShowTicketModal(false);
-        setPopupMessage({
-            title: 'Ticket Type Updated',
-            message: `${ticket.name} ticket type has been updated successfully.`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-    };
-
-    const handleDeleteTicket = (id: string) => {
-        setTicketTypes(ticketTypes.filter(t => t.id !== id));
-        setShowDeleteConfirm(null);
-        setPopupMessage({
-            title: 'Ticket Type Deleted',
-            message: 'Ticket type has been removed successfully.',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-    };
-
-    // Periodic Rental CRUD
-    const handleAddRental = (rental: Omit<PeriodicRental, 'id' | 'savings'>) => {
-        const basePrice = 500 * rental.durationMonths;
-        const discountAmount = (basePrice * rental.discountRate) / 100;
-        const serviceCharge = basePrice - discountAmount;
-        
+    // Periodic Rental CRUD (No discount)
+    const handleAddRental = (rental: Omit<PeriodicRental, 'id'>) => {
         const newRental: PeriodicRental = {
             ...rental,
-            id: Date.now().toString(),
-            serviceCharge: Math.round(serviceCharge),
-            savings: Math.round(basePrice - serviceCharge)
+            id: Date.now().toString()
         };
         setPeriodicRentals([...periodicRentals, newRental]);
         setShowRentalModal(false);
@@ -368,142 +276,25 @@ const SystemSettings: React.FC = () => {
         setShowSuccessPopup(true);
     };
 
-    // Ticket Modal Component
-    const TicketModal = () => {
-        const [formData, setFormData] = useState<TicketType>(
-            editingTicket || {
-                id: '',
-                name: '',
-                code: 'standard',
-                commissionRate: 8,
-                serviceCharge: 100,
-                description: '',
-                isActive: true,
-                color: 'from-blue-500 to-cyan-600'
-            }
-        );
-
-        const handleSubmit = () => {
-            if (editingTicket) {
-                handleUpdateTicket(formData);
-            } else {
-                handleAddTicket(formData);
-            }
-        };
-
-        return (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-2xl max-w-md w-full shadow-xl"
-                >
-                    <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <Ticket className="h-5 w-5 text-white" />
-                                <h2 className="text-xl font-bold text-white">
-                                    {editingTicket ? 'Edit Ticket Type' : 'Add Ticket Type'}
-                                </h2>
-                            </div>
-                            <button onClick={() => { setShowTicketModal(false); setEditingTicket(null); }} className="p-1 hover:bg-white/20 rounded-lg">
-                                <X className="h-5 w-5 text-white" />
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="p-6 space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Ticket Name</label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                placeholder="e.g., VIP, Standard, Balcony"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Commission Rate (%)</label>
-                            <input
-                                type="number"
-                                value={formData.commissionRate}
-                                onChange={(e) => setFormData({ ...formData, commissionRate: parseFloat(e.target.value) })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                step="0.5"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Service Charge (ETB)</label>
-                            <input
-                                type="number"
-                                value={formData.serviceCharge}
-                                onChange={(e) => setFormData({ ...formData, serviceCharge: parseFloat(e.target.value) })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                rows={2}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                                placeholder="Brief description of this ticket type"
-                            />
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.isActive}
-                                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                                    className="w-4 h-4 text-teal-600 rounded"
-                                />
-                                <span className="text-sm text-gray-700">Active</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div className="border-t px-6 py-4 flex justify-end gap-3">
-                        <button onClick={() => { setShowTicketModal(false); setEditingTicket(null); }} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                        <button onClick={handleSubmit} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save Ticket Type</button>
-                    </div>
-                </motion.div>
-            </div>
-        );
-    };
-
-    // Rental Modal Component
+    // Rental Modal Component (No discount)
     const RentalModal = () => {
         const [formData, setFormData] = useState<PeriodicRental>(
             editingRental || {
                 id: '',
                 name: '',
                 durationMonths: 1,
-                discountRate: 0,
-                serviceCharge: 500,
+                rentalFee: 6000,
                 description: '',
                 isActive: true,
                 popular: false
             }
         );
 
-        const calculateServiceCharge = () => {
-            const basePrice = 500 * formData.durationMonths;
-            const discountAmount = (basePrice * formData.discountRate) / 100;
-            return Math.round(basePrice - discountAmount);
-        };
-
         const handleSubmit = () => {
-            const rentalToSave = {
-                ...formData,
-                serviceCharge: calculateServiceCharge()
-            };
             if (editingRental) {
-                handleUpdateRental(rentalToSave as PeriodicRental);
+                handleUpdateRental(formData);
             } else {
-                handleAddRental(rentalToSave);
+                handleAddRental(formData);
             }
         };
 
@@ -517,9 +308,9 @@ const SystemSettings: React.FC = () => {
                     <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
-                                <Calendar className="h-5 w-5 text-white" />
+                                <FileText className="h-5 w-5 text-white" />
                                 <h2 className="text-xl font-bold text-white">
-                                    {editingRental ? 'Edit Rental Plan' : 'Add Rental Plan'}
+                                    {editingRental ? 'Edit Rental Agreement' : 'Add Rental Agreement'}
                                 </h2>
                             </div>
                             <button onClick={() => { setShowRentalModal(false); setEditingRental(null); }} className="p-1 hover:bg-white/20 rounded-lg">
@@ -530,13 +321,13 @@ const SystemSettings: React.FC = () => {
 
                     <div className="p-6 space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Plan Name</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Agreement Name</label>
                             <input
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                placeholder="e.g., Monthly, 3 Months, Yearly"
+                                placeholder="e.g., Monthly Rental, Quarterly Rental, Yearly Rental"
                             />
                         </div>
                         <div>
@@ -548,26 +339,26 @@ const SystemSettings: React.FC = () => {
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
                                 min="1"
                             />
+                            <p className="text-xs text-gray-500 mt-1">Length of the rental agreement period</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Discount Rate (%)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Rental Fee (ETB)</label>
                             <input
                                 type="number"
-                                value={formData.discountRate}
-                                onChange={(e) => setFormData({ ...formData, discountRate: parseFloat(e.target.value) })}
+                                value={formData.rentalFee}
+                                onChange={(e) => setFormData({ ...formData, rentalFee: parseFloat(e.target.value) })}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                step="0.5"
                             />
-                            <p className="text-xs text-gray-500 mt-1">Calculated price: {formatCurrency(calculateServiceCharge())}</p>
+                            <p className="text-xs text-gray-500 mt-1">Flat rental fee for the entire agreement period</p>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Agreement Description</label>
                             <textarea
                                 value={formData.description}
                                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                 rows={2}
                                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
-                                placeholder="Describe this rental plan"
+                                placeholder="Describe the rental agreement terms"
                             />
                         </div>
                         <div className="flex items-center gap-4">
@@ -578,7 +369,7 @@ const SystemSettings: React.FC = () => {
                                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                                     className="w-4 h-4 text-teal-600 rounded"
                                 />
-                                <span className="text-sm text-gray-700">Active</span>
+                                <span className="text-sm text-gray-700">Active Agreement</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
@@ -594,7 +385,7 @@ const SystemSettings: React.FC = () => {
 
                     <div className="border-t px-6 py-4 flex justify-end gap-3">
                         <button onClick={() => { setShowRentalModal(false); setEditingRental(null); }} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-                        <button onClick={handleSubmit} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save Rental Plan</button>
+                        <button onClick={handleSubmit} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save Agreement</button>
                     </div>
                 </motion.div>
             </div>
@@ -606,11 +397,7 @@ const SystemSettings: React.FC = () => {
         if (!showDeleteConfirm) return null;
         
         const handleConfirm = () => {
-            if (showDeleteConfirm.type === 'ticket') {
-                handleDeleteTicket(showDeleteConfirm.id);
-            } else {
-                handleDeleteRental(showDeleteConfirm.id);
-            }
+            handleDeleteRental(showDeleteConfirm.id);
         };
 
         return (
@@ -620,10 +407,10 @@ const SystemSettings: React.FC = () => {
                         <div className="p-2 bg-red-100 rounded-lg">
                             <Trash2 className="h-6 w-6 text-red-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">Confirm Delete</h3>
+                        <h3 className="text-xl font-bold text-gray-900">Confirm Delete Agreement</h3>
                     </div>
                     <p className="text-gray-600 mb-6">
-                        Are you sure you want to delete this {showDeleteConfirm.type === 'ticket' ? 'ticket type' : 'rental plan'}? This action cannot be undone.
+                        Are you sure you want to delete this rental agreement? This action cannot be undone.
                     </p>
                     <div className="flex gap-3">
                         <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
@@ -645,7 +432,7 @@ const SystemSettings: React.FC = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-                            <p className="text-sm text-gray-500 mt-1">Configure business profile, service charges and rental plans</p>
+                            <p className="text-sm text-gray-500 mt-1">Configure business profile, commission agreements and rental agreements</p>
                         </div>
                     </div>
                 </div>
@@ -662,13 +449,13 @@ const SystemSettings: React.FC = () => {
                         Business Profile
                     </button>
                     <button
-                        onClick={() => setActiveTab('ticket')}
+                        onClick={() => setActiveTab('commission')}
                         className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                            activeTab === 'ticket' ? 'bg-white text-teal-600 shadow-md' : 'text-gray-600 hover:bg-gray-200'
+                            activeTab === 'commission' ? 'bg-white text-teal-600 shadow-md' : 'text-gray-600 hover:bg-gray-200'
                         }`}
                     >
-                        <Ticket className="h-4 w-4" />
-                        Service Charge (Per Ticket)
+                        <Percent className="h-4 w-4" />
+                        Service Charge / Commission Agreement
                     </button>
                     <button
                         onClick={() => setActiveTab('rental')}
@@ -677,7 +464,7 @@ const SystemSettings: React.FC = () => {
                         }`}
                     >
                         <Calendar className="h-4 w-4" />
-                        Periodic Rental
+                        Periodic Rental Agreement
                     </button>
                 </div>
 
@@ -924,73 +711,119 @@ const SystemSettings: React.FC = () => {
                     </motion.div>
                 )}
 
-                {/* Service Charge (Per Ticket) Tab */}
-                {activeTab === 'ticket' && (
+                {/* Service Charge / Commission Agreement Tab - Simplified (No ticket levels) */}
+                {activeTab === 'commission' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Ticket Types & Service Charges</h3>
-                                <p className="text-sm text-gray-500">Configure commission rates and service charges for different ticket types</p>
-                            </div>
-                            <button onClick={() => { setEditingTicket(null); setShowTicketModal(true); }} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
-                                <Plus className="h-4 w-4" /> Add Ticket Type
-                            </button>
+                        <div>
+                            <h3 className="text-lg font-semibold text-gray-900">Commission Agreement</h3>
+                            <p className="text-sm text-gray-500 mt-1">Configure global commission rate for all ticket sales</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ticketTypes.map(ticket => (
-                                <div key={ticket.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                                    <div className={`bg-gradient-to-r ${ticket.color} px-4 py-3`}>
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="text-lg font-bold text-white">{ticket.name}</h4>
-                                            <div className="flex gap-1">
-                                                <button onClick={() => { setEditingTicket(ticket); setShowTicketModal(true); }} className="p-1 hover:bg-white/20 rounded-lg transition">
-                                                    <Edit className="h-4 w-4 text-white" />
-                                                </button>
-                                                <button onClick={() => setShowDeleteConfirm({ type: 'ticket', id: ticket.id })} className="p-1 hover:bg-white/20 rounded-lg transition">
-                                                    <Trash2 className="h-4 w-4 text-white" />
-                                                </button>
-                                            </div>
-                                        </div>
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-2xl">
+                            <div className="space-y-6">
+                                {/* Commission Rate */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Commission Rate (%) <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type="number"
+                                            value={commissionAgreement.commissionRate}
+                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, commissionRate: parseFloat(e.target.value) })}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                            step="0.5"
+                                            min="0"
+                                            max="100"
+                                        />
                                     </div>
-                                    <div className="p-4 space-y-3">
-                                        <div className="flex justify-between items-center py-2 border-b">
-                                            <span className="text-sm text-gray-600">Commission Rate</span>
-                                            <span className="font-semibold text-gray-900">{ticket.commissionRate}%</span>
-                                        </div>
-                                        <div className="flex justify-between items-center py-2 border-b">
-                                            <span className="text-sm text-gray-600">Service Charge</span>
-                                            <span className="font-semibold text-teal-600">{formatCurrency(ticket.serviceCharge)}</span>
-                                        </div>
-                                        <div className="py-2">
-                                            <span className="text-sm text-gray-600">Description</span>
-                                            <p className="text-sm text-gray-500 mt-1">{ticket.description}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 pt-2">
-                                            <div className={`w-2 h-2 rounded-full ${ticket.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                                            <span className="text-xs text-gray-500">{ticket.isActive ? 'Active' : 'Inactive'}</span>
-                                        </div>
-                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Percentage charged per ticket sold</p>
                                 </div>
-                            ))}
+
+                                {/* Service Charge */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Service Charge (ETB) <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">ETB</span>
+                                        <input
+                                            type="number"
+                                            value={commissionAgreement.serviceCharge}
+                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, serviceCharge: parseFloat(e.target.value) })}
+                                            className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                            step="1"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">Fixed service charge added to each ticket</p>
+                                </div>
+
+                                {/* Description */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Agreement Description
+                                    </label>
+                                    <textarea
+                                        value={commissionAgreement.description}
+                                        onChange={(e) => setCommissionAgreement({ ...commissionAgreement, description: e.target.value })}
+                                        rows={3}
+                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
+                                        placeholder="Describe the commission agreement terms"
+                                    />
+                                </div>
+
+                                {/* Status */}
+                                <div className="flex items-center gap-3">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={commissionAgreement.isActive}
+                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, isActive: e.target.checked })}
+                                            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
+                                        />
+                                        <span className="text-sm text-gray-700">Active Agreement</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Information Box */}
+                        <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
+                            <div className="flex items-start gap-3">
+                                <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-semibold text-blue-800">Commission Agreement Terms</p>
+                                    <p className="text-xs text-blue-600 mt-1">
+                                        Theater owners agree to pay commission based on ticket sales. 
+                                        Commission is calculated automatically on each ticket sold and deducted from settlements.
+                                        The service charge is added to each ticket price.
+                                    </p>
+                                    <p className="text-xs text-blue-600 mt-2">
+                                        <strong>Current Agreement:</strong> {commissionAgreement.commissionRate}% commission + ETB {commissionAgreement.serviceCharge.toLocaleString()} service charge per ticket.
+                                        {!commissionAgreement.isActive && " (Currently Inactive)"}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
                 )}
 
-                {/* Periodic Rental Tab */}
+                {/* Periodic Rental Agreement Tab */}
                 {activeTab === 'rental' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                         <div className="flex justify-between items-center">
                             <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Periodic Rental Plans</h3>
-                                <p className="text-sm text-gray-500">Configure rental plans with expiration and pricing</p>
+                                <h3 className="text-lg font-semibold text-gray-900">Periodic Rental Agreements</h3>
+                                <p className="text-sm text-gray-500">Configure rental agreements based on theater owner's selection</p>
                             </div>
                             <button onClick={() => { setEditingRental(null); setShowRentalModal(true); }} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
-                                <Plus className="h-4 w-4" /> Add Rental Plan
+                                <Plus className="h-4 w-4" /> Add Rental Agreement
                             </button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {periodicRentals.map(rental => (
                                 <div key={rental.id} className={`bg-white rounded-2xl shadow-lg border overflow-hidden relative ${rental.popular ? 'ring-2 ring-yellow-400' : 'border-gray-100'}`}>
                                     {rental.popular && (
@@ -1013,8 +846,8 @@ const SystemSettings: React.FC = () => {
                                     </div>
                                     <div className="p-4 space-y-3">
                                         <div className="text-center py-2">
-                                            <p className="text-3xl font-bold text-teal-600">{formatCurrency(rental.serviceCharge)}</p>
-                                            <p className="text-xs text-gray-500">for {rental.durationMonths} month{rental.durationMonths > 1 ? 's' : ''}</p>
+                                            <p className="text-3xl font-bold text-teal-600">{formatCurrency(rental.rentalFee)}</p>
+                                            <p className="text-xs text-gray-500">for {rental.durationMonths} month{rental.durationMonths > 1 ? 's' : ''} period</p>
                                         </div>
                                         <div className="space-y-2">
                                             <div className="flex justify-between items-center py-2 border-b">
@@ -1022,26 +855,35 @@ const SystemSettings: React.FC = () => {
                                                 <span className="font-semibold text-gray-900">{rental.durationMonths} Months</span>
                                             </div>
                                             <div className="flex justify-between items-center py-2 border-b">
-                                                <span className="text-sm text-gray-600">Discount Rate</span>
-                                                <span className="font-semibold text-green-600">{rental.discountRate}% OFF</span>
+                                                <span className="text-sm text-gray-600">Rental Fee</span>
+                                                <span className="font-semibold text-teal-600">{formatCurrency(rental.rentalFee)}</span>
                                             </div>
-                                            {rental.savings && rental.savings > 0 && (
-                                                <div className="flex justify-between items-center py-2 border-b">
-                                                    <span className="text-sm text-gray-600">You Save</span>
-                                                    <span className="font-semibold text-green-600">{formatCurrency(rental.savings)}</span>
-                                                </div>
-                                            )}
                                             <div className="py-2">
-                                                <p className="text-sm text-gray-500">{rental.description}</p>
+                                                <span className="text-sm text-gray-600">Agreement Terms</span>
+                                                <p className="text-sm text-gray-500 mt-1">{rental.description}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 pt-2">
                                             <div className={`w-2 h-2 rounded-full ${rental.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                                            <span className="text-xs text-gray-500">{rental.isActive ? 'Available' : 'Unavailable'}</span>
+                                            <span className="text-xs text-gray-500">{rental.isActive ? 'Available for Selection' : 'Unavailable'}</span>
                                         </div>
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Information Box */}
+                        <div className="bg-purple-50 rounded-2xl p-5 border border-purple-200">
+                            <div className="flex items-start gap-3">
+                                <Calendar className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-sm font-semibold text-purple-800">Periodic Rental Agreement Terms</p>
+                                    <p className="text-xs text-purple-600 mt-1">
+                                        Theater owners can select a rental agreement based on their preference. 
+                                        The rental fee is charged as a one-time payment for the selected period.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -1058,7 +900,6 @@ const SystemSettings: React.FC = () => {
             </div>
 
             {/* Modals */}
-            {showTicketModal && <TicketModal />}
             {showRentalModal && <RentalModal />}
             {showDeleteConfirm && <DeleteConfirmModal />}
 
