@@ -32,6 +32,8 @@ import {
   FileSignature,
   AlertTriangle,
   Check,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // ============================================
@@ -44,10 +46,10 @@ interface FormData {
   ownerEmail: string;
   ownerPhone: string;
   ownerPassword: string;
+  ownerConfirmPassword: string;
 
   // Step 2: Theater Information
   theaterName: string;
-  theaterDescription: string;
   businessType: string;
   businessLicenseNumber: string;
   taxId: string;
@@ -55,6 +57,7 @@ interface FormData {
   city: string;
   region: string;
   fullAddress: string;
+  theaterDescription: string;
 
   // Step 3: Documents
   documents: {
@@ -74,39 +77,31 @@ interface Errors {
   [key: string]: string;
 }
 
-// ============================================
-// CONSTANTS
-// ============================================
+// City-Region mapping
+const CITY_REGION_MAP: Record<string, string[]> = {
+  Oromia: ["Adama", "Jimma", "Bishoftu", "Ambo", "Shashamane", "Nekemte"],
+  Amhara: ["Gondar", "Bahir Dar", "Dessie", "Debre Markos", "Lalibela"],
+  Tigray: ["Mekelle", "Adwa", "Axum", "Shire"],
+  Sidama: ["Hawassa", "Yirgalem", "Wendo"],
+  Somali: ["Jijiga", "Gode", "Kebri Dahar"],
+  Harari: ["Harar"],
+  "Addis Ababa": ["Addis Ababa"],
+  "Dire Dawa": ["Dire Dawa"],
+  Afar: ["Semera", "Asayita"],
+  "Benishangul-Gumuz": ["Assosa", "Metekel"],
+  Gambela: ["Gambela"],
+  "South West Ethiopia": ["Bonga", "Mizan Teferi"],
+  "Southern Nations": ["Arba Minch", "Sodo", "Wolaita Sodo"],
+};
 
-const CITIES = [
-  "Addis Ababa",
-  "Gondar",
-  "Jimma",
-  "Harar",
-  "Adama",
-  "Dessie",
-  "Arba Minch",
-  "Jijiga",
-  "Bahir Dar",
-  "Hawassa",
-  "Mekelle",
-  "Dire Dawa",
-];
-const REGIONS = [
-  "Addis Ababa",
-  "Afar",
-  "Amhara",
-  "Benishangul-Gumuz",
-  "Dire Dawa",
-  "Gambela",
-  "Harari",
-  "Oromia",
-  "Sidama",
-  "Somali",
-  "South West Ethiopia",
-  "Southern Nations",
-  "Tigray",
-];
+// Get cities based on selected region
+const getCitiesForRegion = (region: string): string[] => {
+  return CITY_REGION_MAP[region] || [];
+};
+
+// All regions for selection
+const REGIONS = Object.keys(CITY_REGION_MAP);
+
 const BUSINESS_TYPES = [
   "Sole Proprietorship",
   "Partnership",
@@ -183,7 +178,6 @@ const StepIndicator: React.FC<{
   return (
     <div className="w-full max-w-3xl mx-auto mb-12">
       <div className="relative flex justify-between">
-        {/* Background line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 -z-0" />
 
         {steps.map((step, idx) => {
@@ -196,7 +190,6 @@ const StepIndicator: React.FC<{
               key={step.number}
               className="flex flex-col items-center flex-1 relative z-10"
             >
-              {/* Step Circle */}
               <div
                 className={`
                   w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
@@ -211,8 +204,6 @@ const StepIndicator: React.FC<{
                   <Icon className={`h-5 w-5 ${isActive ? "text-white" : ""}`} />
                 )}
               </div>
-
-              {/* Step Label */}
               <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
                 <span
                   className={`
@@ -228,6 +219,98 @@ const StepIndicator: React.FC<{
           );
         })}
       </div>
+    </div>
+  );
+};
+
+// ============================================
+// PASSWORD INPUT COMPONENT
+// ============================================
+
+const PasswordInput: React.FC<{
+  name: string;
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  error?: string;
+  label: string;
+}> = ({ name, value, onChange, placeholder, error, label }) => {
+  const [showPassword, setShowPassword] = useState(false);
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+        {label} <span className="text-red-500">*</span>
+      </label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type={showPassword ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full pl-10 pr-12 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+          placeholder={placeholder}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+        >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" />
+          ) : (
+            <Eye className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+};
+
+// ============================================
+// PHONE INPUT COMPONENT
+// ============================================
+
+const PhoneInput: React.FC<{
+  value: string;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  error?: string;
+}> = ({ value, onChange, error }) => {
+  const handlePhoneChange = (e: ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    // Allow only + and numbers
+    if (val === "" || (val.startsWith("+") && /^\+?[0-9]*$/.test(val))) {
+      onChange({
+        ...e,
+        target: { ...e.target, value: val, name: "ownerPhone" },
+      });
+    } else if (/^[0-9]*$/.test(val)) {
+      onChange({
+        ...e,
+        target: { ...e.target, value: val, name: "ownerPhone" },
+      });
+    }
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+        Phone Number <span className="text-red-500">*</span>
+      </label>
+      <div className="relative">
+        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type="tel"
+          name="ownerPhone"
+          value={value}
+          onChange={handlePhoneChange}
+          className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+          placeholder="+251 XXX XXX XXX"
+        />
+      </div>
+      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
     </div>
   );
 };
@@ -249,8 +332,8 @@ const TheaterRegistration: React.FC = () => {
     ownerEmail: "",
     ownerPhone: "",
     ownerPassword: "",
+    ownerConfirmPassword: "",
     theaterName: "",
-    theaterDescription: "",
     businessType: "",
     businessLicenseNumber: "",
     taxId: "",
@@ -258,6 +341,7 @@ const TheaterRegistration: React.FC = () => {
     city: "",
     region: "",
     fullAddress: "",
+    theaterDescription: "",
     documents: {
       businessLicense: null,
       taxCertificate: null,
@@ -276,6 +360,11 @@ const TheaterRegistration: React.FC = () => {
     { number: 4, title: "Pricing & Terms", icon: FileSignature },
   ];
 
+  // Get available cities based on selected region
+  const availableCities = formData.region
+    ? getCitiesForRegion(formData.region)
+    : [];
+
   const handleInputChange = useCallback(
     (
       e: ChangeEvent<
@@ -284,10 +373,17 @@ const TheaterRegistration: React.FC = () => {
     ) => {
       const { name, value, type } = e.target;
       const checked = (e.target as HTMLInputElement).checked;
+
       setFormData((prev) => ({
         ...prev,
         [name]: type === "checkbox" ? checked : value,
       }));
+
+      // Clear city when region changes
+      if (name === "region") {
+        setFormData((prev) => ({ ...prev, city: "" }));
+      }
+
       if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
       if (duplicateError) setDuplicateError(null);
     },
@@ -330,11 +426,13 @@ const TheaterRegistration: React.FC = () => {
         newErrors.ownerPassword = "Password is required";
       else if (formData.ownerPassword.length < 6)
         newErrors.ownerPassword = "Password must be at least 6 characters";
+      if (!formData.ownerConfirmPassword.trim())
+        newErrors.ownerConfirmPassword = "Please confirm your password";
+      else if (formData.ownerPassword !== formData.ownerConfirmPassword)
+        newErrors.ownerConfirmPassword = "Passwords do not match";
     } else if (step === 2) {
       if (!formData.theaterName.trim())
         newErrors.theaterName = "Theater name is required";
-      if (!formData.theaterDescription.trim())
-        newErrors.theaterDescription = "Theater description is required";
       if (!formData.businessType)
         newErrors.businessType = "Business type is required";
       if (!formData.businessLicenseNumber.trim())
@@ -342,10 +440,18 @@ const TheaterRegistration: React.FC = () => {
       if (!formData.taxId.trim()) newErrors.taxId = "Tax ID is required";
       if (!formData.yearsInOperation)
         newErrors.yearsInOperation = "Years in operation is required";
-      if (!formData.city) newErrors.city = "City is required";
       if (!formData.region) newErrors.region = "Region is required";
+      if (!formData.city) newErrors.city = "City is required";
+      else if (
+        availableCities.length > 0 &&
+        !availableCities.includes(formData.city)
+      ) {
+        newErrors.city = `"${formData.city}" is not a valid city for the selected region. Please select from the list.`;
+      }
       if (!formData.fullAddress.trim())
         newErrors.fullAddress = "Full address is required";
+      if (!formData.theaterDescription.trim())
+        newErrors.theaterDescription = "Theater description is required";
     } else if (step === 3) {
       if (!formData.documents.businessLicense)
         newErrors.businessLicense = "Business license is required";
@@ -366,7 +472,7 @@ const TheaterRegistration: React.FC = () => {
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [step, formData]);
+  }, [step, formData, availableCities]);
 
   const handleNext = useCallback(() => {
     if (validateStep()) setStep((prev) => prev + 1);
@@ -673,49 +779,35 @@ const TheaterRegistration: React.FC = () => {
             <p className="text-xs text-red-500 mt-1">{errors.ownerEmail}</p>
           )}
         </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            Phone Number <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="tel"
-              name="ownerPhone"
-              value={formData.ownerPhone}
-              onChange={handleInputChange}
-              className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
-              placeholder="+251 XXX XXX XXX"
-            />
-          </div>
-          {errors.ownerPhone && (
-            <p className="text-xs text-red-500 mt-1">{errors.ownerPhone}</p>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            Password <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="password"
-              name="ownerPassword"
-              value={formData.ownerPassword}
-              onChange={handleInputChange}
-              className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
-              placeholder="Create a password (min 6 characters)"
-            />
-          </div>
-          {errors.ownerPassword && (
-            <p className="text-xs text-red-500 mt-1">{errors.ownerPassword}</p>
-          )}
-        </div>
+
+        <PhoneInput
+          value={formData.ownerPhone}
+          onChange={handleInputChange}
+          error={errors.ownerPhone}
+        />
+
+        <PasswordInput
+          name="ownerPassword"
+          value={formData.ownerPassword}
+          onChange={handleInputChange}
+          placeholder="Create a password (min 6 characters)"
+          error={errors.ownerPassword}
+          label="Password"
+        />
+
+        <PasswordInput
+          name="ownerConfirmPassword"
+          value={formData.ownerConfirmPassword}
+          onChange={handleInputChange}
+          placeholder="Confirm your password"
+          error={errors.ownerConfirmPassword}
+          label="Confirm Password"
+        />
       </div>
     </div>
   );
 
-  // Step 2: Theater Information
+  // Step 2: Theater Information (Description at the end)
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -747,25 +839,6 @@ const TheaterRegistration: React.FC = () => {
           />
           {errors.theaterName && (
             <p className="text-xs text-red-500 mt-1">{errors.theaterName}</p>
-          )}
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            Theater Description <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="theaterDescription"
-            rows={3}
-            value={formData.theaterDescription}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white resize-none transition-all"
-            placeholder="Describe your theater, facilities, seating capacity, etc."
-          />
-          {errors.theaterDescription && (
-            <p className="text-xs text-red-500 mt-1">
-              {errors.theaterDescription}
-            </p>
           )}
         </div>
 
@@ -853,28 +926,6 @@ const TheaterRegistration: React.FC = () => {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-            City <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="city"
-            value={formData.city}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all"
-          >
-            <option value="">Select City</option>
-            {CITIES.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-          {errors.city && (
-            <p className="text-xs text-red-500 mt-1">{errors.city}</p>
-          )}
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
             Region <span className="text-red-500">*</span>
           </label>
           <select
@@ -895,6 +946,31 @@ const TheaterRegistration: React.FC = () => {
           )}
         </div>
 
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            City <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="city"
+            value={formData.city}
+            onChange={handleInputChange}
+            disabled={!formData.region}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">
+              {formData.region ? "Select City" : "Select Region First"}
+            </option>
+            {availableCities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {errors.city && (
+            <p className="text-xs text-red-500 mt-1">{errors.city}</p>
+          )}
+        </div>
+
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
             Full Address <span className="text-red-500">*</span>
@@ -911,11 +987,30 @@ const TheaterRegistration: React.FC = () => {
             <p className="text-xs text-red-500 mt-1">{errors.fullAddress}</p>
           )}
         </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Theater Description <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="theaterDescription"
+            rows={4}
+            value={formData.theaterDescription}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white resize-none transition-all"
+            placeholder="Describe your theater, facilities, seating capacity, etc."
+          />
+          {errors.theaterDescription && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.theaterDescription}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 
-  // Step 3: Document Upload
+  // Step 3: Document Upload (same as before)
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -933,7 +1028,6 @@ const TheaterRegistration: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Business License */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.businessLicense ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -988,7 +1082,6 @@ const TheaterRegistration: React.FC = () => {
           )}
         </div>
 
-        {/* Tax Certificate */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.taxCertificate ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -1042,7 +1135,6 @@ const TheaterRegistration: React.FC = () => {
           )}
         </div>
 
-        {/* Owner ID Card */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.ownerIdCard ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -1118,7 +1210,7 @@ const TheaterRegistration: React.FC = () => {
     </div>
   );
 
-  // Step 4: Pricing & Terms
+  // Step 4: Pricing & Terms (same as before)
   const renderStep4 = () => {
     const getPlanPrice = (plan: string) => {
       if (plan === "monthly") return "6,000 ETB";
@@ -1386,7 +1478,6 @@ const TheaterRegistration: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center h-20 w-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
             <Theater className="h-10 w-10 text-white" />
@@ -1399,10 +1490,8 @@ const TheaterRegistration: React.FC = () => {
           </p>
         </div>
 
-        {/* Step Indicator - Now properly centered */}
         <StepIndicator currentStep={step} steps={steps} />
 
-        {/* Form Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -1417,7 +1506,6 @@ const TheaterRegistration: React.FC = () => {
             {step === 3 && renderStep3()}
             {step === 4 && renderStep4()}
 
-            {/* Duplicate Error Display */}
             {duplicateError && (
               <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
                 <div className="flex items-start gap-3">
@@ -1445,7 +1533,6 @@ const TheaterRegistration: React.FC = () => {
               </div>
             )}
 
-            {/* Navigation Buttons */}
             <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
               {step > 1 && (
                 <button
