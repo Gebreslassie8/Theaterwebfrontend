@@ -167,6 +167,16 @@ const CONTRACT_TYPES = [
   },
 ];
 
+// Business type mapping for owners table
+const BUSINESS_TYPE_MAP: Record<string, string> = {
+  "Sole Proprietorship": "sole_proprietorship",
+  Partnership: "partnership",
+  LLC: "llc",
+  Corporation: "corporation",
+  "Non-Profit": "non_profit",
+  Government: "government",
+};
+
 // ============================================
 // STEP INDICATOR COMPONENT
 // ============================================
@@ -481,11 +491,12 @@ const TheaterRegistration: React.FC = () => {
 
   // Check for duplicates before submission
   const checkDuplicates = useCallback(async () => {
+    // Use maybeSingle to avoid 406 errors when no records exist
     const { data: existingUser } = await supabase
       .from("users")
       .select("email")
       .eq("email", formData.ownerEmail)
-      .single();
+      .maybeSingle();
 
     if (existingUser) {
       throw new Error(
@@ -497,7 +508,7 @@ const TheaterRegistration: React.FC = () => {
       .from("users")
       .select("phone")
       .eq("phone", formData.ownerPhone)
-      .single();
+      .maybeSingle();
 
     if (existingPhone) {
       throw new Error(
@@ -509,7 +520,7 @@ const TheaterRegistration: React.FC = () => {
       .from("theaters")
       .select("business_license_number")
       .eq("business_license_number", formData.businessLicenseNumber)
-      .single();
+      .maybeSingle();
 
     if (existingLicense) {
       throw new Error(
@@ -521,7 +532,7 @@ const TheaterRegistration: React.FC = () => {
       .from("theaters")
       .select("tax_id")
       .eq("tax_id", formData.taxId)
-      .single();
+      .maybeSingle();
 
     if (existingTaxId) {
       throw new Error(`Tax ID "${formData.taxId}" is already registered.`);
@@ -534,7 +545,7 @@ const TheaterRegistration: React.FC = () => {
   const createRegistration = useCallback(async () => {
     await checkDuplicates();
 
-    // Create user
+    // Create user with password stored in users table
     const userId = crypto.randomUUID();
     const { error: userError } = await supabase.from("users").insert({
       id: userId,
@@ -543,81 +554,95 @@ const TheaterRegistration: React.FC = () => {
       full_name: formData.ownerFullName,
       role: "theater_owner",
       status: "active",
+      password: formData.ownerPassword, // Store password in users table
     });
 
-    if (userError)
+    if (userError) {
+      console.error("User insert error:", userError);
+      if (userError.code === "23505") {
+        if (userError.message.includes("email")) {
+          throw new Error(
+            `Email "${formData.ownerEmail}" is already registered.`,
+          );
+        }
+        if (userError.message.includes("phone")) {
+          throw new Error(
+            `Phone number "${formData.ownerPhone}" is already registered.`,
+          );
+        }
+      }
       throw new Error(`Failed to create owner account: ${userError.message}`);
+    }
 
-    // Create owner record
+    // Create owner record with mapped business type
     const ownerId = crypto.randomUUID();
+    const mappedBusinessType =
+      BUSINESS_TYPE_MAP[formData.businessType] || "sole_proprietorship";
+
     const { error: ownerError } = await supabase.from("owners").insert({
       id: ownerId,
       user_id: userId,
       business_name: formData.theaterName,
-      business_type: formData.businessType.toLowerCase().replace(/\s/g, "_"),
+      business_type: mappedBusinessType,
       years_of_experience: parseInt(formData.yearsInOperation) || 0,
       city: formData.city,
       physical_address: formData.fullAddress,
       verification_status: "pending",
     });
 
-    if (ownerError)
+    if (ownerError) {
+      console.error("Owner insert error:", ownerError);
       throw new Error(`Failed to create owner record: ${ownerError.message}`);
+    }
 
-    // Upload documents
+    // Upload documents to respective buckets
     const theaterId = crypto.randomUUID();
     let licenseDocUrl = null,
       taxDocUrl = null,
-      ownerIdUrl = null;
+      ownerIdCardUrl = null;
 
+    // Upload Business License to "documents" bucket
     if (formData.documents.businessLicense) {
       const fileExt = formData.documents.businessLicense.name.split(".").pop();
+      const fileName = `${theaterId}_license.${fileExt}`;
       const { error } = await supabase.storage
         .from("documents")
-        .upload(
-          `${theaterId}_license.${fileExt}`,
-          formData.documents.businessLicense,
-        );
+        .upload(fileName, formData.documents.businessLicense);
       if (!error) {
         const {
           data: { publicUrl },
-        } = supabase.storage
-          .from("documents")
-          .getPublicUrl(`${theaterId}_license.${fileExt}`);
+        } = supabase.storage.from("documents").getPublicUrl(fileName);
         licenseDocUrl = publicUrl;
       }
     }
 
+    // Upload Tax Certificate to "documents" bucket
     if (formData.documents.taxCertificate) {
       const fileExt = formData.documents.taxCertificate.name.split(".").pop();
+      const fileName = `${theaterId}_tax.${fileExt}`;
       const { error } = await supabase.storage
         .from("documents")
-        .upload(
-          `${theaterId}_tax.${fileExt}`,
-          formData.documents.taxCertificate,
-        );
+        .upload(fileName, formData.documents.taxCertificate);
       if (!error) {
         const {
           data: { publicUrl },
-        } = supabase.storage
-          .from("documents")
-          .getPublicUrl(`${theaterId}_tax.${fileExt}`);
+        } = supabase.storage.from("documents").getPublicUrl(fileName);
         taxDocUrl = publicUrl;
       }
     }
 
+    // Upload Owner ID Card to "owners_id_cards" bucket
     if (formData.documents.ownerIdCard) {
       const fileExt = formData.documents.ownerIdCard.name.split(".").pop();
+      const fileName = `${ownerId}_id.${fileExt}`;
       const { error } = await supabase.storage
-        .from("documents")
-        .upload(`${ownerId}_id.${fileExt}`, formData.documents.ownerIdCard);
+        .from("owners_id_cards")
+        .upload(fileName, formData.documents.ownerIdCard);
       if (!error) {
         const {
           data: { publicUrl },
-        } = supabase.storage
-          .from("documents")
-          .getPublicUrl(`${ownerId}_id.${fileExt}`);
-        ownerIdUrl = publicUrl;
+        } = supabase.storage.from("owners_id_cards").getPublicUrl(fileName);
+        ownerIdCardUrl = publicUrl;
       }
     }
 
@@ -643,6 +668,7 @@ const TheaterRegistration: React.FC = () => {
     });
 
     if (theaterError) {
+      console.error("Theater insert error:", theaterError);
       if (theaterError.code === "23505") {
         if (theaterError.message.includes("business_license_number")) {
           throw new Error(
@@ -656,7 +682,15 @@ const TheaterRegistration: React.FC = () => {
       throw new Error(`Failed to create theater: ${theaterError.message}`);
     }
 
-    // Create contract
+    // Update owners table with ID card URL
+    if (ownerIdCardUrl) {
+      await supabase
+        .from("owners")
+        .update({ national_id_url: ownerIdCardUrl })
+        .eq("id", ownerId);
+    }
+
+    // Create contract in owners_contracts table
     const contractNumber = `CTR-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     let basePrice = 0;
     let paymentFrequency = null;
@@ -674,24 +708,35 @@ const TheaterRegistration: React.FC = () => {
       commissionRate = 0;
     }
 
-    await supabase.from("owners_contracts").insert({
-      owner_id: ownerId,
-      theater_id: theaterId,
-      contract_number: contractNumber,
-      contract_type:
-        formData.pricingModel === "per_ticket" ? "per_ticket" : "subscription",
-      subscription_plan:
-        formData.pricingModel === "subscription" ? formData.contractType : null,
-      base_price: basePrice,
-      discounted_price: null,
-      discount_percent: 0,
-      commission_rate: commissionRate,
-      contract_start_date: new Date().toISOString().split("T")[0],
-      payment_frequency: paymentFrequency,
-      payment_status: "pending",
-      status: "active",
-      terms_accepted_at: new Date().toISOString(),
-    });
+    const { error: contractError } = await supabase
+      .from("owners_contracts")
+      .insert({
+        owner_id: ownerId,
+        theater_id: theaterId,
+        contract_number: contractNumber,
+        contract_type:
+          formData.pricingModel === "per_ticket"
+            ? "per_ticket"
+            : "subscription",
+        subscription_plan:
+          formData.pricingModel === "subscription"
+            ? formData.contractType
+            : null,
+        base_price: basePrice,
+        discounted_price: null,
+        discount_percent: 0,
+        commission_rate: commissionRate,
+        contract_start_date: new Date().toISOString().split("T")[0],
+        payment_frequency: paymentFrequency,
+        payment_status: "pending",
+        status: "active",
+        terms_accepted_at: new Date().toISOString(),
+      });
+
+    if (contractError) {
+      console.error("Contract insert error:", contractError);
+      // Don't throw - contract is optional
+    }
 
     return { userId, ownerId, theaterId, contractNumber };
   }, [formData, checkDuplicates]);
@@ -807,7 +852,7 @@ const TheaterRegistration: React.FC = () => {
     </div>
   );
 
-  // Step 2: Theater Information (Description at the end)
+  // Step 2: Theater Information
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -1010,7 +1055,7 @@ const TheaterRegistration: React.FC = () => {
     </div>
   );
 
-  // Step 3: Document Upload (same as before)
+  // Step 3: Document Upload
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
@@ -1028,6 +1073,7 @@ const TheaterRegistration: React.FC = () => {
       </div>
 
       <div className="space-y-4">
+        {/* Business License */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.businessLicense ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -1082,6 +1128,7 @@ const TheaterRegistration: React.FC = () => {
           )}
         </div>
 
+        {/* Tax Certificate */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.taxCertificate ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -1135,6 +1182,7 @@ const TheaterRegistration: React.FC = () => {
           )}
         </div>
 
+        {/* Owner ID Card */}
         <div
           className={`border-2 rounded-2xl p-5 transition-all ${errors.ownerIdCard ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
         >
@@ -1210,7 +1258,7 @@ const TheaterRegistration: React.FC = () => {
     </div>
   );
 
-  // Step 4: Pricing & Terms (same as before)
+  // Step 4: Pricing & Terms
   const renderStep4 = () => {
     const getPlanPrice = (plan: string) => {
       if (plan === "monthly") return "6,000 ETB";
