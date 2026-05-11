@@ -1,12 +1,6 @@
 // Frontend/src/components/theater/TheaterRegistration.tsx
 import supabase from "@/config/supabaseClient";
-import React, {
-  useState,
-  useRef,
-  ChangeEvent,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useRef, ChangeEvent, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
@@ -34,6 +28,10 @@ import {
   Award,
   Star,
   UserPlus,
+  User,
+  FileSignature,
+  AlertTriangle,
+  Check,
 } from "lucide-react";
 
 // ============================================
@@ -41,9 +39,15 @@ import {
 // ============================================
 
 interface FormData {
-  businessName: string;
-  email: string;
-  phone: string;
+  // Step 1: Owner Account
+  ownerFullName: string;
+  ownerEmail: string;
+  ownerPhone: string;
+  ownerPassword: string;
+
+  // Step 2: Theater Information
+  theaterName: string;
+  theaterDescription: string;
   businessType: string;
   businessLicenseNumber: string;
   taxId: string;
@@ -51,18 +55,19 @@ interface FormData {
   city: string;
   region: string;
   fullAddress: string;
+
+  // Step 3: Documents
   documents: {
     businessLicense: File | null;
     taxCertificate: File | null;
+    ownerIdCard: File | null;
   };
+
+  // Step 4: Pricing & Terms
   pricingModel: string;
   contractType: string;
-  isNewTheater: boolean;
-  paymentCompleted: boolean;
-  paymentIntentId: string;
-  // Owner information
-  ownerFullName: string;
-  ownerPassword: string;
+  agreedToTerms: boolean;
+  agreedToNoRefund: boolean;
 }
 
 interface Errors {
@@ -125,22 +130,20 @@ const PRICING_MODELS = [
     description: "Pay commission per ticket sold",
     icon: Ticket,
     rate: "5-10% commission per ticket",
-    bestFor: "New or low-volume theaters",
   },
   {
-    id: "contract",
-    name: "Contract Plan",
+    id: "subscription",
+    name: "Subscription Plan",
     description: "Fixed monthly subscription",
     icon: Calendar,
     rate: "Starting from 6,000 ETB/month",
-    bestFor: "High-volume theaters",
   },
 ];
 
 const CONTRACT_TYPES = [
   {
     id: "monthly",
-    name: "Monthly",
+    name: "Monthly Plan",
     icon: Calendar,
     basePrice: 6000,
     features: [
@@ -151,24 +154,83 @@ const CONTRACT_TYPES = [
   },
   {
     id: "quarterly",
-    name: "Quarterly",
+    name: "Quarterly Plan",
     icon: Award,
     basePrice: 8000,
     features: ["Save 15% vs monthly", "Priority support", "Marketing tools"],
   },
   {
     id: "yearly",
-    name: "Yearly",
+    name: "Yearly Plan",
     icon: Star,
     basePrice: 6000,
     features: [
       "Save 30% vs monthly",
       "24/7 dedicated support",
       "Advanced analytics",
-      "Feature updates",
     ],
   },
 ];
+
+// ============================================
+// STEP INDICATOR COMPONENT
+// ============================================
+
+const StepIndicator: React.FC<{
+  currentStep: number;
+  steps: { number: number; title: string; icon: React.ElementType }[];
+}> = ({ currentStep, steps }) => {
+  return (
+    <div className="w-full max-w-3xl mx-auto mb-12">
+      <div className="relative flex justify-between">
+        {/* Background line */}
+        <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200 dark:bg-gray-700 -z-0" />
+
+        {steps.map((step, idx) => {
+          const Icon = step.icon;
+          const isCompleted = currentStep > step.number;
+          const isActive = currentStep === step.number;
+
+          return (
+            <div
+              key={step.number}
+              className="flex flex-col items-center flex-1 relative z-10"
+            >
+              {/* Step Circle */}
+              <div
+                className={`
+                  w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300
+                  ${isCompleted ? "bg-teal-600 text-white shadow-lg" : ""}
+                  ${isActive ? "bg-teal-600 text-white ring-4 ring-teal-200 dark:ring-teal-800 shadow-lg" : ""}
+                  ${!isCompleted && !isActive ? "bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400" : ""}
+                `}
+              >
+                {isCompleted ? (
+                  <Check className="h-5 w-5" />
+                ) : (
+                  <Icon className={`h-5 w-5 ${isActive ? "text-white" : ""}`} />
+                )}
+              </div>
+
+              {/* Step Label */}
+              <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                <span
+                  className={`
+                  text-xs font-medium transition-all duration-300
+                  ${isActive ? "text-teal-600 dark:text-teal-400" : ""}
+                  ${isCompleted ? "text-teal-600 dark:text-teal-400" : "text-gray-500 dark:text-gray-400"}
+                `}
+                >
+                  {step.title}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 // ============================================
 // MAIN COMPONENT
@@ -178,16 +240,17 @@ const TheaterRegistration: React.FC = () => {
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [agreedToNoRefund, setAgreedToNoRefund] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
-  const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+  const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const [formData, setFormData] = useState<FormData>({
-    businessName: "",
-    email: "",
-    phone: "",
+    ownerFullName: "",
+    ownerEmail: "",
+    ownerPhone: "",
+    ownerPassword: "",
+    theaterName: "",
+    theaterDescription: "",
     businessType: "",
     businessLicenseNumber: "",
     taxId: "",
@@ -195,15 +258,23 @@ const TheaterRegistration: React.FC = () => {
     city: "",
     region: "",
     fullAddress: "",
-    documents: { businessLicense: null, taxCertificate: null },
+    documents: {
+      businessLicense: null,
+      taxCertificate: null,
+      ownerIdCard: null,
+    },
     pricingModel: "",
     contractType: "",
-    isNewTheater: false,
-    paymentCompleted: false,
-    paymentIntentId: "",
-    ownerFullName: "",
-    ownerPassword: "",
+    agreedToTerms: false,
+    agreedToNoRefund: false,
   });
+
+  const steps = [
+    { number: 1, title: "Owner Account", icon: UserPlus },
+    { number: 2, title: "Theater Info", icon: Theater },
+    { number: 3, title: "Documents", icon: FileCheck },
+    { number: 4, title: "Pricing & Terms", icon: FileSignature },
+  ];
 
   const handleInputChange = useCallback(
     (
@@ -211,11 +282,16 @@ const TheaterRegistration: React.FC = () => {
         HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
       >,
     ) => {
-      const { name, value } = e.target;
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      const { name, value, type } = e.target;
+      const checked = (e.target as HTMLInputElement).checked;
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      }));
       if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+      if (duplicateError) setDuplicateError(null);
     },
-    [errors],
+    [errors, duplicateError],
   );
 
   const handleDocumentUpload = useCallback(
@@ -242,221 +318,286 @@ const TheaterRegistration: React.FC = () => {
   const validateStep = useCallback((): boolean => {
     const newErrors: Errors = {};
     if (step === 1) {
-      if (!formData.businessName.trim())
-        newErrors.businessName = "Business name is required";
-      if (!formData.email.trim()) newErrors.email = "Email is required";
-      else if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
-        newErrors.email = "Please enter a valid email address";
-      if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
-      if (!formData.businessType)
-        newErrors.businessType = "Business type is required";
-      if (!formData.businessLicenseNumber.trim())
-        newErrors.businessLicenseNumber = "Business license number is required";
-      if (!formData.taxId.trim()) newErrors.taxId = "Tax ID / TIN is required";
-      if (!formData.yearsInOperation)
-        newErrors.yearsInOperation = "Years in operation is required";
       if (!formData.ownerFullName.trim())
-        newErrors.ownerFullName = "Owner full name is required";
+        newErrors.ownerFullName = "Full name is required";
+      if (!formData.ownerEmail.trim())
+        newErrors.ownerEmail = "Email is required";
+      else if (!formData.ownerEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/))
+        newErrors.ownerEmail = "Please enter a valid email address";
+      if (!formData.ownerPhone.trim())
+        newErrors.ownerPhone = "Phone number is required";
       if (!formData.ownerPassword.trim())
         newErrors.ownerPassword = "Password is required";
       else if (formData.ownerPassword.length < 6)
         newErrors.ownerPassword = "Password must be at least 6 characters";
     } else if (step === 2) {
+      if (!formData.theaterName.trim())
+        newErrors.theaterName = "Theater name is required";
+      if (!formData.theaterDescription.trim())
+        newErrors.theaterDescription = "Theater description is required";
+      if (!formData.businessType)
+        newErrors.businessType = "Business type is required";
+      if (!formData.businessLicenseNumber.trim())
+        newErrors.businessLicenseNumber = "Business license number is required";
+      if (!formData.taxId.trim()) newErrors.taxId = "Tax ID is required";
+      if (!formData.yearsInOperation)
+        newErrors.yearsInOperation = "Years in operation is required";
       if (!formData.city) newErrors.city = "City is required";
       if (!formData.region) newErrors.region = "Region is required";
       if (!formData.fullAddress.trim())
         newErrors.fullAddress = "Full address is required";
+    } else if (step === 3) {
       if (!formData.documents.businessLicense)
         newErrors.businessLicense = "Business license is required";
       if (!formData.documents.taxCertificate)
         newErrors.taxCertificate = "Tax registration certificate is required";
-    } else if (step === 3) {
+      if (!formData.documents.ownerIdCard)
+        newErrors.ownerIdCard = "Owner ID card is required";
+    } else if (step === 4) {
       if (!formData.pricingModel)
         newErrors.pricingModel = "Please select a pricing model";
-      if (formData.pricingModel === "contract" && !formData.contractType)
-        newErrors.contractType = "Please select a contract type";
-      if (!agreedToTerms)
+      if (formData.pricingModel === "subscription" && !formData.contractType)
+        newErrors.contractType = "Please select a subscription plan";
+      if (!formData.agreedToTerms)
         newErrors.terms =
           "You must confirm that the information provided is accurate";
-      if (!agreedToNoRefund)
+      if (!formData.agreedToNoRefund)
         newErrors.noRefund = "You must acknowledge the no-refund policy";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [step, formData, agreedToTerms, agreedToNoRefund]);
+  }, [step, formData]);
 
   const handleNext = useCallback(() => {
     if (validateStep()) setStep((prev) => prev + 1);
   }, [validateStep]);
   const handleBack = useCallback(() => setStep((prev) => prev - 1), []);
 
-  // Create user in Supabase Auth and Users table
-  const createUser = useCallback(async () => {
-    // First, check if user already exists
-    const { data: existingUser, error: checkError } = await supabase
+  // Check for duplicates before submission
+  const checkDuplicates = useCallback(async () => {
+    const { data: existingUser } = await supabase
       .from("users")
-      .select("id")
-      .eq("email", formData.email)
+      .select("email")
+      .eq("email", formData.ownerEmail)
       .single();
 
     if (existingUser) {
-      return existingUser.id;
+      throw new Error(
+        `Email "${formData.ownerEmail}" is already registered. Please use a different email.`,
+      );
     }
 
-    // Create auth user
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.ownerPassword,
-      options: {
-        data: {
-          full_name: formData.ownerFullName,
-          role: "theater_owner",
-        },
-      },
-    });
-
-    if (authError) throw new Error(`Auth signup failed: ${authError.message}`);
-
-    if (!authData.user) throw new Error("User creation failed");
-
-    // Insert into users table
-    const { data: userData, error: userError } = await supabase
+    const { data: existingPhone } = await supabase
       .from("users")
-      .insert({
-        id: authData.user.id,
-        email: formData.email,
-        phone: formData.phone,
-        full_name: formData.ownerFullName,
-        role: "theater_owner",
-        status: "active",
-      })
-      .select()
+      .select("phone")
+      .eq("phone", formData.ownerPhone)
       .single();
 
-    if (userError) throw new Error(`User insert failed: ${userError.message}`);
-
-    return userData.id;
-  }, [
-    formData.email,
-    formData.ownerPassword,
-    formData.ownerFullName,
-    formData.phone,
-  ]);
-
-  const submitToSupabase = useCallback(async () => {
-    // First, create/get the owner user
-    const ownerUserId = await createUser();
-    setCreatedUserId(ownerUserId);
-
-    const theaterId = crypto.randomUUID();
-
-    let licenseDocUrl = null;
-    let taxDocUrl = null;
-
-    // Upload Business License if exists
-    if (formData.documents.businessLicense) {
-      const fileExt = formData.documents.businessLicense.name.split(".").pop();
-      const fileName = `${theaterId}_license.${fileExt}`;
-      const { error: licenseError } = await supabase.storage
-        .from("documents")
-        .upload(fileName, formData.documents.businessLicense);
-
-      if (!licenseError) {
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("documents").getPublicUrl(fileName);
-        licenseDocUrl = publicUrl;
-      }
+    if (existingPhone) {
+      throw new Error(
+        `Phone number "${formData.ownerPhone}" is already registered.`,
+      );
     }
 
-    // Upload Tax Certificate if exists
-    if (formData.documents.taxCertificate) {
-      const fileExt = formData.documents.taxCertificate.name.split(".").pop();
-      const fileName = `${theaterId}_tax.${fileExt}`;
-      const { error: taxError } = await supabase.storage
-        .from("documents")
-        .upload(fileName, formData.documents.taxCertificate);
-
-      if (!taxError) {
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("documents").getPublicUrl(fileName);
-        taxDocUrl = publicUrl;
-      }
-    }
-
-    // Insert theater with owner_user_id reference
-    const { data: theaterData, error: theaterError } = await supabase
+    const { data: existingLicense } = await supabase
       .from("theaters")
-      .insert({
-        id: theaterId,
-        legal_business_name: formData.businessName,
-        email: formData.email,
-        phone: formData.phone,
-        business_type: formData.businessType,
-        business_license_number: formData.businessLicenseNumber,
-        license_document_url: licenseDocUrl,
-        tax_id: formData.taxId,
-        city: formData.city,
-        address: formData.fullAddress,
-        total_halls: 0,
-        description: "Theater registration pending",
-        status: "pending",
-        is_approved: false,
-        owner_user_id: ownerUserId, // This links to the users table
-        country: "Ethiopia",
-        subscription_status: "trial",
-      });
+      .select("business_license_number")
+      .eq("business_license_number", formData.businessLicenseNumber)
+      .single();
 
-    if (theaterError) {
-      console.error("Theater insert error:", theaterError);
-      if (theaterError.code === "23505") {
-        if (theaterError.message.includes("business_license_number")) {
-          throw new Error(
-            `Business license number "${formData.businessLicenseNumber}" is already taken.`,
-          );
-        }
-        if (theaterError.message.includes("tax_id")) {
-          throw new Error(`Tax ID "${formData.taxId}" is already taken.`);
-        }
-        throw new Error("A theater with this information already exists.");
-      }
-      throw theaterError;
+    if (existingLicense) {
+      throw new Error(
+        `Business license number "${formData.businessLicenseNumber}" is already registered.`,
+      );
     }
 
-    // Insert contract
-    if (theaterData) {
-      await supabase.from("contract").insert({
-        provider_name: formData.businessName,
-        provider_contact: formData.phone,
-        contract_start_date: new Date().toISOString().split("T")[0],
-        contract_end_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0],
-        status: formData.pricingModel === "contract" ? "active" : "draft",
-        commission_rate: formData.pricingModel === "contract" ? 0 : 10,
-      });
+    const { data: existingTaxId } = await supabase
+      .from("theaters")
+      .select("tax_id")
+      .eq("tax_id", formData.taxId)
+      .single();
+
+    if (existingTaxId) {
+      throw new Error(`Tax ID "${formData.taxId}" is already registered.`);
     }
 
-    // Also insert into owners table for additional owner info
-    await supabase.from("owners").insert({
-      user_id: ownerUserId,
-      business_name: formData.businessName,
+    return true;
+  }, [formData]);
+
+  // Create owner, theater, and contract
+  const createRegistration = useCallback(async () => {
+    await checkDuplicates();
+
+    // Create user
+    const userId = crypto.randomUUID();
+    const { error: userError } = await supabase.from("users").insert({
+      id: userId,
+      email: formData.ownerEmail,
+      phone: formData.ownerPhone,
+      full_name: formData.ownerFullName,
+      role: "theater_owner",
+      status: "active",
+    });
+
+    if (userError)
+      throw new Error(`Failed to create owner account: ${userError.message}`);
+
+    // Create owner record
+    const ownerId = crypto.randomUUID();
+    const { error: ownerError } = await supabase.from("owners").insert({
+      id: ownerId,
+      user_id: userId,
+      business_name: formData.theaterName,
       business_type: formData.businessType.toLowerCase().replace(/\s/g, "_"),
+      years_of_experience: parseInt(formData.yearsInOperation) || 0,
       city: formData.city,
       physical_address: formData.fullAddress,
       verification_status: "pending",
     });
 
-    return theaterData;
-  }, [formData, createUser]);
+    if (ownerError)
+      throw new Error(`Failed to create owner record: ${ownerError.message}`);
+
+    // Upload documents
+    const theaterId = crypto.randomUUID();
+    let licenseDocUrl = null,
+      taxDocUrl = null,
+      ownerIdUrl = null;
+
+    if (formData.documents.businessLicense) {
+      const fileExt = formData.documents.businessLicense.name.split(".").pop();
+      const { error } = await supabase.storage
+        .from("documents")
+        .upload(
+          `${theaterId}_license.${fileExt}`,
+          formData.documents.businessLicense,
+        );
+      if (!error) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("documents")
+          .getPublicUrl(`${theaterId}_license.${fileExt}`);
+        licenseDocUrl = publicUrl;
+      }
+    }
+
+    if (formData.documents.taxCertificate) {
+      const fileExt = formData.documents.taxCertificate.name.split(".").pop();
+      const { error } = await supabase.storage
+        .from("documents")
+        .upload(
+          `${theaterId}_tax.${fileExt}`,
+          formData.documents.taxCertificate,
+        );
+      if (!error) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("documents")
+          .getPublicUrl(`${theaterId}_tax.${fileExt}`);
+        taxDocUrl = publicUrl;
+      }
+    }
+
+    if (formData.documents.ownerIdCard) {
+      const fileExt = formData.documents.ownerIdCard.name.split(".").pop();
+      const { error } = await supabase.storage
+        .from("documents")
+        .upload(`${ownerId}_id.${fileExt}`, formData.documents.ownerIdCard);
+      if (!error) {
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from("documents")
+          .getPublicUrl(`${ownerId}_id.${fileExt}`);
+        ownerIdUrl = publicUrl;
+      }
+    }
+
+    // Create theater
+    const { error: theaterError } = await supabase.from("theaters").insert({
+      id: theaterId,
+      legal_business_name: formData.theaterName,
+      email: formData.ownerEmail,
+      phone: formData.ownerPhone,
+      business_type: formData.businessType,
+      business_license_number: formData.businessLicenseNumber,
+      license_document_url: licenseDocUrl,
+      tax_id: formData.taxId,
+      city: formData.city,
+      address: formData.fullAddress,
+      description: formData.theaterDescription,
+      total_halls: 0,
+      status: "pending",
+      is_approved: false,
+      owner_user_id: userId,
+      country: "Ethiopia",
+      subscription_status: "trial",
+    });
+
+    if (theaterError) {
+      if (theaterError.code === "23505") {
+        if (theaterError.message.includes("business_license_number")) {
+          throw new Error(
+            `Business license number "${formData.businessLicenseNumber}" is already registered.`,
+          );
+        }
+        if (theaterError.message.includes("tax_id")) {
+          throw new Error(`Tax ID "${formData.taxId}" is already registered.`);
+        }
+      }
+      throw new Error(`Failed to create theater: ${theaterError.message}`);
+    }
+
+    // Create contract
+    const contractNumber = `CTR-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+    let basePrice = 0;
+    let paymentFrequency = null;
+    let commissionRate = 10;
+
+    if (formData.pricingModel === "per_ticket") {
+      basePrice = 0;
+      paymentFrequency = "per_ticket";
+      commissionRate = 10;
+    } else if (formData.pricingModel === "subscription") {
+      if (formData.contractType === "monthly") basePrice = 6000;
+      else if (formData.contractType === "quarterly") basePrice = 8000;
+      else if (formData.contractType === "yearly") basePrice = 6000;
+      paymentFrequency = formData.contractType;
+      commissionRate = 0;
+    }
+
+    await supabase.from("owners_contracts").insert({
+      owner_id: ownerId,
+      theater_id: theaterId,
+      contract_number: contractNumber,
+      contract_type:
+        formData.pricingModel === "per_ticket" ? "per_ticket" : "subscription",
+      subscription_plan:
+        formData.pricingModel === "subscription" ? formData.contractType : null,
+      base_price: basePrice,
+      discounted_price: null,
+      discount_percent: 0,
+      commission_rate: commissionRate,
+      contract_start_date: new Date().toISOString().split("T")[0],
+      payment_frequency: paymentFrequency,
+      payment_status: "pending",
+      status: "active",
+      terms_accepted_at: new Date().toISOString(),
+    });
+
+    return { userId, ownerId, theaterId, contractNumber };
+  }, [formData, checkDuplicates]);
 
   const handleSubmit = useCallback(async () => {
     if (!validateStep()) return;
 
     setIsSubmitting(true);
+    setDuplicateError(null);
+
     try {
-      await submitToSupabase();
+      await createRegistration();
       setSubmitSuccess(true);
     } catch (error) {
       console.error("Registration error:", error);
@@ -464,585 +605,776 @@ const TheaterRegistration: React.FC = () => {
         error instanceof Error
           ? error.message
           : "Registration failed. Please try again.";
-      setErrors((prev) => ({ ...prev, submit: errorMessage }));
+
+      if (
+        errorMessage.includes("already registered") ||
+        errorMessage.includes("already exists") ||
+        errorMessage.includes("duplicate")
+      ) {
+        setDuplicateError(errorMessage);
+      } else {
+        setErrors((prev) => ({ ...prev, submit: errorMessage }));
+      }
     } finally {
       setIsSubmitting(false);
     }
-  }, [validateStep, submitToSupabase]);
+  }, [validateStep, createRegistration]);
 
-  const renderCurrentStep = () => {
-    switch (step) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
-                <Building2 className="h-5 w-5 text-white" />
+  // Step 1: Create Owner Account
+  const renderStep1 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
+          <UserPlus className="h-5 w-5 text-teal-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Create Owner Account
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Enter your personal information to create your account
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="ownerFullName"
+            value={formData.ownerFullName}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+            placeholder="Enter your full name"
+          />
+          {errors.ownerFullName && (
+            <p className="text-xs text-red-500 mt-1">{errors.ownerFullName}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Email Address <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="email"
+              name="ownerEmail"
+              value={formData.ownerEmail}
+              onChange={handleInputChange}
+              className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+              placeholder="you@example.com"
+            />
+          </div>
+          {errors.ownerEmail && (
+            <p className="text-xs text-red-500 mt-1">{errors.ownerEmail}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Phone Number <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="tel"
+              name="ownerPhone"
+              value={formData.ownerPhone}
+              onChange={handleInputChange}
+              className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+              placeholder="+251 XXX XXX XXX"
+            />
+          </div>
+          {errors.ownerPhone && (
+            <p className="text-xs text-red-500 mt-1">{errors.ownerPhone}</p>
+          )}
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Password <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="password"
+              name="ownerPassword"
+              value={formData.ownerPassword}
+              onChange={handleInputChange}
+              className="w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+              placeholder="Create a password (min 6 characters)"
+            />
+          </div>
+          {errors.ownerPassword && (
+            <p className="text-xs text-red-500 mt-1">{errors.ownerPassword}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Step 2: Theater Information
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
+          <Theater className="h-5 w-5 text-teal-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Theater Information
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Tell us about your theater business
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Theater Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="theaterName"
+            value={formData.theaterName}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+            placeholder="Enter your theater name"
+          />
+          {errors.theaterName && (
+            <p className="text-xs text-red-500 mt-1">{errors.theaterName}</p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Theater Description <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="theaterDescription"
+            rows={3}
+            value={formData.theaterDescription}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white resize-none transition-all"
+            placeholder="Describe your theater, facilities, seating capacity, etc."
+          />
+          {errors.theaterDescription && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.theaterDescription}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Business Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="businessType"
+            value={formData.businessType}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all"
+          >
+            <option value="">Select Business Type</option>
+            {BUSINESS_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+          {errors.businessType && (
+            <p className="text-xs text-red-500 mt-1">{errors.businessType}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Business License Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="businessLicenseNumber"
+            value={formData.businessLicenseNumber}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+            placeholder="Enter a UNIQUE business license number"
+          />
+          {errors.businessLicenseNumber && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.businessLicenseNumber}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Tax ID / TIN <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="taxId"
+            value={formData.taxId}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+            placeholder="Enter a UNIQUE Tax ID"
+          />
+          {errors.taxId && (
+            <p className="text-xs text-red-500 mt-1">{errors.taxId}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Years in Operation <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="yearsInOperation"
+            value={formData.yearsInOperation}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all"
+          >
+            <option value="">Select Years in Operation</option>
+            {YEARS_OPTIONS.map((years) => (
+              <option key={years} value={years}>
+                {years}
+              </option>
+            ))}
+          </select>
+          {errors.yearsInOperation && (
+            <p className="text-xs text-red-500 mt-1">
+              {errors.yearsInOperation}
+            </p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            City <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="city"
+            value={formData.city}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all"
+          >
+            <option value="">Select City</option>
+            {CITIES.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+          {errors.city && (
+            <p className="text-xs text-red-500 mt-1">{errors.city}</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Region <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="region"
+            value={formData.region}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 dark:bg-gray-800/50 dark:text-white transition-all"
+          >
+            <option value="">Select Region</option>
+            {REGIONS.map((region) => (
+              <option key={region} value={region}>
+                {region}
+              </option>
+            ))}
+          </select>
+          {errors.region && (
+            <p className="text-xs text-red-500 mt-1">{errors.region}</p>
+          )}
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+            Full Address <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="fullAddress"
+            value={formData.fullAddress}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white transition-all"
+            placeholder="Street, building, floor, etc."
+          />
+          {errors.fullAddress && (
+            <p className="text-xs text-red-500 mt-1">{errors.fullAddress}</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Step 3: Document Upload
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+        <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
+          <FileCheck className="h-5 w-5 text-teal-600" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            Required Documents
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Please upload the required documents for verification
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {/* Business License */}
+        <div
+          className={`border-2 rounded-2xl p-5 transition-all ${errors.businessLicense ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
+        >
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              <div
+                className={`p-2.5 rounded-xl ${formData.documents.businessLicense ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800"}`}
+              >
+                <FileText
+                  className={`h-5 w-5 ${formData.documents.businessLicense ? "text-green-600" : "text-gray-500"}`}
+                />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Business & Owner Information
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Tell us about your business and owner details
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Business License <span className="text-red-500">*</span>
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Valid business license or registration certificate
                 </p>
+                {formData.documents.businessLicense && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />{" "}
+                    {formData.documents.businessLicense.name}
+                  </p>
+                )}
               </div>
             </div>
+            <div>
+              <input
+                ref={(el) => {
+                  if (el) fileInputRefs.current.businessLicense = el;
+                }}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => handleDocumentUpload(e, "businessLicense")}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRefs.current.businessLicense?.click()}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${formData.documents.businessLicense ? "border-2 border-green-500 text-green-600 hover:bg-green-50" : "bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-md"}`}
+              >
+                <Upload className="h-4 w-4" />{" "}
+                {formData.documents.businessLicense ? "Replace" : "Upload"}
+              </button>
+            </div>
+          </div>
+          {errors.businessLicense && (
+            <p className="text-xs text-red-500 mt-3">
+              {errors.businessLicense}
+            </p>
+          )}
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Business Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="Enter your legal business name"
+        {/* Tax Certificate */}
+        <div
+          className={`border-2 rounded-2xl p-5 transition-all ${errors.taxCertificate ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
+        >
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              <div
+                className={`p-2.5 rounded-xl ${formData.documents.taxCertificate ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800"}`}
+              >
+                <Receipt
+                  className={`h-5 w-5 ${formData.documents.taxCertificate ? "text-green-600" : "text-gray-500"}`}
                 />
-                {errors.businessName && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.businessName}
-                  </p>
-                )}
-              </div>
-
-              {/* Owner Section */}
-              <div className="md:col-span-2">
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <UserPlus className="h-5 w-5 text-blue-600" />
-                    <h3 className="font-semibold text-blue-800 dark:text-blue-300">
-                      Owner Information
-                    </h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Owner Full Name <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="ownerFullName"
-                        value={formData.ownerFullName}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                        placeholder="Full name of the owner"
-                      />
-                      {errors.ownerFullName && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.ownerFullName}
-                        </p>
-                      )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                        Password <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        name="ownerPassword"
-                        value={formData.ownerPassword}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                        placeholder="Create a password (min 6 characters)"
-                      />
-                      {errors.ownerPassword && (
-                        <p className="text-xs text-red-500 mt-1">
-                          {errors.ownerPassword}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="business@example.com"
-                />
-                {errors.email && (
-                  <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-                )}
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="+251 XXX XXX XXX"
-                />
-                {errors.phone && (
-                  <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Business Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="businessType"
-                  value={formData.businessType}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                >
-                  <option value="">Select Business Type</option>
-                  {BUSINESS_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-                {errors.businessType && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.businessType}
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Business License Number{" "}
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Tax Registration Certificate{" "}
                   <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="businessLicenseNumber"
-                  value={formData.businessLicenseNumber}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="Enter a UNIQUE license number"
-                />
-                {errors.businessLicenseNumber && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.businessLicenseNumber}
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Tax Identification Number (TIN) certificate
+                </p>
+                {formData.documents.taxCertificate && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />{" "}
+                    {formData.documents.taxCertificate.name}
                   </p>
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Tax ID / TIN <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="taxId"
-                  value={formData.taxId}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="Tax Identification Number"
-                />
-                {errors.taxId && (
-                  <p className="text-xs text-red-500 mt-1">{errors.taxId}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Years in Operation <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="yearsInOperation"
-                  value={formData.yearsInOperation}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                >
-                  <option value="">Select Years in Operation</option>
-                  {YEARS_OPTIONS.map((years) => (
-                    <option key={years} value={years}>
-                      {years}
-                    </option>
-                  ))}
-                </select>
-                {errors.yearsInOperation && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.yearsInOperation}
-                  </p>
-                )}
-              </div>
+            </div>
+            <div>
+              <input
+                ref={(el) => {
+                  if (el) fileInputRefs.current.taxCertificate = el;
+                }}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => handleDocumentUpload(e, "taxCertificate")}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRefs.current.taxCertificate?.click()}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${formData.documents.taxCertificate ? "border-2 border-green-500 text-green-600 hover:bg-green-50" : "bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-md"}`}
+              >
+                <Upload className="h-4 w-4" />{" "}
+                {formData.documents.taxCertificate ? "Replace" : "Upload"}
+              </button>
             </div>
           </div>
-        );
+          {errors.taxCertificate && (
+            <p className="text-xs text-red-500 mt-3">{errors.taxCertificate}</p>
+          )}
+        </div>
 
-      case 2:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
-                <MapPin className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Location & Documents
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Where is your theater located?
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                >
-                  <option value="">Select City</option>
-                  {CITIES.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-                {errors.city && (
-                  <p className="text-xs text-red-500 mt-1">{errors.city}</p>
-                )}
-              </div>
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Region <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="region"
-                  value={formData.region}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent dark:bg-gray-800/50 dark:text-white"
-                >
-                  <option value="">Select Region</option>
-                  {REGIONS.map((region) => (
-                    <option key={region} value={region}>
-                      {region}
-                    </option>
-                  ))}
-                </select>
-                {errors.region && (
-                  <p className="text-xs text-red-500 mt-1">{errors.region}</p>
-                )}
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Full Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="fullAddress"
-                  value={formData.fullAddress}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all border-gray-200 dark:border-gray-700 dark:bg-gray-800/50 dark:text-white"
-                  placeholder="Street, building, floor, etc."
+        {/* Owner ID Card */}
+        <div
+          className={`border-2 rounded-2xl p-5 transition-all ${errors.ownerIdCard ? "border-red-500 bg-red-50 dark:bg-red-900/10" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
+        >
+          <div className="flex items-start justify-between flex-wrap gap-4">
+            <div className="flex items-start gap-4 flex-1">
+              <div
+                className={`p-2.5 rounded-xl ${formData.documents.ownerIdCard ? "bg-green-100 dark:bg-green-900/20" : "bg-gray-100 dark:bg-gray-800"}`}
+              >
+                <User
+                  className={`h-5 w-5 ${formData.documents.ownerIdCard ? "text-green-600" : "text-gray-500"}`}
                 />
-                {errors.fullAddress && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {errors.fullAddress}
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">
+                  Owner ID Card <span className="text-red-500">*</span>
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Valid government-issued ID (Passport, National ID, or Driver's
+                  License)
+                </p>
+                {formData.documents.ownerIdCard && (
+                  <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />{" "}
+                    {formData.documents.ownerIdCard.name}
                   </p>
                 )}
               </div>
             </div>
-
-            <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
-
-            <div className="space-y-4">
-              <div className="border-2 rounded-2xl p-5 border-gray-200 dark:border-gray-700">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      Business License <span className="text-red-500">*</span>
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Valid business license or registration certificate
-                    </p>
-                    {formData.documents.businessLicense && (
-                      <p className="text-xs text-green-600 mt-2">
-                        ✓ Uploaded: {formData.documents.businessLicense.name}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      ref={(el) => {
-                        if (el) fileInputRefs.current.businessLicense = el;
-                      }}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) =>
-                        handleDocumentUpload(e, "businessLicense")
-                      }
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        fileInputRefs.current.businessLicense?.click()
-                      }
-                      className="px-5 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-md"
-                    >
-                      <Upload className="h-4 w-4 inline mr-2" /> Upload
-                    </button>
-                  </div>
-                </div>
-                {errors.businessLicense && (
-                  <p className="text-xs text-red-500 mt-3">
-                    {errors.businessLicense}
-                  </p>
-                )}
-              </div>
-
-              <div className="border-2 rounded-2xl p-5 border-gray-200 dark:border-gray-700">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">
-                      Tax Registration Certificate{" "}
-                      <span className="text-red-500">*</span>
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Tax Identification Number (TIN) certificate
-                    </p>
-                    {formData.documents.taxCertificate && (
-                      <p className="text-xs text-green-600 mt-2">
-                        ✓ Uploaded: {formData.documents.taxCertificate.name}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <input
-                      ref={(el) => {
-                        if (el) fileInputRefs.current.taxCertificate = el;
-                      }}
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) =>
-                        handleDocumentUpload(e, "taxCertificate")
-                      }
-                      className="hidden"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        fileInputRefs.current.taxCertificate?.click()
-                      }
-                      className="px-5 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-md"
-                    >
-                      <Upload className="h-4 w-4 inline mr-2" /> Upload
-                    </button>
-                  </div>
-                </div>
-                {errors.taxCertificate && (
-                  <p className="text-xs text-red-500 mt-3">
-                    {errors.taxCertificate}
-                  </p>
-                )}
-              </div>
+            <div>
+              <input
+                ref={(el) => {
+                  if (el) fileInputRefs.current.ownerIdCard = el;
+                }}
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => handleDocumentUpload(e, "ownerIdCard")}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRefs.current.ownerIdCard?.click()}
+                className={`px-5 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${formData.documents.ownerIdCard ? "border-2 border-green-500 text-green-600 hover:bg-green-50" : "bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-md"}`}
+              >
+                <Upload className="h-4 w-4" />{" "}
+                {formData.documents.ownerIdCard ? "Replace" : "Upload"}
+              </button>
             </div>
           </div>
-        );
+          {errors.ownerIdCard && (
+            <p className="text-xs text-red-500 mt-3">{errors.ownerIdCard}</p>
+          )}
+        </div>
+      </div>
 
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2.5 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg">
-                <Wallet className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Pricing & Terms
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Choose your payment model
-                </p>
-              </div>
-            </div>
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-2xl p-5">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              Document Requirements
+            </p>
+            <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+              • PDF, JPG, or PNG format only (max 10MB per file)
+              <br />
+              • Documents must be clear and legible
+              <br />
+              • Business license must be currently valid
+              <br />• ID card must match the owner's name
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 rounded-2xl p-4">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={formData.isNewTheater}
-                  onChange={(e) =>
+  // Step 4: Pricing & Terms
+  const renderStep4 = () => {
+    const getPlanPrice = (plan: string) => {
+      if (plan === "monthly") return "6,000 ETB";
+      if (plan === "quarterly") return "8,000 ETB";
+      return "6,000 ETB";
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6 pb-2 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl">
+            <FileSignature className="h-5 w-5 text-teal-600" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              Pricing Plan & Terms
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Choose your preferred payment model
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Select Payment Model <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {PRICING_MODELS.map((model) => {
+              const Icon = model.icon;
+              const isSelected = formData.pricingModel === model.id;
+              return (
+                <div
+                  key={model.id}
+                  onClick={() =>
                     setFormData((prev) => ({
                       ...prev,
-                      isNewTheater: e.target.checked,
+                      pricingModel: model.id,
+                      contractType: "",
                     }))
                   }
-                  className="mt-1 h-5 w-5 text-purple-600 rounded"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">
-                    🎯 New / Low Volume Theater — Save 15%
+                  className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg" : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"}`}
+                >
+                  <div
+                    className={`p-2 rounded-xl inline-block ${isSelected ? "bg-teal-100 dark:bg-teal-900/30" : "bg-gray-100 dark:bg-gray-800"} mb-3`}
+                  >
+                    <Icon
+                      className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600 dark:text-gray-400"}`}
+                    />
+                  </div>
+                  <h3
+                    className={`font-bold text-lg ${isSelected ? "text-teal-600" : "text-gray-900 dark:text-white"}`}
+                  >
+                    {model.name}
+                  </h3>
+                  <p
+                    className={`text-sm mt-1 ${isSelected ? "text-gray-600" : "text-gray-500"}`}
+                  >
+                    {model.description}
                   </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">
-                    Get 15% off all contract plans
+                  <p className={`text-sm font-bold mt-3 text-teal-600`}>
+                    {model.rate}
                   </p>
                 </div>
-              </label>
-            </div>
+              );
+            })}
+          </div>
+          {errors.pricingModel && (
+            <p className="text-xs text-red-500 mt-2">{errors.pricingModel}</p>
+          )}
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {PRICING_MODELS.map((model) => {
-                const Icon = model.icon;
-                const isSelected = formData.pricingModel === model.id;
+        {formData.pricingModel === "subscription" && (
+          <div className="mt-6">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+              Select Subscription Plan <span className="text-red-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {CONTRACT_TYPES.map((contract) => {
+                const Icon = contract.icon;
+                const isSelected = formData.contractType === contract.id;
                 return (
                   <div
-                    key={model.id}
+                    key={contract.id}
                     onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
-                        pricingModel: model.id,
-                        contractType: "",
+                        contractType: contract.id,
                       }))
                     }
-                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected ? "border-teal-500 bg-teal-50 dark:bg-teal-900/20" : "border-gray-200 dark:border-gray-700 hover:border-teal-300"}`}
+                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg" : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"}`}
                   >
-                    <Icon
-                      className={`h-8 w-8 mb-3 ${isSelected ? "text-teal-600" : "text-gray-500"}`}
-                    />
-                    <h3
+                    <div
+                      className={`p-2 rounded-xl inline-block ${isSelected ? "bg-teal-100 dark:bg-teal-900/30" : "bg-gray-100 dark:bg-gray-800"} mb-3`}
+                    >
+                      <Icon
+                        className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600 dark:text-gray-400"}`}
+                      />
+                    </div>
+                    <h4
                       className={`font-bold text-lg ${isSelected ? "text-teal-600" : "text-gray-900 dark:text-white"}`}
                     >
-                      {model.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {model.description}
+                      {contract.name}
+                    </h4>
+                    <p className="text-2xl font-bold text-teal-600 mt-2">
+                      {getPlanPrice(contract.id)}
                     </p>
-                    <p className="text-sm font-bold mt-3 text-teal-600">
-                      {model.rate}
+                    <p className="text-xs text-gray-500 mt-1">
+                      per {contract.id.replace("ly", "")}
                     </p>
+                    <div className="mt-3 space-y-1">
+                      {contract.features.map((feature, idx) => (
+                        <p
+                          key={idx}
+                          className="text-xs text-gray-500 flex items-center gap-1"
+                        >
+                          <CheckCircle className="h-3 w-3 text-green-500" />
+                          {feature}
+                        </p>
+                      ))}
+                    </div>
                   </div>
                 );
               })}
             </div>
-            {errors.pricingModel && (
-              <p className="text-xs text-red-500">{errors.pricingModel}</p>
-            )}
-
-            {formData.pricingModel === "contract" && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {CONTRACT_TYPES.map((contract) => {
-                  const Icon = contract.icon;
-                  const isSelected = formData.contractType === contract.id;
-                  const finalPrice = formData.isNewTheater
-                    ? contract.basePrice * 0.85
-                    : contract.basePrice;
-                  return (
-                    <div
-                      key={contract.id}
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          contractType: contract.id,
-                        }))
-                      }
-                      className={`cursor-pointer rounded-2xl border-2 p-4 transition-all ${isSelected ? "border-teal-500 bg-teal-50 dark:bg-teal-900/20" : "border-gray-200 dark:border-gray-700"}`}
-                    >
-                      <Icon
-                        className={`h-6 w-6 mb-2 ${isSelected ? "text-teal-600" : "text-gray-500"}`}
-                      />
-                      <h4 className="font-bold">{contract.name}</h4>
-                      <p className="text-2xl font-bold text-teal-600">
-                        {new Intl.NumberFormat("en-ET", {
-                          style: "currency",
-                          currency: "ETB",
-                        }).format(finalPrice)}
-                      </p>
-                      <p className="text-xs text-gray-500">per {contract.id}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             {errors.contractType && (
-              <p className="text-xs text-red-500">{errors.contractType}</p>
-            )}
-
-            <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
-
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl p-6">
-              <h3 className="font-bold text-lg mb-4">Terms & Agreement</h3>
-              <ul className="list-disc pl-5 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                <li>All information provided is accurate and complete</li>
-                <li>You authorize us to verify the documents provided</li>
-                <li>You agree to our commission structure</li>
-                <li>All registration fees are non-refundable</li>
-              </ul>
-            </div>
-
-            <div className="space-y-3">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreedToTerms}
-                  onChange={(e) => setAgreedToTerms(e.target.checked)}
-                  className="mt-1 h-5 w-5 text-teal-600 rounded"
-                />
-                <span className="text-sm">
-                  I confirm that all information provided is accurate
-                </span>
-              </label>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={agreedToNoRefund}
-                  onChange={(e) => setAgreedToNoRefund(e.target.checked)}
-                  className="mt-1 h-5 w-5 text-teal-600 rounded"
-                />
-                <span className="text-sm">
-                  I acknowledge the no-refund policy
-                </span>
-              </label>
-            </div>
-            {(errors.terms || errors.noRefund) && (
-              <p className="text-xs text-red-500">
-                {errors.terms || errors.noRefund}
-              </p>
+              <p className="text-xs text-red-500 mt-2">{errors.contractType}</p>
             )}
           </div>
-        );
+        )}
 
-      default:
-        return null;
-    }
+        <div className="border-t border-gray-200 dark:border-gray-700 my-6"></div>
+
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-800/50 rounded-2xl p-6 space-y-4">
+          <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+            Terms & Agreement
+          </h3>
+          <div className="space-y-3 text-sm text-gray-600 dark:text-gray-400">
+            <p>
+              By registering your theater on our platform, you agree to the
+              following terms and conditions:
+            </p>
+            <ul className="list-disc pl-5 space-y-2">
+              <li>
+                All information provided is accurate and complete to the best of
+                your knowledge
+              </li>
+              <li>
+                You authorize us to verify the documents and information
+                provided
+              </li>
+              <li>
+                You agree to our commission structure based on your selected
+                pricing plan
+              </li>
+              <li>
+                Your account may be suspended for violation of terms or
+                provision of false information
+              </li>
+              <li>This agreement is governed by the laws of Ethiopia</li>
+            </ul>
+            <div className="mt-4 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/10 dark:to-orange-900/10 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+                <p className="text-amber-800 dark:text-amber-300 text-sm">
+                  <strong>Admin Review Required:</strong> All applications
+                  undergo review within 3-5 business days. You will be notified
+                  once approved.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-gray-600 mt-0.5" />
+                <p className="text-gray-800 dark:text-gray-300 text-sm">
+                  <strong>No Refund Policy:</strong> All registration fees are
+                  non-refundable. Carefully review your selection before
+                  completing payment.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="agreedToTerms"
+              checked={formData.agreedToTerms}
+              onChange={handleInputChange}
+              className="mt-1 h-5 w-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-teal-600 transition">
+                I confirm that all information provided is accurate
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                I understand that providing false information may lead to
+                rejection or account suspension
+              </p>
+            </div>
+          </label>
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              name="agreedToNoRefund"
+              checked={formData.agreedToNoRefund}
+              onChange={handleInputChange}
+              className="mt-1 h-5 w-5 text-teal-600 rounded border-gray-300 focus:ring-teal-500"
+            />
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-teal-600 transition">
+                I acknowledge the no-refund policy
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                I understand that all payments made are non-refundable
+              </p>
+            </div>
+          </label>
+        </div>
+        {(errors.terms || errors.noRefund) && (
+          <p className="text-xs text-red-500 mt-2">
+            {errors.terms || errors.noRefund}
+          </p>
+        )}
+      </div>
+    );
   };
 
   if (submitSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
         <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 text-center">
-          <div className="h-20 w-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="h-20 w-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
             <CheckCircle className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Registration Submitted!</h2>
-          <p className="text-gray-600 mb-4">
-            Thank you for registering. Our team will review your application
-            within 3-5 business days.
+          <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
+            Registration Submitted Successfully!
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Thank you for registering your theater. Our team will review your
+            application within 3-5 business days.
           </p>
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mb-6">
             <p className="text-sm text-blue-600 dark:text-blue-400">
               <strong>Owner Account Created!</strong>
               <br />
-              Email: {formData.email}
+              Email: {formData.ownerEmail}
               <br />
               You can now login with your credentials.
             </p>
           </div>
           <button
             onClick={() => (window.location.href = "/login")}
-            className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-medium"
+            className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-xl font-medium transition-all"
           >
             Go to Login
           </button>
@@ -1054,94 +1386,128 @@ const TheaterRegistration: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-20 w-20 bg-teal-600 rounded-2xl mb-4 shadow-lg">
+          <div className="inline-flex items-center justify-center h-20 w-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-2xl mb-4 shadow-lg">
             <Theater className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold">Theater Registration</h1>
-          <p className="text-gray-600 mt-2">
-            Join our platform and start selling tickets
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 dark:from-teal-400 dark:to-teal-600 bg-clip-text text-transparent">
+            Theater Registration
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Join our platform and start selling tickets online
           </p>
         </div>
 
-        {/* Step indicators */}
-        <div className="flex justify-center mb-8">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-all ${step >= s ? "bg-teal-600 text-white border-teal-600" : "bg-gray-200 text-gray-500 border-gray-300"}`}
-              >
-                {step > s ? <CheckCircle className="h-5 w-5" /> : s}
+        {/* Step Indicator - Now properly centered */}
+        <StepIndicator currentStep={step} steps={steps} />
+
+        {/* Form Content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={step}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8 border border-gray-200 dark:border-gray-700"
+          >
+            {step === 1 && renderStep1()}
+            {step === 2 && renderStep2()}
+            {step === 3 && renderStep3()}
+            {step === 4 && renderStep4()}
+
+            {/* Duplicate Error Display */}
+            {duplicateError && (
+              <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-red-800 dark:text-red-300">
+                      Duplicate Information Detected
+                    </p>
+                    <p className="text-sm text-red-700 dark:text-red-400 mt-1">
+                      {duplicateError}
+                    </p>
+                    <p className="text-xs text-red-600 dark:text-red-500 mt-2">
+                      Please use different values and try again.
+                    </p>
+                  </div>
+                </div>
               </div>
-              {s < 3 && (
-                <div
-                  className={`w-16 h-0.5 mx-2 ${step > s ? "bg-teal-600" : "bg-gray-300"}`}
-                />
+            )}
+
+            {errors.submit && (
+              <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                <p className="text-sm text-red-600 dark:text-red-400 text-center">
+                  {errors.submit}
+                </p>
+              </div>
+            )}
+
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+              {step > 1 && (
+                <button
+                  onClick={handleBack}
+                  className="px-6 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center gap-2 font-medium"
+                >
+                  <ChevronLeft className="h-4 w-4" /> Back
+                </button>
+              )}
+              {step < 4 ? (
+                <button
+                  onClick={handleNext}
+                  className={`${step > 1 ? "" : "ml-auto"} px-6 py-2.5 bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white rounded-xl font-medium transition-all flex items-center gap-2 shadow-md hover:shadow-lg`}
+                >
+                  Continue <ChevronRight className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmit}
+                  disabled={
+                    isSubmitting ||
+                    !formData.agreedToTerms ||
+                    !formData.agreedToNoRefund ||
+                    (formData.pricingModel === "subscription" &&
+                      !formData.contractType)
+                  }
+                  className={`${step > 1 ? "" : "ml-auto"} px-6 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 shadow-md ${
+                    isSubmitting ||
+                    !formData.agreedToTerms ||
+                    !formData.agreedToNoRefund ||
+                    (formData.pricingModel === "subscription" &&
+                      !formData.contractType)
+                      ? "bg-gray-400 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white hover:shadow-lg"
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" /> Creating
+                      Account...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="h-4 w-4" /> Create Account & Submit
+                    </>
+                  )}
+                </button>
               )}
             </div>
-          ))}
-        </div>
-        <div className="text-center mb-6">
-          <p className="text-sm text-gray-500">
-            {step === 1 && "Step 1: Business & Owner Information"}
-            {step === 2 && "Step 2: Location & Documents"}
-            {step === 3 && "Step 3: Pricing & Terms"}
-          </p>
-        </div>
+          </motion.div>
+        </AnimatePresence>
 
-        {/* Form content */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 md:p-8">
-          {renderCurrentStep()}
-
-          {errors.submit && (
-            <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400 text-center">
-                {errors.submit}
-              </p>
-            </div>
-          )}
-
-          <div className="flex justify-between mt-8 pt-6 border-t">
-            {step > 1 && (
-              <button
-                onClick={handleBack}
-                className="px-6 py-2.5 border-2 rounded-xl hover:bg-gray-50 flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" /> Back
-              </button>
-            )}
-            {step < 3 ? (
-              <button
-                onClick={handleNext}
-                className="ml-auto px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl flex items-center gap-2"
-              >
-                Continue <ChevronRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={
-                  isSubmitting ||
-                  !agreedToTerms ||
-                  !agreedToNoRefund ||
-                  (formData.pricingModel === "contract" &&
-                    !formData.contractType)
-                }
-                className={`ml-auto px-6 py-2.5 rounded-xl font-medium flex items-center gap-2 ${isSubmitting || !agreedToTerms || !agreedToNoRefund || (formData.pricingModel === "contract" && !formData.contractType) ? "bg-gray-400 cursor-not-allowed" : "bg-teal-600 hover:bg-teal-700 text-white"}`}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-                  </>
-                ) : (
-                  <>
-                    <UserPlus className="h-4 w-4" /> Create Account & Submit
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        </div>
+        <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6">
+          By registering, you agree to our{" "}
+          <a href="#" className="text-teal-600 hover:underline font-medium">
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-teal-600 hover:underline font-medium">
+            Privacy Policy
+          </a>
+        </p>
       </div>
     </div>
   );
