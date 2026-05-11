@@ -1,35 +1,26 @@
-// frontend/src/pages/Owner/employes/employeeUtils.ts
-import { Employee } from "./employee.types";
+// frontend/src/pages/Owner/employees/employeeUtils.ts
+import { Employee, EmployeeStats } from "./employee.types";
 
-/**
- * Filter employees based on search term, role, and status
- */
 export const filterEmployees = (
   employees: Employee[],
   searchTerm: string,
   filterRole: string,
   filterStatus: string,
 ): Employee[] => {
-  if (!employees || !Array.isArray(employees)) {
-    return [];
-  }
-
-  if (searchTerm === "" && filterRole === "all" && filterStatus === "all") {
+  if (!employees?.length) return [];
+  if (!searchTerm && filterRole === "all" && filterStatus === "all")
     return employees;
-  }
 
-  const searchLower = searchTerm.toLowerCase();
+  const searchLower = searchTerm.toLowerCase().trim();
 
   return employees.filter((employee) => {
     const matchesSearch =
-      searchTerm === "" ||
-      (employee.name && employee.name.toLowerCase().includes(searchLower)) ||
-      (employee.email && employee.email.toLowerCase().includes(searchLower)) ||
-      (employee.phone && employee.phone.includes(searchTerm)) ||
-      (employee.username &&
-        employee.username.toLowerCase().includes(searchLower)) ||
-      (employee.employee_id &&
-        employee.employee_id.toLowerCase().includes(searchLower));
+      !searchTerm ||
+      employee.name?.toLowerCase().includes(searchLower) ||
+      employee.email?.toLowerCase().includes(searchLower) ||
+      employee.phone?.includes(searchTerm) ||
+      employee.username?.toLowerCase().includes(searchLower) ||
+      employee.employee_id?.toLowerCase().includes(searchLower);
 
     const matchesRole =
       filterRole === "all" || employee.assignedRole === filterRole;
@@ -40,42 +31,20 @@ export const filterEmployees = (
   });
 };
 
-/**
- * Calculate employee statistics
- */
-export const calculateStats = (employees: Employee[]) => {
-  if (!employees || !Array.isArray(employees)) {
-    return {
-      totalEmployees: 0,
-      activeEmployees: 0,
-      inactiveEmployees: 0,
-      totalPayroll: 0,
-      avgSalary: 0,
-    };
+export const calculateStats = (employees: Employee[]): EmployeeStats => {
+  if (!employees?.length) {
+    return { totalEmployees: 0, activeEmployees: 0, inactiveEmployees: 0 };
   }
 
-  const totalEmployees = employees.length;
-  const activeEmployees = employees.filter((e) => e.status === "Active").length;
-  const inactiveEmployees = employees.filter(
-    (e) => e.status === "Inactive",
-  ).length;
-  const totalPayroll = employees.reduce((sum, e) => sum + (e.salary || 0), 0);
-  const avgSalary = totalEmployees > 0 ? totalPayroll / totalEmployees : 0;
-
   return {
-    totalEmployees,
-    activeEmployees,
-    inactiveEmployees,
-    totalPayroll,
-    avgSalary,
+    totalEmployees: employees.length,
+    activeEmployees: employees.filter((e) => e.status === "Active").length,
+    inactiveEmployees: employees.filter((e) => e.status === "Inactive").length,
   };
 };
 
-/**
- * Export employees to CSV
- */
-export const exportToCSV = (employees: Employee[]) => {
-  if (!employees || employees.length === 0) {
+export const exportToCSV = (employees: Employee[]): void => {
+  if (!employees?.length) {
     alert("No data to export");
     return;
   }
@@ -87,47 +56,32 @@ export const exportToCSV = (employees: Employee[]) => {
     "Username",
     "Employee ID",
     "Role",
-    "Salary",
     "Status",
-    "Join Date",
+    "Created At",
   ];
+  const rows = employees.map((emp) => [
+    `"${emp.name || ""}"`,
+    `"${emp.email || ""}"`,
+    `"${emp.phone || ""}"`,
+    `"${emp.username || ""}"`,
+    `"${emp.employee_id || ""}"`,
+    emp.assignedRole || "",
+    emp.status || "",
+    emp.created_at ? new Date(emp.created_at).toLocaleDateString() : "",
+  ]);
 
-  const csvRows = [headers.join(",")];
-
-  for (const emp of employees) {
-    const row = [
-      `"${emp.name || ""}"`,
-      `"${emp.email || ""}"`,
-      `"${emp.phone || ""}"`,
-      `"${emp.username || ""}"`,
-      `"${emp.employee_id || ""}"`,
-      `"${emp.assignedRole || ""}"`,
-      emp.salary || 0,
-      emp.status || "",
-      emp.joinDate || "",
-    ];
-    csvRows.push(row.join(","));
-  }
-
-  const blob = new Blob([csvRows.join("\n")], {
-    type: "text/csv;charset=utf-8;",
-  });
-  const url = URL.createObjectURL(blob);
+  const csvContent = [
+    headers.join(","),
+    ...rows.map((row) => row.join(",")),
+  ].join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute(
-    "download",
-    `employees_${new Date().toISOString().split("T")[0]}.csv`,
-  );
-  document.body.appendChild(link);
+  link.href = URL.createObjectURL(blob);
+  link.download = `employees_${new Date().toISOString().split("T")[0]}.csv`;
   link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(link.href);
 };
 
-/**
- * Get role display name
- */
 export const getRoleDisplayName = (role: string): string => {
   const roleMap: Record<string, string> = {
     super_admin: "Super Admin",
@@ -138,16 +92,4 @@ export const getRoleDisplayName = (role: string): string => {
     customer: "Customer",
   };
   return roleMap[role] || role;
-};
-
-/**
- * Get status display name
- */
-export const getStatusDisplayName = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    active: "Active",
-    inactive: "Inactive",
-    suspended: "Suspended",
-  };
-  return statusMap[status] || status;
 };

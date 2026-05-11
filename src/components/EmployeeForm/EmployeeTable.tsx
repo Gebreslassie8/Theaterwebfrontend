@@ -1,10 +1,22 @@
 // frontend/src/components/EmployeeForm/EmployeeTable.tsx
 import React from "react";
-import { useTranslation } from "react-i18next";
-import { Eye, Edit, Ban, RefreshCw, Trash2, Mail, Phone, LayoutGrid, UsersRound } from "lucide-react";
-import ReusableTable from "../Reusable/ReusableTable";
+import { motion } from "framer-motion";
+import {
+  Eye,
+  Edit,
+  Ban,
+  RefreshCw,
+  Trash2,
+  User,
+  Mail,
+  Phone,
+  Briefcase,
+} from "lucide-react";
 import { Employee } from "../../pages/Owner/employes/employee.types";
-import { roleConfig, statusConfig } from "../../pages/Owner/employes/employeeConstants";
+import {
+  roleConfig,
+  statusConfig,
+} from "../../pages/Owner/employes/employeeConstants";
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -17,6 +29,11 @@ interface EmployeeTableProps {
   onDelete: (employee: Employee) => void;
 }
 
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
+
 export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   employees,
   loading,
@@ -27,216 +44,180 @@ export const EmployeeTable: React.FC<EmployeeTableProps> = ({
   onReactivate,
   onDelete,
 }) => {
-  const { t } = useTranslation();
-
-  const canDeactivate = (employee: Employee): boolean =>
-    employee.status === "Active";
-
-  const canReactivate = (employee: Employee): boolean =>
-    employee.status === "Inactive";
-
-  const canPerformActions = (): boolean => {
-    return (
-      currentUserRole === "super_admin" || currentUserRole === "theater_owner"
-    );
-  };
-
-  const columns = [
-    {
-      Header: t("employeeManagement.table.headers.employee"),
-      accessor: "name",
-      sortable: true,
-      Cell: (row: Employee) => (
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="font-medium text-gray-900">{row.name}</p>
-            <p className="text-xs text-gray-500">@{row.username}</p>
-            {row.employee_id && (
-              <p className="text-xs text-gray-400 font-mono">
-                {t("employeeManagement.table.headers.employeeId")}: {row.employee_id}
-              </p>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      Header: t("employeeManagement.table.headers.contact"),
-      accessor: "email",
-      sortable: true,
-      Cell: (row: Employee) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-1">
-            <Mail className="h-3 w-3 text-gray-400" />
-            <span className="text-sm text-gray-600">{row.email}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Phone className="h-3 w-3 text-gray-400" />
-            <span className="text-sm text-gray-600">{row.phone}</span>
-          </div>
-        </div>
-      ),
-    },
-    {
-      Header: t("employeeManagement.table.headers.role"),
-      accessor: "assignedRole",
-      sortable: true,
-      Cell: (row: Employee) => {
-        const config = roleConfig[row.assignedRole] || roleConfig.sales_person;
-        const Icon = config.icon;
-        let roleLabel = config.label;
-        if (row.assignedRole === "theater_manager") roleLabel = t("employeeManagement.roles.theaterManager");
-        else if (row.assignedRole === "sales_person") roleLabel = t("employeeManagement.roles.salesPerson");
-        else if (row.assignedRole === "qr_scanner") roleLabel = t("employeeManagement.roles.qrScanner");
-        else roleLabel = config.label;
-        return (
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
-          >
-            <Icon className="h-3 w-3" />
-            {roleLabel}
-          </span>
-        );
-      },
-    },
-    {
-      Header: t("employeeManagement.table.headers.salary"),
-      accessor: "salary",
-      sortable: true,
-      Cell: (row: Employee) => (
-        <span className="font-semibold text-green-600">
-          {t("employeeManagement.table.currency")} {row.salary.toLocaleString()}
-        </span>
-      ),
-    },
-    {
-      Header: t("employeeManagement.table.headers.status"),
-      accessor: "status",
-      sortable: true,
-      Cell: (row: Employee) => {
-        const config = statusConfig[row.status];
-        const Icon = config.icon;
-        const statusLabel = row.status === "Active" 
-          ? t("employeeManagement.status.active") 
-          : t("employeeManagement.status.inactive");
-        return (
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
-          >
-            <Icon className="h-3 w-3" />
-            {statusLabel}
-          </span>
-        );
-      },
-    },
-  ];
-
-  const renderActions = (row: Employee) => (
-    <div className="flex items-center justify-start gap-2">
-      <button
-        onClick={() => onView(row)}
-        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-all duration-200 group"
-        title={t("employeeManagement.table.actions.view")}
-        type="button"
-      >
-        <Eye className="h-4 w-4 text-blue-600 group-hover:scale-110 transition-transform" />
-      </button>
-
-      {canPerformActions() && (
-        <button
-          onClick={() => onEdit(row)}
-          className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200 group"
-          title={t("employeeManagement.table.actions.edit")}
-          type="button"
-        >
-          <Edit className="h-4 w-4 text-teal-600 group-hover:scale-110 transition-transform" />
-        </button>
-      )}
-
-      {canDeactivate(row) && canPerformActions() && (
-        <button
-          onClick={() => onDeactivate(row)}
-          className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-all duration-200 group"
-          title={t("employeeManagement.table.actions.deactivate")}
-          type="button"
-        >
-          <Ban className="h-4 w-4 text-orange-600 group-hover:scale-110 transition-transform" />
-        </button>
-      )}
-
-      {canReactivate(row) && canPerformActions() && (
-        <button
-          onClick={() => onReactivate(row)}
-          className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-all duration-200 group"
-          title={t("employeeManagement.table.actions.reactivate")}
-          type="button"
-        >
-          <RefreshCw className="h-4 w-4 text-green-600 group-hover:scale-110 transition-transform" />
-        </button>
-      )}
-
-      {canPerformActions() && (
-        <button
-          onClick={() => onDelete(row)}
-          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all duration-200 group"
-          title={t("employeeManagement.table.actions.delete")}
-          type="button"
-        >
-          <Trash2 className="h-4 w-4 text-red-600 group-hover:scale-110 transition-transform" />
-        </button>
-      )}
-    </div>
-  );
-
-  const columnsWithActions = [
-    ...columns,
-    {
-      Header: t("employeeManagement.table.headers.actions"),
-      accessor: "actions",
-      Cell: renderActions,
-      width: "280px",
-      align: "left" as const,
-    },
-  ];
-
   if (loading) {
     return (
-      <div className="flex flex-col justify-center items-center py-12 bg-white rounded-xl shadow-md">
-        <div
-          className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"
-          role="status"
-        >
-          <span className="sr-only">{t("employeeManagement.table.loading")}</span>
-        </div>
-        <p className="mt-4 text-gray-500">{t("employeeManagement.table.loading")}</p>
+      <div className="flex justify-center items-center py-12 bg-white rounded-xl shadow-sm">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
       </div>
     );
   }
 
   if (employees.length === 0) {
     return (
-      <div className="text-center py-12 bg-white rounded-xl shadow-md">
-        <UsersRound className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
-          {t("employeeManagement.table.noEmployees")}
-        </h3>
-        <p className="text-gray-500 mb-4">
-          {t("employeeManagement.table.noEmployeesMessage")}
-        </p>
+      <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+        <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-500">No employees found</p>
       </div>
     );
   }
 
+  const canEdit =
+    currentUserRole === "super_admin" || currentUserRole === "theater_owner";
+
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
-      <ReusableTable
-        columns={columnsWithActions}
-        data={employees}
-        icon={LayoutGrid}
-        showSearch={false}
-        showExport={false}
-        showPrint={false}
-      />
+    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Employee
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Contact
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {employees.map((employee) => {
+              const roleConf =
+                roleConfig[employee.assignedRole] || roleConfig.sales_person;
+              const RoleIcon = roleConf.icon;
+              const statusConf =
+                statusConfig[employee.status] || statusConfig.Active;
+              const StatusIcon = statusConf.icon;
+
+              return (
+                <motion.tr
+                  key={employee.id}
+                  variants={itemVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  {/* Employee Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-md">
+                        <span className="text-white font-semibold text-sm">
+                          {employee.name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {employee.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {employee.employee_id || "No ID"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Contact Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1 text-sm text-gray-600">
+                        <Mail className="h-3 w-3" />
+                        <span>{employee.email}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <Phone className="h-3 w-3" />
+                        <span>{employee.phone || "No phone"}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Role Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${roleConf.bgColor} ${roleConf.color}`}
+                    >
+                      <RoleIcon className="h-3 w-3" />
+                      {roleConf.label}
+                    </span>
+                  </td>
+
+                  {/* Status Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConf.bgColor} ${statusConf.color}`}
+                    >
+                      <StatusIcon className="h-3 w-3" />
+                      {employee.status}
+                    </span>
+                  </td>
+
+                  {/* Actions Column */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => onView(employee)}
+                        className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                        title="View Details"
+                        type="button"
+                      >
+                        <Eye className="h-4 w-4 text-blue-600" />
+                      </button>
+
+                      {canEdit && (
+                        <button
+                          onClick={() => onEdit(employee)}
+                          className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
+                          title="Edit Employee"
+                          type="button"
+                        >
+                          <Edit className="h-4 w-4 text-teal-600" />
+                        </button>
+                      )}
+
+                      {employee.status === "Active" ? (
+                        <button
+                          onClick={() => onDeactivate(employee)}
+                          className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition-colors"
+                          title="Deactivate"
+                          type="button"
+                        >
+                          <Ban className="h-4 w-4 text-orange-600" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onReactivate(employee)}
+                          className="p-1.5 rounded-lg bg-green-50 hover:bg-green-100 transition-colors"
+                          title="Reactivate"
+                          type="button"
+                        >
+                          <RefreshCw className="h-4 w-4 text-green-600" />
+                        </button>
+                      )}
+
+                      {canEdit && (
+                        <button
+                          onClick={() => onDelete(employee)}
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+                          title="Delete Employee"
+                          type="button"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </motion.tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
