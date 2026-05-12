@@ -181,16 +181,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // CRITICAL FIX: Prevent ALL form submissions and navigation events
+  // Prevent form submissions and navigation events
   useEffect(() => {
     const preventAllFormSubmissions = (e: KeyboardEvent | Event) => {
-      // Prevent Enter key from submitting anything
       if (e instanceof KeyboardEvent && e.key === "Enter") {
         e.preventDefault();
         e.stopPropagation();
         return false;
       }
-      // Prevent any submit events
       if (e.type === "submit") {
         e.preventDefault();
         e.stopPropagation();
@@ -198,18 +196,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
       }
     };
 
-    const preventGlobalNavigation = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    };
-
     if (isOpen) {
-      // Block Enter key globally when modal is open
       document.addEventListener("keydown", preventAllFormSubmissions);
       document.addEventListener("submit", preventAllFormSubmissions, true);
 
-      // Block all click events that might cause navigation
       const allLinks = document.querySelectorAll("a");
       const modalElement = modalRef.current;
 
@@ -294,7 +284,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen, show.id]);
 
-  // Fetch seat data based on selected schedule's hall
+  // Fetch seat data based on selected schedule - ONLY for THIS specific schedule
   useEffect(() => {
     const fetchSeatData = async () => {
       if (!selectedSchedule?.hallId) {
@@ -306,6 +296,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setLoadingSeats(true);
         setError("");
 
+        console.log("🔍 Fetching seat data for hall:", selectedSchedule.hallId);
+        console.log("🔍 Schedule ID:", selectedSchedule.id);
+        console.log("🔍 Event ID:", show.id);
+
+        // Fetch hall info
         const { data: hall, error: hallError } = await supabase
           .from("halls")
           .select("id, name")
@@ -315,6 +310,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         if (hallError) throw hallError;
         setHallData(hall);
 
+        // Fetch seat levels
         const { data: levelsData, error: levelsError } = await supabase
           .from("seat_levels")
           .select("*")
@@ -325,6 +321,39 @@ const BookingModal: React.FC<BookingModalProps> = ({
         if (levelsError) throw levelsError;
         setSeatLevels(levelsData || []);
 
+        // IMPORTANT: Get seats reserved ONLY for THIS specific schedule
+        // This ensures seats booked for different schedules/events remain available
+        const { data: reservedSeatsForThisSchedule, error: reservedError } =
+          await supabase
+            .from("reserved_seats")
+            .select(
+              `
+            seat_id,
+            reservation_id,
+            reservations!inner (
+              schedule_id,
+              status,
+              payment_status
+            )
+          `,
+            )
+            .eq("reservations.schedule_id", selectedSchedule.id)
+            .in("reservations.status", ["confirmed", "pending"])
+            .eq("reservations.payment_status", "paid");
+
+        if (reservedError) {
+          console.error("Error fetching reserved seats:", reservedError);
+        }
+
+        const reservedSeatIds = new Set(
+          reservedSeatsForThisSchedule?.map((rs) => rs.seat_id) || [],
+        );
+        console.log(
+          `🔒 Found ${reservedSeatIds.size} reserved seats for THIS schedule only`,
+        );
+        console.log(`   (Seats for other schedules/events remain available)`);
+
+        // Fetch all seats
         const { data: seatsData, error: seatsError } = await supabase
           .from("seats")
           .select("*")
@@ -335,10 +364,25 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
         if (seatsError) throw seatsError;
 
-        setSeats(seatsData || []);
+        // Mark seats as reserved ONLY if they are reserved for THIS schedule
+        const seatsWithReservationStatus =
+          seatsData?.map((seat) => ({
+            ...seat,
+            is_reserved: reservedSeatIds.has(seat.id),
+            status: reservedSeatIds.has(seat.id) ? "reserved" : "available",
+          })) || [];
+
+        const availableCount = seatsWithReservationStatus.filter(
+          (s) => !s.is_reserved,
+        ).length;
+
+        console.log(`✅ Total seats: ${seatsWithReservationStatus.length}`);
+        console.log(`📊 Available for THIS schedule: ${availableCount}`);
+
+        setSeats(seatsWithReservationStatus);
         setSelectedSeats([]);
       } catch (err) {
-        console.error("Error fetching seat data:", err);
+        console.error("❌ Error in fetchSeatData:", err);
         setError(
           err instanceof Error
             ? err.message
@@ -353,6 +397,74 @@ const BookingModal: React.FC<BookingModalProps> = ({
       fetchSeatData();
     }
   }, [isOpen, selectedSchedule]);
+
+  // Verify seats are still available for THIS schedule before proceeding
+  const verifySeatsAvailability = async (): Promise<boolean> => {
+    if (!selectedSchedule) return false;
+
+    const seatIds = selectedSeats.map((seat) => seat.id);
+
+    // Check ONLY for this specific schedule
+    const { data: existingReservations, error } = await supabase
+      .from("reserved_seats")
+      .select(
+        `
+        seat_id,
+        reservation_id,
+        reservations!inner (
+          schedule_id,
+          status,
+          payment_status
+        )
+      `,
+      )
+      .in("seat_id", seatIds)
+      .eq("reservations.schedule_id", selectedSchedule.id)
+      .in("reservations.status", ["confirmed", "pending"])
+      .eq("reservations.payment_status", "paid");
+
+    if (error) {
+      console.error("Error verifying seat availability:", error);
+      return false;
+    }
+
+    const unavailableSeatIds = new Set(
+      existingReservations?.map((rs) => rs.seat_id) || [],
+    );
+    const unavailableSeats = selectedSeats.filter((seat) =>
+      unavailableSeatIds.has(seat.id),
+    );
+
+    if (unavailableSeats.length > 0) {
+      setError(
+        `Seats ${unavailableSeats.map((s) => s.seat_label).join(", ")} are no longer available for this show time. Please select different seats.`,
+      );
+
+      // Refresh seat data to show updated availability
+      const { data: freshReserved } = await supabase
+        .from("reserved_seats")
+        .select(
+          `seat_id, reservations!inner(schedule_id, status, payment_status)`,
+        )
+        .eq("reservations.schedule_id", selectedSchedule.id)
+        .in("reservations.status", ["confirmed", "pending"])
+        .eq("reservations.payment_status", "paid");
+
+      const freshReservedIds = new Set(
+        freshReserved?.map((rs) => rs.seat_id) || [],
+      );
+      setSeats((prev) =>
+        prev.map((seat) => ({
+          ...seat,
+          is_reserved: freshReservedIds.has(seat.id),
+          status: freshReservedIds.has(seat.id) ? "reserved" : "available",
+        })),
+      );
+      return false;
+    }
+
+    return true;
+  };
 
   const seatsByRow = seats.reduce(
     (acc, seat) => {
@@ -428,7 +540,9 @@ const BookingModal: React.FC<BookingModalProps> = ({
     );
   };
 
-  const handleNext = (e?: React.MouseEvent | React.KeyboardEvent): void => {
+  const handleNext = async (
+    e?: React.MouseEvent | React.KeyboardEvent,
+  ): Promise<void> => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
@@ -441,6 +555,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
       }
       if (selectedSeats.length === 0) {
         setError("Please select at least one seat");
+        return;
+      }
+      // Verify seats are still available before proceeding
+      const stillAvailable = await verifySeatsAvailability();
+      if (!stillAvailable) {
         return;
       }
     }
@@ -482,6 +601,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setError("");
 
     try {
+      // Final availability check before booking
+      const stillAvailable = await verifySeatsAvailability();
+      if (!stillAvailable) {
+        setIsProcessing(false);
+        return;
+      }
+
       const seatsForRegistration: SeatInfo[] = selectedSeats.map((seat) => {
         const seatLevel = getSeatLevel(seat.seat_level_id);
         return {
@@ -855,17 +981,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                             }
                                             disabled={isReserved}
                                             type="button"
-                                            className={`
-                                              relative w-9 h-9 rounded-lg transition-all duration-200
-                                              flex items-center justify-center text-xs font-medium
-                                              ${
-                                                isReserved
-                                                  ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-50 line-through"
-                                                  : isSelected
-                                                    ? "bg-teal-600 text-white shadow-lg scale-105 ring-2 ring-teal-400"
-                                                    : "hover:shadow-lg cursor-pointer border-2 border-transparent hover:border-teal-400"
-                                              }
-                                            `}
+                                            className={`relative w-9 h-9 rounded-lg transition-all duration-200 flex items-center justify-center text-xs font-medium ${
+                                              isReserved
+                                                ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed opacity-50 line-through"
+                                                : isSelected
+                                                  ? "bg-teal-600 text-white shadow-lg scale-105 ring-2 ring-teal-400"
+                                                  : "hover:shadow-lg cursor-pointer border-2 border-transparent hover:border-teal-400"
+                                            }`}
                                             style={{
                                               backgroundColor:
                                                 !isReserved && !isSelected
@@ -903,7 +1025,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                 <div className="flex items-center gap-1.5">
                                   <div className="w-3 h-3 rounded bg-gray-400" />
                                   <span className="text-xs text-gray-600">
-                                    Reserved
+                                    Reserved for this show
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
@@ -946,14 +1068,11 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                     setSelectedSchedule(s);
                                     setSelectedSeats([]);
                                   }}
-                                  className={`
-                                    p-3 rounded-xl border-2 cursor-pointer transition-all
-                                    ${
-                                      selectedSchedule?.id === s.id
-                                        ? "border-teal-500 bg-teal-100 dark:bg-teal-900/30 shadow-md"
-                                        : "border-gray-200 dark:border-dark-700 hover:border-teal-300"
-                                    }
-                                  `}
+                                  className={`p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                    selectedSchedule?.id === s.id
+                                      ? "border-teal-500 bg-teal-100 dark:bg-teal-900/30 shadow-md"
+                                      : "border-gray-200 dark:border-dark-700 hover:border-teal-300"
+                                  }`}
                                 >
                                   <div className="flex justify-between items-center">
                                     <div>
@@ -1025,7 +1144,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
                                   );
                                 })}
                               </div>
-
                               <div className="mt-3 pt-3 border-t">
                                 <div className="flex justify-between items-center font-bold">
                                   <span>Total</span>
@@ -1237,13 +1355,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
                       >
                         {isProcessing ? (
                           <>
-                            <Loader2 className="animate-spin h-5 w-5" />
+                            <Loader2 className="animate-spin h-5 w-5" />{" "}
                             Processing...
                           </>
                         ) : (
                           <>
-                            <Sparkles className="h-5 w-5" />
-                            Pay {formatCurrency(calculateTotal())}
+                            <Sparkles className="h-5 w-5" /> Pay{" "}
+                            {formatCurrency(calculateTotal())}
                           </>
                         )}
                       </button>
@@ -1266,9 +1384,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     <button
                       onClick={handleNext}
                       type="button"
-                      className={`px-6 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-md transition ${
-                        step === 1 ? "ml-auto" : ""
-                      }`}
+                      className={`px-6 py-2.5 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg font-medium hover:shadow-md transition ${step === 1 ? "ml-auto" : ""}`}
                     >
                       Continue{" "}
                       {step === 1 ? (
