@@ -14,6 +14,7 @@ import {
   Lock,
   Edit,
   CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import * as Yup from "yup";
 import supabase from "@/config/supabaseClient";
@@ -29,30 +30,129 @@ interface AddNewEmployeeProps {
   currentUserRole?: string;
 }
 
+// Ethiopian phone number validation
+const validateEthiopianPhone = (phone: string): boolean => {
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, "");
+
+  // Ethiopian phone numbers are 10 digits after removing country code
+  // Ethio Telecom: 91, 92, 93, 94, 95, 96, 97, 98, 99
+  // Safaricom: 90, 91, 92, 93, 94, 95, 96, 97, 98, 99
+  const ethioPrefixes = ["91", "92", "93", "94", "95", "96", "97", "98", "99"];
+  const safaricomPrefixes = [
+    "90",
+    "91",
+    "92",
+    "93",
+    "94",
+    "95",
+    "96",
+    "97",
+    "98",
+    "99",
+  ];
+  const allPrefixes = [...new Set([...ethioPrefixes, ...safaricomPrefixes])];
+
+  // Check if number has 9 digits (without country code)
+  if (cleaned.length === 9) {
+    const prefix = cleaned.substring(0, 2);
+    return allPrefixes.includes(prefix);
+  }
+
+  // Check if number has 10 digits (includes leading 0)
+  if (cleaned.length === 10 && cleaned.startsWith("0")) {
+    const prefix = cleaned.substring(1, 3);
+    return allPrefixes.includes(prefix);
+  }
+
+  // Check if number has 12 digits (includes country code 251)
+  if (cleaned.length === 12 && cleaned.startsWith("251")) {
+    const prefix = cleaned.substring(3, 5);
+    return allPrefixes.includes(prefix);
+  }
+
+  return false;
+};
+
+// Format phone number for display
+const formatEthiopianPhone = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, "");
+
+  if (cleaned.length === 9) {
+    return `0${cleaned.slice(0, 2)}-${cleaned.slice(2, 5)}-${cleaned.slice(5)}`;
+  }
+  if (cleaned.length === 10 && cleaned.startsWith("0")) {
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+  }
+  if (cleaned.length === 12 && cleaned.startsWith("251")) {
+    return `+251 ${cleaned.slice(3, 5)}-${cleaned.slice(5, 8)}-${cleaned.slice(8)}`;
+  }
+
+  return phone;
+};
+
 const createValidationSchema = (isEditMode: boolean) =>
   Yup.object({
     name: Yup.string()
-      .required("Name is required")
-      .min(2, "Name must be at least 2 characters"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
+      .required("Full name is required")
+      .min(2, "Name must be at least 2 characters")
+      .max(100, "Name must not exceed 100 characters")
+      .matches(
+        /^[a-zA-ZÀ-ÿ\s'-]+$/,
+        "Name can only contain letters, spaces, apostrophes, and hyphens",
+      ),
+
+    email: Yup.string()
+      .required("Email address is required")
+      .email("Please enter a valid email address")
+      .max(255, "Email must not exceed 255 characters")
+      .lowercase("Email must be in lowercase"),
+
     phone: Yup.string()
       .required("Phone number is required")
-      .matches(/^[0-9+\s-]+$/, "Invalid phone number format"),
-    assignedRole: Yup.string().required("Role is required"),
+      .test(
+        "ethiopian-phone",
+        "Please enter a valid Ethiopian phone number (e.g., 0912345678, +251912345678, or 912345678)",
+        (value) => {
+          if (!value) return false;
+          return validateEthiopianPhone(value);
+        },
+      ),
+
+    assignedRole: Yup.string().required(
+      "Please select a role for the employee",
+    ),
+
     password: Yup.string().when([], {
       is: () => !isEditMode,
       then: (schema) =>
         schema
-          .required("Password is required")
-          .min(6, "Password must be at least 6 characters"),
-      otherwise: (schema) => schema.notRequired(),
+          .required("Password is required for new employees")
+          .min(8, "Password must be at least 8 characters")
+          .max(32, "Password must not exceed 32 characters")
+          .matches(
+            /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+            "Password must contain at least one uppercase letter, one lowercase letter, and one number",
+          ),
+      otherwise: (schema) =>
+        schema.test(
+          "password-strength",
+          "If providing a new password, it must be at least 8 characters and contain uppercase, lowercase, and numbers",
+          (value) => {
+            if (!value) return true; // Empty is fine for edit mode
+            return (
+              value.length >= 8 && /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(value)
+            );
+          },
+        ),
     }),
+
     confirmPassword: Yup.string().when(["password"], {
       is: (password: string) => password && password.length > 0,
       then: (schema) =>
         schema
           .required("Please confirm your password")
-          .oneOf([Yup.ref("password")], "Passwords must match"),
+          .oneOf([Yup.ref("password")], "Passwords must match exactly"),
       otherwise: (schema) => schema.notRequired(),
     }),
   });
@@ -71,6 +171,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [formValues, setFormValues] = useState({
     name: "",
     email: "",
@@ -119,11 +220,30 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
     return username;
   };
 
+  // Format phone number as user types
+  const handlePhoneChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    let formatted = cleaned;
+
+    if (cleaned.length === 0) {
+      formatted = "";
+    } else if (cleaned.length <= 3) {
+      formatted = cleaned;
+    } else if (cleaned.length <= 6) {
+      formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    } else {
+      formatted = `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    }
+
+    handleFieldChange("phone", formatted);
+  };
+
   // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
       setErrors({});
+      setTouched({});
 
       if (isEdit && editData) {
         setFormValues({
@@ -163,6 +283,12 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         if (error.path) newErrors[error.path] = error.message;
       });
       setErrors(newErrors);
+      // Mark all fields as touched on submit
+      const allTouched: Record<string, boolean> = {};
+      Object.keys(formValues).forEach((key) => {
+        allTouched[key] = true;
+      });
+      setTouched(allTouched);
       return false;
     }
   };
@@ -178,17 +304,32 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
     }
   };
 
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
   const handleSubmit = async () => {
     if (!(await validateForm())) return;
     setIsSubmitting(true);
 
     try {
+      // Format phone number for storage (store in standard format)
+      const cleanedPhone = formValues.phone.replace(/\D/g, "");
+      const storedPhone =
+        cleanedPhone.length === 9
+          ? `0${cleanedPhone}`
+          : cleanedPhone.length === 10
+            ? cleanedPhone
+            : cleanedPhone.length === 12
+              ? `0${cleanedPhone.slice(3)}`
+              : formValues.phone;
+
       if (isEdit && editData) {
         // UPDATE MODE
         const updateData: any = {
-          full_name: formValues.name,
-          email: formValues.email.toLowerCase(),
-          phone: formValues.phone,
+          full_name: formValues.name.trim(),
+          email: formValues.email.toLowerCase().trim(),
+          phone: storedPhone,
           role: formValues.assignedRole,
           updated_at: new Date().toISOString(),
         };
@@ -221,7 +362,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         const { data: existingEmail } = await supabase
           .from("users")
           .select("email")
-          .eq("email", formValues.email.toLowerCase())
+          .eq("email", formValues.email.toLowerCase().trim())
           .maybeSingle();
         if (existingEmail) {
           throw new Error(`Email ${formValues.email} is already registered`);
@@ -231,11 +372,11 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         const { data: existingPhone } = await supabase
           .from("users")
           .select("phone")
-          .eq("phone", formValues.phone)
+          .eq("phone", storedPhone)
           .maybeSingle();
         if (existingPhone) {
           throw new Error(
-            `Phone number ${formValues.phone} is already registered`,
+            `Phone number ${formatEthiopianPhone(storedPhone)} is already registered`,
           );
         }
 
@@ -247,10 +388,10 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         const { data: userData, error: userError } = await supabase
           .from("users")
           .insert({
-            full_name: formValues.name,
+            full_name: formValues.name.trim(),
             username,
-            email: formValues.email.toLowerCase(),
-            phone: formValues.phone,
+            email: formValues.email.toLowerCase().trim(),
+            phone: storedPhone,
             password: formValues.password,
             role: formValues.assignedRole,
             status: "active",
@@ -301,24 +442,28 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
       required: true,
       icon: <User size={16} />,
       colSpan: 1,
+      hint: "",
     },
     {
       name: "email",
       type: "email",
       label: "Email Address",
-      placeholder: "Enter email",
+      placeholder: "employee@example.com",
       required: true,
       icon: <Mail size={16} />,
       colSpan: 1,
+      hint: "",
     },
     {
       name: "phone",
       type: "tel",
       label: "Phone Number",
-      placeholder: "Enter phone number",
+      placeholder: "0912-345-678",
       required: true,
       icon: <Phone size={16} />,
       colSpan: 1,
+      hint: "Ethiopian format: 0912345678, 912345678",
+      onChange: handlePhoneChange,
     },
     {
       name: "assignedRole",
@@ -329,6 +474,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
       icon: <Briefcase size={16} />,
       colSpan: 1,
       options: availableRoles.map((r) => ({ value: r.id, label: r.label })),
+      hint: "Determines system permissions and access levels",
     },
     {
       name: "password",
@@ -340,6 +486,9 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
       colSpan: 1,
       rightIcon: showPassword ? <EyeOff size={18} /> : <Eye size={18} />,
       onRightIconClick: () => setShowPassword(!showPassword),
+      hint: isEdit
+        ? "Enter new password only if you want to change it"
+        : "",
     },
     {
       name: "confirmPassword",
@@ -351,6 +500,7 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
       colSpan: 1,
       rightIcon: showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />,
       onRightIconClick: () => setShowConfirmPassword(!showConfirmPassword),
+      hint: "Re-enter the password to confirm",
     },
   ];
 
@@ -435,7 +585,12 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                       onChange={(e) =>
                         handleFieldChange(field.name, e.target.value)
                       }
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
+                      onBlur={() => handleBlur(field.name)}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-colors ${
+                        touched[field.name] && errors[field.name]
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-200 bg-white"
+                      }`}
                     >
                       <option value="">{field.placeholder}</option>
                       {field.options?.map((opt) => (
@@ -453,11 +608,22 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                           field.name as keyof typeof formValues
                         ] as string
                       }
-                      onChange={(e) =>
-                        handleFieldChange(field.name, e.target.value)
-                      }
+                      onChange={(e) => {
+                        if (field.onChange) {
+                          field.onChange(e.target.value);
+                        } else {
+                          handleFieldChange(field.name, e.target.value);
+                        }
+                      }}
+                      onBlur={() => handleBlur(field.name)}
                       required={field.required}
-                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                      className={`w-full pl-10 ${
+                        field.rightIcon ? "pr-10" : "pr-4"
+                      } py-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none transition-colors ${
+                        touched[field.name] && errors[field.name]
+                          ? "border-red-300 bg-red-50"
+                          : "border-gray-200 bg-white"
+                      }`}
                     />
                   )}
 
@@ -471,14 +637,57 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
                     </button>
                   )}
                 </div>
-                {errors[field.name] && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors[field.name]}
-                  </p>
+
+                {/* Error message */}
+                {touched[field.name] && errors[field.name] && (
+                  <div className="mt-1 flex items-start gap-1">
+                    <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-red-500">{errors[field.name]}</p>
+                  </div>
+                )}
+
+                {/* Hint text */}
+                {field.hint && !(touched[field.name] && errors[field.name]) && (
+                  <p className="mt-1 text-xs text-gray-400">{field.hint}</p>
                 )}
               </div>
             ))}
           </div>
+
+          {/* Password Requirements (only show in create mode or when password field is touched) */}
+          {(!isEdit || formValues.password) && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-xs font-medium text-gray-700 mb-2">
+                Password Requirements:
+              </p>
+              <ul className="text-xs text-gray-600 space-y-1">
+                <li className="flex items-center gap-2">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${formValues.password.length >= 8 ? "bg-green-500" : "bg-gray-300"}`}
+                  />
+                  At least 8 characters long
+                </li>
+                <li className="flex items-center gap-2">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(formValues.password) ? "bg-green-500" : "bg-gray-300"}`}
+                  />
+                  At least one uppercase letter (A-Z)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${/[a-z]/.test(formValues.password) ? "bg-green-500" : "bg-gray-300"}`}
+                  />
+                  At least one lowercase letter (a-z)
+                </li>
+                <li className="flex items-center gap-2">
+                  <div
+                    className={`w-1.5 h-1.5 rounded-full ${/\d/.test(formValues.password) ? "bg-green-500" : "bg-gray-300"}`}
+                  />
+                  At least one number (0-9)
+                </li>
+              </ul>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200 mt-4">
