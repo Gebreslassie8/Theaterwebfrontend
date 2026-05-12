@@ -45,7 +45,7 @@ export interface Event {
   duration: number;
   theater_id: string;
   venue?: string;
-  poster_url: PosterUrls;
+  poster_url: PosterUrls | string;
   images: {
     poster: string;
     gallery: string[];
@@ -86,39 +86,28 @@ interface SupabaseEvent {
 
 const ITEMS_PER_PAGE = 6;
 
-// Transform function (unchanged)
-const transformSupabaseEvent = (event: SupabaseEvent): Event => {
-  const sampleDates: ShowDate[] = [
-    {
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      time: "19:30",
-      availableSeats: Math.floor(Math.random() * 100) + 20,
-      price: event.price_min || 50,
-    },
-    {
-      date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0],
-      time: "14:00",
-      availableSeats: Math.floor(Math.random() * 100) + 20,
-      price: event.price_min || 50,
-    },
-  ];
+// Helper function to safely get poster URL
+const getPosterUrl = (event: SupabaseEvent): string => {
+  return event.poster_url || "";
+};
 
-  const posterUrl =
-    event.poster_url ||
-    "https://images.unsplash.com/photo-1511193311914-034c8c8a8f16?w=800&auto=format&fit=crop";
+// Transform function - only use real data
+const transformSupabaseEvent = (event: SupabaseEvent): Event | null => {
+  // Skip events without poster URL (real data only)
+  if (!event.poster_url) {
+    return null;
+  }
+
+  const posterUrl = event.poster_url;
 
   return {
     id: event.id,
     title: event.title,
-    description: event.description || "No description available",
-    genre: event.genre || "General",
-    duration: event.duration_minutes || 120,
+    description: event.description || "",
+    genre: event.genre || "",
+    duration: event.duration_minutes || 0,
     theater_id: event.theater_id,
-    venue: event.theaters?.legal_business_name || "Unknown Theater",
+    venue: event.theaters?.legal_business_name || "",
     cast: event.cast || [],
     poster_url: {
       poster: posterUrl,
@@ -128,12 +117,12 @@ const transformSupabaseEvent = (event: SupabaseEvent): Event => {
       poster: posterUrl,
       gallery: [],
     },
-    dates: sampleDates,
+    dates: [],
     priceRange: {
       min: event.price_min || 0,
       max: event.price_max || 0,
     },
-    status: event.status || "coming-soon",
+    status: event.status || "",
     isFeatured: event.is_featured || false,
     rating: event.rating || undefined,
     reviews: event.review_count || undefined,
@@ -142,7 +131,7 @@ const transformSupabaseEvent = (event: SupabaseEvent): Event => {
 };
 
 const Home: React.FC = () => {
-  const { t } = useTranslation();   // <-- translation hook
+  const { t } = useTranslation();
 
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
@@ -157,7 +146,6 @@ const Home: React.FC = () => {
   const [showCookieConsent, setShowCookieConsent] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
-  // ------- Sort options with translated labels -------
   const sortOptions = [
     { value: "date", label: t("sortOptions.date"), icon: Calendar },
     { value: "name", label: t("sortOptions.name"), icon: SortAsc },
@@ -166,7 +154,7 @@ const Home: React.FC = () => {
     { value: "rating", label: t("sortOptions.rating"), icon: Star },
   ];
 
-  // Fetch data from Supabase (unchanged)
+  // Fetch data from Supabase
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -183,12 +171,15 @@ const Home: React.FC = () => {
             )
             `,
           )
+          .not("poster_url", "is", null)
           .order("created_at", { ascending: false });
 
         if (supabaseError) throw supabaseError;
 
         if (supabaseEvents && supabaseEvents.length > 0) {
-          const transformedEvents = supabaseEvents.map(transformSupabaseEvent);
+          const transformedEvents = supabaseEvents
+            .map(transformSupabaseEvent)
+            .filter((event): event is Event => event !== null);
           setEvents(transformedEvents);
           setFilteredEvents(transformedEvents);
         } else {
@@ -208,30 +199,7 @@ const Home: React.FC = () => {
     fetchEvents();
   }, []);
 
-  // Cookie handlers (unchanged)
-  const acceptAllCookies = () => {
-    localStorage.setItem("cookieConsent", "accepted");
-    localStorage.setItem(
-      "cookiePreferences",
-      JSON.stringify({ functional: true, analytics: true, marketing: true })
-    );
-    setShowCookieConsent(false);
-  };
-
-  const rejectAllCookies = () => {
-    localStorage.setItem("cookieConsent", "rejected");
-    localStorage.setItem(
-      "cookiePreferences",
-      JSON.stringify({ functional: false, analytics: false, marketing: false })
-    );
-    setShowCookieConsent(false);
-  };
-
-  const customizeCookies = () => {
-    window.location.href = "/cookies";
-  };
-
-  // Filter & sort logic (unchanged)
+  // Filter & sort logic
   useEffect(() => {
     let results = [...events];
 
@@ -260,10 +228,7 @@ const Home: React.FC = () => {
     results.sort((a, b) => {
       switch (sortBy) {
         case "date":
-          return (
-            (new Date(b.dates?.[0]?.date || 0).getTime() -
-              new Date(a.dates?.[0]?.date || 0).getTime())
-          );
+          return 0;
         case "price-low":
           return (a.priceRange?.min ?? 0) - (b.priceRange?.min ?? 0);
         case "price-high":
@@ -315,8 +280,10 @@ const Home: React.FC = () => {
     setSortBy("date");
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
+      e.preventDefault();
+      e.stopPropagation();
       console.log("Searching for:", searchQuery);
     }
   };
@@ -369,13 +336,36 @@ const Home: React.FC = () => {
     }
   }, []);
 
-  // ---------- RENDER ----------
+  const acceptAllCookies = () => {
+    localStorage.setItem("cookieConsent", "accepted");
+    localStorage.setItem(
+      "cookiePreferences",
+      JSON.stringify({ functional: true, analytics: true, marketing: true }),
+    );
+    setShowCookieConsent(false);
+  };
+
+  const rejectAllCookies = () => {
+    localStorage.setItem("cookieConsent", "rejected");
+    localStorage.setItem(
+      "cookiePreferences",
+      JSON.stringify({ functional: false, analytics: false, marketing: false }),
+    );
+    setShowCookieConsent(false);
+  };
+
+  const customizeCookies = () => {
+    window.location.href = "/cookies";
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-dark-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-deepTeal mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">{t("common.loadingEvents")}</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {t("common.loadingEvents")}
+          </p>
         </div>
       </div>
     );
@@ -394,6 +384,7 @@ const Home: React.FC = () => {
           <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
           <button
             onClick={() => window.location.reload()}
+            type="button"
             className="px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
           >
             {t("common.tryAgain")}
@@ -405,25 +396,15 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-dark-900 pb-20">
-      {/* Hero Section (dynamic, not translated because titles come from DB) */}
-      <HeroBanner
-        featuredShows={events
-          .filter((event) => event.isFeatured)
-          .map((event) => ({
-            id: event.id,
-            title: event.title,
-            image: event.poster_url.poster,
-            genre: event.genre,
-            rating: event.rating || 0,
-          }))}
-      />
+      {/* Hero Banner - No props needed, it fetches data itself */}
+      <HeroBanner />
 
       <div className="container mx-auto px-4 py-12">
-        {/* Search & Filter Section */}
+        {/* Search & Filter Section - No form to prevent submission */}
         <div className="mb-10">
           <div className="max-w-5xl mx-auto">
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              {/* Search input */}
+              {/* Search input - Not inside a form */}
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <input
@@ -432,18 +413,21 @@ const Home: React.FC = () => {
                   className="w-full pl-12 pr-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl focus:ring-2 focus:ring-deepTeal focus:border-transparent dark:text-white placeholder:text-gray-400 shadow-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyPress={handleSearchKeyPress}
                 />
               </div>
 
               {/* Sort Dropdown */}
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setIsSortOpen(!isSortOpen)}
                   className="w-full sm:w-48 px-4 py-4 bg-white dark:bg-dark-800 border border-gray-200 dark:border-dark-700 rounded-xl font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-colors shadow-sm flex items-center justify-between gap-2"
                 >
                   <span className="truncate">{getCurrentSortLabel()}</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`} />
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform duration-300 ${isSortOpen ? "rotate-180" : ""}`}
+                  />
                 </button>
 
                 <AnimatePresence>
@@ -460,6 +444,7 @@ const Home: React.FC = () => {
                         return (
                           <button
                             key={option.value}
+                            type="button"
                             onClick={() => {
                               setSortBy(option.value);
                               setIsSortOpen(false);
@@ -472,7 +457,9 @@ const Home: React.FC = () => {
                           >
                             <Icon className="h-4 w-4" />
                             <span className="flex-1">{option.label}</span>
-                            {sortBy === option.value && <CheckCircle className="h-4 w-4 text-deepTeal" />}
+                            {sortBy === option.value && (
+                              <CheckCircle className="h-4 w-4 text-deepTeal" />
+                            )}
                           </button>
                         );
                       })}
@@ -483,6 +470,7 @@ const Home: React.FC = () => {
 
               {/* Filters Toggle Button */}
               <button
+                type="button"
                 onClick={() => setShowFilters(!showFilters)}
                 className={`px-6 py-4 rounded-xl font-medium transition-all shadow-sm flex items-center justify-center gap-2 whitespace-nowrap ${
                   showFilters
@@ -492,11 +480,12 @@ const Home: React.FC = () => {
               >
                 <Filter className="h-5 w-5" />
                 <span>{t("common.filters")}</span>
-                <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform duration-300 ${showFilters ? "rotate-180" : ""}`}
+                />
               </button>
             </div>
 
-            {/* Active Filters (translatable) */}
             {(selectedCategory !== "All" || searchQuery) && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
@@ -504,7 +493,9 @@ const Home: React.FC = () => {
                 className="flex items-center justify-between bg-deepTeal/5 rounded-lg p-3"
               >
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-deepTeal">{t("common.activeFilters")}</span>
+                  <span className="text-sm font-medium text-deepTeal">
+                    {t("common.activeFilters")}
+                  </span>
                   {selectedCategory !== "All" && (
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-deepTeal/10 text-deepTeal rounded-full text-sm">
                       {t("common.category")}: {selectedCategory}
@@ -517,6 +508,7 @@ const Home: React.FC = () => {
                   )}
                 </div>
                 <button
+                  type="button"
                   onClick={handleClearFilters}
                   className="text-sm text-red-600 hover:text-red-700 font-medium flex items-center gap-1 transition-colors"
                 >
@@ -527,7 +519,6 @@ const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters Panel */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
@@ -546,16 +537,21 @@ const Home: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Events Grid */}
         {currentEvents.length > 0 ? (
           <section>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{t("common.allEvents")}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {t("common.allEvents")}
+                </h2>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {t("common.showing")} {(currentPage - 1) * ITEMS_PER_PAGE + 1} {t("common.to")}{" "}
-                  {Math.min(currentPage * ITEMS_PER_PAGE, filteredEvents.length)} {t("common.of")}{" "}
-                  {filteredEvents.length} {t("common.events")}
+                  {t("common.showing")} {(currentPage - 1) * ITEMS_PER_PAGE + 1}{" "}
+                  {t("common.to")}{" "}
+                  {Math.min(
+                    currentPage * ITEMS_PER_PAGE,
+                    filteredEvents.length,
+                  )}{" "}
+                  {t("common.of")} {filteredEvents.length} {t("common.events")}
                 </p>
               </div>
             </div>
@@ -573,11 +569,11 @@ const Home: React.FC = () => {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-10">
                 <nav className="flex items-center gap-2 flex-wrap">
                   <button
+                    type="button"
                     onClick={handlePrevPage}
                     disabled={currentPage === 1}
                     className={`px-3 py-2 rounded-lg flex items-center gap-1 transition-colors ${
@@ -592,10 +588,16 @@ const Home: React.FC = () => {
 
                   {getPageNumbers().map((page, idx) =>
                     page === "..." ? (
-                      <span key={`dots-${idx}`} className="px-3 py-2 text-gray-500 dark:text-gray-400">...</span>
+                      <span
+                        key={`dots-${idx}`}
+                        className="px-3 py-2 text-gray-500 dark:text-gray-400"
+                      >
+                        ...
+                      </span>
                     ) : (
                       <button
                         key={page}
+                        type="button"
                         onClick={() => handlePageChange(page as number)}
                         className={`min-w-[40px] px-3 py-2 rounded-lg font-medium transition-colors ${
                           currentPage === page
@@ -605,10 +607,11 @@ const Home: React.FC = () => {
                       >
                         {page}
                       </button>
-                    )
+                    ),
                   )}
 
                   <button
+                    type="button"
                     onClick={handleNextPage}
                     disabled={currentPage === totalPages}
                     className={`px-3 py-2 rounded-lg flex items-center gap-1 transition-colors ${
@@ -629,9 +632,14 @@ const Home: React.FC = () => {
             <div className="bg-gray-100 dark:bg-dark-800 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
               <Ticket className="h-10 w-10 text-gray-400" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">{t("common.noEventsFound")}</h3>
-            <p className="text-gray-500 dark:text-gray-400">{t("common.tryAdjusting")}</p>
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              {t("common.noEventsFound")}
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              {t("common.tryAdjusting")}
+            </p>
             <button
+              type="button"
               onClick={handleClearFilters}
               className="mt-4 px-4 py-2 bg-deepTeal text-white rounded-lg hover:bg-deepTeal/80 transition-colors"
             >
@@ -641,10 +649,10 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Scroll to Top */}
       <AnimatePresence>
         {showScrollTop && (
           <motion.button
+            type="button"
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
@@ -656,7 +664,6 @@ const Home: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Cookie Consent (fully translatable) */}
       <AnimatePresence>
         {showCookieConsent && (
           <motion.div
@@ -684,18 +691,21 @@ const Home: React.FC = () => {
 
                 <div className="flex flex-wrap gap-2 mt-4">
                   <button
+                    type="button"
                     onClick={acceptAllCookies}
                     className="flex-1 px-4 py-2 bg-deepTeal text-white rounded-lg text-sm font-medium hover:bg-deepTeal/80 transition-all duration-200 shadow-md hover:shadow-lg"
                   >
                     {t("cookieConsent.acceptAll")}
                   </button>
                   <button
+                    type="button"
                     onClick={rejectAllCookies}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-600 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-100 dark:hover:bg-dark-700 transition-all duration-200"
                   >
                     {t("cookieConsent.rejectAll")}
                   </button>
                   <button
+                    type="button"
                     onClick={customizeCookies}
                     className="px-4 py-2 text-deepTeal rounded-lg text-sm font-medium hover:bg-deepTeal/5 transition-all duration-200"
                   >

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import {
   X,
+  Activity,
   Plus,
   Upload,
   AlertCircle,
@@ -20,8 +21,9 @@ import {
   Mail,
   Phone,
   DollarSign,
-  Info, // Add this line
+  Info,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { categories, genres } from "./types";
 import supabase from "@/config/supabaseClient";
@@ -81,10 +83,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const [loadingHalls, setLoadingHalls] = useState(false);
   const [loadingSeatLevels, setLoadingSeatLevels] = useState(false);
 
-  // Schedule state
   const [schedules, setSchedules] = useState<Schedule[]>([
     {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       date: "",
       startTime: "",
       endTime: "",
@@ -102,10 +103,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     director: "",
     cast: [] as string[],
     poster_url: "",
-    status: "coming-soon" as "coming-soon" | "now-showing" | "ended",
-    is_featured: false,
-    theater_id:
-      selectedTheaterId || (theaters.length > 0 ? theaters[0].id : ""),
     event_provider: "",
     event_provider_email: "",
     event_provider_phone: "",
@@ -118,9 +115,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [castInput, setCastInput] = useState("");
-  const [priceConfigs, setPriceConfigs] = useState<
-    Record<string, Record<string, number>>
-  >({});
 
   // Load halls when theater changes
   useEffect(() => {
@@ -129,7 +123,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     }
   }, [selectedTheater]);
 
-  // Load seat levels when hall is selected in a schedule
+  // Load seat levels when hall is selected
   useEffect(() => {
     const hallIds = [
       ...new Set(schedules.map((s) => s.hallId).filter(Boolean)),
@@ -172,15 +166,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
       if (error) throw error;
       setAvailableSeatLevels((prev) => ({ ...prev, [hallId]: data || [] }));
-
-      // Initialize price configs for this hall if not exists
-      if (!priceConfigs[hallId] && data) {
-        const initialPrices: Record<string, number> = {};
-        data.forEach((level) => {
-          initialPrices[level.id] = level.price;
-        });
-        setPriceConfigs((prev) => ({ ...prev, [hallId]: initialPrices }));
-      }
     } catch (error) {
       console.error("Error loading seat levels:", error);
     } finally {
@@ -200,37 +185,21 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     return `${String(endHours).padStart(2, "0")}:${String(endMinutes).padStart(2, "0")}`;
   };
 
-  const validateScheduleTimes = () => {
-    for (const schedule of schedules) {
-      if (schedule.startTime && formData.duration_minutes) {
-        const calculatedEnd = calculateEndTime(
-          schedule.startTime,
-          formData.duration_minutes,
-        );
-        if (schedule.endTime && schedule.endTime !== calculatedEnd) {
-          return false;
-        }
-      }
-    }
-    return true;
-  };
-
-  const handleBlur = (field: string) => {
-    setTouched((prev) => ({ ...prev, [field]: true }));
-  };
-
-  const validateStep1 = () => {
+  const validateStep1 = (): boolean => {
     const newErrors: Record<string, string> = {};
+
     if (!selectedTheater) newErrors.theater = "Please select a theater";
-    if (!formData.title) newErrors.title = "Event title is required";
+    if (!formData.title.trim()) newErrors.title = "Event title is required";
     if (!formData.genre) newErrors.genre = "Genre is required";
     if (!formData.category) newErrors.category = "Category is required";
-    if (!formData.duration_minutes || formData.duration_minutes <= 0)
+    if (!formData.duration_minutes || formData.duration_minutes <= 0) {
       newErrors.duration_minutes = "Valid duration is required";
-    if (!formData.director) newErrors.director = "Director name is required";
+    }
+    if (!formData.director.trim())
+      newErrors.director = "Director name is required";
     if (formData.cast.length === 0)
       newErrors.cast = "At least one cast member is required";
-    if (!formData.event_provider)
+    if (!formData.event_provider.trim())
       newErrors.event_provider = "Event provider name is required";
     if (!formData.event_provider_email) {
       newErrors.event_provider_email = "Provider email is required";
@@ -246,43 +215,31 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       if (!schedule.date) newErrors[`schedule_${i}_date`] = "Date is required";
       if (!schedule.startTime)
         newErrors[`schedule_${i}_start`] = "Start time required";
+      if (!schedule.hallId)
+        newErrors[`schedule_${i}_hall`] = "Hall is required";
 
-      // Auto-calculate end time based on duration
+      // Validate that end time is within valid range (00:00 - 23:59)
       if (schedule.startTime && formData.duration_minutes) {
         const calculatedEnd = calculateEndTime(
           schedule.startTime,
           formData.duration_minutes,
         );
-        if (schedule.endTime && schedule.endTime !== calculatedEnd) {
+        const [endHours] = calculatedEnd.split(":").map(Number);
+        if (endHours >= 24) {
           newErrors[`schedule_${i}_end`] =
-            `End time should be ${calculatedEnd} (based on ${formData.duration_minutes} min duration)`;
+            "End time exceeds 23:59. Please adjust start time or duration.";
         }
       }
-
-      if (
-        !schedule.endTime &&
-        schedule.startTime &&
-        formData.duration_minutes
-      ) {
-        // Auto-set end time
-        const calculatedEnd = calculateEndTime(
-          schedule.startTime,
-          formData.duration_minutes,
-        );
-        updateSchedule(schedule.id, "endTime", calculatedEnd);
-      }
-
-      if (!schedule.hallId)
-        newErrors[`schedule_${i}_hall`] = "Hall is required";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateStep2 = () => {
+  const validateStep2 = (): boolean => {
     const newErrors: Record<string, string> = {};
-    if (!formData.description) {
+
+    if (!formData.description.trim()) {
       newErrors.description = "Description is required";
     } else if (formData.description.length < 50) {
       newErrors.description = "Description must be at least 50 characters";
@@ -290,15 +247,13 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     if (!posterFile && !formData.poster_url) {
       newErrors.poster = "Event poster is required";
     }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
-    let isValid = false;
-    if (currentStep === 1) isValid = validateStep1();
-    else if (currentStep === 2) isValid = validateStep2();
-
+    const isValid = currentStep === 1 ? validateStep1() : validateStep2();
     if (isValid) {
       setCurrentStep((prev) => prev + 1);
       setErrors({});
@@ -333,7 +288,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     const {
       data: { publicUrl },
     } = supabase.storage.from("event-images").getPublicUrl(filePath);
-
     setUploading(false);
     return publicUrl;
   };
@@ -342,7 +296,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     setSchedules([
       ...schedules,
       {
-        id: Date.now().toString(),
+        id: crypto.randomUUID(),
         date: "",
         startTime: "",
         endTime: "",
@@ -363,7 +317,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       schedules.map((s) => {
         if (s.id === id) {
           const updated = { ...s, [field]: value };
-          // Auto-calculate end time when start time changes
           if (field === "startTime" && formData.duration_minutes && value) {
             updated.endTime = calculateEndTime(
               value,
@@ -385,10 +338,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     setSchedules(
       schedules.map((s) =>
         s.id === scheduleId
-          ? {
-              ...s,
-              customPrices: { ...s.customPrices, [levelId]: price },
-            }
+          ? { ...s, customPrices: { ...s.customPrices, [levelId]: price } }
           : s,
       ),
     );
@@ -397,18 +347,12 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const handleSubmit = async () => {
     if (!validateStep2()) return;
 
-    if (!selectedTheater) {
-      setErrors((prev) => ({ ...prev, theater: "Please select a theater" }));
-      return;
-    }
-
     const posterUrl = await uploadPoster();
     if (!posterUrl && !formData.poster_url) {
       setErrors((prev) => ({ ...prev, poster: "Failed to upload poster" }));
       return;
     }
 
-    // Prepare submission data
     const submitData = {
       title: formData.title,
       description: formData.description,
@@ -418,8 +362,8 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       director: formData.director,
       cast: formData.cast,
       poster_url: posterUrl || formData.poster_url,
-      status: formData.status,
-      is_featured: formData.is_featured,
+      status: "avaliable_now", // Default status for new events
+      is_featured: false,
       theater_id: selectedTheater,
       event_provider: formData.event_provider,
       event_provider_email: formData.event_provider_email,
@@ -457,6 +401,13 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors((prev) => ({
+          ...prev,
+          poster: "File size must be less than 5MB",
+        }));
+        return;
+      }
       setPosterFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setPosterPreview(reader.result as string);
@@ -465,17 +416,36 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     }
   };
 
-  const handleTheaterChange = (theaterId: string) => {
-    setSelectedTheater(theaterId);
-    setFormData((prev) => ({ ...prev, theater_id: theaterId }));
-    if (errors.theater) setErrors((prev) => ({ ...prev, theater: "" }));
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
-  const totalSteps = 3;
-  const progress = (currentStep / totalSteps) * 100;
   const selectedTheaterInfo = theaters?.find((t) => t.id === selectedTheater);
   const hasMultipleTheaters = theaters && theaters.length > 1;
-  const hasSingleTheater = theaters && theaters.length === 1;
+  const progress = (currentStep / 3) * 100;
+
+  if (!theaters || theaters.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-gray-900 mb-2">
+            No Theaters Available
+          </h3>
+          <p className="text-gray-600 mb-6">
+            Please contact your administrator to assign a theater to your
+            account.
+          </p>
+          <button
+            onClick={onCancel}
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -498,7 +468,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             </div>
             <button
               onClick={onCancel}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/20 rounded-lg transition"
             >
               <X className="h-5 w-5 text-white" />
             </button>
@@ -523,13 +493,19 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         {/* Step Indicators */}
         <div className="px-6 pt-4 pb-2 bg-gray-50 flex justify-between border-b">
           {[
-            { step: 1, title: "Basic Info & Schedule", icon: Calendar },
-            { step: 2, title: "Media & Details", icon: Image },
+            { step: 1, title: "Basic Info", icon: Calendar },
+            { step: 2, title: "Media", icon: Image },
             { step: 3, title: "Review", icon: CheckCircle },
           ].map((item) => (
             <div
               key={item.step}
-              className={`flex-1 text-center py-2 rounded-lg transition-all ${currentStep === item.step ? "bg-teal-100 text-teal-700 font-medium shadow-sm" : currentStep > item.step ? "text-green-600" : "text-gray-500"}`}
+              className={`flex-1 text-center py-2 rounded-lg transition-all ${
+                currentStep === item.step
+                  ? "bg-teal-100 text-teal-700 font-medium shadow-sm"
+                  : currentStep > item.step
+                    ? "text-green-600"
+                    : "text-gray-500"
+              }`}
             >
               <div className="flex items-center justify-center gap-2">
                 {currentStep > item.step ? (
@@ -537,37 +513,16 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 ) : (
                   <item.icon className="h-4 w-4" />
                 )}
-                <span className="text-sm">{item.title}</span>
+                <span className="text-sm hidden sm:inline">{item.title}</span>
               </div>
             </div>
           ))}
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {(!theaters || theaters.length === 0) && (
-            <div className="text-center py-8">
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />
-                <p className="text-yellow-800 font-medium">
-                  No Theaters Available
-                </p>
-                <p className="text-yellow-600 text-sm mt-1">
-                  Please contact your administrator to assign a theater to your
-                  account.
-                </p>
-              </div>
-              <button
-                onClick={onCancel}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
-              >
-                Close
-              </button>
-            </div>
-          )}
-
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Step 1: Basic Information & Schedule */}
-          {currentStep === 1 && theaters && theaters.length > 0 && (
+          {currentStep === 1 && (
             <div className="space-y-5">
               {/* Theater Selection */}
               {hasMultipleTheaters && (
@@ -577,8 +532,12 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   </label>
                   <select
                     value={selectedTheater}
-                    onChange={(e) => handleTheaterChange(e.target.value)}
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.theater && touched.theater ? "border-red-500" : "border-gray-200"}`}
+                    onChange={(e) => setSelectedTheater(e.target.value)}
+                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                      errors.theater && touched.theater
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                     onBlur={() => handleBlur("theater")}
                   >
                     {theaters.map((theater) => (
@@ -588,15 +547,14 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     ))}
                   </select>
                   {errors.theater && touched.theater && (
-                    <p className="text-red-500 text-xs mt-1">
-                      <AlertCircle className="h-3 w-3 inline" />{" "}
-                      {errors.theater}
+                    <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {errors.theater}
                     </p>
                   )}
                 </div>
               )}
 
-              {hasSingleTheater && selectedTheaterInfo && (
+              {!hasMultipleTheaters && selectedTheaterInfo && (
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center gap-2">
                     <Theater className="h-4 w-4 text-blue-600" />
@@ -613,7 +571,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               )}
 
               {/* Event Basic Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Event Title *
@@ -621,19 +579,19 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   <input
                     type="text"
                     placeholder="Enter event title"
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.title && touched.title ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                      errors.title && touched.title
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                     value={formData.title}
                     onBlur={() => handleBlur("title")}
-                    onChange={(e) => {
-                      setFormData({ ...formData, title: e.target.value });
-                      if (errors.title)
-                        setErrors((prev) => ({ ...prev, title: "" }));
-                    }}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                   />
                   {errors.title && touched.title && (
-                    <p className="text-red-500 text-xs mt-1">
-                      <AlertCircle className="h-3 w-3" /> {errors.title}
-                    </p>
+                    <p className="text-red-500 text-xs mt-1">{errors.title}</p>
                   )}
                 </div>
 
@@ -643,30 +601,28 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   </label>
                   <input
                     type="number"
+                    min="1"
+                    max="480"
                     placeholder="e.g., 120"
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.duration_minutes && touched.duration_minutes ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                      errors.duration_minutes && touched.duration_minutes
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                     value={formData.duration_minutes || ""}
                     onBlur={() => handleBlur("duration_minutes")}
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 0;
                       setFormData({ ...formData, duration_minutes: val });
-                      if (errors.duration_minutes)
-                        setErrors((prev) => ({
-                          ...prev,
-                          duration_minutes: "",
-                        }));
-
-                      // Update all schedules end times based on new duration
+                      // Update all schedules end times
                       setSchedules((prev) =>
-                        prev.map((s) => {
-                          if (s.startTime && val) {
-                            return {
-                              ...s,
-                              endTime: calculateEndTime(s.startTime, val),
-                            };
-                          }
-                          return s;
-                        }),
+                        prev.map((s) => ({
+                          ...s,
+                          endTime:
+                            s.startTime && val
+                              ? calculateEndTime(s.startTime, val)
+                              : s.endTime,
+                        })),
                       );
                     }}
                   />
@@ -678,20 +634,22 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Genre *
                   </label>
                   <select
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.genre && touched.genre ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                      errors.genre && touched.genre
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                     value={formData.genre}
                     onBlur={() => handleBlur("genre")}
-                    onChange={(e) => {
-                      setFormData({ ...formData, genre: e.target.value });
-                      if (errors.genre)
-                        setErrors((prev) => ({ ...prev, genre: "" }));
-                    }}
+                    onChange={(e) =>
+                      setFormData({ ...formData, genre: e.target.value })
+                    }
                   >
                     <option value="">Select Genre</option>
                     {genres.map((g) => (
@@ -704,19 +662,22 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     <p className="text-red-500 text-xs mt-1">{errors.genre}</p>
                   )}
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Category *
                   </label>
                   <select
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.category && touched.category ? "border-red-500" : "border-gray-200"}`}
+                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                      errors.category && touched.category
+                        ? "border-red-500"
+                        : "border-gray-200"
+                    }`}
                     value={formData.category}
                     onBlur={() => handleBlur("category")}
-                    onChange={(e) => {
-                      setFormData({ ...formData, category: e.target.value });
-                      if (errors.category)
-                        setErrors((prev) => ({ ...prev, category: "" }));
-                    }}
+                    onChange={(e) =>
+                      setFormData({ ...formData, category: e.target.value })
+                    }
                   >
                     <option value="">Select Category</option>
                     {categories.map((c) => (
@@ -733,29 +694,27 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Director *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Director name"
-                    className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.director && touched.director ? "border-red-500" : "border-gray-200"}`}
-                    value={formData.director}
-                    onBlur={() => handleBlur("director")}
-                    onChange={(e) => {
-                      setFormData({ ...formData, director: e.target.value });
-                      if (errors.director)
-                        setErrors((prev) => ({ ...prev, director: "" }));
-                    }}
-                  />
-                  {errors.director && touched.director && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {errors.director}
-                    </p>
-                  )}
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Director *
+                </label>
+                <input
+                  type="text"
+                  placeholder="Director name"
+                  className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                    errors.director && touched.director
+                      ? "border-red-500"
+                      : "border-gray-200"
+                  }`}
+                  value={formData.director}
+                  onBlur={() => handleBlur("director")}
+                  onChange={(e) =>
+                    setFormData({ ...formData, director: e.target.value })
+                  }
+                />
+                {errors.director && touched.director && (
+                  <p className="text-red-500 text-xs mt-1">{errors.director}</p>
+                )}
               </div>
 
               {/* Cast */}
@@ -799,14 +758,12 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   </div>
                 )}
                 {errors.cast && (
-                  <p className="text-red-500 text-xs mt-1">
-                    <AlertCircle className="h-3 w-3 inline" /> {errors.cast}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.cast}</p>
                 )}
               </div>
 
               {/* Event Provider Information */}
-              <div className="border-t pt-4 mt-2">
+              <div className="border-t pt-4">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2 mb-3">
                   <Users className="h-5 w-5 text-teal-600" />
                   Event Provider Information
@@ -819,20 +776,19 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     <input
                       type="text"
                       placeholder="e.g., ABC Productions"
-                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.event_provider && touched.event_provider ? "border-red-500" : "border-gray-200"}`}
+                      className={`w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                        errors.event_provider && touched.event_provider
+                          ? "border-red-500"
+                          : "border-gray-200"
+                      }`}
                       value={formData.event_provider}
                       onBlur={() => handleBlur("event_provider")}
-                      onChange={(e) => {
+                      onChange={(e) =>
                         setFormData({
                           ...formData,
                           event_provider: e.target.value,
-                        });
-                        if (errors.event_provider)
-                          setErrors((prev) => ({
-                            ...prev,
-                            event_provider: "",
-                          }));
-                      }}
+                        })
+                      }
                     />
                     {errors.event_provider && touched.event_provider && (
                       <p className="text-red-500 text-xs mt-1">
@@ -849,20 +805,20 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                       <input
                         type="email"
                         placeholder="provider@example.com"
-                        className={`w-full pl-10 pr-4 p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.event_provider_email && touched.event_provider_email ? "border-red-500" : "border-gray-200"}`}
+                        className={`w-full pl-10 pr-4 p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                          errors.event_provider_email &&
+                          touched.event_provider_email
+                            ? "border-red-500"
+                            : "border-gray-200"
+                        }`}
                         value={formData.event_provider_email}
                         onBlur={() => handleBlur("event_provider_email")}
-                        onChange={(e) => {
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
                             event_provider_email: e.target.value,
-                          });
-                          if (errors.event_provider_email)
-                            setErrors((prev) => ({
-                              ...prev,
-                              event_provider_email: "",
-                            }));
-                        }}
+                          })
+                        }
                       />
                     </div>
                     {errors.event_provider_email &&
@@ -881,20 +837,20 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                       <input
                         type="tel"
                         placeholder="+251-XXX-XXXXXX"
-                        className={`w-full pl-10 pr-4 p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.event_provider_phone && touched.event_provider_phone ? "border-red-500" : "border-gray-200"}`}
+                        className={`w-full pl-10 pr-4 p-2.5 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                          errors.event_provider_phone &&
+                          touched.event_provider_phone
+                            ? "border-red-500"
+                            : "border-gray-200"
+                        }`}
                         value={formData.event_provider_phone}
                         onBlur={() => handleBlur("event_provider_phone")}
-                        onChange={(e) => {
+                        onChange={(e) =>
                           setFormData({
                             ...formData,
                             event_provider_phone: e.target.value,
-                          });
-                          if (errors.event_provider_phone)
-                            setErrors((prev) => ({
-                              ...prev,
-                              event_provider_phone: "",
-                            }));
-                        }}
+                          })
+                        }
                       />
                     </div>
                     {errors.event_provider_phone &&
@@ -907,45 +863,8 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.is_featured}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        is_featured: e.target.checked,
-                      })
-                    }
-                    className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    Feature this event (highlight on homepage)
-                  </span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.status === "now-showing"}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        status: e.target.checked
-                          ? "now-showing"
-                          : "coming-soon",
-                      })
-                    }
-                    className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                  />
-                  <span className="text-sm text-gray-700">
-                    Mark as "Now Showing"
-                  </span>
-                </label>
-              </div>
-
               {/* Show Schedules Section */}
-              <div className="border-t pt-4 mt-4">
+              <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     <Clock className="h-5 w-5 text-teal-600" />
@@ -958,9 +877,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     <Plus className="h-4 w-4" /> Add Schedule
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 mb-3">
-                  Schedule when and where this event will be shown
-                </p>
 
                 {schedules.map((schedule, idx) => {
                   const hallSeatLevels =
@@ -979,10 +895,11 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                             onClick={() => removeSchedule(schedule.id)}
                             className="text-red-500 hover:text-red-700"
                           >
-                            <X className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-1">
@@ -998,7 +915,11 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                                 e.target.value,
                               )
                             }
-                            className={`w-full p-2 border rounded-lg text-sm ${errors[`schedule_${idx}_date`] ? "border-red-500" : "border-gray-200"}`}
+                            className={`w-full p-2 border rounded-lg text-sm ${
+                              errors[`schedule_${idx}_date`]
+                                ? "border-red-500"
+                                : "border-gray-200"
+                            }`}
                           />
                           {errors[`schedule_${idx}_date`] && (
                             <p className="text-red-500 text-xs mt-1">
@@ -1020,7 +941,11 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                                 e.target.value,
                               )
                             }
-                            className={`w-full p-2 border rounded-lg text-sm ${errors[`schedule_${idx}_start`] ? "border-red-500" : "border-gray-200"}`}
+                            className={`w-full p-2 border rounded-lg text-sm ${
+                              errors[`schedule_${idx}_start`]
+                                ? "border-red-500"
+                                : "border-gray-200"
+                            }`}
                           />
                           {errors[`schedule_${idx}_start`] && (
                             <p className="text-red-500 text-xs mt-1">
@@ -1038,9 +963,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                             disabled
                             className="w-full p-2 border rounded-lg text-sm bg-gray-100 text-gray-500"
                           />
-                          <p className="text-xs text-gray-400 mt-1">
-                            Auto-calculated from duration
-                          </p>
                           {errors[`schedule_${idx}_end`] && (
                             <p className="text-red-500 text-xs mt-1">
                               {errors[`schedule_${idx}_end`]}
@@ -1064,14 +986,17 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                             if (e.target.value)
                               loadSeatLevelsForHall(e.target.value);
                           }}
-                          className={`w-full p-2 border rounded-lg text-sm ${errors[`schedule_${idx}_hall`] ? "border-red-500" : "border-gray-200"}`}
+                          className={`w-full p-2 border rounded-lg text-sm ${
+                            errors[`schedule_${idx}_hall`]
+                              ? "border-red-500"
+                              : "border-gray-200"
+                          }`}
                           disabled={loadingHalls}
                         >
                           <option value="">Select Hall</option>
                           {availableHalls.map((hall) => (
                             <option key={hall.id} value={hall.id}>
-                              {hall.name} (Capacity: {hall.capacity} |{" "}
-                              {hall.num_of_row} rows × {hall.num_of_col} cols)
+                              {hall.name} (Capacity: {hall.capacity})
                             </option>
                           ))}
                         </select>
@@ -1082,7 +1007,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                         )}
                       </div>
 
-                      {/* Custom Pricing per Seat Level */}
+                      {/* Custom Pricing */}
                       {schedule.hallId && hallSeatLevels.length > 0 && (
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-2">
@@ -1124,9 +1049,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                               </div>
                             ))}
                           </div>
-                          <p className="text-xs text-gray-400 mt-1">
-                            Leave as default price or override for this show
-                          </p>
                         </div>
                       )}
                     </div>
@@ -1134,9 +1056,8 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 })}
 
                 {formData.duration_minutes > 0 && (
-                  <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700">
-                    <Info className="h-4 w-4 inline mr-1" />
-                    {/* Cannot find name 'Info'. */}
+                  <div className="p-3 bg-blue-50 rounded-lg text-sm text-blue-700 flex items-center gap-2">
+                    <Info className="h-4 w-4" />
                     End times are automatically calculated based on{" "}
                     {formData.duration_minutes} minutes duration.
                   </div>
@@ -1146,14 +1067,18 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           )}
 
           {/* Step 2: Media & Details */}
-          {currentStep === 2 && theaters && theaters.length > 0 && (
+          {currentStep === 2 && (
             <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Event Poster *
                 </label>
                 <div
-                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${errors.poster ? "border-red-500 bg-red-50" : "border-gray-300 hover:border-teal-500"}`}
+                  className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+                    errors.poster
+                      ? "border-red-500 bg-red-50"
+                      : "border-gray-300 hover:border-teal-500"
+                  }`}
                 >
                   <input
                     type="file"
@@ -1186,9 +1111,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   </label>
                 </div>
                 {errors.poster && (
-                  <p className="text-red-500 text-xs mt-1">
-                    <AlertCircle className="h-3 w-3 inline" /> {errors.poster}
-                  </p>
+                  <p className="text-red-500 text-xs mt-1">{errors.poster}</p>
                 )}
               </div>
 
@@ -1198,14 +1121,16 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </label>
                 <textarea
                   rows={6}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${errors.description && touched.description ? "border-red-500" : "border-gray-200"}`}
+                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none ${
+                    errors.description && touched.description
+                      ? "border-red-500"
+                      : "border-gray-200"
+                  }`}
                   value={formData.description}
                   onBlur={() => handleBlur("description")}
-                  onChange={(e) => {
-                    setFormData({ ...formData, description: e.target.value });
-                    if (errors.description)
-                      setErrors((prev) => ({ ...prev, description: "" }));
-                  }}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Provide a detailed description of the event..."
                 />
                 {errors.description && touched.description && (
@@ -1221,205 +1146,164 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           )}
 
           {/* Step 3: Review */}
-          {currentStep === 3 &&
-            theaters &&
-            theaters.length > 0 &&
-            selectedTheaterInfo && (
-              <div className="space-y-4">
-                <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-5 rounded-xl border border-teal-200">
-                  <h3 className="font-bold text-lg text-teal-800 mb-3">
-                    <CheckCircle className="inline mr-2 text-green-600" /> Event
-                    Summary
-                  </h3>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <span className="text-gray-500">Theater:</span>{" "}
-                      {selectedTheaterInfo.legal_business_name} (
-                      {selectedTheaterInfo.city})
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Title:</span>{" "}
-                      {formData.title}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Genre:</span>{" "}
-                      {formData.genre}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Category:</span>{" "}
-                      {formData.category}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Duration:</span>{" "}
-                      {formData.duration_minutes} min
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Director:</span>{" "}
-                      {formData.director}
-                    </div>
-                    <div className="col-span-2">
-                      <span className="text-gray-500">Cast:</span>{" "}
-                      {formData.cast.join(", ")}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Provider:</span>{" "}
-                      {formData.event_provider}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Provider Email:</span>{" "}
-                      {formData.event_provider_email}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Provider Phone:</span>{" "}
-                      {formData.event_provider_phone}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Status:</span>{" "}
-                      {formData.status === "now-showing"
-                        ? "Now Showing"
-                        : "Coming Soon"}
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Featured:</span>{" "}
-                      {formData.is_featured ? "Yes" : "No"}
-                    </div>
+          {currentStep === 3 && selectedTheaterInfo && (
+            <div className="space-y-4">
+              <div className="bg-gradient-to-r from-teal-50 to-emerald-50 p-5 rounded-xl border border-teal-200">
+                <h3 className="font-bold text-lg text-teal-800 mb-3 flex items-center gap-2">
+                  <CheckCircle className="text-green-600" /> Event Summary
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-500">Theater:</span>{" "}
+                    {selectedTheaterInfo.legal_business_name}
                   </div>
-                </div>
-
-                <div className="bg-gray-50 p-5 rounded-xl">
-                  <h3 className="font-bold text-gray-800 mb-3">
-                    <Clock className="inline mr-2 text-teal-600" /> Show
-                    Schedules
-                  </h3>
-                  <div className="space-y-2">
-                    {schedules.map((schedule, idx) => {
-                      const hall = availableHalls.find(
-                        (h) => h.id === schedule.hallId,
-                      );
-                      return (
-                        <div
-                          key={schedule.id}
-                          className="p-3 bg-white rounded-lg border"
-                        >
-                          <p className="font-medium">Schedule #{idx + 1}</p>
-                          <p className="text-sm">
-                            📅 {new Date(schedule.date).toLocaleDateString()} |
-                            🕐 {schedule.startTime} - {schedule.endTime}
-                          </p>
-                          <p className="text-sm">
-                            🏠 {hall?.name || "Unknown Hall"} (Capacity:{" "}
-                            {hall?.capacity || "N/A"})
-                          </p>
-                          {Object.keys(schedule.customPrices).length > 0 && (
-                            <div className="mt-2 text-sm">
-                              <span className="text-gray-500">
-                                Custom Prices:
-                              </span>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {Object.entries(schedule.customPrices).map(
-                                  ([levelId, price]) => {
-                                    const level = availableSeatLevels[
-                                      schedule.hallId
-                                    ]?.find((l) => l.id === levelId);
-                                    return (
-                                      level && (
-                                        <span
-                                          key={levelId}
-                                          className="text-xs bg-gray-100 px-2 py-1 rounded"
-                                        >
-                                          {level.display_name}: ETB {price}
-                                        </span>
-                                      )
-                                    );
-                                  },
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                  <div>
+                    <span className="text-gray-500">Title:</span>{" "}
+                    {formData.title}
                   </div>
-                </div>
-
-                {formData.description && (
-                  <div className="bg-gray-50 p-5 rounded-xl">
-                    <h3 className="font-bold text-gray-800 mb-2">
-                      <FileText className="inline mr-2 text-teal-600" />{" "}
-                      Description
-                    </h3>
-                    <p className="text-gray-700 whitespace-pre-wrap">
-                      {formData.description}
-                    </p>
+                  <div>
+                    <span className="text-gray-500">Genre:</span>{" "}
+                    {formData.genre}
                   </div>
-                )}
-
-                {posterPreview && (
-                  <div className="bg-gray-50 p-5 rounded-xl">
-                    <h3 className="font-bold text-gray-800 mb-2">
-                      <Image className="inline mr-2 text-teal-600" /> Poster
-                    </h3>
-                    <img
-                      src={posterPreview}
-                      alt="Event poster"
-                      className="max-h-48 rounded-lg shadow"
-                    />
+                  <div>
+                    <span className="text-gray-500">Category:</span>{" "}
+                    {formData.category}
                   </div>
-                )}
-
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-                  <AlertCircle className="inline mr-2 h-4 w-4 text-yellow-600" />
-                  <span className="text-sm text-yellow-800">
-                    Please verify all information before submitting.
-                  </span>
+                  <div>
+                    <span className="text-gray-500">Duration:</span>{" "}
+                    {formData.duration_minutes} min
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Director:</span>{" "}
+                    {formData.director}
+                  </div>
+                  <div className="col-span-2">
+                    <span className="text-gray-500">Cast:</span>{" "}
+                    {formData.cast.join(", ")}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Provider:</span>{" "}
+                    {formData.event_provider}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Provider Email:</span>{" "}
+                    {formData.event_provider_email}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Provider Phone:</span>{" "}
+                    {formData.event_provider_phone}
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Status:</span>{" "}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                      <Activity className="h-3 w-3" /> Available Now
+                    </span>
+                  </div>
                 </div>
               </div>
-            )}
+
+              <div className="bg-gray-50 p-5 rounded-xl">
+                <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <Clock className="text-teal-600" /> Show Schedules
+                </h3>
+                <div className="space-y-2">
+                  {schedules.map((schedule, idx) => {
+                    const hall = availableHalls.find(
+                      (h) => h.id === schedule.hallId,
+                    );
+                    return (
+                      <div
+                        key={schedule.id}
+                        className="p-3 bg-white rounded-lg border text-sm"
+                      >
+                        <p className="font-medium">Schedule #{idx + 1}</p>
+                        <p>
+                          📅 {new Date(schedule.date).toLocaleDateString()} | 🕐{" "}
+                          {schedule.startTime} - {schedule.endTime}
+                        </p>
+                        <p>
+                          🏠 {hall?.name || "Unknown Hall"} (Capacity:{" "}
+                          {hall?.capacity || "N/A"})
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {formData.description && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <FileText className="text-teal-600" /> Description
+                  </h3>
+                  <p className="text-gray-700 whitespace-pre-wrap text-sm">
+                    {formData.description}
+                  </p>
+                </div>
+              )}
+
+              {posterPreview && (
+                <div className="bg-gray-50 p-5 rounded-xl">
+                  <h3 className="font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <Image className="text-teal-600" /> Poster
+                  </h3>
+                  <img
+                    src={posterPreview}
+                    alt="Event poster"
+                    className="max-h-48 rounded-lg shadow"
+                  />
+                </div>
+              )}
+
+              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <span className="text-sm text-yellow-800">
+                  Please verify all information before submitting.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Footer */}
-        {theaters && theaters.length > 0 && (
-          <div className="border-t p-5 bg-gray-50 flex justify-between shrink-0">
-            {currentStep > 1 && (
-              <button
-                onClick={handleBack}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors flex items-center gap-2"
-              >
-                <ChevronLeft className="h-4 w-4" /> Back
-              </button>
-            )}
-            {currentStep < 3 ? (
-              <button
-                onClick={handleNext}
-                className={`px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ${currentStep === 1 ? "w-full" : "ml-auto"}`}
-              >
-                Continue <ChevronRight className="h-4 w-4" />
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={uploading}
-                className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-all flex items-center gap-2 ml-auto disabled:opacity-50"
-              >
-                {uploading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>{" "}
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4" /> Create Event
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        )}
+        {/* Footer Buttons */}
+        <div className="border-t p-5 bg-gray-50 flex justify-between shrink-0">
+          {currentStep > 1 && (
+            <button
+              onClick={handleBack}
+              className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition flex items-center gap-2"
+            >
+              <ChevronLeft className="h-4 w-4" /> Back
+            </button>
+          )}
+          {currentStep < 3 ? (
+            <button
+              onClick={handleNext}
+              className={`px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition flex items-center gap-2 ${currentStep === 1 ? "ml-auto" : ""}`}
+            >
+              Continue <ChevronRight className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={uploading}
+              className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition flex items-center gap-2 ml-auto disabled:opacity-50"
+            >
+              {uploading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />{" "}
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4" /> Create Event
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 };
 
 export default CreateEventForm;
-
-// i it closed when  trying to give duration ...  

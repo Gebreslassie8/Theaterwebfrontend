@@ -26,10 +26,47 @@ import {
   Building,
   DollarSign,
   Ticket,
-  Info,
-  AlertTriangle,
 } from "lucide-react";
-import { EventData } from "./types";
+
+interface EventData {
+  id: string;
+  title: string;
+  description: string | null;
+  genre: string | null;
+  category: string | null;
+  duration_minutes: number | null;
+  director: string | null;
+  cast: string[];
+  poster_url: string | null;
+  status: "avaliable_now" | "ended" | "cancelled";
+  is_featured: boolean;
+  rating: number;
+  review_count: number;
+  view_count: number;
+  theater_id: string;
+  created_at: string;
+  updated_at: string;
+  published_by: string | null;
+  schedules?: Schedule[];
+  price_min?: number;
+  price_max?: number;
+  available_seats?: number;
+  total_seats?: number;
+}
+
+interface Schedule {
+  id: string;
+  event_id: string;
+  hall_id: string;
+  show_date: string;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+  hall?: {
+    id: string;
+    name: string;
+  };
+}
 
 interface ViewEventModalProps {
   event: EventData | null;
@@ -51,28 +88,24 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
           icon: Activity,
           color: "bg-green-100 text-green-700",
           label: "Available Now",
-          bgIcon: "bg-green-500",
         };
       case "ended":
         return {
           icon: CheckCircle,
           color: "bg-gray-100 text-gray-700",
           label: "Ended",
-          bgIcon: "bg-gray-500",
         };
       case "cancelled":
         return {
           icon: XCircle,
           color: "bg-red-100 text-red-700",
           label: "Cancelled",
-          bgIcon: "bg-red-500",
         };
       default:
         return {
           icon: Calendar,
           color: "bg-gray-100 text-gray-700",
-          label: status || "Unknown",
-          bgIcon: "bg-gray-500",
+          label: status,
         };
     }
   };
@@ -86,11 +119,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
 
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      return new Date(dateString).toLocaleDateString();
     } catch {
       return dateString;
     }
@@ -104,7 +133,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
     }).format(amount);
   };
 
-  const schedules = (event as any).schedules || event.timeSlots || [];
+  const schedules = event.schedules || [];
 
   return (
     <div
@@ -116,7 +145,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
         onClick={handleModalClick}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 sticky top-0 z-10">
+        <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-5 shrink-0 sticky top-0 z-10">
           <div className="flex justify-between items-start">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-lg">
@@ -133,7 +162,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
               <div>
                 <h2 className="text-2xl text-white font-bold">{event.title}</h2>
                 <p className="text-white/80 text-sm mt-1">
-                  ID: {event.id?.slice(0, 8)}...
+                  Event ID: {event.id?.slice(0, 8)}...
                 </p>
               </div>
             </div>
@@ -151,7 +180,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
           {/* Status Badge and Stats */}
           <div className="flex justify-between items-center pb-4 border-b border-gray-200 flex-wrap gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Status:</span>
+              <span className="text-sm text-gray-500">Current Status:</span>
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${statusConfig.color}`}
               >
@@ -220,62 +249,44 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
           </div>
 
           {/* Pricing Information */}
-          {((event as any).price_min !== undefined ||
-            (event as any).price_max !== undefined) && (
+          {(event.price_min !== undefined || event.price_max !== undefined) && (
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-teal-600" />
-                Pricing
+                Pricing Information
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Ticket className="h-4 w-4 text-teal-600" />
-                    <span className="text-sm text-gray-600">Price Range:</span>
-                    <span className="font-semibold text-gray-800">
-                      {formatCurrency((event as any).price_min || 0)} -{" "}
-                      {formatCurrency((event as any).price_max || 0)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Event Provider Information */}
-          {(event as any).event_provider && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Users className="h-5 w-5 text-teal-600" />
-                Event Provider
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-xs text-gray-500 mb-1">Provider Name</p>
+                  <p className="text-xs text-gray-500 mb-1">Price Range</p>
                   <p className="font-semibold text-gray-800">
-                    {(event as any).event_provider}
+                    {event.price_min && event.price_max
+                      ? `${formatCurrency(event.price_min)} - ${formatCurrency(event.price_max)}`
+                      : "Not configured"}
                   </p>
                 </div>
-                {(event as any).event_provider_email && (
+                {(event.available_seats !== undefined ||
+                  event.total_seats !== undefined) && (
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">Email</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Seat Availability
+                    </p>
                     <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-gray-400" />
+                      <Ticket className="h-4 w-4 text-teal-600" />
                       <p className="font-semibold text-gray-800">
-                        {(event as any).event_provider_email}
+                        {event.available_seats || 0} / {event.total_seats || 0}{" "}
+                        seats available
                       </p>
                     </div>
-                  </div>
-                )}
-                {(event as any).event_provider_phone && (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-xs text-gray-500 mb-1">Phone</p>
-                    <div className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gray-400" />
-                      <p className="font-semibold text-gray-800">
-                        {(event as any).event_provider_phone}
-                      </p>
-                    </div>
+                    {event.total_seats && event.total_seats > 0 && (
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div
+                          className="bg-teal-600 h-2 rounded-full transition-all"
+                          style={{
+                            width: `${((event.available_seats || 0) / event.total_seats) * 100}%`,
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -294,7 +305,7 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
                   {event.cast.map((member, idx) => (
                     <span
                       key={idx}
-                      className="px-3 py-1 bg-white rounded-full text-sm text-gray-700 shadow-sm border"
+                      className="px-3 py-1 bg-white rounded-full text-sm text-gray-700 shadow-sm"
                     >
                       {member}
                     </span>
@@ -325,28 +336,25 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
                     </tr>
                   </thead>
                   <tbody>
-                    {schedules.map((slot: any, idx: number) => (
+                    {schedules.map((slot, idx) => (
                       <tr
                         key={slot.id || idx}
                         className="border-t border-gray-200 hover:bg-gray-50"
                       >
                         <td className="p-3 text-gray-600">{idx + 1}</td>
                         <td className="p-3 font-medium">
-                          {formatDate(slot.date || slot.show_date)}
+                          {formatDate(slot.show_date)}
                         </td>
                         <td className="p-3">
-                          {slot.startTime || slot.start_time?.substring(0, 5)}
+                          {slot.start_time?.substring(0, 5)}
                         </td>
                         <td className="p-3">
-                          {slot.endTime || slot.end_time?.substring(0, 5)}
+                          {slot.end_time?.substring(0, 5)}
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-2">
                             <Building className="h-3 w-3 text-gray-400" />
-                            {slot.hallName ||
-                              slot.hall?.name ||
-                              slot.hall ||
-                              "Main Hall"}
+                            {slot.hall?.name || "Main Hall"}
                           </div>
                         </td>
                       </tr>
@@ -357,25 +365,28 @@ export const ViewEventModal: React.FC<ViewEventModalProps> = ({
             </div>
           )}
 
-          {/* Hall Information */}
-          {schedules.length > 0 && schedules[0]?.hall && (
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                <Theater className="h-5 w-5 text-teal-600" />
-                Venue Information
-              </h3>
-              <div className="bg-gray-50 rounded-lg p-4">
+          {/* Venue Information */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Theater className="h-5 w-5 text-teal-600" />
+              Venue Information
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Venue / Hall</p>
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="font-semibold text-gray-800">
-                    {schedules[0].hall?.name ||
-                      schedules[0].hallName ||
-                      "Main Hall"}
-                  </span>
+                  <p className="font-semibold text-gray-800">
+                    {schedules[0]?.hall?.name || "Main Hall"}
+                  </p>
                 </div>
               </div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Age Restriction</p>
+                <p className="font-semibold text-gray-800">All Ages</p>
+              </div>
             </div>
-          )}
+          </div>
 
           {/* Description */}
           {event.description && (
@@ -457,21 +468,16 @@ export const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
         onClick={handleModalClick}
       >
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-red-100 rounded-full">
+          <div className="p-2 bg-red-100 rounded-lg">
             <Trash2 className="h-6 w-6 text-red-600" />
           </div>
           <h3 className="text-xl font-bold text-gray-900">Delete Event</h3>
         </div>
-        <p className="text-gray-600 mb-4">
-          Are you sure you want to delete "<strong>{event.title}</strong>"?
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to delete "<strong>{event.title}</strong>"? This
+          action cannot be undone and will also delete all associated schedules
+          and bookings.
         </p>
-        <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-6 rounded">
-          <p className="text-sm text-red-700 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            This action cannot be undone and will also delete all associated
-            schedules and bookings.
-          </p>
-        </div>
         <div className="flex gap-3">
           <button
             onClick={onClose}
@@ -483,7 +489,7 @@ export const DeleteEventModal: React.FC<DeleteEventModalProps> = ({
             onClick={onConfirm}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
           >
-            Delete Event
+            Delete
           </button>
         </div>
       </div>
@@ -524,7 +530,7 @@ export const CancelEventModal: React.FC<CancelEventModalProps> = ({
       >
         <div className="flex items-center gap-3 mb-4">
           <div
-            className={`p-3 rounded-full ${isRestore ? "bg-green-100" : "bg-orange-100"}`}
+            className={`p-2 rounded-lg ${isRestore ? "bg-green-100" : "bg-orange-100"}`}
           >
             {isRestore ? (
               <RefreshCw className="h-6 w-6 text-green-600" />
@@ -533,13 +539,13 @@ export const CancelEventModal: React.FC<CancelEventModalProps> = ({
             )}
           </div>
           <h3 className="text-xl font-bold text-gray-900">
-            {isRestore ? "Reactivate Event" : "Cancel Event"}
+            {isRestore ? "Restore Event" : "Cancel Event"}
           </h3>
         </div>
         <p className="text-gray-600 mb-6">
           {isRestore
-            ? `Are you sure you want to reactivate "${event.title}"? It will be set to "Available Now" status and customers can book tickets again.`
-            : `Are you sure you want to cancel "${event.title}"? This will prevent any further bookings.`}
+            ? `Are you sure you want to restore "${event.title}"? It will be set to "Available Now" status.`
+            : `Are you sure you want to cancel "${event.title}"?`}
         </p>
         <div className="flex gap-3">
           <button
@@ -556,54 +562,9 @@ export const CancelEventModal: React.FC<CancelEventModalProps> = ({
                 : "bg-orange-600 hover:bg-orange-700"
             }`}
           >
-            {isRestore ? "Reactivate Event" : "Cancel Event"}
+            {isRestore ? "Restore Event" : "Cancel Event"}
           </button>
         </div>
-      </div>
-    </div>
-  );
-};
-
-// Success Modal Component
-interface SuccessModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  message: string;
-  title?: string;
-}
-
-export const SuccessModal: React.FC<SuccessModalProps> = ({
-  isOpen,
-  onClose,
-  message,
-  title = "Success",
-}) => {
-  if (!isOpen) return null;
-
-  const handleModalClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl max-w-md w-full p-6 text-center"
-        onClick={handleModalClick}
-      >
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="h-8 w-8 text-green-600" />
-        </div>
-        <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-        <p className="text-gray-600 mb-6">{message}</p>
-        <button
-          onClick={onClose}
-          className="px-6 py-2 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition"
-        >
-          Continue
-        </button>
       </div>
     </div>
   );

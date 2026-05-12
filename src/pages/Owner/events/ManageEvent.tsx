@@ -17,15 +17,16 @@ import {
   RefreshCw,
   Trash2,
   Building,
-  AlertCircle,
   Clock,
+  Ticket,
+  DollarSign,
 } from "lucide-react";
 import ReusableTable from "../../../components/Reusable/ReusableTable";
 import SuccessPopup from "../../../components/Reusable/SuccessPopup";
 import CreateEventForm from "../../../components/EventForm/CreateEventForm";
 import UpdateEventForm from "../../../components/EventForm/UpdateEventForm";
 import { DeleteConfirmModal } from "../../../components/EmployeeForm/DeleteConfirmModal";
-import { ViewEventModal } from "../../../components/EventForm/ViewEventModals";
+import { ViewEventModal, CancelEventModal } from "./EventModals";
 import supabase from "@/config/supabaseClient";
 
 interface Event {
@@ -38,7 +39,7 @@ interface Event {
   director: string | null;
   cast: string[];
   poster_url: string | null;
-  status: "coming-soon" | "now-showing" | "ended" | "cancelled";
+  status: "avaliable_now" | "ended" | "cancelled";
   is_featured: boolean;
   rating: number;
   review_count: number;
@@ -48,6 +49,11 @@ interface Event {
   updated_at: string;
   published_by: string | null;
   schedules?: Schedule[];
+  price_min?: number;
+  price_max?: number;
+  available_seats?: number;
+  total_seats?: number;
+  occupancy_percentage?: number;
 }
 
 interface Schedule {
@@ -129,6 +135,7 @@ const ManageEvent: React.FC = () => {
   };
 
   const formatTime = (timeString: string) => {
+    if (!timeString) return "";
     return timeString.substring(0, 5);
   };
 
@@ -201,56 +208,109 @@ const ManageEvent: React.FC = () => {
       : null;
   }, []);
 
-  // Fetch events with their schedules
-  const fetchEventsWithSchedules = useCallback(async (theaterId: string) => {
-    try {
-      // Fetch events
-      const { data: eventsData, error: eventsError } = await supabase
-        .from("events")
-        .select("*")
-        .eq("theater_id", theaterId)
-        .order("created_at", { ascending: false });
+  // Fetch price range for event
+  const fetchEventPriceRange = useCallback(async (eventId: string) => {
+    const { data: priceData } = await supabase
+      .from("seat_price")
+      .select("price")
+      .eq("event_id", eventId)
+      .eq("is_active", true);
 
-      if (eventsError) throw eventsError;
-
-      if (!eventsData || eventsData.length === 0) return [];
-
-      // Fetch schedules for all events
-      const eventIds = eventsData.map((e) => e.id);
-      const { data: schedulesData } = await supabase
-        .from("show_schedules")
-        .select(
-          `
-          *,
-          hall:halls(id, name)
-        `,
-        )
-        .in("event_id", eventIds)
-        .eq("is_active", true)
-        .order("show_date", { ascending: true });
-
-      // Group schedules by event_id
-      const schedulesMap = new Map<string, Schedule[]>();
-      schedulesData?.forEach((schedule: any) => {
-        if (!schedulesMap.has(schedule.event_id)) {
-          schedulesMap.set(schedule.event_id, []);
-        }
-        schedulesMap.get(schedule.event_id)!.push({
-          ...schedule,
-          hall: schedule.hall,
-        });
-      });
-
-      // Combine events with their schedules
-      return eventsData.map((event) => ({
-        ...event,
-        schedules: schedulesMap.get(event.id) || [],
-      }));
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      return [];
+    if (priceData && priceData.length > 0) {
+      const prices = priceData.map((p) => p.price);
+      return {
+        min: Math.min(...prices),
+        max: Math.max(...prices),
+      };
     }
+    return { min: 0, max: 0 };
   }, []);
+
+  // Fetch total available seats for event
+  const fetchEventSeatAvailability = useCallback(async (hallId: string) => {
+    const { data: seats } = await supabase
+      .from("seats")
+      .select("id, is_reserved, status")
+      .eq("hall_id", hallId)
+      .eq("is_active", true);
+
+    if (seats) {
+      const available = seats.filter(
+        (s) => !s.is_reserved && s.status !== "reserved",
+      ).length;
+      const total = seats.length;
+      return {
+        available,
+        total,
+        percentage: total > 0 ? (available / total) * 100 : 0,
+      };
+    }
+    return { available: 0, total: 0, percentage: 0 };
+  }, []);
+
+  // Fetch events with their schedules
+  const fetchEventsWithSchedules = useCallback(
+    async (theaterId: string) => {
+      try {
+        const { data: eventsData, error: eventsError } = await supabase
+          .from("events")
+          .select("*")
+          .eq("theater_id", theaterId)
+          .in("status", ["avaliable_now", "ended", "cancelled"])
+          .order("created_at", { ascending: false });
+
+        if (eventsError) throw eventsError;
+        if (!eventsData || eventsData.length === 0) return [];
+
+        const eventIds = eventsData.map((e) => e.id);
+        const { data: schedulesData } = await supabase
+          .from("event_schedules")
+          .select(`*, hall:halls(id, name)`)
+          .in("event_id", eventIds)
+          .eq("is_active", true)
+          .order("show_date", { ascending: true });
+
+        const schedulesMap = new Map<string, Schedule[]>();
+        schedulesData?.forEach((schedule: any) => {
+          if (!schedulesMap.has(schedule.event_id)) {
+            schedulesMap.set(schedule.event_id, []);
+          }
+          schedulesMap.get(schedule.event_id)!.push({
+            ...schedule,
+            hall: schedule.hall,
+          });
+        });
+
+        const eventsWithDetails = await Promise.all(
+          eventsData.map(async (event) => {
+            const schedules = schedulesMap.get(event.id) || [];
+            const firstHallId = schedules[0]?.hall_id;
+            const priceRange = await fetchEventPriceRange(event.id);
+            let seatAvailability = { available: 0, total: 0, percentage: 0 };
+            if (firstHallId) {
+              seatAvailability = await fetchEventSeatAvailability(firstHallId);
+            }
+
+            return {
+              ...event,
+              schedules,
+              price_min: priceRange.min,
+              price_max: priceRange.max,
+              available_seats: seatAvailability.available,
+              total_seats: seatAvailability.total,
+              occupancy_percentage: seatAvailability.percentage,
+            };
+          }),
+        );
+
+        return eventsWithDetails;
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        return [];
+      }
+    },
+    [fetchEventPriceRange, fetchEventSeatAvailability],
+  );
 
   // Main fetch function
   const fetchUserAndEvents = useCallback(async () => {
@@ -308,11 +368,9 @@ const ManageEvent: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
-  // Stats
   const stats = {
     total: events.length,
-    nowShowing: events.filter((e) => e.status === "now-showing").length,
-    comingSoon: events.filter((e) => e.status === "coming-soon").length,
+    avaliableNow: events.filter((e) => e.status === "avaliable_now").length,
     ended: events.filter((e) => e.status === "ended").length,
     cancelled: events.filter((e) => e.status === "cancelled").length,
   };
@@ -346,7 +404,6 @@ const ManageEvent: React.FC = () => {
     try {
       const { schedules: eventSchedules, ...eventData } = formData;
 
-      // Create the event
       const newEvent = {
         title: eventData.title,
         description: eventData.description || null,
@@ -356,13 +413,12 @@ const ManageEvent: React.FC = () => {
         director: eventData.director || null,
         cast: eventData.cast || [],
         poster_url: posterUrl || eventData.poster_url || null,
-        status: eventData.status || "coming-soon",
-        is_featured: eventData.is_featured || false,
+        status: "avaliable_now",
         theater_id: userTheater.id,
         published_by: currentUser.id,
-        rating: 0,
-        review_count: 0,
-        view_count: 0,
+        event_provider: eventData.event_provider || null,
+        event_provider_email: eventData.event_provider_email || null,
+        event_provider_phone: eventData.event_provider_phone || null,
       };
 
       const { data: createdEvent, error: eventError } = await supabase
@@ -373,7 +429,6 @@ const ManageEvent: React.FC = () => {
 
       if (eventError) throw eventError;
 
-      // Create show schedules
       if (eventSchedules && eventSchedules.length > 0) {
         const scheduleRecords = eventSchedules.map((schedule: any) => ({
           event_id: createdEvent.id,
@@ -385,7 +440,7 @@ const ManageEvent: React.FC = () => {
         }));
 
         const { error: scheduleError } = await supabase
-          .from("show_schedules")
+          .from("event_schedules")
           .insert(scheduleRecords);
 
         if (scheduleError) {
@@ -406,13 +461,7 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  const handleCreateEventSubmit = async (formData: any) => {
-    if (!userTheater) {
-      setSuccessMessage("No theater assigned to your account.");
-      setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 3000);
-      return;
-    }
+  const handleCreateEventWrapper = async (formData: any) => {
     const posterUrl = formData.poster_url || null;
     await handleCreateEvent(formData, posterUrl);
   };
@@ -424,7 +473,6 @@ const ManageEvent: React.FC = () => {
     try {
       const { schedules: eventSchedules, ...eventData } = formData;
 
-      // Update event
       const { error: eventError } = await supabase
         .from("events")
         .update({
@@ -436,18 +484,19 @@ const ManageEvent: React.FC = () => {
           director: eventData.director || null,
           cast: eventData.cast || [],
           poster_url: eventData.poster_url || null,
-          status: eventData.status,
           is_featured: eventData.is_featured || false,
           updated_at: new Date().toISOString(),
+          event_provider: eventData.event_provider || null,
+          event_provider_email: eventData.event_provider_email || null,
+          event_provider_phone: eventData.event_provider_phone || null,
         })
         .eq("id", selectedEventForEdit.id);
 
       if (eventError) throw eventError;
 
-      // Delete existing schedules and recreate
       if (eventSchedules) {
         await supabase
-          .from("show_schedules")
+          .from("event_schedules")
           .delete()
           .eq("event_id", selectedEventForEdit.id);
 
@@ -462,7 +511,7 @@ const ManageEvent: React.FC = () => {
           }));
 
           const { error: scheduleError } = await supabase
-            .from("show_schedules")
+            .from("event_schedules")
             .insert(scheduleRecords);
 
           if (scheduleError) {
@@ -489,19 +538,14 @@ const ManageEvent: React.FC = () => {
     if (!selectedEventForDelete) return;
 
     try {
-      // Delete schedules first
       await supabase
-        .from("show_schedules")
+        .from("event_schedules")
         .delete()
         .eq("event_id", selectedEventForDelete.id);
-
-      // Delete event
-      const { error } = await supabase
+      await supabase
         .from("events")
         .delete()
         .eq("id", selectedEventForDelete.id);
-
-      if (error) throw error;
 
       await fetchUserAndEvents();
       closeAllModals();
@@ -556,7 +600,7 @@ const ManageEvent: React.FC = () => {
       const { error } = await supabase
         .from("events")
         .update({
-          status: "coming-soon",
+          status: "avaliable_now",
           updated_at: new Date().toISOString(),
         })
         .eq("id", selectedEventForReactivate.id);
@@ -573,6 +617,31 @@ const ManageEvent: React.FC = () => {
     } catch (error) {
       console.error("Error reactivating event:", error);
       setSuccessMessage("Failed to reactivate event. Please try again.");
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    }
+  };
+
+  // End event handler
+  const handleEndEvent = async (event: Event) => {
+    try {
+      const { error } = await supabase
+        .from("events")
+        .update({
+          status: "ended",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", event.id);
+
+      if (error) throw error;
+
+      await fetchUserAndEvents();
+      setSuccessMessage(`📅 Event "${event.title}" has been marked as ended.`);
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    } catch (error) {
+      console.error("Error ending event:", error);
+      setSuccessMessage("Failed to update event status.");
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     }
@@ -608,10 +677,8 @@ const ManageEvent: React.FC = () => {
   // UI helpers
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "now-showing":
+      case "avaliable_now":
         return "bg-green-100 text-green-700";
-      case "coming-soon":
-        return "bg-blue-100 text-blue-700";
       case "ended":
         return "bg-gray-100 text-gray-700";
       case "cancelled":
@@ -623,10 +690,8 @@ const ManageEvent: React.FC = () => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "now-showing":
+      case "avaliable_now":
         return <Activity className="h-3 w-3" />;
-      case "coming-soon":
-        return <Calendar className="h-3 w-3" />;
       case "ended":
         return <CheckCircle className="h-3 w-3" />;
       case "cancelled":
@@ -638,10 +703,8 @@ const ManageEvent: React.FC = () => {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "now-showing":
-        return "Now Showing";
-      case "coming-soon":
-        return "Coming Soon";
+      case "avaliable_now":
+        return "Available Now";
       case "ended":
         return "Ended";
       case "cancelled":
@@ -651,11 +714,11 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Table columns
+  // Table columns - ALL WITH UNIQUE ACCESSORS
   const columns: Column[] = [
     {
       Header: "Event",
-      accessor: "title",
+      accessor: "eventInfo",
       Cell: (row: Event) => (
         <div className="flex items-center gap-3">
           {row.poster_url ? (
@@ -677,8 +740,22 @@ const ManageEvent: React.FC = () => {
       ),
     },
     {
+      Header: "Price",
+      accessor: "priceInfo",
+      Cell: (row: Event) => (
+        <div className="flex items-center gap-1">
+          <DollarSign className="h-3 w-3 text-green-600" />
+          <span className="text-sm font-medium">
+            {row.price_min && row.price_max
+              ? `ETB ${row.price_min} - ${row.price_max}`
+              : "TBD"}
+          </span>
+        </div>
+      ),
+    },
+    {
       Header: "Schedule",
-      accessor: "schedules",
+      accessor: "scheduleInfo",
       Cell: (row: Event) => {
         const schedules = row.schedules || [];
         if (schedules.length === 0)
@@ -707,28 +784,41 @@ const ManageEvent: React.FC = () => {
     },
     {
       Header: "Venue",
-      accessor: "schedules",
+      accessor: "venueInfo",
       Cell: (row: Event) => {
         const schedules = row.schedules || [];
         const firstHall = schedules[0]?.hall?.name;
         return (
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-gray-400" />
+            <Building className="h-4 w-4 text-gray-400" />
             <span className="text-sm">{firstHall || "TBD"}</span>
           </div>
         );
       },
     },
     {
-      Header: "Duration",
-      accessor: "duration_minutes",
+      Header: "Availability",
+      accessor: "availabilityInfo",
       Cell: (row: Event) => (
-        <span className="text-sm">{row.duration_minutes || 0} min</span>
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1">
+            <Ticket className="h-3 w-3 text-teal-600" />
+            <span className="text-sm font-medium">
+              {row.available_seats || 0} / {row.total_seats || 0}
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+            <div
+              className="bg-teal-600 h-1.5 rounded-full transition-all duration-300"
+              style={{ width: `${row.occupancy_percentage || 0}%` }}
+            />
+          </div>
+        </div>
       ),
     },
     {
       Header: "Status",
-      accessor: "status",
+      accessor: "statusInfo",
       Cell: (row: Event) => (
         <span
           className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(row.status)}`}
@@ -739,7 +829,7 @@ const ManageEvent: React.FC = () => {
     },
     {
       Header: "Actions",
-      accessor: "actions",
+      accessor: "actionsInfo",
       Cell: (row: Event) => (
         <div className="flex gap-2">
           <button
@@ -764,8 +854,15 @@ const ManageEvent: React.FC = () => {
             >
               <RefreshCw className="h-4 w-4 text-green-600" />
             </button>
-          ) : (
-            row.status !== "ended" && (
+          ) : row.status === "avaliable_now" ? (
+            <>
+              <button
+                onClick={() => handleEndEvent(row)}
+                className="p-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition"
+                title="Mark as Ended"
+              >
+                <CheckCircle className="h-4 w-4 text-gray-600" />
+              </button>
               <button
                 onClick={() => openCancelModal(row)}
                 className="p-1.5 rounded-lg bg-orange-50 hover:bg-orange-100 transition"
@@ -773,8 +870,8 @@ const ManageEvent: React.FC = () => {
               >
                 <Ban className="h-4 w-4 text-orange-600" />
               </button>
-            )
-          )}
+            </>
+          ) : null}
           <button
             onClick={() => openDeleteModal(row)}
             className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition"
@@ -787,19 +884,19 @@ const ManageEvent: React.FC = () => {
     },
   ];
 
-  // Stat Card Component
-  const StatCard = ({ title, value, icon: Icon, color }: any) => (
+  const StatCard = ({ title, value, icon: Icon, color, subtitle }: any) => (
     <motion.div
       variants={itemVariants}
-      className="bg-white rounded-xl p-5 shadow-sm border border-gray-100"
+      className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all"
     >
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <p className="text-sm text-gray-500 mb-1">{title}</p>
           <p className="text-2xl font-bold">{value}</p>
+          {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
         </div>
         <div
-          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center`}
+          className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md`}
         >
           <Icon className="h-6 w-6 text-white" />
         </div>
@@ -807,7 +904,6 @@ const ManageEvent: React.FC = () => {
     </motion.div>
   );
 
-  // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -816,7 +912,6 @@ const ManageEvent: React.FC = () => {
     );
   }
 
-  // No theater assigned state
   if (!userTheater) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -875,24 +970,19 @@ const ManageEvent: React.FC = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatCard
             title="Total Events"
             value={stats.total}
             icon={Calendar}
-            color="from-teal-500 to-teal-600"
+            color="from-teal-500 to-emerald-600"
           />
           <StatCard
-            title="Now Showing"
-            value={stats.nowShowing}
+            title="Available Now"
+            value={stats.avaliableNow}
             icon={Activity}
             color="from-green-500 to-emerald-600"
-          />
-          <StatCard
-            title="Coming Soon"
-            value={stats.comingSoon}
-            icon={Calendar}
-            color="from-blue-500 to-cyan-600"
+            subtitle="Currently showing"
           />
           <StatCard
             title="Ended"
@@ -927,8 +1017,7 @@ const ManageEvent: React.FC = () => {
               className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
             >
               <option value="all">All Status</option>
-              <option value="now-showing">Now Showing</option>
-              <option value="coming-soon">Coming Soon</option>
+              <option value="avaliable_now">Available Now</option>
               <option value="ended">Ended</option>
               <option value="cancelled">Cancelled</option>
             </select>
@@ -957,7 +1046,7 @@ const ManageEvent: React.FC = () => {
         {/* Modals */}
         {showCreateModal && (
           <CreateEventForm
-            onSubmit={handleCreateEventSubmit}
+            onSubmit={handleCreateEventWrapper}
             onCancel={() => closeAllModals()}
             theaters={[
               {
@@ -987,7 +1076,8 @@ const ManageEvent: React.FC = () => {
           />
         )}
 
-        {/* Delete Modal - Using the updated DeleteConfirmModal with title prop */}
+        {/* Delete Modal */}
+        {/* Delete Modal */}
         <DeleteConfirmModal
           employee={
             selectedEventForDelete
@@ -1050,36 +1140,12 @@ const ManageEvent: React.FC = () => {
 
         {/* Reactivate Modal */}
         {showCancelModal && selectedEventForReactivate && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <RefreshCw className="h-6 w-6 text-green-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Reactivate Event
-                </h3>
-              </div>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to reactivate{" "}
-                <strong>{selectedEventForReactivate.title}</strong>?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => closeAllModals()}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleReactivateEvent}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  Reactivate Event
-                </button>
-              </div>
-            </div>
-          </div>
+          <CancelEventModal
+            event={selectedEventForReactivate as any}
+            isOpen={showCancelModal}
+            onConfirm={handleReactivateEvent}
+            onClose={() => closeAllModals()}
+          />
         )}
 
         <SuccessPopup

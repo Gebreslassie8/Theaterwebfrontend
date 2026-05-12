@@ -1,7 +1,7 @@
 // src/components/EmployeeForm/DeleteConfirmModal.tsx
 import React from "react";
 import { motion } from "framer-motion";
-import { AlertCircle } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
 interface DeleteItem {
   id: string;
@@ -43,7 +43,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
       >
         <div className="flex items-center gap-3 mb-4">
           <div className="p-2 bg-red-100 rounded-lg">
-            <AlertCircle className="h-6 w-6 text-red-600" />
+            <Trash2 className="h-6 w-6 text-red-600" />
           </div>
           <h3 className="text-xl font-bold text-gray-900">{title}</h3>
         </div>
@@ -55,12 +55,14 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
           <button
             onClick={onCancel}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+            type="button"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            type="button"
           >
             Delete
           </button>
