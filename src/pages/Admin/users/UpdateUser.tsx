@@ -1,12 +1,12 @@
 // src/pages/Admin/users/UpdateUser.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, User, Mail, Phone, Shield, Save, Lock, Image as ImageIcon } from 'lucide-react';
+import { X, User, Mail, Phone, Shield, Save, Loader2, AlertCircle } from 'lucide-react';
 import * as Yup from 'yup';
 import ReusableForm from '../../../components/Reusable/ReusableForm';
-import ReusableButton from '../../../components/Reusable/ReusableButton';
 import Colors from '../../../components/Reusable/Colors';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
 // Types
 interface UpdateUserProps {
@@ -14,51 +14,49 @@ interface UpdateUserProps {
     isOpen: boolean;
     onClose: () => void;
     onUpdate: (userData: any) => void;
+    onUserUpdated?: () => void;
 }
 
 interface User {
-    id: number;
+    id: string;
     username: string;
+    full_name: string;
     email: string;
     phone: string;
-    password: string;
-    image: string;
-    role: 'Admin' | 'Manager' | 'Theater Owner' | 'Salesperson' | 'Scanner' | 'Customer';
-    status: 'Active' | 'Inactive';
+    password?: string;
+    role: 'super_admin' | 'theater_owner' | 'theater_manager' | 'sales_person' | 'qr_scanner' | 'customer';
+    status: 'active' | 'inactive' | 'pending';
+    created_at?: string;
 }
 
-// Validation Schema
+// Validation Schema - No password field
 const ValidationSchema = Yup.object({
     username: Yup.string()
         .required('Username is required')
         .min(3, 'Username must be at least 3 characters')
-        .max(50, 'Username cannot exceed 50 characters'),
+        .max(50, 'Username cannot exceed 50 characters')
+        .matches(/^[a-zA-Z0-9_]+$/, 'Username can only contain letters, numbers, and underscores'),
+    
+    full_name: Yup.string()
+        .required('Full name is required')
+        .min(2, 'Full name must be at least 2 characters')
+        .max(100, 'Full name cannot exceed 100 characters'),
+    
     email: Yup.string()
         .required('Email is required')
         .email('Please enter a valid email address'),
+    
     phone: Yup.string()
         .required('Phone number is required')
-        .test('phone', 'Enter a valid Ethiopian phone number (e.g., 0912345678, 0912 345 678, or +251912345678)', function (value) {
-            if (!value) return false;
-            const cleanNumber = value.replace(/[\s\-\(\)]/g, '');
-            const patterns = [
-                /^09\d{8}$/,
-                /^\+2519\d{8}$/,
-                /^2519\d{8}$/,
-                /^9\d{8}$/
-            ];
-            return patterns.some(pattern => pattern.test(cleanNumber));
-        }),
-    password: Yup.string()
-        .optional()
-        .min(6, 'Password must be at least 6 characters'),
-    image: Yup.string()
-        .optional()
-        .url('Please enter a valid image URL'),
+        .matches(/^\+?[0-9]{10,15}$/, 'Please enter a valid phone number (10-15 digits)'),
+    
     role: Yup.string()
-        .required('Role is required'),
+        .required('Role is required')
+        .oneOf(['super_admin', 'theater_owner', 'theater_manager', 'sales_person', 'qr_scanner', 'customer'], 'Invalid role selected'),
+    
     status: Yup.string()
         .required('Status is required')
+        .oneOf(['active', 'inactive', 'pending'], 'Invalid status selected')
 });
 
 // Reusable Button Component
@@ -69,7 +67,8 @@ const ReusableFormButton: React.FC<{
     variant?: 'primary' | 'secondary' | 'danger';
     className?: string;
     disabled?: boolean;
-}> = ({ onClick, type = 'button', children, variant = 'primary', className = '', disabled = false }) => {
+    loading?: boolean;
+}> = ({ onClick, type = 'button', children, variant = 'primary', className = '', disabled = false, loading = false }) => {
     const [isHovered, setIsHovered] = useState(false);
 
     const getButtonStyle = () => {
@@ -103,13 +102,20 @@ const ReusableFormButton: React.FC<{
         <button
             type={type}
             onClick={onClick}
-            disabled={disabled}
+            disabled={disabled || loading}
             className={`h-[46px] text-base font-normal rounded-2xl flex justify-center items-center cursor-pointer mt-2 ${className}`}
             style={buttonStyle}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
-            {children}
+            {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Updating...</span>
+                </div>
+            ) : (
+                children
+            )}
         </button>
     );
 };
@@ -118,21 +124,21 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
     user,
     isOpen,
     onClose,
-    onUpdate
+    onUpdate,
+    onUserUpdated
 }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
 
-    // Initial values for the form - based on User columns
+    // Initial values for the form - No password field
     const initialValues = {
         username: user?.username || '',
+        full_name: user?.full_name || '',
         email: user?.email || '',
         phone: user?.phone || '',
-        password: '',
-        image: user?.image || '',
-        role: user?.role?.toLowerCase().replace(' ', '_') || 'customer',
-        status: user?.status || 'Active'
+        role: user?.role || 'customer',
+        status: user?.status || 'active'
     };
 
     const formFields = [
@@ -141,35 +147,32 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
             type: 'text' as const,
             label: 'Username',
             placeholder: 'Enter username',
-            required: true
+            required: true,
+            icon: <User className="h-4 w-4" />
+        },
+        {
+            name: 'full_name',
+            type: 'text' as const,
+            label: 'Full Name',
+            placeholder: 'Enter full name',
+            required: true,
+            icon: <User className="h-4 w-4" />
         },
         {
             name: 'email',
             type: 'email' as const,
             label: 'Email Address',
             placeholder: 'Enter email address',
-            required: true
+            required: true,
+            icon: <Mail className="h-4 w-4" />
         },
         {
             name: 'phone',
             type: 'text' as const,
             label: 'Phone Number',
             placeholder: 'Enter phone number',
-            required: true
-        },
-        {
-            name: 'password',
-            type: 'password' as const,
-            label: 'Password',
-            placeholder: 'Enter new password (leave blank to keep current)',
-            required: false
-        },
-        {
-            name: 'image',
-            type: 'text' as const,
-            label: 'Profile Image URL',
-            placeholder: 'Enter image URL (e.g., https://ui-avatars.com/api/?name=John&background=0D9488&color=fff)',
-            required: false
+            required: true,
+            icon: <Phone className="h-4 w-4" />
         },
         {
             name: 'role',
@@ -178,11 +181,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
             placeholder: 'Select role',
             required: true,
             options: [
-                { value: 'admin', label: 'Admin' },
-                { value: 'manager', label: 'Manager' },
+                { value: 'super_admin', label: 'Super Admin' },
                 { value: 'theater_owner', label: 'Theater Owner' },
-                { value: 'salesperson', label: 'Salesperson' },
-                { value: 'scanner', label: 'Scanner' },
+                { value: 'theater_manager', label: 'Theater Manager' },
+                { value: 'sales_person', label: 'Sales Person' },
+                { value: 'qr_scanner', label: 'QR Scanner' },
                 { value: 'customer', label: 'Customer' }
             ]
         },
@@ -193,49 +196,131 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
             placeholder: 'Select status',
             required: true,
             options: [
-                { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' }
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
+                { value: 'pending', label: 'Pending' }
             ]
         }
     ];
 
     const handleSubmit = async (values: any, { setSubmitting }: any) => {
+        if (!user?.id) {
+            setPopupMessage({
+                title: 'Error',
+                message: 'User ID is missing',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+            return;
+        }
+
         setIsLoading(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        try {
+            // Prepare update data - only essential fields, no password
+            const updateData: any = {
+                username: values.username,
+                full_name: values.full_name,
+                email: values.email,
+                phone: values.phone,
+                role: values.role,
+                status: values.status,
+                updated_at: new Date().toISOString()
+            };
 
-        const updatedUser = {
-            id: user?.id,
-            username: values.username,
-            email: values.email,
-            phone: values.phone,
-            // Only update password if provided
-            ...(values.password && { password: values.password }),
-            // Use existing image if not provided
-            image: values.image || user?.image,
-            role: values.role === 'admin' ? 'Admin' :
-                values.role === 'manager' ? 'Manager' :
-                    values.role === 'theater_owner' ? 'Theater Owner' :
-                        values.role === 'salesperson' ? 'Salesperson' :
-                            values.role === 'scanner' ? 'Scanner' : 'Customer',
-            status: values.status
-        };
+            // Update user in Supabase
+            const { data: updatedUser, error: updateError } = await supabase
+                .from('users')
+                .update(updateData)
+                .eq('id', user.id)
+                .select()
+                .single();
 
-        onUpdate(updatedUser);
-        setIsLoading(false);
-        setSubmitting(false);
+            if (updateError) {
+                console.error('Update error:', updateError);
+                throw new Error(updateError.message);
+            }
 
-        setPopupMessage({
-            title: 'User Updated!',
-            message: `${values.username} has been updated successfully`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+            // If role is theater_owner, update owners table
+            if (values.role === 'theater_owner') {
+                const { error: ownerError } = await supabase
+                    .from('owners')
+                    .upsert({
+                        user_id: user.id,
+                        business_name: values.full_name,
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
 
-        setTimeout(() => {
-            onClose();
-        }, 1500);
+                if (ownerError) console.error('Owner update error:', ownerError);
+            }
+
+            // If role is customer, update customers table
+            if (values.role === 'customer') {
+                const { error: customerError } = await supabase
+                    .from('customers')
+                    .upsert({
+                        user_id: user.id,
+                        full_name: values.full_name,
+                        email: values.email,
+                        phone: values.phone,
+                        is_active: values.status === 'active',
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_id' });
+
+                if (customerError) console.error('Customer update error:', customerError);
+            }
+
+            // Update localStorage/sessionStorage if this is the current user
+            const storedUser = JSON.parse(
+                localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'
+            );
+
+            if (storedUser && storedUser.id === user.id) {
+                const updatedStoredUser = {
+                    ...storedUser,
+                    name: values.full_name,
+                    full_name: values.full_name,
+                    email: values.email,
+                    phone: values.phone,
+                    username: values.username,
+                    role: values.role
+                };
+
+                if (localStorage.getItem('user')) {
+                    localStorage.setItem('user', JSON.stringify(updatedStoredUser));
+                }
+                if (sessionStorage.getItem('user')) {
+                    sessionStorage.setItem('user', JSON.stringify(updatedStoredUser));
+                }
+            }
+
+            // Call parent update callback
+            onUpdate(updatedUser);
+            if (onUserUpdated) onUserUpdated();
+
+            setPopupMessage({
+                title: 'User Updated!',
+                message: `${values.full_name || values.username} has been updated successfully`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+
+            setTimeout(() => {
+                onClose();
+            }, 1500);
+
+        } catch (error: any) {
+            console.error('Error updating user:', error);
+            setPopupMessage({
+                title: 'Error',
+                message: error.message || 'Failed to update user. Please try again.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsLoading(false);
+            setSubmitting(false);
+        }
     };
 
     if (!isOpen) return null;
@@ -265,24 +350,7 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
                         </button>
                     </div>
 
-                    {/* Current Avatar Preview */}
-                    {user?.image && (
-                        <div className="px-6 pt-4 pb-2">
-                            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                <img
-                                    src={user.image}
-                                    alt={user.username}
-                                    className="w-12 h-12 rounded-full object-cover ring-2 ring-teal-500/20"
-                                />
-                                <div>
-                                    <p className="text-xs text-gray-500">Current Avatar</p>
-                                    <p className="text-sm text-gray-700 font-medium">{user.username}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Form */}
+                    {/* Form - No info alert, no password field */}
                     <div className="p-6">
                         <ReusableForm
                             id="update-user-form"
@@ -307,19 +375,11 @@ const UpdateUser: React.FC<UpdateUserProps> = ({
                                         type="submit"
                                         variant="primary"
                                         disabled={formik.isSubmitting || isLoading}
+                                        loading={formik.isSubmitting || isLoading}
                                         className="flex-1"
                                     >
-                                        {formik.isSubmitting || isLoading ? (
-                                            <div className="flex items-center justify-center gap-2">
-                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                Updating...
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <Save className="h-4 w-4 mr-2" />
-                                                Update User
-                                            </>
-                                        )}
+                                        <Save className="h-4 w-4 mr-2" />
+                                        Update User
                                     </ReusableFormButton>
                                 </div>
                             )}
