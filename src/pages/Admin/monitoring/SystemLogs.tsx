@@ -31,12 +31,15 @@ import {
   Copy,
   Check,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Loader2
 } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
+// Types
 interface SystemLog {
   id: string;
   timestamp: string;
@@ -355,7 +358,6 @@ const LogDetailsModal: React.FC<{
         <div className="flex-1 overflow-y-auto p-6">
           {activeTab === 'details' && (
             <div className="space-y-4">
-              {/* Main Message Card */}
               <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl p-5 border border-gray-200">
                 <div className="flex items-start gap-3">
                   <div className={`p-2 rounded-lg ${getLevelColor(log.level)}`}>
@@ -368,7 +370,6 @@ const LogDetailsModal: React.FC<{
                 </div>
               </div>
 
-              {/* Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <DetailRow icon={<Clock className="h-4 w-4 text-gray-500" />} label="Timestamp" value={formatDate(log.timestamp)} />
                 <DetailRow icon={<Server className="h-4 w-4 text-gray-500" />} label="Source" value={log.source} />
@@ -378,7 +379,6 @@ const LogDetailsModal: React.FC<{
                 <DetailRow icon={<Hash className="h-4 w-4 text-gray-500" />} label="Request ID" value={logData.requestId} copyable />
               </div>
 
-              {/* Additional Details */}
               {log.details && (
                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -389,7 +389,6 @@ const LogDetailsModal: React.FC<{
                 </div>
               )}
 
-              {/* Stack Trace (if error) */}
               {log.level === 'error' && log.stackTrace && (
                 <div className="bg-red-50 rounded-xl p-4 border border-red-200">
                   <div className="flex items-center gap-2 mb-3">
@@ -463,15 +462,7 @@ const SystemLogs: React.FC = () => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'all'>('today');
 
-  // Mock log data with enhanced fields
-  const mockLogs: SystemLog[] = [
-    { id: '1', timestamp: new Date().toISOString(), level: 'info', source: 'Auth Service', message: 'User login successful', userId: 'user_123', ipAddress: '192.168.1.100', userAgent: 'Chrome/120.0', details: 'Login from new device. Two-factor authentication bypassed.', method: 'POST', endpoint: '/api/auth/login', statusCode: 200, duration: 45 },
-    { id: '2', timestamp: new Date(Date.now() - 300000).toISOString(), level: 'warning', source: 'Payment Gateway', message: 'Payment processing delay detected', userId: 'user_456', ipAddress: '192.168.1.101', userAgent: 'Firefox/121.0', details: 'Stripe API response time exceeded 3 seconds. Retry logic triggered.', method: 'POST', endpoint: '/api/payments/process', statusCode: 429, duration: 3200 },
-    { id: '3', timestamp: new Date(Date.now() - 600000).toISOString(), level: 'error', source: 'Database', message: 'Connection pool timeout', ipAddress: 'localhost', userAgent: 'System', details: 'Connection pool exhausted. Active connections: 100/100. Query optimization recommended.', method: 'GET', endpoint: '/api/bookings', statusCode: 500, duration: 15000 },
-    { id: '4', timestamp: new Date(Date.now() - 900000).toISOString(), level: 'info', source: 'API Gateway', message: 'New theater registration submitted', userId: 'theater_789', ipAddress: '192.168.1.102', userAgent: 'Postman/10.0', details: 'Registration data validated. Awaiting admin approval.', method: 'POST', endpoint: '/api/theaters/register', statusCode: 201, duration: 120 },
-    { id: '5', timestamp: new Date(Date.now() - 1200000).toISOString(), level: 'warning', source: 'Cache Service', message: 'Redis memory usage above 80%', ipAddress: 'localhost', userAgent: 'System', details: 'Current memory usage: 82%. Consider scaling up or clearing old cache.', method: 'GET', endpoint: '/api/cache/stats', statusCode: 200, duration: 25 }
-  ];
-
+  // Fetch logs from activity_logs table
   useEffect(() => {
     fetchLogs();
   }, []);
@@ -479,40 +470,87 @@ const SystemLogs: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setLogs(mockLogs);
+      const { data: logsData, error: logsError } = await supabase
+        .from('activity_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (logsError) {
+        console.error('Error fetching logs:', logsError);
+        setLogs([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!logsData || logsData.length === 0) {
+        setLogs([]);
+        setLoading(false);
+        return;
+      }
+
+      // Transform activity_logs to SystemLog format
+      const formattedLogs: SystemLog[] = logsData.map(log => ({
+        id: log.id,
+        timestamp: log.created_at,
+        level: mapStatusToLevel(log.status),
+        source: log.action_type || 'System',
+        message: log.action || 'Unknown Action',
+        userId: log.performed_by_id,
+        ipAddress: log.ip_address,
+        userAgent: log.user_agent,
+        details: log.details,
+        requestId: log.id,
+        statusCode: log.status === 'success' ? 200 : log.status === 'failed' ? 500 : 202,
+        endpoint: `/api/${log.target_type}/${log.target_id}`
+      }));
+
+      setLogs(formattedLogs);
     } catch (error) {
       console.error('Error fetching logs:', error);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getLevelBadge = (level: string) => {
-    const configs: Record<string, { icon: any; color: string; bg: string; border: string }> = {
-      info: { icon: Info, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
-      warning: { icon: AlertTriangle, color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
-      error: { icon: AlertCircle, color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
-      debug: { icon: Activity, color: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' }
-    };
-    const config = configs[level];
-    const Icon = config.icon;
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.color} border ${config.border}`}>
-        <Icon className="h-3 w-3" />
-        {level.toUpperCase()}
-      </span>
-    );
+  const mapStatusToLevel = (status: string): 'info' | 'warning' | 'error' | 'debug' => {
+    switch (status) {
+      case 'success': return 'info';
+      case 'failed': return 'error';
+      case 'pending': return 'warning';
+      default: return 'info';
+    }
   };
 
-  const handleDeleteLog = () => {
-    if (logToDelete) {
+  const deleteLog = async (logId: string) => {
+    try {
+      const { error } = await supabase
+        .from('activity_logs')
+        .delete()
+        .eq('id', logId);
+      
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting log:', error);
+      return false;
+    }
+  };
+
+  const handleDeleteLog = async () => {
+    if (!logToDelete) return;
+    
+    const success = await deleteLog(logToDelete.id);
+    if (success) {
       setLogs(logs.filter(log => log.id !== logToDelete.id));
-      setShowDeleteConfirm(false);
-      setLogToDelete(null);
-      setSuccessMessage(`Log ${logToDelete.id} has been deleted successfully`);
+      setSuccessMessage(`Log has been deleted successfully`);
+      setShowSuccess(true);
+    } else {
+      setSuccessMessage(`Failed to delete log`);
       setShowSuccess(true);
     }
+    setShowDeleteConfirm(false);
+    setLogToDelete(null);
   };
 
   const handleCopyLog = (log: SystemLog) => {
@@ -540,10 +578,12 @@ const SystemLogs: React.FC = () => {
       case 'today':
         return date.toDateString() === now.toDateString();
       case 'week':
-        const weekAgo = new Date(now.setDate(now.getDate() - 7));
+        const weekAgo = new Date(now);
+        weekAgo.setDate(weekAgo.getDate() - 7);
         return date >= weekAgo;
       case 'month':
-        const monthAgo = new Date(now.setMonth(now.getMonth() - 1));
+        const monthAgo = new Date(now);
+        monthAgo.setMonth(monthAgo.getMonth() - 1);
         return date >= monthAgo;
       default:
         return true;
@@ -572,12 +612,29 @@ const SystemLogs: React.FC = () => {
   };
 
   const dashboardCards = [
-    { title: 'Total Logs', value: levelCounts.total, icon: FileText, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/monitoring/logs', trend: 12 },
-    { title: 'Errors', value: levelCounts.error, icon: AlertCircle, color: 'from-red-500 to-rose-600', delay: 0.15, link: '/admin/monitoring/logs?level=error', trend: -5 },
-    { title: 'Warnings', value: levelCounts.warning, icon: AlertTriangle, color: 'from-yellow-500 to-orange-600', delay: 0.2, link: '/admin/monitoring/logs?level=warning', trend: 8 },
-    { title: 'Info', value: levelCounts.info, icon: Info, color: 'from-blue-500 to-cyan-600', delay: 0.25, link: '/admin/monitoring/logs?level=info', trend: 3 },
-    { title: 'Debug', value: levelCounts.debug, icon: Activity, color: 'from-purple-500 to-indigo-600', delay: 0.3, link: '/admin/monitoring/logs?level=debug', trend: -2 }
+    { title: 'Total Logs', value: levelCounts.total, icon: FileText, color: 'from-teal-500 to-teal-600', delay: 0.1, trend: 12 },
+    { title: 'Errors', value: levelCounts.error, icon: AlertCircle, color: 'from-red-500 to-rose-600', delay: 0.15, trend: -5 },
+    { title: 'Warnings', value: levelCounts.warning, icon: AlertTriangle, color: 'from-yellow-500 to-orange-600', delay: 0.2, trend: 8 },
+    { title: 'Info', value: levelCounts.info, icon: Info, color: 'from-blue-500 to-cyan-600', delay: 0.25, trend: 3 },
+    { title: 'Debug', value: levelCounts.debug, icon: Activity, color: 'from-purple-500 to-indigo-600', delay: 0.3, trend: -2 }
   ];
+
+  const getLevelBadge = (level: string) => {
+    const configs: Record<string, { icon: any; color: string; bg: string; border: string }> = {
+      info: { icon: Info, color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-200' },
+      warning: { icon: AlertTriangle, color: 'text-yellow-700', bg: 'bg-yellow-50', border: 'border-yellow-200' },
+      error: { icon: AlertCircle, color: 'text-red-700', bg: 'bg-red-50', border: 'border-red-200' },
+      debug: { icon: Activity, color: 'text-gray-700', bg: 'bg-gray-100', border: 'border-gray-200' }
+    };
+    const config = configs[level];
+    const Icon = config.icon;
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${config.bg} ${config.color} border ${config.border}`}>
+        <Icon className="h-3 w-3" />
+        {level.toUpperCase()}
+      </span>
+    );
+  };
 
   const columns = [
     {
@@ -623,7 +680,7 @@ const SystemLogs: React.FC = () => {
           {row.userId && (
             <div className="flex items-center gap-1 mt-0.5">
               <User className="h-3 w-3 text-gray-400" />
-              <p className="text-xs text-gray-500">{row.userId}</p>
+              <p className="text-xs text-gray-500">{row.userId.slice(-8)}</p>
             </div>
           )}
         </div>
@@ -664,6 +721,17 @@ const SystemLogs: React.FC = () => {
     setShowSuccess(true);
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+          <p className="text-gray-500">Loading system logs...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial="hidden"
@@ -695,7 +763,6 @@ const SystemLogs: React.FC = () => {
               icon={card.icon}
               color={card.color}
               delay={card.delay}
-              link={card.link}
               trend={card.trend}
             />
           ))}
@@ -785,7 +852,7 @@ const SystemLogs: React.FC = () => {
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && logToDelete && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div              initial={{ scale: 0.9, opacity: 0 }}
+            <motion.div initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-2xl max-w-md w-full p-6"
