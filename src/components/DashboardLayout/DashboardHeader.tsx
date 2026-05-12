@@ -14,13 +14,18 @@ import { useAuth } from "../../contexts/AuthContext";
 import ProfileSettingsModal from "../modals/ProfileSettingsModal";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
+import supabase from "@/config/supabaseClient";
 
 interface UserData {
-  id?: number;
+  id?: string;
   name?: string;
   email?: string;
   role?: string;
   profileImage?: string | null;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  full_name?: string;
   [key: string]: any;
 }
 
@@ -46,7 +51,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const { logout } = useAuth();
   const navigate = useNavigate();
 
-  // Language options (same as Navbar)
+  // Language options
   const languages = [
     { code: "en", name: "English", flag: "🇬🇧" },
     { code: "am", name: "አማርኛ", flag: "🇪🇹" },
@@ -79,24 +84,26 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const getRoleGradient = (role?: string): string => {
     const gradients: Record<string, string> = {
-      admin: "from-deepTeal to-pink-500",
-      venue_manager: "from-deepTeal to-pink-500",
-      theater_owner: "from-deepTeal to-pink-500",
-      user: "from-deepTeal to-pink-500",
+      super_admin: "from-teal-500 to-emerald-600",
+      theater_owner: "from-blue-500 to-indigo-600",
+      theater_manager: "from-amber-500 to-orange-600",
+      sales_person: "from-green-500 to-emerald-600",
+      qr_scanner: "from-purple-500 to-pink-600",
+      customer: "from-indigo-500 to-violet-600",
     };
-    return gradients[role || ""] || "from-deepTeal to-pink-500";
+    return gradients[role || "customer"] || "from-teal-500 to-emerald-600";
   };
 
   const getRoleLabel = (role?: string): string => {
     const labels: Record<string, string> = {
-      super_admin: t("roles.admin"),
-      theater_manager: t("roles.manager"),
+      super_admin: t("roles.superAdmin"),
       theater_owner: t("roles.owner"),
+      theater_manager: t("roles.manager"),
       sales_person: t("roles.sales"),
       qr_scanner: t("roles.scanner"),
-      Customer: t("roles.customer"),
+      customer: t("roles.customer"),
     };
-    return labels[role || ""] || t("roles.user");
+    return labels[role || "customer"] || t("roles.user");
   };
 
   const handleProfileClick = (): void => {
@@ -105,19 +112,60 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   const handleUserUpdate = (updatedUser: UserData): void => {
-    setCurrentUser(updatedUser);
-    if (onUserUpdate) onUserUpdate(updatedUser);
+    // Merge the updated user data
+    const mergedUser = {
+      ...currentUser,
+      ...updatedUser,
+      name: updatedUser.fullName || updatedUser.name,
+      full_name: updatedUser.fullName || updatedUser.name,
+    };
+    
+    setCurrentUser(mergedUser);
+    
+    // Update parent component
+    if (onUserUpdate) onUserUpdate(mergedUser);
+    
+    // Update localStorage/sessionStorage
+    const storedUser = JSON.parse(
+      localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'
+    );
+    
+    if (storedUser) {
+      const updatedStoredUser = {
+        ...storedUser,
+        name: mergedUser.name,
+        email: mergedUser.email,
+        phone: mergedUser.phone,
+        bio: mergedUser.bio,
+        location: mergedUser.location,
+        profileImage: mergedUser.profileImage,
+      };
+      
+      if (localStorage.getItem('user')) {
+        localStorage.setItem('user', JSON.stringify(updatedStoredUser));
+      }
+      if (sessionStorage.getItem('user')) {
+        sessionStorage.setItem('user', JSON.stringify(updatedStoredUser));
+      }
+    }
+    
     setShowProfileModal(false);
   };
 
   const getUserInitials = (): string => {
     const displayUser = currentUser || user;
-    if (displayUser?.name) {
-      const names = displayUser.name.split(" ");
+    const name = displayUser?.name || displayUser?.full_name;
+    if (name) {
+      const names = name.split(" ");
       if (names.length >= 2) return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
-      return displayUser.name.charAt(0).toUpperCase();
+      return name.charAt(0).toUpperCase();
     }
     return "U";
+  };
+
+  const getUserName = (): string => {
+    const displayUser = currentUser || user;
+    return displayUser?.name || displayUser?.full_name || t("dashboard.user");
   };
 
   const displayUser = currentUser || user;
@@ -125,17 +173,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   return (
     <>
       <header
-        className={`bg-white dark:bg-dark-800 border-b border-gray-200 dark:border-dark-700 shadow-lg dark:shadow-dark-900 ${className}`}
+        className={`bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-lg ${className}`}
       >
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Left: Menu Button */}
             <div className="flex items-center">
               <div className="relative group lg:hidden">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-500 rounded-lg opacity-0 group-hover:opacity-20 blur transition duration-500" />
+                <div className="absolute -inset-1 bg-gradient-to-r from-teal-500 to-purple-500 rounded-lg opacity-0 group-hover:opacity-20 blur transition duration-500" />
                 <button
                   onClick={onMenuClick}
-                  className="relative p-2.5 rounded-lg bg-white dark:bg-dark-700 text-gray-700 dark:text-gray-300 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md hover:bg-gray-100 dark:hover:bg-dark-600"
+                  className="relative p-2.5 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 transition-all duration-300 group-hover:scale-110 group-hover:shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
                   onMouseEnter={() => setHoveredItem("menu")}
                   onMouseLeave={() => setHoveredItem(null)}
                   aria-label={t("dashboard.toggleSidebar")}
@@ -147,11 +195,11 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
             {/* Right: Language Selector + Profile */}
             <div className="flex items-center space-x-3">
-              {/* Language Dropdown (same as Navbar) */}
+              {/* Language Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowLangDropdown(!showLangDropdown)}
-                  className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-dark-700 transition-all duration-200"
+                  className="flex items-center space-x-1 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
                   aria-label={t("nav.selectLanguage") || "Select language"}
                 >
                   <Globe className="h-5 w-5 text-gray-600 dark:text-gray-400" />
@@ -165,15 +213,15 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 mt-2 w-40 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden"
                     >
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
                           onClick={() => changeLanguage(lang.code)}
-                          className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-dark-700 flex items-center space-x-2 transition-colors text-sm ${
+                          className={`w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center space-x-2 transition-colors text-sm ${
                             i18n.language === lang.code
-                              ? "bg-primary/10 text-primary"
+                              ? "bg-teal-50 text-teal-600 dark:bg-teal-900/20 dark:text-teal-400"
                               : "text-gray-700 dark:text-gray-300"
                           }`}
                         >
@@ -186,7 +234,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 </AnimatePresence>
               </div>
 
-              {/* Profile Dropdown (unchanged) */}
+              {/* Profile Dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
@@ -195,54 +243,65 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   onMouseLeave={() => setHoveredItem(null)}
                 >
                   <div className={`absolute -inset-1 bg-gradient-to-r ${getRoleGradient(displayUser?.role)} rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-500 ${showProfileDropdown ? "opacity-30" : ""}`} />
-                  <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${hoveredItem === "profile" || showProfileDropdown ? "bg-gradient-to-r from-primary/5 to-purple-500/5 dark:from-primary/10 dark:to-purple-500/10 scale-105" : "bg-white dark:bg-dark-700"}`} />
+                  <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${hoveredItem === "profile" || showProfileDropdown ? "bg-gradient-to-r from-teal-500/5 to-purple-500/5 dark:from-teal-500/10 dark:to-purple-500/10 scale-105" : "bg-white dark:bg-gray-800"}`} />
                   <div className={`relative h-10 w-10 rounded-full bg-gradient-to-r ${getRoleGradient(displayUser?.role)} flex items-center justify-center shadow-lg overflow-hidden`}>
                     {displayUser?.profileImage ? (
-                      <img src={displayUser.profileImage} alt={displayUser?.name || "User"} className="h-full w-full object-cover" />
+                      <img src={displayUser.profileImage} alt={getUserName()} className="h-full w-full object-cover" />
                     ) : (
                       <span className="text-white font-bold text-sm">{getUserInitials()}</span>
                     )}
                   </div>
                   <div className="hidden lg:block text-left relative z-10">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{displayUser?.name || t("dashboard.user")}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">{getUserName()}</p>
                     <p className={`text-xs px-2 py-0.5 rounded-full bg-gradient-to-r ${getRoleGradient(displayUser?.role)} text-white font-medium mt-0.5 inline-block`}>
                       {getRoleLabel(displayUser?.role)}
                     </p>
                   </div>
-                  <ChevronDown className={`h-5 w-5 text-gray-400 transition-all duration-300 relative z-10 ${showProfileDropdown ? "transform rotate-180 text-primary" : hoveredItem === "profile" ? "text-primary scale-110" : ""}`} />
+                  <ChevronDown className={`h-5 w-5 text-gray-400 transition-all duration-300 relative z-10 ${showProfileDropdown ? "transform rotate-180 text-teal-500" : hoveredItem === "profile" ? "text-teal-500 scale-110" : ""}`} />
                 </button>
 
                 {showProfileDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-dark-800 rounded-xl shadow-2xl border border-gray-200 dark:border-dark-700 z-50 overflow-hidden animate-in slide-in-from-top-5 duration-300">
-                    <div className="p-4 border-b border-gray-200 dark:border-dark-700 bg-gradient-to-r from-primary/5 to-purple-500/5 dark:from-primary/10 dark:to-purple-500/10">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 z-50 overflow-hidden animate-in slide-in-from-top-5 duration-300">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-500/5 to-purple-500/5 dark:from-teal-500/10 dark:to-purple-500/10">
                       <div className="flex items-center space-x-3">
                         <div className={`h-12 w-12 rounded-full bg-gradient-to-r ${getRoleGradient(displayUser?.role)} flex items-center justify-center overflow-hidden`}>
                           {displayUser?.profileImage ? (
-                            <img src={displayUser.profileImage} alt={displayUser?.name || "User"} className="h-full w-full object-cover" />
+                            <img src={displayUser.profileImage} alt={getUserName()} className="h-full w-full object-cover" />
                           ) : (
                             <span className="text-white font-bold text-lg">{getUserInitials()}</span>
                           )}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 dark:text-white">{displayUser?.name || t("dashboard.user")}</p>
+                          <p className="text-sm font-bold text-gray-900 dark:text-white">{getUserName()}</p>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{getRoleLabel(displayUser?.role)}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{displayUser?.email}</p>
                         </div>
                       </div>
                     </div>
                     <div className="py-1">
-                      <button onClick={handleProfileClick} className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-all duration-300 group relative">
-                        <User className="h-4 w-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
+                      <button 
+                        onClick={handleProfileClick} 
+                        className="w-full flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 group relative"
+                      >
+                        <User className="h-4 w-4 mr-3 text-gray-400 group-hover:text-teal-500 transition-colors" />
                         <span>{t("dashboard.profileSettings")}</span>
                         <div className="absolute right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:translate-x-0 -translate-x-2">
-                          <Edit className="h-3 w-3 text-primary" />
+                          <Edit className="h-3 w-3 text-teal-500" />
                         </div>
                       </button>
-                      <Link to="/help" className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-700 transition-all duration-300 group" onClick={() => setShowProfileDropdown(false)}>
-                        <HelpCircle className="h-4 w-4 mr-3 text-gray-400 group-hover:text-primary transition-colors" />
+                      <Link 
+                        to="/help" 
+                        className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-300 group" 
+                        onClick={() => setShowProfileDropdown(false)}
+                      >
+                        <HelpCircle className="h-4 w-4 mr-3 text-gray-400 group-hover:text-teal-500 transition-colors" />
                         <span>{t("dashboard.helpSupport")}</span>
                       </Link>
-                      <div className="border-t border-gray-200 dark:border-dark-700 my-1"></div>
-                      <button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group">
+                      <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                      <button 
+                        onClick={handleLogout} 
+                        className="flex items-center w-full px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-300 group"
+                      >
                         <LogOut className="h-4 w-4 mr-3 group-hover:rotate-12 transition-transform duration-300" />
                         <span>{t("dashboard.signOut")}</span>
                       </button>
@@ -255,7 +314,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         </div>
       </header>
 
-      <ProfileSettingsModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} user={displayUser} onUserUpdate={handleUserUpdate} />
+      <ProfileSettingsModal 
+        isOpen={showProfileModal} 
+        onClose={() => setShowProfileModal(false)} 
+        user={displayUser} 
+        onUserUpdate={handleUserUpdate} 
+      />
     </>
   );
 };
