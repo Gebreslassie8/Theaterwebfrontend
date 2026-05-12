@@ -11,31 +11,12 @@ import {
   Eye,
   EyeOff,
   Shield,
-  Coins,
+  Lock,
+  Edit,
+  CheckCircle,
 } from "lucide-react";
 import * as Yup from "yup";
 import supabase from "@/config/supabaseClient";
-import { useTranslation } from "react-i18next";
-
-// Form validation schema – will use translation messages inside component
-const getValidationSchema = (t: (key: string) => string) =>
-  Yup.object({
-    name: Yup.string()
-      .required(t("employeeComponents.addNew.validation.nameRequired"))
-      .min(2, t("employeeComponents.addNew.validation.nameMin")),
-    email: Yup.string()
-      .email(t("employeeComponents.addNew.validation.emailInvalid"))
-      .required(t("employeeComponents.addNew.validation.emailRequired")),
-    phone: Yup.string().required(
-      t("employeeComponents.addNew.validation.phoneRequired")
-    ),
-    assignedRole: Yup.string().required(
-      t("employeeComponents.addNew.validation.roleRequired")
-    ),
-    salary: Yup.number()
-      .min(0, t("employeeComponents.addNew.validation.salaryMin"))
-      .typeError(t("employeeComponents.addNew.validation.salaryNumber")),
-  });
 
 interface AddNewEmployeeProps {
   isOpen: boolean;
@@ -48,97 +29,33 @@ interface AddNewEmployeeProps {
   currentUserRole?: string;
 }
 
-interface FieldConfig {
-  name: string;
-  type: "text" | "email" | "tel" | "password" | "select" | "number";
-  label: string;
-  placeholder: string;
-  required: boolean;
-  icon: React.ReactNode;
-  colSpan: number;
-  rightIcon?: React.ReactNode;
-  onRightIconClick?: () => void;
-  options?: Array<{ value: string; label: string }>;
-}
-
-const getFields = (
-  roles: any[],
-  showPassword: boolean,
-  setShowPassword: (value: boolean) => void,
-  isEditMode: boolean,
-  t: (key: string) => string
-): FieldConfig[] => {
-  const fields: FieldConfig[] = [
-    {
-      name: "name",
-      type: "text",
-      label: t("employeeComponents.addNew.labels.name"),
-      placeholder: t("employeeComponents.addNew.placeholders.name"),
-      required: true,
-      icon: React.createElement(User, { size: 16 }),
-      colSpan: 1,
-    },
-    {
-      name: "email",
-      type: "email",
-      label: t("employeeComponents.addNew.labels.email"),
-      placeholder: t("employeeComponents.addNew.placeholders.email"),
-      required: true,
-      icon: React.createElement(Mail, { size: 16 }),
-      colSpan: 1,
-    },
-    {
-      name: "phone",
-      type: "tel",
-      label: t("employeeComponents.addNew.labels.phone"),
-      placeholder: t("employeeComponents.addNew.placeholders.phone"),
-      required: true,
-      icon: React.createElement(Phone, { size: 16 }),
-      colSpan: 1,
-    },
-  ];
-
-  // Only show password field in create mode
-  if (!isEditMode) {
-    fields.push({
-      name: "password",
-      type: showPassword ? "text" : "password",
-      label: t("employeeComponents.addNew.labels.password"),
-      placeholder: t("employeeComponents.addNew.placeholders.password"),
-      required: true,
-      icon: React.createElement(Shield, { size: 16 }),
-      rightIcon: showPassword
-        ? React.createElement(EyeOff, { size: 18 })
-        : React.createElement(Eye, { size: 18 }),
-      onRightIconClick: () => setShowPassword(!showPassword),
-      colSpan: 1,
-    });
-  }
-
-  fields.push(
-    {
-      name: "assignedRole",
-      type: "select",
-      label: t("employeeComponents.addNew.labels.role"),
-      placeholder: t("employeeComponents.addNew.placeholders.role"),
-      required: true,
-      options: roles.map((r: any) => ({ value: r.id, label: r.label })),
-      icon: React.createElement(Briefcase, { size: 16 }),
-      colSpan: 1,
-    },
-    {
-      name: "salary",
-      type: "number",
-      label: t("employeeComponents.addNew.labels.salary"),
-      placeholder: t("employeeComponents.addNew.placeholders.salary"),
-      required: true,
-      icon: React.createElement(Coins, { size: 16 }),
-      colSpan: 1,
-    }
-  );
-
-  return fields;
-};
+const createValidationSchema = (isEditMode: boolean) =>
+  Yup.object({
+    name: Yup.string()
+      .required("Name is required")
+      .min(2, "Name must be at least 2 characters"),
+    email: Yup.string().email("Invalid email").required("Email is required"),
+    phone: Yup.string()
+      .required("Phone number is required")
+      .matches(/^[0-9+\s-]+$/, "Invalid phone number format"),
+    assignedRole: Yup.string().required("Role is required"),
+    password: Yup.string().when([], {
+      is: () => !isEditMode,
+      then: (schema) =>
+        schema
+          .required("Password is required")
+          .min(6, "Password must be at least 6 characters"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+    confirmPassword: Yup.string().when(["password"], {
+      is: (password: string) => password && password.length > 0,
+      then: (schema) =>
+        schema
+          .required("Please confirm your password")
+          .oneOf([Yup.ref("password")], "Passwords must match"),
+      otherwise: (schema) => schema.notRequired(),
+    }),
+  });
 
 const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
   isOpen,
@@ -150,23 +67,21 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
   theaterId = null,
   currentUserRole = "theater_owner",
 }) => {
-  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
-  const [resetTrigger, setResetTrigger] = useState(0);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formValues, setFormValues] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
+    confirmPassword: "",
     assignedRole: "",
-    salary: "",
   });
 
-  // Validation schema with translation
-  const validationSchema = getValidationSchema(t);
+  const validationSchema = createValidationSchema(isEdit);
 
-  // Generate unique employee ID for new employees
   const generateUniqueEmployeeId = async (): Promise<string> => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 10000);
@@ -179,19 +94,17 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         .eq("employee_id", employeeId)
         .maybeSingle();
       if (!data) break;
-      const newRandom = Math.floor(Math.random() * 10000);
-      employeeId = `EMP-${timestamp}-${newRandom}`;
+      employeeId = `EMP-${timestamp}-${Math.floor(Math.random() * 10000)}`;
     }
     return employeeId;
   };
 
-  // Generate unique username from full name
   const generateUniqueUsername = async (fullName: string): Promise<string> => {
-    const nameParts = fullName.toLowerCase().split(" ");
-    const firstName = nameParts[0] || "";
-    const lastName = nameParts.slice(1).join("") || "";
-    const baseUsername = `${firstName}.${lastName}`.replace(/[^a-z0-9.]/g, "");
-    let username = baseUsername;
+    const parts = fullName.toLowerCase().split(" ");
+    const firstName = parts[0] || "";
+    const lastName = parts.slice(1).join("") || "";
+    const base = `${firstName}.${lastName}`.replace(/[^a-z0-9.]/g, "");
+    let username = base;
     let counter = 1;
 
     while (true) {
@@ -200,75 +113,88 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
         .select("username")
         .eq("username", username)
         .maybeSingle();
-
       if (!data) break;
-      username = `${baseUsername}${counter}`;
-      counter++;
+      username = `${base}${counter++}`;
     }
     return username;
   };
 
-  // Populate form with edit data when in edit mode
-  useEffect(() => {
-    if (isOpen && isEdit && editData) {
-      setFormValues({
-        name: editData.name || "",
-        email: editData.email || "",
-        phone: editData.phone || "",
-        password: "",
-        assignedRole: editData.assignedRole || "",
-        salary: editData.salary?.toString() || "",
-      });
-    } else if (isOpen && !isEdit) {
-      // Reset form for new employee
-      setFormValues({
-        name: "",
-        email: "",
-        phone: "",
-        password: "",
-        assignedRole: "",
-        salary: "",
-      });
-    }
-  }, [isOpen, isEdit, editData]);
-
-  // Reset modal state when opened/closed
+  // Reset form when modal opens/closes
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      setShowPassword(false);
-      setResetTrigger((prev) => prev + 1);
+      setErrors({});
+
+      if (isEdit && editData) {
+        setFormValues({
+          name: editData.name || "",
+          email: editData.email || "",
+          phone: editData.phone || "",
+          password: "",
+          confirmPassword: "",
+          assignedRole: editData.assignedRole || "",
+        });
+      } else {
+        setFormValues({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+          assignedRole: "",
+        });
+      }
     } else {
       document.body.style.overflow = "unset";
     }
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [isOpen]);
+  }, [isOpen, isEdit, editData]);
 
-  if (!isOpen) return null;
+  const validateForm = async (): Promise<boolean> => {
+    try {
+      await validationSchema.validate(formValues, { abortEarly: false });
+      setErrors({});
+      return true;
+    } catch (err: any) {
+      const newErrors: Record<string, string> = {};
+      err.inner.forEach((error: any) => {
+        if (error.path) newErrors[error.path] = error.message;
+      });
+      setErrors(newErrors);
+      return false;
+    }
+  };
 
-  const handleSubmit = async (
-    values: any,
-    { setSubmitting, resetForm }: any
-  ) => {
+  const handleFieldChange = (field: string, value: string) => {
+    setFormValues((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!(await validateForm())) return;
     setIsSubmitting(true);
 
     try {
       if (isEdit && editData) {
-        // UPDATE MODE - Update existing employee
+        // UPDATE MODE
         const updateData: any = {
-          full_name: values.name,
-          email: values.email.toLowerCase(),
-          phone: values.phone,
-          role: values.assignedRole,
-          salary: parseFloat(values.salary),
+          full_name: formValues.name,
+          email: formValues.email.toLowerCase(),
+          phone: formValues.phone,
+          role: formValues.assignedRole,
           updated_at: new Date().toISOString(),
         };
 
-        // Only update password if provided
-        if (values.password && values.password.trim() !== "") {
-          updateData.password = values.password;
+        if (formValues.password?.trim()) {
+          updateData.password = formValues.password;
         }
 
         // Update users table
@@ -276,271 +202,311 @@ const AddNewEmployee: React.FC<AddNewEmployeeProps> = ({
           .from("users")
           .update(updateData)
           .eq("id", editData.id);
-
         if (userError) throw userError;
 
         // Update employees table
-        const { error: employeeError } = await supabase
+        const { error: empError } = await supabase
           .from("employees")
           .update({
-            employee_role: values.assignedRole,
-            salary: parseFloat(values.salary),
+            employee_role: formValues.assignedRole,
             updated_at: new Date().toISOString(),
           })
           .eq("user_id", editData.id);
+        if (empError) throw empError;
 
-        if (employeeError) throw employeeError;
-
-        await onSubmit(values);
+        await onSubmit(formValues);
       } else {
-        // CREATE MODE - Add new employee
-        // Check if email already exists
+        // CREATE MODE
+        // Check for existing email
         const { data: existingEmail } = await supabase
           .from("users")
           .select("email")
-          .eq("email", values.email.toLowerCase())
+          .eq("email", formValues.email.toLowerCase())
           .maybeSingle();
-
         if (existingEmail) {
-          throw new Error(
-            t("employeeComponents.addNew.errors.emailExists", { email: values.email })
-          );
+          throw new Error(`Email ${formValues.email} is already registered`);
         }
 
-        // Check if phone already exists
+        // Check for existing phone
         const { data: existingPhone } = await supabase
           .from("users")
           .select("phone")
-          .eq("phone", values.phone)
+          .eq("phone", formValues.phone)
           .maybeSingle();
-
         if (existingPhone) {
           throw new Error(
-            t("employeeComponents.addNew.errors.phoneExists", { phone: values.phone })
+            `Phone number ${formValues.phone} is already registered`,
           );
         }
 
-        const username = await generateUniqueUsername(values.name);
+        // Generate unique identifiers
+        const username = await generateUniqueUsername(formValues.name);
         const employeeId = await generateUniqueEmployeeId();
 
         // Insert into users table
         const { data: userData, error: userError } = await supabase
           .from("users")
           .insert({
-            full_name: values.name,
-            username: username,
-            email: values.email.toLowerCase(),
-            phone: values.phone,
-            password: values.password,
-            role: values.assignedRole,
+            full_name: formValues.name,
+            username,
+            email: formValues.email.toLowerCase(),
+            phone: formValues.phone,
+            password: formValues.password,
+            role: formValues.assignedRole,
             status: "active",
-            salary: parseFloat(values.salary),
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
           .select()
           .single();
-
         if (userError) throw userError;
 
         // Insert into employees table
-        const { error: employeeError } = await supabase
-          .from("employees")
-          .insert({
-            employee_id: employeeId,
-            user_id: userData.id,
-            theater_id: theaterId,
-            employee_role: values.assignedRole,
-            is_active: true,
-            salary: parseFloat(values.salary),
-            hire_date: new Date().toISOString().split("T")[0],
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        const { error: empError } = await supabase.from("employees").insert({
+          employee_id: employeeId,
+          user_id: userData.id,
+          theater_id: theaterId,
+          employee_role: formValues.assignedRole,
+          is_active: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (empError) throw empError;
 
-        if (employeeError) throw employeeError;
-
-        await onSubmit(values);
+        await onSubmit(formValues);
       }
 
-      resetForm();
       onClose();
     } catch (error: any) {
       console.error("Error saving employee:", error);
-      alert(error.message || t("employeeComponents.addNew.errors.generic", { action: isEdit ? "update" : "add" }));
+      alert(error.message || `Failed to ${isEdit ? "update" : "add"} employee`);
     } finally {
       setIsSubmitting(false);
-      setSubmitting(false);
     }
   };
 
-  const handleCancel = () => {
-    onClose();
-  };
+  // Filter roles based on user permissions
+  const availableRoles =
+    currentUserRole === "super_admin"
+      ? roles
+      : roles.filter((r) => r.id !== "super_admin" && r.id !== "theater_owner");
 
-  const fields = getFields(roles, showPassword, setShowPassword, isEdit, t);
+  // Field configuration
+  const fields = [
+    {
+      name: "name",
+      type: "text",
+      label: "Full Name",
+      placeholder: "Enter full name",
+      required: true,
+      icon: <User size={16} />,
+      colSpan: 1,
+    },
+    {
+      name: "email",
+      type: "email",
+      label: "Email Address",
+      placeholder: "Enter email",
+      required: true,
+      icon: <Mail size={16} />,
+      colSpan: 1,
+    },
+    {
+      name: "phone",
+      type: "tel",
+      label: "Phone Number",
+      placeholder: "Enter phone number",
+      required: true,
+      icon: <Phone size={16} />,
+      colSpan: 1,
+    },
+    {
+      name: "assignedRole",
+      type: "select",
+      label: "Role",
+      placeholder: "Select a role",
+      required: true,
+      icon: <Briefcase size={16} />,
+      colSpan: 1,
+      options: availableRoles.map((r) => ({ value: r.id, label: r.label })),
+    },
+    {
+      name: "password",
+      type: showPassword ? "text" : "password",
+      label: "Password",
+      placeholder: isEdit ? "Leave blank to keep current" : "Enter password",
+      required: !isEdit,
+      icon: <Lock size={16} />,
+      colSpan: 1,
+      rightIcon: showPassword ? <EyeOff size={18} /> : <Eye size={18} />,
+      onRightIconClick: () => setShowPassword(!showPassword),
+    },
+    {
+      name: "confirmPassword",
+      type: showConfirmPassword ? "text" : "password",
+      label: "Confirm Password",
+      placeholder: "Confirm password",
+      required: !isEdit,
+      icon: <Shield size={16} />,
+      colSpan: 1,
+      rightIcon: showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />,
+      onRightIconClick: () => setShowConfirmPassword(!showConfirmPassword),
+    },
+  ];
+
+  if (!isOpen) return null;
 
   return (
     <div
       className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-      onClick={handleCancel}
+      onClick={onClose}
     >
       <motion.div
-        key={resetTrigger}
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10 shrink-0">
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-lg">
-              <UserPlus className="h-5 w-5 text-white" />
+              {isEdit ? (
+                <Edit className="h-5 w-5 text-white" />
+              ) : (
+                <UserPlus className="h-5 w-5 text-white" />
+              )}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {isEdit
-                  ? t("employeeComponents.addNew.titleEdit")
-                  : t("employeeComponents.addNew.titleAdd")}
+              <h2 className="text-xl font-bold">
+                {isEdit ? "Edit Employee" : "Add New Employee"}
               </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <p className="text-xs text-gray-500">
                 {isEdit
-                  ? t("employeeComponents.addNew.subtitleEdit")
-                  : t("employeeComponents.addNew.subtitleAdd")}
+                  ? "Update employee information"
+                  : "Fill in the employee information"}
               </p>
             </div>
           </div>
           <button
-            onClick={handleCancel}
+            onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             type="button"
           >
-            <X className="h-5 w-5 text-gray-500" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
+        {/* Body */}
         <div className="flex-1 overflow-y-auto p-6">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              const values = {
-                name: formData.get("name") as string,
-                email: formData.get("email") as string,
-                phone: formData.get("phone") as string,
-                password: (formData.get("password") as string) || "",
-                assignedRole: formData.get("assignedRole") as string,
-                salary: formData.get("salary") as string,
-              };
+          {/* Info Banner */}
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-blue-700">
+                Fields marked with{" "}
+                <span className="text-red-500 font-medium">*</span> are
+                required. Username will be auto-generated from the full name.
+              </p>
+            </div>
+          </div>
 
-              if (
-                !values.name ||
-                !values.email ||
-                !values.phone ||
-                !values.assignedRole ||
-                !values.salary
-              ) {
-                alert(t("employeeComponents.addNew.errors.fieldsMissing"));
-                return;
-              }
-
-              if (!isEdit && !values.password) {
-                alert(t("employeeComponents.addNew.errors.passwordMissing"));
-                return;
-              }
-
-              handleSubmit(values, {
-                setSubmitting: () => {},
-                resetForm: () => {},
-              });
-            }}
-          >
-            <div className="grid grid-cols-2 gap-4">
-              {fields.map((field) => (
-                <div key={field.name} className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {field.label}{" "}
-                    {field.required && <span className="text-red-500">*</span>}
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      {field.icon}
-                    </div>
-                    {field.type === "select" ? (
-                      <select
-                        name={field.name}
-                        defaultValue={
-                          formValues[field.name as keyof typeof formValues] || ""
-                        }
-                        required={field.required}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                      >
-                        <option value="">{field.placeholder}</option>
-                        {field.options?.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input
-                        type={
-                          field.type === "password" && showPassword
-                            ? "text"
-                            : field.type
-                        }
-                        name={field.name}
-                        placeholder={field.placeholder}
-                        defaultValue={
-                          formValues[field.name as keyof typeof formValues]
-                        }
-                        required={field.required}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
-                      />
-                    )}
-                    {field.rightIcon && field.onRightIconClick && (
-                      <button
-                        type="button"
-                        onClick={field.onRightIconClick}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                      >
-                        {field.rightIcon}
-                      </button>
-                    )}
+          {/* Form Fields */}
+          <div className="grid grid-cols-2 gap-4">
+            {fields.map((field) => (
+              <div key={field.name} className="col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {field.label}{" "}
+                  {field.required && <span className="text-red-500">*</span>}
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                    {field.icon}
                   </div>
-                </div>
-              ))}
-            </div>
 
-            <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200 mt-4 -mb-2">
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                >
-                  {t("common.cancel")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                  {field.type === "select" ? (
+                    <select
+                      value={
+                        formValues[
+                          field.name as keyof typeof formValues
+                        ] as string
+                      }
+                      onChange={(e) =>
+                        handleFieldChange(field.name, e.target.value)
+                      }
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none bg-white"
+                    >
+                      <option value="">{field.placeholder}</option>
+                      {field.options?.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
                   ) : (
-                    <>
-                      <UserPlus className="h-4 w-4" />
-                      {isEdit
-                        ? t("employeeComponents.addNew.updateButton")
-                        : t("employeeComponents.addNew.createButton")}
-                    </>
+                    <input
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      value={
+                        formValues[
+                          field.name as keyof typeof formValues
+                        ] as string
+                      }
+                      onChange={(e) =>
+                        handleFieldChange(field.name, e.target.value)
+                      }
+                      required={field.required}
+                      className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
+                    />
                   )}
-                </button>
+
+                  {field.rightIcon && (
+                    <button
+                      type="button"
+                      onClick={field.onRightIconClick}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {field.rightIcon}
+                    </button>
+                  )}
+                </div>
+                {errors[field.name] && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors[field.name]}
+                  </p>
+                )}
               </div>
+            ))}
+          </div>
+
+          {/* Actions */}
+          <div className="sticky bottom-0 bg-white pt-4 pb-2 border-t border-gray-200 mt-4">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="flex-1 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-lg hover:from-teal-600 hover:to-emerald-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                ) : (
+                  <>
+                    <UserPlus className="h-4 w-4" />
+                    {isEdit ? "Update Employee" : "Create Employee"}
+                  </>
+                )}
+              </button>
             </div>
-          </form>
+          </div>
         </div>
       </motion.div>
     </div>

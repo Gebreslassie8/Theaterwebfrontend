@@ -1,5 +1,5 @@
-// frontend/src/pages/Owner/employes/EmployeeManagement.tsx
-import React, { useState, useEffect } from "react";
+// frontend/src/pages/Owner/employees/EmployeeManagement.tsx
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   UsersRound,
@@ -7,6 +7,7 @@ import {
   UserX,
   AlertCircle,
   RefreshCw,
+  Plus,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import SuccessPopup from "../../../components/Reusable/SuccessPopup";
@@ -18,10 +19,7 @@ import { StatCard } from "../../../components/EmployeeForm/StatCard";
 import { EmployeeFilters } from "../../../components/EmployeeForm/EmployeeFilters";
 import { EmployeeTable } from "../../../components/EmployeeForm/EmployeeTable";
 import { containerVariants, itemVariants } from "./animations";
-import {
-  roleOptions,
-  deactivationReasons,
-} from "./employeeConstants";
+import { roleOptions, deactivationReasons } from "./employeeConstants";
 import { useEmployeeData } from "./useEmployeeData";
 import { employeeService } from "./employeeService";
 import { filterEmployees, calculateStats } from "./employeeUtils";
@@ -61,6 +59,7 @@ const EmployeeManagement: React.FC = () => {
   const [currentUserRole, setCurrentUserRole] = useState<string>("");
   const [currentUserName, setCurrentUserName] = useState<string>("");
 
+  // Get user info on mount
   useEffect(() => {
     const getUserInfo = async () => {
       const userInfo = await employeeService.getCurrentUserInfo();
@@ -88,7 +87,6 @@ const EmployeeManagement: React.FC = () => {
   );
   const stats = calculateStats(employees);
 
-  // Handlers
   const handleClearFilters = () => {
     setFilterRole("all");
     setFilterStatus("all");
@@ -99,22 +97,29 @@ const EmployeeManagement: React.FC = () => {
     if (!employeeToDelete) return;
     try {
       await employeeService.deleteEmployee(employeeToDelete.id);
+      // Refresh data after delete
       await loadEmployees();
       setShowDeleteConfirm(false);
       setEmployeeToDelete(null);
       setPopupMessage({
-        title: t("employeeManagement.popup.deleteSuccess.title"),
-        message: t("employeeManagement.popup.deleteSuccess.message", { name: employeeToDelete.name }),
+        title: "Success",
+        message: `${employeeToDelete.name} has been deleted`,
         type: "success",
       });
       setShowSuccessPopup(true);
     } catch (error: any) {
+      console.error("Delete error:", error);
+      // Still refresh to show current state
+      await loadEmployees();
       setPopupMessage({
-        title: t("employeeManagement.popup.deleteError.title"),
-        message: error.message,
-        type: "error",
+        title: "Info",
+        message: error.message || "Employee has been deactivated",
+        type: "warning",
       });
       setShowSuccessPopup(true);
+    } finally {
+      setShowDeleteConfirm(false);
+      setEmployeeToDelete(null);
     }
   };
 
@@ -125,19 +130,22 @@ const EmployeeManagement: React.FC = () => {
         employeeToDeactivate.id,
         deactivationReason,
       );
+      // Refresh data after deactivation
       await loadEmployees();
       setShowDeactivateConfirm(false);
       setEmployeeToDeactivate(null);
       setDeactivationReason("");
       setPopupMessage({
-        title: t("employeeManagement.popup.deactivateSuccess.title"),
-        message: t("employeeManagement.popup.deactivateSuccess.message", { name: employeeToDeactivate.name }),
+        title: "Deactivated",
+        message: `${employeeToDeactivate.name} has been deactivated`,
         type: "warning",
       });
       setShowSuccessPopup(true);
     } catch (error: any) {
+      console.error("Deactivate error:", error);
+      await loadEmployees();
       setPopupMessage({
-        title: t("employeeManagement.popup.deactivateError.title"),
+        title: "Error",
         message: error.message,
         type: "error",
       });
@@ -149,18 +157,21 @@ const EmployeeManagement: React.FC = () => {
     if (!employeeToReactivate) return;
     try {
       await employeeService.reactivateEmployee(employeeToReactivate.id);
+      // Refresh data after reactivation
       await loadEmployees();
       setShowReactivateConfirm(false);
       setEmployeeToReactivate(null);
       setPopupMessage({
-        title: t("employeeManagement.popup.reactivateSuccess.title"),
-        message: t("employeeManagement.popup.reactivateSuccess.message", { name: employeeToReactivate.name }),
+        title: "Reactivated",
+        message: `${employeeToReactivate.name} has been reactivated`,
         type: "success",
       });
       setShowSuccessPopup(true);
     } catch (error: any) {
+      console.error("Reactivate error:", error);
+      await loadEmployees();
       setPopupMessage({
-        title: t("employeeManagement.popup.reactivateError.title"),
+        title: "Error",
         message: error.message,
         type: "error",
       });
@@ -169,23 +180,25 @@ const EmployeeManagement: React.FC = () => {
   };
 
   const handleAddEmployee = async () => {
+    // Refresh data after adding
     await loadEmployees();
     setShowAddModal(false);
     setPopupMessage({
-      title: t("employeeManagement.popup.addSuccess.title"),
-      message: t("employeeManagement.popup.addSuccess.message"),
+      title: "Success",
+      message: "Employee added successfully",
       type: "success",
     });
     setShowSuccessPopup(true);
   };
 
   const handleUpdateEmployee = async () => {
+    // Refresh data after update
     await loadEmployees();
     setShowUpdateModal(false);
     setSelectedEmployee(null);
     setPopupMessage({
-      title: t("employeeManagement.popup.updateSuccess.title"),
-      message: t("employeeManagement.popup.updateSuccess.message"),
+      title: "Success",
+      message: "Employee updated successfully",
       type: "success",
     });
     setShowSuccessPopup(true);
@@ -194,21 +207,21 @@ const EmployeeManagement: React.FC = () => {
   // Dashboard cards
   const dashboardCards = [
     {
-      title: t("employeeManagement.cards.totalEmployees"),
+      title: "Total Employees",
       value: stats.totalEmployees,
       icon: UsersRound,
       color: "from-teal-500 to-teal-600",
       delay: 0.1,
     },
     {
-      title: t("employeeManagement.cards.activeEmployees"),
+      title: "Active Employees",
       value: stats.activeEmployees,
       icon: UserCheck,
       color: "from-green-500 to-emerald-600",
       delay: 0.15,
     },
     {
-      title: t("employeeManagement.cards.inactiveEmployees"),
+      title: "Inactive Employees",
       value: stats.inactiveEmployees,
       icon: UserX,
       color: "from-red-500 to-rose-600",
@@ -228,10 +241,10 @@ const EmployeeManagement: React.FC = () => {
         <motion.div variants={itemVariants} className="mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">
-              {t("employeeManagement.title")}
+              Employee Management
             </h1>
             <p className="text-gray-500 mt-1">
-              {t("employeeManagement.welcomeMessage", { name: currentUserName })}
+              Welcome back, {currentUserName || "User"}
             </p>
           </div>
         </motion.div>
@@ -263,17 +276,14 @@ const EmployeeManagement: React.FC = () => {
         {/* Results Count */}
         <div className="mb-4 flex justify-between items-center">
           <p className="text-sm text-gray-500">
-            {t("employeeManagement.showingResults", {
-              filtered: filteredEmployees.length,
-              total: employees.length,
-            })}
+            Showing {filteredEmployees.length} of {employees.length} employees
           </p>
           {filteredEmployees.length !== employees.length && (
             <button
               onClick={handleClearFilters}
               className="text-sm text-teal-600 hover:text-teal-700"
             >
-              {t("employeeManagement.clearFilters")}
+              Clear filters
             </button>
           )}
         </div>
@@ -313,7 +323,7 @@ const EmployeeManagement: React.FC = () => {
             onSubmit={handleAddEmployee}
             roles={roleOptions}
             isEdit={false}
-            theaterId={theaterId || undefined}
+            theaterId={theaterId}
             currentUserRole={currentUserRole}
           />
         )}
@@ -329,7 +339,7 @@ const EmployeeManagement: React.FC = () => {
               setSelectedEmployee(null);
             }}
             onUpdate={handleUpdateEmployee}
-            theaterId={theaterId || undefined}
+            theaterId={theaterId}
             currentUserRole={currentUserRole}
           />
         )}
@@ -376,22 +386,23 @@ const EmployeeManagement: React.FC = () => {
                   <AlertCircle className="h-6 w-6 text-orange-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  {t("employeeManagement.deactivateModal.title")}
+                  Deactivate Employee
                 </h3>
               </div>
               <p className="text-gray-600 mb-4">
-                {t("employeeManagement.deactivateModal.message", { name: employeeToDeactivate.name })}
+                Are you sure you want to deactivate{" "}
+                <strong>{employeeToDeactivate.name}</strong>?
               </p>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("employeeManagement.deactivateModal.reasonLabel")}
+                  Reason *
                 </label>
                 <select
                   value={deactivationReason}
                   onChange={(e) => setDeactivationReason(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                 >
-                  <option value="">{t("employeeManagement.deactivateModal.selectReason")}</option>
+                  <option value="">Select a reason</option>
                   {deactivationReasons.map((reason) => (
                     <option key={reason} value={reason}>
                       {reason}
@@ -404,14 +415,14 @@ const EmployeeManagement: React.FC = () => {
                   onClick={() => setShowDeactivateConfirm(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
-                  {t("common.cancel")}
+                  Cancel
                 </button>
                 <button
                   onClick={handleDeactivateEmployee}
                   disabled={!deactivationReason}
                   className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 transition"
                 >
-                  {t("employeeManagement.deactivateModal.confirmButton")}
+                  Deactivate
                 </button>
               </div>
             </motion.div>
@@ -432,24 +443,25 @@ const EmployeeManagement: React.FC = () => {
                   <RefreshCw className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900">
-                  {t("employeeManagement.reactivateModal.title")}
+                  Reactivate Employee
                 </h3>
               </div>
               <p className="text-gray-600 mb-4">
-                {t("employeeManagement.reactivateModal.message", { name: employeeToReactivate.name })}
+                Are you sure you want to reactivate{" "}
+                <strong>{employeeToReactivate.name}</strong>?
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowReactivateConfirm(false)}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                 >
-                  {t("common.cancel")}
+                  Cancel
                 </button>
                 <button
                   onClick={handleReactivateEmployee}
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
                 >
-                  {t("employeeManagement.reactivateModal.confirmButton")}
+                  Reactivate
                 </button>
               </div>
             </motion.div>
