@@ -1,310 +1,483 @@
 // src/pages/Admin/settings/SystemSettings.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import * as Yup from 'yup';
 import {
-    Settings, Building, CreditCard, Ticket, Calendar,
-    DollarSign, Percent, Clock, Save, RefreshCw,
-    Globe, Mail, Phone, MapPin, Users, Award,
-    AlertCircle, CheckCircle, Eye, EyeOff, Plus,
-    Trash2, Edit, X, ChevronDown, TrendingUp,
-    Star, Gift, Zap, Image, UploadCloud, FileImage, Camera, Loader2, FileText
+    Settings, Calendar, Percent,
+    Plus, Trash2, Edit, X, Star,
+    LayoutGrid, Loader2, FileText, Save, AlertCircle
 } from 'lucide-react';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import ReusableTable from '../../../components/Reusable/ReusableTable';
+import ReusableButton from '../../../components/Reusable/ReusableButton';
+import supabase  from '../../../config/supabaseClient';
 
 // Types
-interface BusinessProfile {
-    businessName: string;
-    businessEmail: string;
-    businessPhone: string;
-    businessAddress: string;
-    businessLogo: string;
-    businessLogoUrl?: string;
-    taxId: string;
-    registrationNumber: string;
-    website: string;
-    description: string;
-    facebook: string;
-    instagram: string;
-    twitter: string;
-    linkedin: string;
-    youtube: string;
-    telegram: string;
-    tiktok: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-    footerText?: string;
-    copyrightText?: string;
-}
-
 interface CommissionAgreement {
     id: string;
-    commissionRate: number;
-    serviceCharge: number;
-    description: string;
-    isActive: boolean;
+    commission_rate: number;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
 }
 
 interface PeriodicRental {
     id: string;
     name: string;
-    durationMonths: number;
-    rentalFee: number;
+    duration_months: number;
+    rental_fee: number;
     description: string;
-    isActive: boolean;
-    popular?: boolean;
+    is_active: boolean;
+    popular: boolean;
+    created_at?: string;
+    updated_at?: string;
 }
 
-// Default data
-const defaultBusinessProfile: BusinessProfile = {
-    businessName: 'Theatre Hub Ethiopia',
-    businessEmail: 'info@theatrehub.com',
-    businessPhone: '+251 911 234 567',
-    businessAddress: 'Bole Road, Addis Ababa, Ethiopia',
-    businessLogo: '',
-    businessLogoUrl: '',
-    taxId: 'TAX-123456789',
-    registrationNumber: 'REG-987654321',
-    website: 'www.theatrehub.com',
-    description: 'Premier online ticket booking platform for theaters across Ethiopia',
-    facebook: 'https://facebook.com/theatrehub',
-    instagram: 'https://instagram.com/theatrehub',
-    twitter: 'https://twitter.com/theatrehub',
-    linkedin: 'https://linkedin.com/company/theatrehub',
-    youtube: 'https://youtube.com/theatrehub',
-    telegram: 'https://t.me/theatrehub',
-    tiktok: 'https://tiktok.com/@theatrehub',
-    primaryColor: '#0D9488',
-    secondaryColor: '#14B8A6',
-    footerText: 'Experience the magic of live theater',
-    copyrightText: '© 2024 Theatre Hub Ethiopia. All rights reserved.'
-};
+type TabType = 'commission' | 'rental';
 
-const defaultCommissionAgreement: CommissionAgreement = {
-    id: '1',
-    commissionRate: 8,
-    serviceCharge: 100,
-    description: 'Standard commission agreement for all ticket sales',
-    isActive: true
-};
+// Validation schemas
+const commissionValidationSchema = Yup.object({
+    commission_rate: Yup.number()
+        .min(0, 'Commission rate cannot be less than 0%')
+        .max(100, 'Commission rate cannot exceed 100%')
+        .required('Commission rate is required')
+});
 
-const defaultPeriodicRentals: PeriodicRental[] = [
-    {
-        id: '1',
-        name: 'Monthly Rental',
-        durationMonths: 1,
-        rentalFee: 6000,
-        description: 'Month-to-month rental agreement for theater space',
-        isActive: true
-    },
-    {
-        id: '2',
-        name: 'Quarterly Rental',
-        durationMonths: 3,
-        rentalFee: 8000,
-        description: '3-month rental agreement for theater space',
-        isActive: true,
-        popular: true
-    },
-    {
-        id: '3',
-        name: 'Yearly Rental',
-        durationMonths: 12,
-        rentalFee: 6000,
-        description: 'Annual rental agreement for theater space',
-        isActive: true
-    }
-];
-
-type TabType = 'business' | 'commission' | 'rental';
+const rentalValidationSchema = Yup.object({
+    name: Yup.string()
+        .min(3, 'Agreement name must be at least 3 characters')
+        .max(100, 'Agreement name cannot exceed 100 characters')
+        .required('Agreement name is required'),
+    duration_months: Yup.number()
+        .min(1, 'Duration must be at least 1 month')
+        .max(60, 'Duration cannot exceed 60 months')
+        .required('Duration is required'),
+    rental_fee: Yup.number()
+        .min(0, 'Rental fee cannot be negative')
+        .required('Rental fee is required'),
+    description: Yup.string()
+        .max(500, 'Description cannot exceed 500 characters')
+});
 
 const SystemSettings: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<TabType>('business');
-    const [businessProfile, setBusinessProfile] = useState<BusinessProfile>(defaultBusinessProfile);
-    const [commissionAgreement, setCommissionAgreement] = useState<CommissionAgreement>(defaultCommissionAgreement);
-    const [periodicRentals, setPeriodicRentals] = useState<PeriodicRental[]>(defaultPeriodicRentals);
-    const [isLoading, setIsLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<TabType>('commission');
+    const [commissionAgreement, setCommissionAgreement] = useState<CommissionAgreement | null>(null);
+    const [periodicRentals, setPeriodicRentals] = useState<PeriodicRental[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isFetching, setIsFetching] = useState(true);
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
     const [editingRental, setEditingRental] = useState<PeriodicRental | null>(null);
     const [showRentalModal, setShowRentalModal] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<{ type: 'rental'; id: string } | null>(null);
-    const [uploadingLogo, setUploadingLogo] = useState(false);
-    const [previewLogo, setPreviewLogo] = useState<string | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Validation errors state
+    const [commissionErrors, setCommissionErrors] = useState<{ commission_rate?: string }>({});
+    const [rentalErrors, setRentalErrors] = useState<{ name?: string; duration_months?: string; rental_fee?: string; description?: string }>({});
 
     const formatCurrency = (amount: number) => `ETB ${amount.toLocaleString()}`;
 
-    // Handle logo upload
-    const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                setPopupMessage({
-                    title: 'Invalid File',
-                    message: 'Please upload an image file (PNG, JPG, JPEG, GIF)',
-                    type: 'error'
+    // Fetch data from Supabase
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        setIsFetching(true);
+        try {
+            // First, check if table exists and get commission data
+            const { data: commissionData, error: commissionError } = await supabase
+                .from('commission_agreements')
+                .select('*')
+                .maybeSingle();
+
+            if (commissionError) {
+                console.error('Error fetching commission:', commissionError);
+                // If table doesn't exist or error, set default data
+                setCommissionAgreement({
+                    id: 'temp',
+                    commission_rate: 8,
+                    is_active: true
                 });
-                setShowSuccessPopup(true);
-                return;
+            } else if (commissionData) {
+                setCommissionAgreement(commissionData);
+            } else {
+                // No data found, create default
+                setCommissionAgreement({
+                    id: 'temp',
+                    commission_rate: 8,
+                    is_active: true
+                });
             }
 
-            if (file.size > 2 * 1024 * 1024) {
-                setPopupMessage({
-                    title: 'File Too Large',
-                    message: 'Logo size should be less than 2MB',
-                    type: 'error'
-                });
-                setShowSuccessPopup(true);
-                return;
+            // Fetch periodic rentals
+            const { data: rentalsData, error: rentalsError } = await supabase
+                .from('periodic_rentals')
+                .select('*')
+                .order('rental_fee', { ascending: true });
+
+            if (rentalsError) {
+                console.error('Error fetching rentals:', rentalsError);
+                // Set default rentals if error
+                setPeriodicRentals([
+                    {
+                        id: '1',
+                        name: 'Monthly Rental',
+                        duration_months: 1,
+                        rental_fee: 6000,
+                        description: 'Month-to-month rental agreement for theater space',
+                        is_active: true,
+                        popular: false
+                    },
+                    {
+                        id: '2',
+                        name: 'Quarterly Rental',
+                        duration_months: 3,
+                        rental_fee: 8000,
+                        description: '3-month rental agreement for theater space',
+                        is_active: true,
+                        popular: true
+                    },
+                    {
+                        id: '3',
+                        name: 'Yearly Rental',
+                        duration_months: 12,
+                        rental_fee: 6000,
+                        description: 'Annual rental agreement for theater space',
+                        is_active: true,
+                        popular: false
+                    }
+                ]);
+            } else if (rentalsData && rentalsData.length > 0) {
+                setPeriodicRentals(rentalsData);
+            } else {
+                // No data found, set default rentals
+                setPeriodicRentals([
+                    {
+                        id: '1',
+                        name: 'Monthly Rental',
+                        duration_months: 1,
+                        rental_fee: 6000,
+                        description: 'Month-to-month rental agreement for theater space',
+                        is_active: true,
+                        popular: false
+                    },
+                    {
+                        id: '2',
+                        name: 'Quarterly Rental',
+                        duration_months: 3,
+                        rental_fee: 8000,
+                        description: '3-month rental agreement for theater space',
+                        is_active: true,
+                        popular: true
+                    },
+                    {
+                        id: '3',
+                        name: 'Yearly Rental',
+                        duration_months: 12,
+                        rental_fee: 6000,
+                        description: 'Annual rental agreement for theater space',
+                        is_active: true,
+                        popular: false
+                    }
+                ]);
             }
-
-            setUploadingLogo(true);
-
-            setTimeout(() => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64String = reader.result as string;
-                    setBusinessProfile({
-                        ...businessProfile,
-                        businessLogo: base64String,
-                        businessLogoUrl: URL.createObjectURL(file)
-                    });
-                    setPreviewLogo(base64String);
-                    setUploadingLogo(false);
-                    
-                    setPopupMessage({
-                        title: 'Logo Uploaded',
-                        message: 'Theater logo has been updated successfully',
-                        type: 'success'
-                    });
-                    setShowSuccessPopup(true);
-                };
-                reader.readAsDataURL(file);
-            }, 500);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+            // Set default data on error
+            setCommissionAgreement({
+                id: 'temp',
+                commission_rate: 8,
+                is_active: true
+            });
+            setPeriodicRentals([
+                {
+                    id: '1',
+                    name: 'Monthly Rental',
+                    duration_months: 1,
+                    rental_fee: 6000,
+                    description: 'Month-to-month rental agreement for theater space',
+                    is_active: true,
+                    popular: false
+                },
+                {
+                    id: '2',
+                    name: 'Quarterly Rental',
+                    duration_months: 3,
+                    rental_fee: 8000,
+                    description: '3-month rental agreement for theater space',
+                    is_active: true,
+                    popular: true
+                },
+                {
+                    id: '3',
+                    name: 'Yearly Rental',
+                    duration_months: 12,
+                    rental_fee: 6000,
+                    description: 'Annual rental agreement for theater space',
+                    is_active: true,
+                    popular: false
+                }
+            ]);
+        } finally {
+            setIsFetching(false);
         }
     };
 
-    const handleRemoveLogo = () => {
-        setBusinessProfile({
-            ...businessProfile,
-            businessLogo: '',
-            businessLogoUrl: ''
-        });
-        setPreviewLogo(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+    // Validate commission form
+    const validateCommissionForm = async () => {
+        try {
+            await commissionValidationSchema.validate(
+                { commission_rate: commissionAgreement?.commission_rate },
+                { abortEarly: false }
+            );
+            setCommissionErrors({});
+            return true;
+        } catch (error) {
+            if (error instanceof Yup.ValidationError) {
+                const errors: { commission_rate?: string } = {};
+                error.inner.forEach(err => {
+                    if (err.path === 'commission_rate') {
+                        errors.commission_rate = err.message;
+                    }
+                });
+                setCommissionErrors(errors);
+            }
+            return false;
         }
-        setPopupMessage({
-            title: 'Logo Removed',
-            message: 'Theater logo has been removed',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
     };
 
-    const handleSaveSettings = async () => {
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const settingsData = {
-            businessProfile,
-            commissionAgreement,
-            periodicRentals,
-            lastUpdated: new Date().toISOString()
-        };
-        
-        localStorage.setItem('system_settings', JSON.stringify(settingsData));
-        
-        setPopupMessage({
-            title: 'Settings Saved!',
-            message: 'All system settings have been updated successfully.',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-        setIsLoading(false);
+    // Save commission agreement with button click
+    const handleSaveCommission = async () => {
+        const isValid = await validateCommissionForm();
+        if (!isValid) return;
+
+        setIsSaving(true);
+        try {
+            // Check if we have a real record or temp
+            if (commissionAgreement?.id && commissionAgreement.id !== 'temp') {
+                // Update existing
+                const { error } = await supabase
+                    .from('commission_agreements')
+                    .update({
+                        commission_rate: commissionAgreement.commission_rate,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', commissionAgreement.id);
+
+                if (error) throw error;
+            } else {
+                // Insert new
+                const { data, error } = await supabase
+                    .from('commission_agreements')
+                    .insert({
+                        commission_rate: commissionAgreement?.commission_rate || 8,
+                        is_active: true
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                
+                if (data) {
+                    setCommissionAgreement(data);
+                }
+            }
+            
+            setPopupMessage({
+                title: 'Commission Updated',
+                message: `Commission rate has been updated to ${commissionAgreement?.commission_rate}%`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+            
+            // Refresh data
+            await fetchData();
+        } catch (error: any) {
+            console.error('Error saving commission:', error);
+            setPopupMessage({
+                title: 'Save Failed',
+                message: error.message || 'Failed to save commission rate. Please check your permissions.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const handleResetSettings = () => {
-        setBusinessProfile(defaultBusinessProfile);
-        setCommissionAgreement(defaultCommissionAgreement);
-        setPeriodicRentals(defaultPeriodicRentals);
-        setPreviewLogo(null);
-        setPopupMessage({
-            title: 'Settings Reset',
-            message: 'All settings have been restored to default values.',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+    // Validate rental form
+    const validateRentalForm = async (formData: any) => {
+        try {
+            await rentalValidationSchema.validate(formData, { abortEarly: false });
+            setRentalErrors({});
+            return true;
+        } catch (error) {
+            if (error instanceof Yup.ValidationError) {
+                const errors: any = {};
+                error.inner.forEach(err => {
+                    if (err.path) {
+                        errors[err.path] = err.message;
+                    }
+                });
+                setRentalErrors(errors);
+            }
+            return false;
+        }
     };
 
-    // Periodic Rental CRUD (No discount)
-    const handleAddRental = (rental: Omit<PeriodicRental, 'id'>) => {
-        const newRental: PeriodicRental = {
-            ...rental,
-            id: Date.now().toString()
-        };
-        setPeriodicRentals([...periodicRentals, newRental]);
-        setShowRentalModal(false);
-        setPopupMessage({
-            title: 'Rental Plan Added',
-            message: `${rental.name} rental plan has been added successfully.`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+    // Periodic Rental CRUD with validation
+    const handleAddRental = async (rental: Omit<PeriodicRental, 'id' | 'created_at' | 'updated_at'>) => {
+        const isValid = await validateRentalForm(rental);
+        if (!isValid) return;
+
+        setIsSaving(true);
+        try {
+            const { data, error } = await supabase
+                .from('periodic_rentals')
+                .insert({
+                    name: rental.name,
+                    duration_months: rental.duration_months,
+                    rental_fee: rental.rental_fee,
+                    description: rental.description,
+                    is_active: rental.is_active,
+                    popular: rental.popular
+                })
+                .select()
+                .single();
+
+            if (error) throw error;
+            
+            setPeriodicRentals([...periodicRentals, data]);
+            setShowRentalModal(false);
+            setRentalErrors({});
+            setPopupMessage({
+                title: 'Rental Plan Added',
+                message: `${rental.name} rental plan has been added successfully.`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+        } catch (error: any) {
+            console.error('Error adding rental:', error);
+            setPopupMessage({
+                title: 'Add Failed',
+                message: error.message || 'Failed to add rental plan.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const handleUpdateRental = (rental: PeriodicRental) => {
-        setPeriodicRentals(periodicRentals.map(r => r.id === rental.id ? rental : r));
-        setEditingRental(null);
-        setShowRentalModal(false);
-        setPopupMessage({
-            title: 'Rental Plan Updated',
-            message: `${rental.name} rental plan has been updated successfully.`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+    const handleUpdateRental = async (rental: PeriodicRental) => {
+        const isValid = await validateRentalForm(rental);
+        if (!isValid) return;
+
+        setIsSaving(true);
+        try {
+            const { error } = await supabase
+                .from('periodic_rentals')
+                .update({
+                    name: rental.name,
+                    duration_months: rental.duration_months,
+                    rental_fee: rental.rental_fee,
+                    description: rental.description,
+                    is_active: rental.is_active,
+                    popular: rental.popular,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', rental.id);
+
+            if (error) throw error;
+            
+            setPeriodicRentals(periodicRentals.map(r => r.id === rental.id ? rental : r));
+            setEditingRental(null);
+            setShowRentalModal(false);
+            setRentalErrors({});
+            setPopupMessage({
+                title: 'Rental Plan Updated',
+                message: `${rental.name} rental plan has been updated successfully.`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+        } catch (error: any) {
+            console.error('Error updating rental:', error);
+            setPopupMessage({
+                title: 'Update Failed',
+                message: error.message || 'Failed to update rental plan.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    const handleDeleteRental = (id: string) => {
-        setPeriodicRentals(periodicRentals.filter(r => r.id !== id));
-        setShowDeleteConfirm(null);
-        setPopupMessage({
-            title: 'Rental Plan Deleted',
-            message: 'Rental plan has been removed successfully.',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+    const handleDeleteRental = async (id: string) => {
+        const rentalToDelete = periodicRentals.find(r => r.id === id);
+        setIsSaving(true);
+        try {
+            const { error } = await supabase
+                .from('periodic_rentals')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            
+            setPeriodicRentals(periodicRentals.filter(r => r.id !== id));
+            setShowDeleteConfirm(null);
+            setPopupMessage({
+                title: 'Rental Plan Deleted',
+                message: `${rentalToDelete?.name} has been removed successfully.`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+        } catch (error: any) {
+            console.error('Error deleting rental:', error);
+            setPopupMessage({
+                title: 'Delete Failed',
+                message: error.message || 'Failed to delete rental plan.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
-    // Rental Modal Component (No discount)
+    // Rental Modal Component (without framer-motion)
     const RentalModal = () => {
-        const [formData, setFormData] = useState<PeriodicRental>(
+        const [formData, setFormData] = useState<Partial<PeriodicRental>>(
             editingRental || {
-                id: '',
                 name: '',
-                durationMonths: 1,
-                rentalFee: 6000,
+                duration_months: 1,
+                rental_fee: 6000,
                 description: '',
-                isActive: true,
+                is_active: true,
                 popular: false
             }
         );
 
-        const handleSubmit = () => {
+        const handleFieldChange = (field: string, value: any) => {
+            setFormData({ ...formData, [field]: value });
+            // Clear error for this field when user starts typing
+            if (rentalErrors[field as keyof typeof rentalErrors]) {
+                setRentalErrors({ ...rentalErrors, [field]: undefined });
+            }
+        };
+
+        const handleSubmit = async () => {
             if (editingRental) {
-                handleUpdateRental(formData);
+                await handleUpdateRental({ ...editingRental, ...formData } as PeriodicRental);
             } else {
-                handleAddRental(formData);
+                await handleAddRental(formData as Omit<PeriodicRental, 'id' | 'created_at' | 'updated_at'>);
             }
         };
 
         return (
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="bg-white rounded-2xl max-w-md w-full shadow-xl"
-                >
+                <div className="bg-white rounded-2xl max-w-md w-full shadow-xl">
                     <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
                         <div className="flex justify-between items-center">
                             <div className="flex items-center gap-3">
@@ -313,7 +486,7 @@ const SystemSettings: React.FC = () => {
                                     {editingRental ? 'Edit Rental Agreement' : 'Add Rental Agreement'}
                                 </h2>
                             </div>
-                            <button onClick={() => { setShowRentalModal(false); setEditingRental(null); }} className="p-1 hover:bg-white/20 rounded-lg">
+                            <button onClick={() => { setShowRentalModal(false); setEditingRental(null); setRentalErrors({}); }} className="p-1 hover:bg-white/20 rounded-lg">
                                 <X className="h-5 w-5 text-white" />
                             </button>
                         </div>
@@ -321,52 +494,88 @@ const SystemSettings: React.FC = () => {
 
                     <div className="p-6 space-y-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Agreement Name</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Agreement Name <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="text"
                                 value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                onChange={(e) => handleFieldChange('name', e.target.value)}
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${
+                                    rentalErrors.name ? 'border-red-500' : 'border-gray-200'
+                                }`}
                                 placeholder="e.g., Monthly Rental, Quarterly Rental, Yearly Rental"
                             />
+                            {rentalErrors.name && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> {rentalErrors.name}
+                                </p>
+                            )}
                         </div>
+                        
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (Months)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Duration (Months) <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="number"
-                                value={formData.durationMonths}
-                                onChange={(e) => setFormData({ ...formData, durationMonths: parseInt(e.target.value) })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                value={formData.duration_months}
+                                onChange={(e) => handleFieldChange('duration_months', parseInt(e.target.value))}
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${
+                                    rentalErrors.duration_months ? 'border-red-500' : 'border-gray-200'
+                                }`}
                                 min="1"
                             />
-                            <p className="text-xs text-gray-500 mt-1">Length of the rental agreement period</p>
+                            {rentalErrors.duration_months && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> {rentalErrors.duration_months}
+                                </p>
+                            )}
                         </div>
+                        
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Rental Fee (ETB)</label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Rental Fee (ETB) <span className="text-red-500">*</span>
+                            </label>
                             <input
                                 type="number"
-                                value={formData.rentalFee}
-                                onChange={(e) => setFormData({ ...formData, rentalFee: parseFloat(e.target.value) })}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                value={formData.rental_fee}
+                                onChange={(e) => handleFieldChange('rental_fee', parseFloat(e.target.value))}
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${
+                                    rentalErrors.rental_fee ? 'border-red-500' : 'border-gray-200'
+                                }`}
                             />
-                            <p className="text-xs text-gray-500 mt-1">Flat rental fee for the entire agreement period</p>
+                            {rentalErrors.rental_fee && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> {rentalErrors.rental_fee}
+                                </p>
+                            )}
                         </div>
+                        
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Agreement Description</label>
                             <textarea
                                 value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                onChange={(e) => handleFieldChange('description', e.target.value)}
                                 rows={2}
-                                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
+                                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 resize-none ${
+                                    rentalErrors.description ? 'border-red-500' : 'border-gray-200'
+                                }`}
                                 placeholder="Describe the rental agreement terms"
                             />
+                            {rentalErrors.description && (
+                                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                    <AlertCircle className="h-3 w-3" /> {rentalErrors.description}
+                                </p>
+                            )}
                         </div>
+                        
                         <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 cursor-pointer">
                                 <input
                                     type="checkbox"
-                                    checked={formData.isActive}
-                                    onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+                                    checked={formData.is_active}
+                                    onChange={(e) => handleFieldChange('is_active', e.target.checked)}
                                     className="w-4 h-4 text-teal-600 rounded"
                                 />
                                 <span className="text-sm text-gray-700">Active Agreement</span>
@@ -375,7 +584,7 @@ const SystemSettings: React.FC = () => {
                                 <input
                                     type="checkbox"
                                     checked={formData.popular}
-                                    onChange={(e) => setFormData({ ...formData, popular: e.target.checked })}
+                                    onChange={(e) => handleFieldChange('popular', e.target.checked)}
                                     className="w-4 h-4 text-yellow-600 rounded"
                                 />
                                 <span className="text-sm text-gray-700">Mark as Popular</span>
@@ -384,10 +593,10 @@ const SystemSettings: React.FC = () => {
                     </div>
 
                     <div className="border-t px-6 py-4 flex justify-end gap-3">
-                        <button onClick={() => { setShowRentalModal(false); setEditingRental(null); }} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                        <button onClick={() => { setShowRentalModal(false); setEditingRental(null); setRentalErrors({}); }} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
                         <button onClick={handleSubmit} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700">Save Agreement</button>
                     </div>
-                </motion.div>
+                </div>
             </div>
         );
     };
@@ -395,6 +604,8 @@ const SystemSettings: React.FC = () => {
     // Delete Confirm Modal
     const DeleteConfirmModal = () => {
         if (!showDeleteConfirm) return null;
+        
+        const rentalToDelete = periodicRentals.find(r => r.id === showDeleteConfirm.id);
         
         const handleConfirm = () => {
             handleDeleteRental(showDeleteConfirm.id);
@@ -410,7 +621,7 @@ const SystemSettings: React.FC = () => {
                         <h3 className="text-xl font-bold text-gray-900">Confirm Delete Agreement</h3>
                     </div>
                     <p className="text-gray-600 mb-6">
-                        Are you sure you want to delete this rental agreement? This action cannot be undone.
+                        Are you sure you want to delete <strong>{rentalToDelete?.name}</strong>? This action cannot be undone.
                     </p>
                     <div className="flex gap-3">
                         <button onClick={() => setShowDeleteConfirm(null)} className="flex-1 px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
@@ -420,6 +631,93 @@ const SystemSettings: React.FC = () => {
             </div>
         );
     };
+
+    // Table columns for periodic rentals
+    const rentalColumns = [
+        {
+            Header: 'Agreement Name',
+            accessor: 'name',
+            sortable: true,
+            Cell: (row: PeriodicRental) => (
+                <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">{row.name}</span>
+                    {row.popular && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Star className="h-3 w-3" /> Popular
+                        </span>
+                    )}
+                </div>
+            )
+        },
+        {
+            Header: 'Duration',
+            accessor: 'duration_months',
+            sortable: true,
+            Cell: (row: PeriodicRental) => (
+                <span className="text-gray-700">{row.duration_months} Month{row.duration_months > 1 ? 's' : ''}</span>
+            )
+        },
+        {
+            Header: 'Rental Fee',
+            accessor: 'rental_fee',
+            sortable: true,
+            Cell: (row: PeriodicRental) => (
+                <span className="font-semibold text-teal-600">{formatCurrency(row.rental_fee)}</span>
+            )
+        },
+        {
+            Header: 'Description',
+            accessor: 'description',
+            sortable: false,
+            Cell: (row: PeriodicRental) => (
+                <span className="text-gray-500 text-sm">{row.description}</span>
+            )
+        },
+        {
+            Header: 'Status',
+            accessor: 'is_active',
+            sortable: true,
+            Cell: (row: PeriodicRental) => (
+                <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${row.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {row.is_active ? 'Active' : 'Inactive'}
+                </span>
+            )
+        },
+        {
+            Header: 'Actions',
+            accessor: 'id',
+            sortable: false,
+            Cell: (row: PeriodicRental) => (
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => { setEditingRental(row); setShowRentalModal(true); }}
+                        className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200"
+                        title="Edit"
+                    >
+                        <Edit className="h-4 w-4 text-teal-600" />
+                    </button>
+                    <button
+                        onClick={() => setShowDeleteConfirm({ type: 'rental', id: row.id })}
+                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-all duration-200"
+                        title="Delete"
+                    >
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                    </button>
+                </div>
+            )
+        }
+    ];
+
+    if (isFetching) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading settings...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -432,7 +730,7 @@ const SystemSettings: React.FC = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-                            <p className="text-sm text-gray-500 mt-1">Configure business profile, commission agreements and rental agreements</p>
+                            <p className="text-sm text-gray-500 mt-1">Configure commission agreements and rental agreements</p>
                         </div>
                     </div>
                 </div>
@@ -440,22 +738,13 @@ const SystemSettings: React.FC = () => {
                 {/* Tabs */}
                 <div className="flex gap-2 bg-gray-100 rounded-xl p-1 mb-6 w-fit">
                     <button
-                        onClick={() => setActiveTab('business')}
-                        className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
-                            activeTab === 'business' ? 'bg-white text-teal-600 shadow-md' : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        <Building className="h-4 w-4" />
-                        Business Profile
-                    </button>
-                    <button
                         onClick={() => setActiveTab('commission')}
                         className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
                             activeTab === 'commission' ? 'bg-white text-teal-600 shadow-md' : 'text-gray-600 hover:bg-gray-200'
                         }`}
                     >
                         <Percent className="h-4 w-4" />
-                        Service Charge / Commission Agreement
+                        Commission Agreement
                     </button>
                     <button
                         onClick={() => setActiveTab('rental')}
@@ -468,251 +757,8 @@ const SystemSettings: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Business Profile Tab */}
-                {activeTab === 'business' && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Left Column - Logo Upload */}
-                            <div className="lg:col-span-1">
-                                <div className="sticky top-6">
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Theater Logo</h3>
-                                    <div className="bg-gray-50 rounded-2xl p-6 text-center border-2 border-dashed border-gray-200">
-                                        {previewLogo || businessProfile.businessLogo ? (
-                                            <div className="space-y-4">
-                                                <div className="w-40 h-40 mx-auto rounded-2xl overflow-hidden bg-white shadow-md">
-                                                    <img 
-                                                        src={previewLogo || businessProfile.businessLogo} 
-                                                        alt="Theater Logo" 
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="flex gap-3 justify-center">
-                                                    <button
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 text-sm"
-                                                    >
-                                                        <UploadCloud className="h-4 w-4" /> Change Logo
-                                                    </button>
-                                                    <button
-                                                        onClick={handleRemoveLogo}
-                                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2 text-sm"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" /> Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                <div className="w-40 h-40 mx-auto rounded-2xl bg-gray-200 flex items-center justify-center">
-                                                    <Building className="h-16 w-16 text-gray-400" />
-                                                </div>
-                                                <div>
-                                                    <button
-                                                        onClick={() => fileInputRef.current?.click()}
-                                                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 mx-auto"
-                                                    >
-                                                        <UploadCloud className="h-4 w-4" /> Upload Logo
-                                                    </button>
-                                                    <p className="text-xs text-gray-500 mt-2">PNG, JPG, JPEG, GIF up to 2MB</p>
-                                                </div>
-                                            </div>
-                                        )}
-                                        <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleLogoUpload}
-                                            className="hidden"
-                                        />
-                                        {uploadingLogo && (
-                                            <div className="mt-3 flex items-center justify-center gap-2 text-teal-600">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                <span className="text-sm">Uploading...</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Column - Business Information */}
-                            <div className="lg:col-span-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={businessProfile.businessName} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, businessName: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                                <input 
-                                                    type="email" 
-                                                    value={businessProfile.businessEmail} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, businessEmail: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                                <input 
-                                                    type="tel" 
-                                                    value={businessProfile.businessPhone} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, businessPhone: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                                                <textarea 
-                                                    value={businessProfile.businessAddress} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, businessAddress: e.target.value })} 
-                                                    rows={2} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={businessProfile.taxId} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, taxId: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Registration Number</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={businessProfile.registrationNumber} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, registrationNumber: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
-                                                <input 
-                                                    type="url" 
-                                                    value={businessProfile.website} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, website: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Branding & Colors</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Primary Color</label>
-                                                <div className="flex gap-3 items-center">
-                                                    <input 
-                                                        type="color" 
-                                                        value={businessProfile.primaryColor || '#0D9488'} 
-                                                        onChange={(e) => setBusinessProfile({ ...businessProfile, primaryColor: e.target.value })} 
-                                                        className="w-12 h-10 rounded border cursor-pointer" 
-                                                    />
-                                                    <input 
-                                                        type="text" 
-                                                        value={businessProfile.primaryColor || '#0D9488'} 
-                                                        onChange={(e) => setBusinessProfile({ ...businessProfile, primaryColor: e.target.value })} 
-                                                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 font-mono"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Secondary Color</label>
-                                                <div className="flex gap-3 items-center">
-                                                    <input 
-                                                        type="color" 
-                                                        value={businessProfile.secondaryColor || '#14B8A6'} 
-                                                        onChange={(e) => setBusinessProfile({ ...businessProfile, secondaryColor: e.target.value })} 
-                                                        className="w-12 h-10 rounded border cursor-pointer" 
-                                                    />
-                                                    <input 
-                                                        type="text" 
-                                                        value={businessProfile.secondaryColor || '#14B8A6'} 
-                                                        onChange={(e) => setBusinessProfile({ ...businessProfile, secondaryColor: e.target.value })} 
-                                                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 font-mono"
-                                                    />
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Footer Text</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={businessProfile.footerText || ''} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, footerText: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                    placeholder="Footer tagline"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Copyright Text</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={businessProfile.copyrightText || ''} 
-                                                    onChange={(e) => setBusinessProfile({ ...businessProfile, copyrightText: e.target.value })} 
-                                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                                    placeholder="© 2024 Your Company"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-lg font-semibold text-gray-900 mt-6 mb-4">Social Media Links</h3>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Facebook</label>
-                                                <input type="url" value={businessProfile.facebook} onChange={(e) => setBusinessProfile({ ...businessProfile, facebook: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Instagram</label>
-                                                <input type="url" value={businessProfile.instagram} onChange={(e) => setBusinessProfile({ ...businessProfile, instagram: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Twitter</label>
-                                                <input type="url" value={businessProfile.twitter} onChange={(e) => setBusinessProfile({ ...businessProfile, twitter: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">LinkedIn</label>
-                                                <input type="url" value={businessProfile.linkedin} onChange={(e) => setBusinessProfile({ ...businessProfile, linkedin: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">YouTube</label>
-                                                <input type="url" value={businessProfile.youtube} onChange={(e) => setBusinessProfile({ ...businessProfile, youtube: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
-                                                <input type="url" value={businessProfile.telegram} onChange={(e) => setBusinessProfile({ ...businessProfile, telegram: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">TikTok</label>
-                                                <input type="url" value={businessProfile.tiktok} onChange={(e) => setBusinessProfile({ ...businessProfile, tiktok: e.target.value })} className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" />
-                                            </div>
-                                        </div>
-                                        <div className="mt-6">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Business Description</label>
-                                            <textarea 
-                                                value={businessProfile.description} 
-                                                onChange={(e) => setBusinessProfile({ ...businessProfile, description: e.target.value })} 
-                                                rows={3} 
-                                                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500" 
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {/* Service Charge / Commission Agreement Tab - Simplified (No ticket levels) */}
-                {activeTab === 'commission' && (
+                {/* Commission Agreement Tab with Submit Button */}
+                {activeTab === 'commission' && commissionAgreement && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900">Commission Agreement</h3>
@@ -721,7 +767,6 @@ const SystemSettings: React.FC = () => {
 
                         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 max-w-2xl">
                             <div className="space-y-6">
-                                {/* Commission Rate */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Commission Rate (%) <span className="text-red-500">*</span>
@@ -730,80 +775,40 @@ const SystemSettings: React.FC = () => {
                                         <Percent className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                                         <input
                                             type="number"
-                                            value={commissionAgreement.commissionRate}
-                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, commissionRate: parseFloat(e.target.value) })}
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                                            value={commissionAgreement.commission_rate}
+                                            onChange={(e) => {
+                                                const newValue = parseFloat(e.target.value);
+                                                setCommissionAgreement({ ...commissionAgreement, commission_rate: newValue });
+                                                // Clear error when user types
+                                                if (commissionErrors.commission_rate) {
+                                                    setCommissionErrors({});
+                                                }
+                                            }}
+                                            className={`w-full pl-10 pr-4 py-3 border rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent ${
+                                                commissionErrors.commission_rate ? 'border-red-500' : 'border-gray-200'
+                                            }`}
                                             step="0.5"
                                             min="0"
                                             max="100"
                                         />
                                     </div>
+                                    {commissionErrors.commission_rate && (
+                                        <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                                            <AlertCircle className="h-3 w-3" /> {commissionErrors.commission_rate}
+                                        </p>
+                                    )}
                                     <p className="text-xs text-gray-500 mt-1">Percentage charged per ticket sold</p>
                                 </div>
 
-                                {/* Service Charge */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Service Charge (ETB) <span className="text-red-500">*</span>
-                                    </label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 font-medium">ETB</span>
-                                        <input
-                                            type="number"
-                                            value={commissionAgreement.serviceCharge}
-                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, serviceCharge: parseFloat(e.target.value) })}
-                                            className="w-full pl-14 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-                                            step="1"
-                                            min="0"
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-1">Fixed service charge added to each ticket</p>
-                                </div>
-
-                                {/* Description */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Agreement Description
-                                    </label>
-                                    <textarea
-                                        value={commissionAgreement.description}
-                                        onChange={(e) => setCommissionAgreement({ ...commissionAgreement, description: e.target.value })}
-                                        rows={3}
-                                        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent resize-none"
-                                        placeholder="Describe the commission agreement terms"
-                                    />
-                                </div>
-
-                                {/* Status */}
-                                <div className="flex items-center gap-3">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={commissionAgreement.isActive}
-                                            onChange={(e) => setCommissionAgreement({ ...commissionAgreement, isActive: e.target.checked })}
-                                            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500"
-                                        />
-                                        <span className="text-sm text-gray-700">Active Agreement</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Information Box */}
-                        <div className="bg-blue-50 rounded-2xl p-5 border border-blue-200">
-                            <div className="flex items-start gap-3">
-                                <FileText className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-semibold text-blue-800">Commission Agreement Terms</p>
-                                    <p className="text-xs text-blue-600 mt-1">
-                                        Theater owners agree to pay commission based on ticket sales. 
-                                        Commission is calculated automatically on each ticket sold and deducted from settlements.
-                                        The service charge is added to each ticket price.
-                                    </p>
-                                    <p className="text-xs text-blue-600 mt-2">
-                                        <strong>Current Agreement:</strong> {commissionAgreement.commissionRate}% commission + ETB {commissionAgreement.serviceCharge.toLocaleString()} service charge per ticket.
-                                        {!commissionAgreement.isActive && " (Currently Inactive)"}
-                                    </p>
+                                {/* Submit Button for Commission */}
+                                <div className="flex justify-end pt-4 border-t">
+                                    <button
+                                        onClick={handleSaveCommission}
+                                        disabled={isSaving}
+                                        className="px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isSaving ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving...</> : <><Save className="h-4 w-4" /> Update Commission Rate</>}
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -813,90 +818,27 @@ const SystemSettings: React.FC = () => {
                 {/* Periodic Rental Agreement Tab */}
                 {activeTab === 'rental' && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-900">Periodic Rental Agreements</h3>
-                                <p className="text-sm text-gray-500">Configure rental agreements based on theater owner's selection</p>
-                            </div>
-                            <button onClick={() => { setEditingRental(null); setShowRentalModal(true); }} className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 flex items-center gap-2">
-                                <Plus className="h-4 w-4" /> Add Rental Agreement
-                            </button>
+                        <div className="flex justify-end items-center mb-4">
+                            <ReusableButton
+                                onClick={() => { setEditingRental(null); setShowRentalModal(true); }}
+                                icon="Plus"
+                                label="Add Rental Agreement"
+                                className="px-5 py-2.5 text-sm bg-teal-600 hover:bg-teal-700 text-white"
+                            />
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {periodicRentals.map(rental => (
-                                <div key={rental.id} className={`bg-white rounded-2xl shadow-lg border overflow-hidden relative ${rental.popular ? 'ring-2 ring-yellow-400' : 'border-gray-100'}`}>
-                                    {rental.popular && (
-                                        <div className="absolute top-0 right-0 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
-                                            <Star className="h-3 w-3" /> Popular
-                                        </div>
-                                    )}
-                                    <div className="bg-gradient-to-r from-teal-600 to-emerald-600 px-4 py-3">
-                                        <div className="flex justify-between items-center">
-                                            <h4 className="text-lg font-bold text-white">{rental.name}</h4>
-                                            <div className="flex gap-1">
-                                                <button onClick={() => { setEditingRental(rental); setShowRentalModal(true); }} className="p-1 hover:bg-white/20 rounded-lg transition">
-                                                    <Edit className="h-4 w-4 text-white" />
-                                                </button>
-                                                <button onClick={() => setShowDeleteConfirm({ type: 'rental', id: rental.id })} className="p-1 hover:bg-white/20 rounded-lg transition">
-                                                    <Trash2 className="h-4 w-4 text-white" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="p-4 space-y-3">
-                                        <div className="text-center py-2">
-                                            <p className="text-3xl font-bold text-teal-600">{formatCurrency(rental.rentalFee)}</p>
-                                            <p className="text-xs text-gray-500">for {rental.durationMonths} month{rental.durationMonths > 1 ? 's' : ''} period</p>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center py-2 border-b">
-                                                <span className="text-sm text-gray-600">Duration</span>
-                                                <span className="font-semibold text-gray-900">{rental.durationMonths} Months</span>
-                                            </div>
-                                            <div className="flex justify-between items-center py-2 border-b">
-                                                <span className="text-sm text-gray-600">Rental Fee</span>
-                                                <span className="font-semibold text-teal-600">{formatCurrency(rental.rentalFee)}</span>
-                                            </div>
-                                            <div className="py-2">
-                                                <span className="text-sm text-gray-600">Agreement Terms</span>
-                                                <p className="text-sm text-gray-500 mt-1">{rental.description}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2 pt-2">
-                                            <div className={`w-2 h-2 rounded-full ${rental.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                                            <span className="text-xs text-gray-500">{rental.isActive ? 'Available for Selection' : 'Unavailable'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Information Box */}
-                        <div className="bg-purple-50 rounded-2xl p-5 border border-purple-200">
-                            <div className="flex items-start gap-3">
-                                <Calendar className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-semibold text-purple-800">Periodic Rental Agreement Terms</p>
-                                    <p className="text-xs text-purple-600 mt-1">
-                                        Theater owners can select a rental agreement based on their preference. 
-                                        The rental fee is charged as a one-time payment for the selected period.
-                                    </p>
-                                </div>
-                            </div>
+                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                            <ReusableTable
+                                columns={rentalColumns}
+                                data={periodicRentals}
+                                icon={LayoutGrid}
+                                showSearch={false}
+                                showExport={false}
+                                showPrint={false}
+                            />
                         </div>
                     </motion.div>
                 )}
-
-                {/* Action Buttons */}
-                <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
-                    <button onClick={handleResetSettings} className="px-6 py-2.5 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-                        <RefreshCw className="h-4 w-4" /> Reset to Default
-                    </button>
-                    <button onClick={handleSaveSettings} disabled={isLoading} className="px-6 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 disabled:opacity-50">
-                        {isLoading ? <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</> : <><Save className="h-4 w-4" /> Save All Settings</>}
-                    </button>
-                </div>
             </div>
 
             {/* Modals */}

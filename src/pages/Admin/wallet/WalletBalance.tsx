@@ -1,5 +1,5 @@
 // src/pages/Admin/wallet/WalletBalance.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Wallet,
@@ -29,11 +29,13 @@ import {
     Banknote,
     Landmark,
     Info,
-    MapPin  // Add MapPin here
+    MapPin,
+    Loader2
 } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
 // Types
 interface Transaction {
@@ -83,124 +85,18 @@ interface WithdrawalRequest {
     theaterAddress?: string;
 }
 
-// Mock Data
-const mockSystemTransactions: Transaction[] = [
-    {
-        id: 'SYS-001',
-        type: 'credit',
-        amount: 5000,
-        description: 'Commission from Grand Theater',
-        status: 'completed',
-        date: '2024-04-05T10:30:00',
-        reference: 'COM-20240405-001',
-        source: 'system'
-    },
-    {
-        id: 'SYS-002',
-        type: 'debit',
-        amount: 1250,
-        description: 'Withdrawal Request - Admin',
-        status: 'completed',
-        date: '2024-04-04T15:20:00',
-        reference: 'WDR-20240404-001',
-        source: 'system'
-    },
-    {
-        id: 'SYS-003',
-        type: 'credit',
-        amount: 2500,
-        description: 'Commission from Star Multiplex',
-        status: 'completed',
-        date: '2024-04-03T18:45:00',
-        reference: 'COM-20240403-002',
-        source: 'system'
-    },
-    {
-        id: 'SYS-004',
-        type: 'debit',
-        amount: 350,
-        description: 'Platform Maintenance Fee',
-        status: 'completed',
-        date: '2024-04-02T09:15:00',
-        reference: 'FEE-20240402-001',
-        source: 'system'
-    }
-];
-
-const mockTheaterBalances: TheaterBalance[] = [
-    { id: 'th-1', name: 'Grand Theater', balance: 12450, totalEarned: 45600, lastPayout: '2024-03-28' },
-    { id: 'th-2', name: 'Star Multiplex', balance: 8750, totalEarned: 32400, lastPayout: '2024-03-25' },
-    { id: 'th-3', name: 'Sunset Theater', balance: 5200, totalEarned: 18900, lastPayout: '2024-03-20' },
-    { id: 'th-4', name: 'Royal Theater', balance: 3400, totalEarned: 12500, lastPayout: '2024-03-30' }
-];
-
-const mockWithdrawalRequests: WithdrawalRequest[] = [
-    {
-        id: 'WDR-001',
-        theaterId: 'th-1',
-        theaterName: 'Grand Theater',
-        amount: 5000,
-        bankAccount: '1000123456789',
-        accountName: 'Grand Theater PLC',
-        bankName: 'Commercial Bank of Ethiopia',
-        reason: 'Monthly operational expenses including staff salaries and utility bills',
-        status: 'pending',
-        requestDate: '2024-04-05T14:30:00',
-        contactEmail: 'finance@grandtheater.com',
-        contactPhone: '+251 911 234 567',
-        theaterAddress: 'Bole Road, Addis Ababa, Ethiopia'
-    },
-    {
-        id: 'WDR-002',
-        theaterId: 'th-2',
-        theaterName: 'Star Multiplex',
-        amount: 3000,
-        bankAccount: '1000987654321',
-        accountName: 'Star Multiplex Entertainment',
-        bankName: 'Dashen Bank',
-        reason: 'Staff salaries payment for 50 employees',
-        status: 'pending',
-        requestDate: '2024-04-06T09:15:00',
-        contactEmail: 'accounts@starmultiplex.com',
-        contactPhone: '+251 922 345 678',
-        theaterAddress: 'Kazanchis Business District, Addis Ababa'
-    },
-    {
-        id: 'WDR-003',
-        theaterId: 'th-1',
-        theaterName: 'Grand Theater',
-        amount: 2500,
-        bankAccount: '1000123456789',
-        accountName: 'Grand Theater PLC',
-        bankName: 'Commercial Bank of Ethiopia',
-        reason: 'Maintenance and repairs of theater equipment',
-        status: 'approved',
-        requestDate: '2024-04-01T11:00:00',
-        processedDate: '2024-04-02T10:30:00',
-        notes: 'Approved by Finance Manager - John Doe',
-        processedBy: 'Finance Manager',
-        contactEmail: 'finance@grandtheater.com',
-        contactPhone: '+251 911 234 567'
-    },
-    {
-        id: 'WDR-004',
-        theaterId: 'th-3',
-        theaterName: 'Sunset Theater',
-        amount: 1500,
-        bankAccount: '1000555666777',
-        accountName: 'Sunset Theater Group',
-        bankName: 'Awash Bank',
-        reason: 'Equipment purchase for new screening room',
-        status: 'rejected',
-        requestDate: '2024-03-28T16:20:00',
-        processedDate: '2024-03-30T09:00:00',
-        rejectionReason: 'Insufficient documentation provided. Please submit invoices for equipment purchase.',
-        notes: 'Customer notified via email',
-        processedBy: 'Compliance Officer',
-        contactEmail: 'info@sunsettheater.com',
-        contactPhone: '+251 944 567 890'
-    }
-];
+// Helper function to format relative time
+const formatRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return `${Math.floor(diffMins / 1440)} days ago`;
+};
 
 // Professional View Details Modal Component
 const WithdrawalDetailsModal: React.FC<{
@@ -228,6 +124,7 @@ const WithdrawalDetailsModal: React.FC<{
     };
 
     const formatDateTime = (dateString: string) => {
+        if (!dateString) return 'N/A';
         return new Date(dateString).toLocaleString('en-US', {
             year: 'numeric',
             month: 'long',
@@ -393,7 +290,7 @@ const WithdrawalDetailsModal: React.FC<{
                         </div>
                     </div>
 
-                    {/* Processing Information (for approved/rejected) */}
+                    {/* Processing Information */}
                     {(request.status === 'approved' || request.status === 'rejected') && (
                         <div className="mb-6">
                             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
@@ -425,7 +322,7 @@ const WithdrawalDetailsModal: React.FC<{
                         </div>
                     )}
 
-                    {/* Action Buttons for Pending Requests */}
+                    {/* Action Buttons */}
                     {request.status === 'pending' && !showApproveForm && !showRejectForm && (
                         <div className="border-t pt-6">
                             <h3 className="text-sm font-semibold text-gray-900 mb-4">Review Actions</h3>
@@ -480,7 +377,7 @@ const WithdrawalDetailsModal: React.FC<{
                                     className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
-                                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Processing...</>
+                                        <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
                                     ) : (
                                         <><Check className="h-4 w-4" /> Confirm Approval</>
                                     )}
@@ -524,7 +421,7 @@ const WithdrawalDetailsModal: React.FC<{
                                     className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition flex items-center justify-center gap-2"
                                 >
                                     {isSubmitting ? (
-                                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Processing...</>
+                                        <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
                                     ) : (
                                         <><X className="h-4 w-4" /> Confirm Rejection</>
                                     )}
@@ -533,7 +430,7 @@ const WithdrawalDetailsModal: React.FC<{
                         </div>
                     )}
 
-                    {/* Close Button for Non-Pending */}
+                    {/* Close Button */}
                     {request.status !== 'pending' && (
                         <div className="flex justify-end pt-4 border-t border-gray-200">
                             <button
@@ -552,9 +449,10 @@ const WithdrawalDetailsModal: React.FC<{
 };
 
 const WalletBalance: React.FC = () => {
-    const [systemTransactions] = useState<Transaction[]>(mockSystemTransactions);
-    const [theaterBalances] = useState<TheaterBalance[]>(mockTheaterBalances);
-    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>(mockWithdrawalRequests);
+    const [loading, setLoading] = useState(true);
+    const [systemTransactions, setSystemTransactions] = useState<Transaction[]>([]);
+    const [theaterBalances, setTheaterBalances] = useState<TheaterBalance[]>([]);
+    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
     const [activeTab, setActiveTab] = useState<'system' | 'theaters' | 'withdrawals'>('system');
     const [showBalance, setShowBalance] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -567,46 +465,251 @@ const WalletBalance: React.FC = () => {
     const [rejectionReason, setRejectionReason] = useState('');
     const [approvalNotes, setApprovalNotes] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
+    const [walletStats, setWalletStats] = useState<WalletStats>({
+        systemBalance: 0,
+        theatersTotalBalance: 0,
+        lastTransaction: new Date().toISOString()
+    });
 
-    // Wallet Statistics
-    const walletStats: WalletStats = {
-        systemBalance: 15850,
-        theatersTotalBalance: theaterBalances.reduce((sum, t) => sum + t.balance, 0),
-        lastTransaction: '2024-04-05T20:00:00'
+    // ============================================
+    // INLINE BACKEND - SUPABASE QUERIES
+    // ============================================
+
+    // Fetch all wallet data
+    useEffect(() => {
+        fetchAllWalletData();
+    }, []);
+
+    const fetchAllWalletData = async () => {
+        setLoading(true);
+        try {
+            await Promise.all([
+                fetchSystemBalance(),
+                fetchTheaterBalances(),
+                fetchWithdrawalRequests(),
+                fetchSystemTransactions()
+            ]);
+        } catch (error) {
+            console.error('Error fetching wallet data:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Filter transactions
-    const getFilteredTransactions = () => {
-        let filtered = systemTransactions;
-        
-        filtered = filtered.filter(t => {
-            const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.id.toLowerCase().includes(searchTerm.toLowerCase());
-            const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
-            return matchesSearch && matchesStatus;
-        });
-        
-        return filtered;
+    const fetchSystemBalance = async () => {
+        try {
+            // Get total commission from earnings (platform revenue)
+            const { data: earnings } = await supabase
+                .from('earnings')
+                .select('commission_amount, created_at');
+            
+            const totalCommission = earnings?.reduce((sum, e) => sum + (e.commission_amount || 0), 0) || 0;
+            
+            // Get total paid out to theaters
+            const { data: withdrawals } = await supabase
+                .from('payments')
+                .select('amount')
+                .eq('payment_type', 'withdrawal')
+                .eq('payment_status', 'completed');
+            
+            const totalWithdrawn = withdrawals?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+            
+            const systemBalance = totalCommission - totalWithdrawn;
+            
+            // Get last transaction date
+            const lastTransaction = earnings?.[0]?.created_at || new Date().toISOString();
+            
+            setWalletStats(prev => ({
+                ...prev,
+                systemBalance,
+                lastTransaction
+            }));
+        } catch (error) {
+            console.error('Error fetching system balance:', error);
+        }
     };
 
-    // Filter withdrawal requests
-    const getFilteredWithdrawals = () => {
-        let filtered = withdrawalRequests;
-        
-        if (searchTerm) {
-            filtered = filtered.filter(w => 
-                w.theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                w.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                w.bankAccount.includes(searchTerm)
-            );
+    const fetchTheaterBalances = async () => {
+        try {
+            // Get all theaters
+            const { data: theaters } = await supabase
+                .from('theaters')
+                .select('id, legal_business_name');
+            
+            if (!theaters) return;
+            
+            const balances: TheaterBalance[] = [];
+            
+            for (const theater of theaters) {
+                // Get total earnings for this theater
+                const { data: earnings } = await supabase
+                    .from('earnings')
+                    .select('net_amount')
+                    .eq('theater_id', theater.id);
+                
+                const totalEarned = earnings?.reduce((sum, e) => sum + (e.net_amount || 0), 0) || 0;
+                
+                // Get total withdrawn for this theater
+                const { data: withdrawals } = await supabase
+                    .from('payments')
+                    .select('amount')
+                    .eq('theater_id', theater.id)
+                    .eq('payment_type', 'withdrawal')
+                    .eq('payment_status', 'completed');
+                
+                const totalWithdrawn = withdrawals?.reduce((sum, w) => sum + (w.amount || 0), 0) || 0;
+                
+                const currentBalance = totalEarned - totalWithdrawn;
+                
+                // Get last payout date
+                const { data: lastWithdrawal } = await supabase
+                    .from('payments')
+                    .select('created_at')
+                    .eq('theater_id', theater.id)
+                    .eq('payment_type', 'withdrawal')
+                    .eq('payment_status', 'completed')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+                
+                balances.push({
+                    id: theater.id,
+                    name: theater.legal_business_name,
+                    balance: currentBalance,
+                    totalEarned: totalEarned,
+                    lastPayout: lastWithdrawal?.created_at || new Date().toISOString()
+                });
+            }
+            
+            // Update total theaters balance
+            const theatersTotalBalance = balances.reduce((sum, t) => sum + t.balance, 0);
+            setWalletStats(prev => ({ ...prev, theatersTotalBalance }));
+            setTheaterBalances(balances);
+        } catch (error) {
+            console.error('Error fetching theater balances:', error);
         }
-        
-        if (filterStatus !== 'all') {
-            filtered = filtered.filter(w => w.status === filterStatus);
+    };
+
+    const fetchSystemTransactions = async () => {
+        try {
+            // Get all completed payments (commission earnings)
+            const { data: earnings } = await supabase
+                .from('earnings')
+                .select('id, commission_amount, created_at, theater_id')
+                .order('created_at', { ascending: false })
+                .limit(50);
+            
+            const transactions: Transaction[] = [];
+            
+            // Add credit transactions (commission earned)
+            earnings?.forEach(earning => {
+                transactions.push({
+                    id: `earn_${earning.id}`,
+                    type: 'credit',
+                    amount: earning.commission_amount || 0,
+                    description: 'Commission earned from ticket sales',
+                    status: 'completed',
+                    date: earning.created_at,
+                    reference: `COM-${earning.id.slice(-8)}`,
+                    source: 'system'
+                });
+            });
+            
+            setSystemTransactions(transactions);
+        } catch (error) {
+            console.error('Error fetching system transactions:', error);
         }
-        
-        return filtered;
+    };
+
+    const fetchWithdrawalRequests = async () => {
+        try {
+            // Get withdrawal requests from payments table
+            const { data: withdrawals } = await supabase
+                .from('payments')
+                .select(`
+                    id,
+                    amount,
+                    payment_status,
+                    created_at,
+                    updated_at,
+                    transaction_id,
+                    theater_id,
+                    theaters (
+                        legal_business_name,
+                        email,
+                        phone,
+                        address
+                    )
+                `)
+                .eq('payment_type', 'withdrawal')
+                .order('created_at', { ascending: false });
+            
+            // Get bank details from owners table
+            const { data: owners } = await supabase
+                .from('owners')
+                .select('user_id, bank_name, bank_account_number, business_name');
+            
+            const requests: WithdrawalRequest[] = withdrawals?.map(w => ({
+                id: w.id,
+                theaterId: w.theater_id,
+                theaterName: w.theaters?.legal_business_name || 'Unknown',
+                amount: w.amount || 0,
+                bankAccount: owners?.find(o => o.user_id === w.theater_id)?.bank_account_number || 'N/A',
+                accountName: owners?.find(o => o.user_id === w.theater_id)?.business_name || 'N/A',
+                bankName: owners?.find(o => o.user_id === w.theater_id)?.bank_name || 'N/A',
+                reason: w.transaction_id || 'Monthly withdrawal request',
+                status: mapPaymentStatus(w.payment_status),
+                requestDate: w.created_at,
+                processedDate: w.updated_at,
+                rejectionReason: w.payment_status === 'failed' ? 'Payment processing failed' : undefined,
+                contactEmail: w.theaters?.email,
+                contactPhone: w.theaters?.phone,
+                theaterAddress: w.theaters?.address
+            })) || [];
+            
+            setWithdrawalRequests(requests);
+        } catch (error) {
+            console.error('Error fetching withdrawal requests:', error);
+        }
+    };
+
+    const mapPaymentStatus = (status: string): 'pending' | 'approved' | 'rejected' => {
+        switch (status) {
+            case 'completed': return 'approved';
+            case 'failed': return 'rejected';
+            default: return 'pending';
+        }
+    };
+
+    const mapStatusToPaymentStatus = (status: string): string => {
+        switch (status) {
+            case 'approved': return 'completed';
+            case 'rejected': return 'failed';
+            default: return 'pending';
+        }
+    };
+
+    const updateWithdrawalStatus = async (requestId: string, status: 'approved' | 'rejected', notes?: string) => {
+        try {
+            const { error } = await supabase
+                .from('payments')
+                .update({
+                    payment_status: mapStatusToPaymentStatus(status),
+                    updated_at: new Date().toISOString(),
+                    transaction_id: notes
+                })
+                .eq('id', requestId);
+            
+            if (error) throw error;
+            
+            // Refresh data
+            await fetchWithdrawalRequests();
+            await fetchSystemBalance();
+            await fetchTheaterBalances();
+        } catch (error) {
+            console.error('Error updating withdrawal status:', error);
+            throw error;
+        }
     };
 
     const formatCurrency = (amount: number) => {
@@ -630,8 +733,7 @@ const WalletBalance: React.FC = () => {
     };
 
     const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
+        return new Date(dateString).toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric', 
             year: 'numeric',
@@ -662,10 +764,9 @@ const WalletBalance: React.FC = () => {
     };
 
     const handleExport = () => {
-        const transactions = getFilteredTransactions();
         const csvContent = [
             ['ID', 'Type', 'Amount', 'Description', 'Status', 'Date', 'Reference'],
-            ...transactions.map(t => [t.id, t.type, t.amount, t.description, t.status, t.date, t.reference])
+            ...systemTransactions.map(t => [t.id, t.type, t.amount, t.description, t.status, t.date, t.reference])
         ].map(row => row.join(',')).join('\n');
 
         const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -688,62 +789,58 @@ const WalletBalance: React.FC = () => {
         if (!selectedRequest) return;
         
         setIsProcessing(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
         
-        setWithdrawalRequests(prev => prev.map(req => 
-            req.id === selectedRequest.id 
-                ? { 
-                    ...req, 
-                    status: 'approved', 
-                    processedDate: new Date().toISOString(),
-                    notes: approvalNotes || req.notes,
-                    processedBy: 'Finance Administrator'
-                  }
-                : req
-        ));
-        
-        setPopupMessage({
-            title: 'Withdrawal Approved',
-            message: `${formatCurrency(selectedRequest.amount)} has been approved for ${selectedRequest.theaterName}`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-        setShowActionModal(null);
-        setSelectedRequest(null);
-        setApprovalNotes('');
-        setIsProcessing(false);
-        setShowDetailsModal(false);
+        try {
+            await updateWithdrawalStatus(selectedRequest.id, 'approved', approvalNotes);
+            
+            setPopupMessage({
+                title: 'Withdrawal Approved',
+                message: `${formatCurrency(selectedRequest.amount)} has been approved for ${selectedRequest.theaterName}`,
+                type: 'success'
+            });
+        } catch (error) {
+            setPopupMessage({
+                title: 'Error',
+                message: 'Failed to approve withdrawal. Please try again.',
+                type: 'error'
+            });
+        } finally {
+            setShowSuccessPopup(true);
+            setShowActionModal(null);
+            setSelectedRequest(null);
+            setApprovalNotes('');
+            setIsProcessing(false);
+            setShowDetailsModal(false);
+        }
     };
 
     const handleRejectRequest = async () => {
         if (!selectedRequest || !rejectionReason) return;
         
         setIsProcessing(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
         
-        setWithdrawalRequests(prev => prev.map(req => 
-            req.id === selectedRequest.id 
-                ? { 
-                    ...req, 
-                    status: 'rejected', 
-                    processedDate: new Date().toISOString(),
-                    rejectionReason: rejectionReason,
-                    processedBy: 'Finance Administrator'
-                  }
-                : req
-        ));
-        
-        setPopupMessage({
-            title: 'Withdrawal Rejected',
-            message: `${formatCurrency(selectedRequest.amount)} withdrawal for ${selectedRequest.theaterName} has been rejected`,
-            type: 'warning'
-        });
-        setShowSuccessPopup(true);
-        setShowActionModal(null);
-        setSelectedRequest(null);
-        setRejectionReason('');
-        setIsProcessing(false);
-        setShowDetailsModal(false);
+        try {
+            await updateWithdrawalStatus(selectedRequest.id, 'rejected', rejectionReason);
+            
+            setPopupMessage({
+                title: 'Withdrawal Rejected',
+                message: `${formatCurrency(selectedRequest.amount)} withdrawal for ${selectedRequest.theaterName} has been rejected`,
+                type: 'warning'
+            });
+        } catch (error) {
+            setPopupMessage({
+                title: 'Error',
+                message: 'Failed to reject withdrawal. Please try again.',
+                type: 'error'
+            });
+        } finally {
+            setShowSuccessPopup(true);
+            setShowActionModal(null);
+            setSelectedRequest(null);
+            setRejectionReason('');
+            setIsProcessing(false);
+            setShowDetailsModal(false);
+        }
     };
 
     const handleViewDetails = (request: WithdrawalRequest) => {
@@ -751,7 +848,40 @@ const WalletBalance: React.FC = () => {
         setShowDetailsModal(true);
     };
 
-    // Column definitions for transactions table
+    // Filter functions
+    const getFilteredTransactions = () => {
+        let filtered = systemTransactions;
+        
+        filtered = filtered.filter(t => {
+            const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                t.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                t.id.toLowerCase().includes(searchTerm.toLowerCase());
+            const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
+            return matchesSearch && matchesStatus;
+        });
+        
+        return filtered;
+    };
+
+    const getFilteredWithdrawals = () => {
+        let filtered = withdrawalRequests;
+        
+        if (searchTerm) {
+            filtered = filtered.filter(w => 
+                w.theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                w.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                w.bankAccount.includes(searchTerm)
+            );
+        }
+        
+        if (filterStatus !== 'all') {
+            filtered = filtered.filter(w => w.status === filterStatus);
+        }
+        
+        return filtered;
+    };
+
+    // Column definitions
     const transactionColumns = [
         {
             Header: 'Transaction',
@@ -793,7 +923,6 @@ const WalletBalance: React.FC = () => {
         }
     ];
 
-    // Column definitions for theater balances table
     const theaterColumns = [
         {
             Header: 'Theater',
@@ -806,7 +935,7 @@ const WalletBalance: React.FC = () => {
                     </div>
                     <div>
                         <p className="font-medium text-gray-900">{row.name}</p>
-                        <p className="text-xs text-gray-500">ID: {row.id}</p>
+                        <p className="text-xs text-gray-500">ID: {row.id.slice(-8)}</p>
                     </div>
                 </div>
             )
@@ -837,7 +966,6 @@ const WalletBalance: React.FC = () => {
         }
     ];
 
-    // Column definitions for withdrawal requests table
     const withdrawalColumns = [
         {
             Header: 'Theater',
@@ -846,7 +974,7 @@ const WalletBalance: React.FC = () => {
             Cell: (row: WithdrawalRequest) => (
                 <div>
                     <p className="font-medium text-gray-900">{row.theaterName}</p>
-                    <p className="text-xs text-gray-500">ID: {row.id}</p>
+                    <p className="text-xs text-gray-500">ID: {row.id.slice(-8)}</p>
                 </div>
             )
         },
@@ -929,6 +1057,17 @@ const WalletBalance: React.FC = () => {
 
     const pendingCount = withdrawalRequests.filter(w => w.status === 'pending').length;
 
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+                    <p className="text-gray-500">Loading wallet data...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -945,7 +1084,7 @@ const WalletBalance: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Two Balance Cards - Medium text size */}
+                {/* Two Balance Cards */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
                     {/* System Balance Card */}
                     <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
@@ -1115,7 +1254,7 @@ const WalletBalance: React.FC = () => {
                     />
                 )}
 
-                {/* Professional Withdrawal Details Modal */}
+                {/* Withdrawal Details Modal */}
                 {showDetailsModal && selectedRequest && (
                     <WithdrawalDetailsModal
                         request={selectedRequest}
@@ -1137,7 +1276,7 @@ const WalletBalance: React.FC = () => {
                     />
                 )}
 
-                {/* Approve Modal (Simple) */}
+                {/* Approve Modal */}
                 {showActionModal === 'approve' && selectedRequest && !showDetailsModal && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <motion.div
@@ -1199,7 +1338,7 @@ const WalletBalance: React.FC = () => {
                                     className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition flex items-center gap-2"
                                 >
                                     {isProcessing ? (
-                                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Processing...</>
+                                        <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
                                     ) : (
                                         <><Check className="h-4 w-4" /> Confirm Approval</>
                                     )}
@@ -1209,7 +1348,7 @@ const WalletBalance: React.FC = () => {
                     </div>
                 )}
 
-                {/* Reject Modal (Simple) */}
+                {/* Reject Modal */}
                 {showActionModal === 'reject' && selectedRequest && !showDetailsModal && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <motion.div
@@ -1270,7 +1409,7 @@ const WalletBalance: React.FC = () => {
                                     className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition flex items-center gap-2"
                                 >
                                     {isProcessing ? (
-                                        <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> Processing...</>
+                                        <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
                                     ) : (
                                         <><X className="h-4 w-4" /> Confirm Rejection</>
                                     )}
