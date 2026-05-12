@@ -277,21 +277,19 @@ const CommissionAnalytics: React.FC = () => {
         return filtered;
     }, [commissions, searchTerm, filterStatus, filterPaymentMethod, dateRangeType, customStartDate, customEndDate]);
 
-    // Calculate totals
+    // Calculate totals (removed totalRevenue and overdueTotal from display)
     const totals = useMemo(() => {
         const totalCommission = filteredCommissions.reduce((sum, c) => sum + c.commissionAmount, 0);
-        const totalRevenue = filteredCommissions.reduce((sum, c) => sum + c.totalRevenue, 0);
         const cashTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'cash').reduce((sum, c) => sum + c.commissionAmount, 0);
         const chapaTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'chapa').reduce((sum, c) => sum + c.commissionAmount, 0);
         const telebirrTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'telebirr').reduce((sum, c) => sum + c.commissionAmount, 0);
         const bankTransferTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'bank_transfer').reduce((sum, c) => sum + c.commissionAmount, 0);
         const pendingTotal = filteredCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const overdueTotal = filteredCommissions.filter(c => c.status === 'overdue').reduce((sum, c) => sum + c.commissionAmount, 0);
         const paidTotal = filteredCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0);
         
         return { 
-            totalCommission, totalRevenue, cashTotal, chapaTotal, telebirrTotal, 
-            bankTransferTotal, pendingTotal, overdueTotal, paidTotal 
+            totalCommission, cashTotal, chapaTotal, telebirrTotal, 
+            bankTransferTotal, pendingTotal, paidTotal
         };
     }, [filteredCommissions]);
 
@@ -312,13 +310,12 @@ const CommissionAnalytics: React.FC = () => {
                 return {
                     period: new Date(day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
                     commission: dayCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    revenue: dayCommissions.reduce((sum, c) => sum + c.totalRevenue, 0),
                     cash: dayCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
                     chapa: dayCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
                 };
             });
         } else if (dateRangeType === 'yearly') {
-            // Last 12 months aggregated by year
+            // Last 5 years
             const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - (4 - i));
             return years.map(year => {
                 const yearCommissions = filteredCommissions.filter(c => 
@@ -327,7 +324,6 @@ const CommissionAnalytics: React.FC = () => {
                 return {
                     period: year.toString(),
                     commission: yearCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    revenue: yearCommissions.reduce((sum, c) => sum + c.totalRevenue, 0),
                     cash: yearCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
                     chapa: yearCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
                 };
@@ -347,7 +343,6 @@ const CommissionAnalytics: React.FC = () => {
                 return {
                     period: new Date(month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
                     commission: monthCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    revenue: monthCommissions.reduce((sum, c) => sum + c.totalRevenue, 0),
                     cash: monthCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
                     chapa: monthCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
                 };
@@ -386,14 +381,6 @@ const CommissionAnalytics: React.FC = () => {
                     <p className="font-medium text-gray-900">{row.theaterName}</p>
                     <p className="text-xs text-gray-500">ID: {row.theaterId.slice(-8)}</p>
                 </div>
-            )
-        },
-        {
-            Header: 'Total Revenue',
-            accessor: 'totalRevenue',
-            sortable: true,
-            Cell: (row: TopTheater) => (
-                <p className="font-semibold text-gray-900">ETB {row.totalRevenue.toLocaleString()}</p>
             )
         },
         {
@@ -445,14 +432,6 @@ const CommissionAnalytics: React.FC = () => {
             )
         },
         {
-            Header: 'Revenue',
-            accessor: 'totalRevenue',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <p className="text-sm font-medium text-gray-900">ETB {row.totalRevenue.toLocaleString()}</p>
-            )
-        },
-        {
             Header: 'Commission',
             accessor: 'commissionAmount',
             sortable: true,
@@ -501,26 +480,6 @@ const CommissionAnalytics: React.FC = () => {
 
     const formatETB = (amount: number) => `ETB ${amount.toLocaleString()}`;
 
-    const handleExport = () => {
-        const headers = ['Theater', 'Location', 'Date', 'Revenue', 'Commission', 'Rate', 'Status', 'Payment Method'];
-        const rows = filteredCommissions.map(c => [
-            c.theaterName, c.theaterLocation,
-            new Date(c.dueDate).toLocaleDateString(),
-            c.totalRevenue, c.commissionAmount, `${c.commissionRate.toFixed(1)}%`,
-            c.status, c.paymentMethod
-        ]);
-        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `commission_report_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        setPopupMessage({ title: 'Success!', message: 'Report exported successfully', type: 'success' });
-        setShowSuccessPopup(true);
-    };
-
     const handleResetFilters = () => {
         setSearchTerm('');
         setFilterStatus('all');
@@ -529,12 +488,6 @@ const CommissionAnalytics: React.FC = () => {
         setCustomStartDate('');
         setCustomEndDate('');
         setPopupMessage({ title: 'Filters Reset', message: 'All filters have been cleared', type: 'success' });
-        setShowSuccessPopup(true);
-    };
-
-    const handleRefresh = async () => {
-        await fetchCommissionData();
-        setPopupMessage({ title: 'Refreshed', message: 'Data has been updated', type: 'success' });
         setShowSuccessPopup(true);
     };
 
@@ -552,29 +505,13 @@ const CommissionAnalytics: React.FC = () => {
     return (
         <div className="space-y-6 p-6 bg-gray-50 min-h-screen">
             {/* Header */}
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Commission Analytics</h1>
-                    <p className="text-sm text-gray-500">Track and analyze theater commissions</p>
-                </div>
-                <div className="flex gap-3">
-                    <button 
-                        onClick={handleRefresh} 
-                        className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-                    >
-                        <RefreshCw className="h-4 w-4" /> Refresh
-                    </button>
-                    <button 
-                        onClick={handleExport} 
-                        className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-                    >
-                        <Download className="h-4 w-4" /> Export CSV
-                    </button>
-                </div>
+            <div>
+                <h1 className="text-2xl font-bold text-gray-900">Commission Analytics</h1>
+                <p className="text-sm text-gray-500">Track and analyze theater commissions</p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+            {/* Stats Cards - Removed Total Revenue and Overdue Payment */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-3 bg-emerald-500 rounded-xl text-white"><Wallet className="h-5 w-5" /></div>
@@ -582,14 +519,6 @@ const CommissionAnalytics: React.FC = () => {
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.totalCommission)}</p>
                     <p className="text-sm text-gray-500">Total Commission</p>
-                </div>
-                <div className="bg-white rounded-xl p-5 shadow-lg border">
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-blue-500 rounded-xl text-white"><TrendingUp className="h-5 w-5" /></div>
-                        <span className="text-green-600 text-sm">+8.2%</span>
-                    </div>
-                    <p className="text-2xl font-bold">{formatETB(totals.totalRevenue)}</p>
-                    <p className="text-sm text-gray-500">Total Revenue</p>
                 </div>
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
@@ -609,11 +538,11 @@ const CommissionAnalytics: React.FC = () => {
                 </div>
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-red-500 rounded-xl text-white"><AlertCircle className="h-5 w-5" /></div>
-                        <span className="text-red-600 text-sm">Overdue</span>
+                        <div className="p-3 bg-purple-500 rounded-xl text-white"><Smartphone className="h-5 w-5" /></div>
+                        <span className="text-green-600 text-sm">+8.2%</span>
                     </div>
-                    <p className="text-2xl font-bold">{formatETB(totals.overdueTotal)}</p>
-                    <p className="text-sm text-gray-500">Overdue Payment</p>
+                    <p className="text-2xl font-bold">{formatETB(totals.chapaTotal)}</p>
+                    <p className="text-sm text-gray-500">Chapa Payments</p>
                 </div>
             </div>
 
@@ -797,7 +726,7 @@ const CommissionAnalytics: React.FC = () => {
                 </div>
             </div>
 
-            {/* Bar Chart - Cash vs Chapa vs Telebirr */}
+            {/* Bar Chart - Cash vs Chapa */}
             <div className="bg-white rounded-xl p-5 shadow-lg">
                 <h3 className="text-lg font-semibold mb-4">Payment Method Collection Comparison</h3>
                 <ResponsiveContainer width="100%" height={300}>
