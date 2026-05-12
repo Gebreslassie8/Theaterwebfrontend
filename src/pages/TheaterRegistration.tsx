@@ -1,6 +1,6 @@
 // Frontend/src/components/theater/TheaterRegistration.tsx
 import supabase from "@/config/supabaseClient";
-import React, { useState, useRef, ChangeEvent, useCallback } from "react";
+import React, { useState, useRef, ChangeEvent, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2,
@@ -34,6 +34,8 @@ import {
   Check,
   Eye,
   EyeOff,
+  TrendingUp,
+  Percent
 } from "lucide-react";
 
 // ============================================
@@ -77,6 +79,22 @@ interface Errors {
   [key: string]: string;
 }
 
+interface CommissionAgreement {
+  id: string;
+  commission_rate: number;
+  is_active: boolean;
+}
+
+interface PeriodicRental {
+  id: string;
+  name: string;
+  duration_months: number;
+  rental_fee: number;
+  description: string;
+  is_active: boolean;
+  popular: boolean;
+}
+
 // City-Region mapping
 const CITY_REGION_MAP: Record<string, string[]> = {
   Oromia: ["Adama", "Jimma", "Bishoftu", "Ambo", "Shashamane", "Nekemte"],
@@ -116,55 +134,6 @@ const YEARS_OPTIONS = [
   "3-5 years",
   "5-10 years",
   "10+ years",
-];
-
-const PRICING_MODELS = [
-  {
-    id: "per_ticket",
-    name: "Per Ticket Selling",
-    description: "Pay commission per ticket sold",
-    icon: Ticket,
-    rate: "5-10% commission per ticket",
-  },
-  {
-    id: "subscription",
-    name: "Subscription Plan",
-    description: "Fixed monthly subscription",
-    icon: Calendar,
-    rate: "Starting from 6,000 ETB/month",
-  },
-];
-
-const CONTRACT_TYPES = [
-  {
-    id: "monthly",
-    name: "Monthly Plan",
-    icon: Calendar,
-    basePrice: 6000,
-    features: [
-      "No long-term commitment",
-      "Cancel anytime",
-      "Basic support included",
-    ],
-  },
-  {
-    id: "quarterly",
-    name: "Quarterly Plan",
-    icon: Award,
-    basePrice: 8000,
-    features: ["Save 15% vs monthly", "Priority support", "Marketing tools"],
-  },
-  {
-    id: "yearly",
-    name: "Yearly Plan",
-    icon: Star,
-    basePrice: 6000,
-    features: [
-      "Save 30% vs monthly",
-      "24/7 dedicated support",
-      "Advanced analytics",
-    ],
-  },
 ];
 
 // Business type mapping for owners table
@@ -336,6 +305,11 @@ const TheaterRegistration: React.FC = () => {
   const [errors, setErrors] = useState<Errors>({});
   const [duplicateError, setDuplicateError] = useState<string | null>(null);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  
+  // State for dynamic pricing data from database
+  const [commissionRate, setCommissionRate] = useState<number>(8);
+  const [periodicRentals, setPeriodicRentals] = useState<PeriodicRental[]>([]);
+  const [isLoadingPricing, setIsLoadingPricing] = useState(true);
 
   const [formData, setFormData] = useState<FormData>({
     ownerFullName: "",
@@ -362,6 +336,46 @@ const TheaterRegistration: React.FC = () => {
     agreedToTerms: false,
     agreedToNoRefund: false,
   });
+
+  // Fetch commission rate and periodic rentals from database
+  useEffect(() => {
+    const fetchPricingData = async () => {
+      setIsLoadingPricing(true);
+      try {
+        // Fetch active commission agreement
+        const { data: commissionData, error: commissionError } = await supabase
+          .from("commission_agreements")
+          .select("commission_rate")
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (commissionError) {
+          console.error("Error fetching commission rate:", commissionError);
+        } else if (commissionData) {
+          setCommissionRate(commissionData.commission_rate);
+        }
+
+        // Fetch active periodic rentals
+        const { data: rentalsData, error: rentalsError } = await supabase
+          .from("periodic_rentals")
+          .select("*")
+          .eq("is_active", true)
+          .order("duration_months", { ascending: true });
+
+        if (rentalsError) {
+          console.error("Error fetching periodic rentals:", rentalsError);
+        } else if (rentalsData) {
+          setPeriodicRentals(rentalsData);
+        }
+      } catch (error) {
+        console.error("Error fetching pricing data:", error);
+      } finally {
+        setIsLoadingPricing(false);
+      }
+    };
+
+    fetchPricingData();
+  }, []);
 
   const steps = [
     { number: 1, title: "Owner Account", icon: UserPlus },
@@ -690,22 +704,26 @@ const TheaterRegistration: React.FC = () => {
         .eq("id", ownerId);
     }
 
-    // Create contract in owners_contracts table
+    // Create contract in owners_contracts table with real data
     const contractNumber = `CTR-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     let basePrice = 0;
     let paymentFrequency = null;
-    let commissionRate = 10;
+    let commissionRateValue = 0;
 
     if (formData.pricingModel === "per_ticket") {
       basePrice = 0;
       paymentFrequency = "per_ticket";
-      commissionRate = 10;
+      commissionRateValue = commissionRate; // Use real commission rate from database
     } else if (formData.pricingModel === "subscription") {
-      if (formData.contractType === "monthly") basePrice = 6000;
-      else if (formData.contractType === "quarterly") basePrice = 8000;
-      else if (formData.contractType === "yearly") basePrice = 6000;
-      paymentFrequency = formData.contractType;
-      commissionRate = 0;
+      // Find the selected rental plan
+      const selectedRental = periodicRentals.find(
+        (rental) => rental.id === formData.contractType
+      );
+      basePrice = selectedRental?.rental_fee || 0;
+      paymentFrequency = selectedRental?.duration_months === 1 ? "monthly" 
+        : selectedRental?.duration_months === 3 ? "quarterly" 
+        : "yearly";
+      commissionRateValue = 0;
     }
 
     const { error: contractError } = await supabase
@@ -725,7 +743,7 @@ const TheaterRegistration: React.FC = () => {
         base_price: basePrice,
         discounted_price: null,
         discount_percent: 0,
-        commission_rate: commissionRate,
+        commission_rate: commissionRateValue,
         contract_start_date: new Date().toISOString().split("T")[0],
         payment_frequency: paymentFrequency,
         payment_status: "pending",
@@ -739,7 +757,7 @@ const TheaterRegistration: React.FC = () => {
     }
 
     return { userId, ownerId, theaterId, contractNumber };
-  }, [formData, checkDuplicates]);
+  }, [formData, checkDuplicates, commissionRate, periodicRentals]);
 
   const handleSubmit = useCallback(async () => {
     if (!validateStep()) return;
@@ -1258,13 +1276,16 @@ const TheaterRegistration: React.FC = () => {
     </div>
   );
 
-  // Step 4: Pricing & Terms
+  // Step 4: Pricing & Terms with real data from database
   const renderStep4 = () => {
-    const getPlanPrice = (plan: string) => {
-      if (plan === "monthly") return "6,000 ETB";
-      if (plan === "quarterly") return "8,000 ETB";
-      return "6,000 ETB";
-    };
+    if (isLoadingPricing) {
+      return (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+          <span className="ml-2 text-gray-600">Loading pricing options...</span>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
@@ -1277,7 +1298,7 @@ const TheaterRegistration: React.FC = () => {
               Pricing Plan & Terms
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Choose your preferred payment model
+              Choose your preferred payment model (Real data from our system)
             </p>
           </div>
         </div>
@@ -1287,98 +1308,182 @@ const TheaterRegistration: React.FC = () => {
             Select Payment Model <span className="text-red-500">*</span>
           </label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {PRICING_MODELS.map((model) => {
-              const Icon = model.icon;
-              const isSelected = formData.pricingModel === model.id;
-              return (
-                <div
-                  key={model.id}
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      pricingModel: model.id,
-                      contractType: "",
-                    }))
-                  }
-                  className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg" : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"}`}
-                >
-                  <div
-                    className={`p-2 rounded-xl inline-block ${isSelected ? "bg-teal-100 dark:bg-teal-900/30" : "bg-gray-100 dark:bg-gray-800"} mb-3`}
-                  >
-                    <Icon
-                      className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600 dark:text-gray-400"}`}
-                    />
-                  </div>
-                  <h3
-                    className={`font-bold text-lg ${isSelected ? "text-teal-600" : "text-gray-900 dark:text-white"}`}
-                  >
-                    {model.name}
-                  </h3>
-                  <p
-                    className={`text-sm mt-1 ${isSelected ? "text-gray-600" : "text-gray-500"}`}
-                  >
-                    {model.description}
-                  </p>
-                  <p className={`text-sm font-bold mt-3 text-teal-600`}>
-                    {model.rate}
-                  </p>
-                </div>
-              );
-            })}
+            {/* Per Ticket Selling Option - Uses Commission Rate from DB */}
+            <div
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pricingModel: "per_ticket",
+                  contractType: "",
+                }))
+              }
+              className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                formData.pricingModel === "per_ticket"
+                  ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg"
+                  : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"
+              }`}
+            >
+              <div
+                className={`p-2 rounded-xl inline-block ${
+                  formData.pricingModel === "per_ticket"
+                    ? "bg-teal-100 dark:bg-teal-900/30"
+                    : "bg-gray-100 dark:bg-gray-800"
+                } mb-3`}
+              >
+                <Ticket
+                  className={`h-6 w-6 ${
+                    formData.pricingModel === "per_ticket"
+                      ? "text-teal-600"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                />
+              </div>
+              <h3
+                className={`font-bold text-lg ${
+                  formData.pricingModel === "per_ticket"
+                    ? "text-teal-600"
+                    : "text-gray-900 dark:text-white"
+                }`}
+              >
+                Per Ticket Selling
+              </h3>
+              <p className="text-sm mt-1 text-gray-500">
+                Pay commission per ticket sold
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                <Percent className="h-4 w-4 text-teal-600" />
+                <p className="text-lg font-bold text-teal-600">
+                  {commissionRate}% commission
+                </p>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Commission is calculated automatically on each ticket sold
+              </p>
+            </div>
+
+            {/* Subscription Plan Option - Uses Real Periodic Rentals from DB */}
+            <div
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  pricingModel: "subscription",
+                  contractType: "",
+                }))
+              }
+              className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${
+                formData.pricingModel === "subscription"
+                  ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg"
+                  : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"
+              }`}
+            >
+              <div
+                className={`p-2 rounded-xl inline-block ${
+                  formData.pricingModel === "subscription"
+                    ? "bg-teal-100 dark:bg-teal-900/30"
+                    : "bg-gray-100 dark:bg-gray-800"
+                } mb-3`}
+              >
+                <Calendar
+                  className={`h-6 w-6 ${
+                    formData.pricingModel === "subscription"
+                      ? "text-teal-600"
+                      : "text-gray-600 dark:text-gray-400"
+                  }`}
+                />
+              </div>
+              <h3
+                className={`font-bold text-lg ${
+                  formData.pricingModel === "subscription"
+                    ? "text-teal-600"
+                    : "text-gray-900 dark:text-white"
+                }`}
+              >
+                Subscription Plan
+              </h3>
+              <p className="text-sm mt-1 text-gray-500">
+                Fixed monthly subscription fee
+              </p>
+              <p className="text-sm font-bold mt-3 text-teal-600">
+                Starting from {periodicRentals[0]?.rental_fee?.toLocaleString() || "0"} ETB/{periodicRentals[0]?.duration_months === 1 ? "month" : periodicRentals[0]?.duration_months === 3 ? "quarter" : "year"}
+              </p>
+            </div>
           </div>
           {errors.pricingModel && (
             <p className="text-xs text-red-500 mt-2">{errors.pricingModel}</p>
           )}
         </div>
 
-        {formData.pricingModel === "subscription" && (
+        {formData.pricingModel === "subscription" && periodicRentals.length > 0 && (
           <div className="mt-6">
             <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
               Select Subscription Plan <span className="text-red-500">*</span>
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {CONTRACT_TYPES.map((contract) => {
-                const Icon = contract.icon;
-                const isSelected = formData.contractType === contract.id;
+            <div className={`grid grid-cols-1 gap-4 ${periodicRentals.length === 1 ? "md:grid-cols-1" : periodicRentals.length === 2 ? "md:grid-cols-2" : "md:grid-cols-3"}`}>
+              {periodicRentals.map((rental) => {
+                const isSelected = formData.contractType === rental.id;
+                const getFrequencyLabel = (months: number) => {
+                  if (months === 1) return "month";
+                  if (months === 3) return "quarter";
+                  if (months === 12) return "year";
+                  return `${months} months`;
+                };
                 return (
                   <div
-                    key={contract.id}
+                    key={rental.id}
                     onClick={() =>
                       setFormData((prev) => ({
                         ...prev,
-                        contractType: contract.id,
+                        contractType: rental.id,
                       }))
                     }
-                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all ${isSelected ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg" : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"}`}
+                    className={`cursor-pointer rounded-2xl border-2 p-5 transition-all relative ${
+                      isSelected
+                        ? "border-teal-500 bg-gradient-to-br from-teal-500/10 to-teal-600/10 shadow-lg"
+                        : "border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:shadow-md"
+                    }`}
                   >
+                    {rental.popular && (
+                      <div className="absolute top-3 right-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <Star className="h-3 w-3" /> Popular
+                        </span>
+                      </div>
+                    )}
                     <div
-                      className={`p-2 rounded-xl inline-block ${isSelected ? "bg-teal-100 dark:bg-teal-900/30" : "bg-gray-100 dark:bg-gray-800"} mb-3`}
+                      className={`p-2 rounded-xl inline-block ${
+                        isSelected
+                          ? "bg-teal-100 dark:bg-teal-900/30"
+                          : "bg-gray-100 dark:bg-gray-800"
+                      } mb-3`}
                     >
-                      <Icon
-                        className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600 dark:text-gray-400"}`}
-                      />
+                      {rental.duration_months === 1 && <Calendar className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600"}`} />}
+                      {rental.duration_months === 3 && <TrendingUp className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600"}`} />}
+                      {rental.duration_months === 12 && <Award className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600"}`} />}
+                      {![1, 3, 12].includes(rental.duration_months) && <Calendar className={`h-6 w-6 ${isSelected ? "text-teal-600" : "text-gray-600"}`} />}
                     </div>
                     <h4
-                      className={`font-bold text-lg ${isSelected ? "text-teal-600" : "text-gray-900 dark:text-white"}`}
+                      className={`font-bold text-lg ${
+                        isSelected
+                          ? "text-teal-600"
+                          : "text-gray-900 dark:text-white"
+                      }`}
                     >
-                      {contract.name}
+                      {rental.name}
                     </h4>
                     <p className="text-2xl font-bold text-teal-600 mt-2">
-                      {getPlanPrice(contract.id)}
+                      ETB {rental.rental_fee.toLocaleString()}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      per {contract.id.replace("ly", "")}
+                      per {getFrequencyLabel(rental.duration_months)}
                     </p>
-                    <div className="mt-3 space-y-1">
-                      {contract.features.map((feature, idx) => (
-                        <p
-                          key={idx}
-                          className="text-xs text-gray-500 flex items-center gap-1"
-                        >
-                          <CheckCircle className="h-3 w-3 text-green-500" />
-                          {feature}
-                        </p>
-                      ))}
+                    <p className="text-xs text-gray-500 mt-2">
+                      {rental.description}
+                    </p>
+                    <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <p className="text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        No commission on tickets
+                      </p>
                     </div>
                   </div>
                 );
@@ -1387,6 +1492,26 @@ const TheaterRegistration: React.FC = () => {
             {errors.contractType && (
               <p className="text-xs text-red-500 mt-2">{errors.contractType}</p>
             )}
+          </div>
+        )}
+
+        {formData.pricingModel === "per_ticket" && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/10 dark:to-indigo-900/10 rounded-2xl p-5 mt-4">
+            <div className="flex items-start gap-3">
+              <Percent className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                  Commission Details
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                  • Current commission rate: <strong>{commissionRate}%</strong> per ticket sold
+                  <br />
+                  • Commission is calculated automatically on each ticket
+                  <br />
+                  • No upfront fees - pay only when you sell
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -1411,8 +1536,7 @@ const TheaterRegistration: React.FC = () => {
                 provided
               </li>
               <li>
-                You agree to our commission structure based on your selected
-                pricing plan
+                You agree to our {formData.pricingModel === "per_ticket" ? `${commissionRate}% commission structure` : "subscription pricing plan"}
               </li>
               <li>
                 Your account may be suspended for violation of terms or
