@@ -88,15 +88,12 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
 
     const fetchUserData = async (id: string) => {
         try {
-            // Validate UUID format - if not valid, try to find by email
             const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
             let query;
             
             if (uuidRegex.test(id)) {
-                // It's a valid UUID
                 query = supabase.from('users').select('*').eq('id', id);
             } else {
-                // It might be a number string or email, try by email
                 console.log('Invalid UUID format, trying by email:', id);
                 query = supabase.from('users').select('*').eq('email', user?.email);
             }
@@ -105,7 +102,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             
             if (userError) {
                 console.error('User fetch error:', userError);
-                // Use data from props as fallback
                 setUserRole(user?.role);
                 const userFormData = {
                     fullName: user?.full_name || user?.name || "",
@@ -124,7 +120,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                         showPhone: user?.show_phone ?? false,
                     },
                     preferences: {
-                        currency: user?.currency || "ETB",
+                        currencey: user?.currencey || "ETB",
                         theme: user?.theme || "system",
                     },
                     currentPassword: "",
@@ -136,7 +132,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 setTwoFactorEnabled(user?.two_factor_enabled || false);
                 setOriginalTwoFactor(user?.two_factor_enabled || false);
                 
-                // Set the correct user ID from the fetched data or props
                 if (userData) {
                     setUserId(userData.id);
                     setUserRole(userData.role);
@@ -168,7 +163,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                         showPhone: userData.show_phone ?? false,
                     },
                     preferences: {
-                        currency: userData.currency || "ETB",
+                        currencey: userData.currencey || "ETB",
                         theme: userData.theme || "system",
                     },
                     currentPassword: "",
@@ -281,7 +276,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 }
             }
             
-            // Update users table - using the correct UUID
+            // Update users table - using correct column names from your database
             const updateData: any = {
                 full_name: formData.fullName,
                 email: formData.email,
@@ -294,7 +289,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 profile_visibility: formData.privacy.profileVisibility,
                 show_email: formData.privacy.showEmail,
                 show_phone: formData.privacy.showPhone,
-                currency: formData.preferences.currency,
+                currency: formData.preferences.currency,  // ← Correct column name
                 theme: formData.preferences.theme,
                 two_factor_enabled: twoFactorEnabled,
                 updated_at: new Date().toISOString()
@@ -408,13 +403,11 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setIsDeleting(true);
         
         try {
-            // Delete related records first
             await supabase.from('customers').delete().eq('user_id', userId);
             await supabase.from('employees').delete().eq('user_id', userId);
             await supabase.from('owners').delete().eq('user_id', userId);
             await supabase.from('users').delete().eq('id', userId);
             
-            // Clear local storage
             localStorage.removeItem('user');
             sessionStorage.removeItem('user');
             localStorage.removeItem('token');
