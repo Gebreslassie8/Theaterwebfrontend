@@ -116,14 +116,12 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [castInput, setCastInput] = useState("");
 
-  // Load halls when theater changes
   useEffect(() => {
     if (selectedTheater) {
       loadHalls();
     }
   }, [selectedTheater]);
 
-  // Load seat levels when hall is selected
   useEffect(() => {
     const hallIds = [
       ...new Set(schedules.map((s) => s.hallId).filter(Boolean)),
@@ -209,7 +207,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     if (!formData.event_provider_phone)
       newErrors.event_provider_phone = "Provider phone is required";
 
-    // Validate schedules
     for (let i = 0; i < schedules.length; i++) {
       const schedule = schedules[i];
       if (!schedule.date) newErrors[`schedule_${i}_date`] = "Date is required";
@@ -218,7 +215,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       if (!schedule.hallId)
         newErrors[`schedule_${i}_hall`] = "Hall is required";
 
-      // Validate that end time is within valid range (00:00 - 23:59)
       if (schedule.startTime && formData.duration_minutes) {
         const calculatedEnd = calculateEndTime(
           schedule.startTime,
@@ -362,13 +358,13 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       director: formData.director,
       cast: formData.cast,
       poster_url: posterUrl || formData.poster_url,
-      status: "avaliable_now", // Default status for new events
-      is_featured: false,
+      status: "avaliable_now",
       theater_id: selectedTheater,
       event_provider: formData.event_provider,
       event_provider_email: formData.event_provider_email,
       event_provider_phone: formData.event_provider_phone,
       schedules: schedules.map((s) => ({
+        id: s.id,
         date: s.date,
         startTime: s.startTime,
         endTime: s.endTime,
@@ -474,7 +470,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
             </button>
           </div>
 
-          {/* Progress Bar */}
           <div className="mt-4">
             <div className="flex justify-between text-xs text-white/70 mb-2">
               <span>Basic Info & Schedule</span>
@@ -490,7 +485,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           </div>
         </div>
 
-        {/* Step Indicators */}
         <div className="px-6 pt-4 pb-2 bg-gray-50 flex justify-between border-b">
           {[
             { step: 1, title: "Basic Info", icon: Calendar },
@@ -519,12 +513,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           ))}
         </div>
 
-        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Step 1: Basic Information & Schedule */}
           {currentStep === 1 && (
             <div className="space-y-5">
-              {/* Theater Selection */}
               {hasMultipleTheaters && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -570,7 +562,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </div>
               )}
 
-              {/* Event Basic Info */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -614,7 +605,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     onChange={(e) => {
                       const val = parseInt(e.target.value) || 0;
                       setFormData({ ...formData, duration_minutes: val });
-                      // Update all schedules end times
                       setSchedules((prev) =>
                         prev.map((s) => ({
                           ...s,
@@ -732,7 +722,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     onKeyPress={(e) => e.key === "Enter" && addCastMember()}
                   />
                   <button
-                    type="button"
                     onClick={addCastMember}
                     className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
                   >
@@ -863,7 +852,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                 </div>
               </div>
 
-              {/* Show Schedules Section */}
+              {/* Show Schedules Section with Schedule-Specific Pricing */}
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -877,6 +866,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                     <Plus className="h-4 w-4" /> Add Schedule
                   </button>
                 </div>
+                <p className="text-sm text-gray-500 mb-3">
+                  Each schedule can have its own pricing for different seat
+                  levels
+                </p>
 
                 {schedules.map((schedule, idx) => {
                   const hallSeatLevels =
@@ -1007,12 +1000,16 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                         )}
                       </div>
 
-                      {/* Custom Pricing */}
+                      {/* Schedule-Specific Pricing */}
                       {schedule.hallId && hallSeatLevels.length > 0 && (
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-2">
-                            Custom Pricing (Optional)
+                            Schedule-Specific Pricing (Optional)
                           </label>
+                          <p className="text-xs text-gray-400 mb-2">
+                            Set custom prices for this specific schedule
+                            (overrides event and default prices)
+                          </p>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {hallSeatLevels.map((level) => (
                               <div
@@ -1044,11 +1041,16 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                                     className="w-20 p-1 border rounded text-sm text-right"
                                     step="5"
                                     min="0"
+                                    placeholder={level.price.toString()}
                                   />
                                 </div>
                               </div>
                             ))}
                           </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Prices set here will apply only to this specific
+                            schedule
+                          </p>
                         </div>
                       )}
                     </div>
@@ -1204,9 +1206,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
               <div className="bg-gray-50 p-5 rounded-xl">
                 <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <Clock className="text-teal-600" /> Show Schedules
+                  <Clock className="text-teal-600" /> Show Schedules & Pricing
                 </h3>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {schedules.map((schedule, idx) => {
                     const hall = availableHalls.find(
                       (h) => h.id === schedule.hallId,
@@ -1225,6 +1227,30 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                           🏠 {hall?.name || "Unknown Hall"} (Capacity:{" "}
                           {hall?.capacity || "N/A"})
                         </p>
+                        {Object.keys(schedule.customPrices).length > 0 && (
+                          <div className="mt-2">
+                            <span className="text-xs font-medium text-gray-600">
+                              Schedule-Specific Prices:
+                            </span>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {Object.entries(schedule.customPrices).map(
+                                ([levelId, price]) => {
+                                  const level = availableSeatLevels[
+                                    schedule.hallId
+                                  ]?.find((l) => l.id === levelId);
+                                  return level ? (
+                                    <span
+                                      key={levelId}
+                                      className="text-xs bg-teal-50 px-2 py-0.5 rounded"
+                                    >
+                                      {level.display_name}: ETB {price}
+                                    </span>
+                                  ) : null;
+                                },
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

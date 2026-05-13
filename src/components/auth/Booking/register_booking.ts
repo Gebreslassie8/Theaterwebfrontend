@@ -39,7 +39,6 @@ export interface BookingRegistrationData {
   totalAmount: number;
   paymentMethod: string;
   transactionReference?: string;
-  isGuest?: boolean; // Add flag for guest checkout
 }
 
 export interface BookingResult {
@@ -66,7 +65,7 @@ function generateTicketNumber(seatLabel: string): string {
 }
 
 /**
- * Generate QR code data (simplified - you can integrate a proper QR library)
+ * Generate QR code data
  */
 function generateQRCodeData(reservationId: string, seatLabel: string): string {
   return JSON.stringify({
@@ -83,6 +82,7 @@ function generateQRCodeData(reservationId: string, seatLabel: string): string {
 function generateTickets(
   reservationId: string,
   data: BookingRegistrationData,
+  seatPrices: Map<string, number>,
 ): any[] {
   return data.selectedSeats.map((seat) => ({
     ticketId: `TKT-${reservationId.substring(0, 8)}-${seat.seat_label}`,
@@ -90,10 +90,153 @@ function generateTickets(
     row: seat.seat_row,
     number: seat.seat_number,
     section: seat.seat_level_display_name,
-    price: seat.price,
+    price: seatPrices.get(seat.id) || seat.price,
     customerName: data.customerInfo.name,
     qrCode: generateQRCodeData(reservationId, seat.seat_label),
   }));
+}
+
+/**
+ * Get schedule-specific price for a seat level (checks schedule first, then event, then default)
+ */
+async function getScheduleSeatPrice(
+  eventId: string,
+  scheduleId: string,
+  seatLevelId: string,
+  defaultPrice: number,
+): Promise<number> {
+  try {
+    // First, try to get schedule-specific price
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from("seat_price")
+      .select("price")
+      .eq("event_id", eventId)
+      .eq("schedule_id", scheduleId)
+      .eq("seat_level_id", seatLevelId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!scheduleError && scheduleData) {
+      console.log(`✅ Using schedule-specific price: ${scheduleData.price}`);
+      return scheduleData.price;
+    }
+
+    // If no schedule-specific price, try event-level price
+    const { data: eventData, error: eventError } = await supabase
+      .from("seat_price")
+      .select("price")
+      .eq("event_id", eventId)
+      .eq("seat_level_id", seatLevelId)
+      .is("schedule_id", null)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (!eventError && eventData) {
+      console.log(`✅ Using event-level price: ${eventData.price}`);
+      return eventData.price;
+    }
+
+    // Fallback to default price
+    console.log(`⚠️ Using default price: ${defaultPrice}`);
+    return defaultPrice;
+  } catch (error) {
+    console.error("Error fetching seat price:", error);
+    return defaultPrice;
+  }
+}
+
+/**
+ * Get all seat prices for a schedule (batch fetch for performance)
+ */
+async function getAllScheduleSeatPrices(
+  eventId: string,
+  scheduleId: string,
+  seatLevelIds: string[],
+): Promise<Map<string, number>> {
+  try {
+    const priceMap = new Map<string, number>();
+
+    // Fetch schedule-specific prices
+    const { data: schedulePriceData, error: scheduleError } = await supabase
+      .from("seat_price")
+      .select("seat_level_id, price")
+      .eq("event_id", eventId)
+      .eq("schedule_id", scheduleId)
+      .eq("is_active", true)
+      .in("seat_level_id", seatLevelIds);
+
+    if (scheduleError) {
+      console.error("Error fetching schedule seat prices:", scheduleError);
+    }
+
+    schedulePriceData?.forEach((item) => {
+      priceMap.set(item.seat_level_id, item.price);
+    });
+
+    // For any missing seat levels, try event-level prices
+    const missingLevelIds = seatLevelIds.filter((id) => !priceMap.has(id));
+
+    if (missingLevelIds.length > 0) {
+      const { data: eventPriceData, error: eventError } = await supabase
+        .from("seat_price")
+        .select("seat_level_id, price")
+        .eq("event_id", eventId)
+        .is("schedule_id", null)
+        .eq("is_active", true)
+        .in("seat_level_id", missingLevelIds);
+
+      if (!eventError && eventPriceData) {
+        eventPriceData.forEach((item) => {
+          priceMap.set(item.seat_level_id, item.price);
+        });
+      }
+    }
+
+    console.log(
+      `📊 Loaded ${priceMap.size} price records for schedule ${scheduleId}`,
+    );
+    return priceMap;
+  } catch (error) {
+    console.error("Error in getAllScheduleSeatPrices:", error);
+    return new Map();
+  }
+}
+
+/**
+ * Check if seats are already reserved for this schedule
+ */
+async function areSeatsAvailable(
+  seatIds: string[],
+  scheduleId: string,
+): Promise<{ available: boolean; unavailableSeatIds: string[] }> {
+  const { data: existingReservations, error } = await supabase
+    .from("reserved_seats")
+    .select(
+      `
+      seat_id,
+      reservations!inner (
+        schedule_id,
+        status,
+        payment_status
+      )
+    `,
+    )
+    .in("seat_id", seatIds)
+    .eq("reservations.schedule_id", scheduleId)
+    .in("reservations.status", ["confirmed", "pending"])
+    .eq("reservations.payment_status", "paid");
+
+  if (error) {
+    console.error("Error checking seat availability:", error);
+    return { available: false, unavailableSeatIds: seatIds };
+  }
+
+  const unavailableSeatIds =
+    existingReservations?.map((rs) => rs.seat_id) || [];
+  return {
+    available: unavailableSeatIds.length === 0,
+    unavailableSeatIds,
+  };
 }
 
 /**
@@ -103,11 +246,62 @@ export async function registerBooking(
   data: BookingRegistrationData,
 ): Promise<BookingResult> {
   try {
-    console.log("📝 Starting booking registration...", data);
+    console.log("📝 Starting booking registration...", {
+      eventId: data.eventId,
+      scheduleId: data.schedule.id,
+      seatsCount: data.selectedSeats.length,
+      totalAmount: data.totalAmount,
+    });
 
+    // Step 1: Verify seats are still available
+    const seatIds = data.selectedSeats.map((seat) => seat.id);
+    const { available, unavailableSeatIds } = await areSeatsAvailable(
+      seatIds,
+      data.schedule.id,
+    );
+
+    if (!available) {
+      const unavailableSeats = data.selectedSeats.filter((seat) =>
+        unavailableSeatIds.includes(seat.id),
+      );
+      return {
+        success: false,
+        error: `Seats ${unavailableSeats.map((s) => s.seat_label).join(", ")} are no longer available.`,
+      };
+    }
+
+    // Step 2: Get seat level IDs for price fetching
+    const seatLevelIds = [
+      ...new Set(data.selectedSeats.map((seat) => seat.seat_level_id)),
+    ];
+
+    // Step 3: Fetch all schedule-specific prices at once
+    const schedulePrices = await getAllScheduleSeatPrices(
+      data.eventId,
+      data.schedule.id,
+      seatLevelIds,
+    );
+
+    // Calculate correct total using schedule-specific prices
+    let correctTotal = 0;
+    const seatPrices = new Map<string, number>();
+
+    for (const seat of data.selectedSeats) {
+      const schedulePrice = schedulePrices.get(seat.seat_level_id);
+      const finalPrice = schedulePrice || seat.price;
+      seatPrices.set(seat.id, finalPrice);
+      correctTotal += finalPrice;
+    }
+
+    console.log(
+      `💰 Calculated total: ${correctTotal} (original: ${data.totalAmount})`,
+    );
+    console.log(`💺 Seat prices:`, Object.fromEntries(seatPrices));
+
+    // Step 4: Get user info (optional)
     let userId = null;
+    let guestId = null;
 
-    // Try to get authenticated user, but don't require it
     try {
       const {
         data: { user },
@@ -116,24 +310,21 @@ export async function registerBooking(
         userId = user.id;
         console.log("✅ User authenticated:", userId);
       } else {
-        console.log("👤 Guest checkout - no login required");
+        guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+        console.log("👤 Guest checkout - ID:", guestId);
       }
     } catch (authError) {
+      guestId = `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
       console.log("👤 Guest checkout - continuing without authentication");
     }
 
-    // Create a guest ID for tracking if not logged in
-    const guestId = !userId
-      ? `guest_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`
-      : null;
-
-    // Start a transaction by creating the reservation first
+    // Step 5: Create reservation
     const reservationData = {
-      user_id: userId, // Can be null for guests
+      user_id: userId,
       guest_id: guestId,
       event_id: data.eventId,
       schedule_id: data.schedule.id,
-      total_amount: data.totalAmount,
+      total_amount: correctTotal,
       status: "confirmed",
       payment_status: "paid",
       payment_method: data.paymentMethod,
@@ -143,12 +334,11 @@ export async function registerBooking(
       customer_email: data.customerInfo.email,
       customer_phone: data.customerInfo.phone,
       booking_date: new Date().toISOString(),
-      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes expiry
-      is_guest: !userId, // Flag to indicate guest booking
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      is_guest: !userId,
     };
 
-    console.log("📝 Creating reservation:", reservationData);
-
+    console.log("📝 Creating reservation...");
     const { data: reservation, error: reservationError } = await supabase
       .from("reservations")
       .insert([reservationData])
@@ -166,25 +356,28 @@ export async function registerBooking(
 
     console.log("✅ Reservation created:", reservation.id);
 
-    // Create reserved seats entries
-    const reservedSeatsData = data.selectedSeats.map((seat) => ({
-      reservation_id: reservation.id,
-      seat_id: seat.id,
-      seat_row: seat.seat_row,
-      seat_number: seat.seat_number,
-      seat_label: seat.seat_label,
-      seat_level_id: seat.seat_level_id,
-      seat_level_name: seat.seat_level_name,
-      seat_level_display_name: seat.seat_level_display_name,
-      price_at_time: seat.price,
-      ticket_number: generateTicketNumber(seat.seat_label),
-      ticket_type: "regular",
-      is_checked_in: false,
-      created_at: new Date().toISOString(),
-    }));
+    // Step 6: Create reserved seats entries with correct prices
+    const reservedSeatsData = data.selectedSeats.map((seat) => {
+      const finalPrice = seatPrices.get(seat.id) || seat.price;
+
+      return {
+        reservation_id: reservation.id,
+        seat_id: seat.id,
+        seat_row: seat.seat_row,
+        seat_number: seat.seat_number,
+        seat_label: seat.seat_label,
+        seat_level_id: seat.seat_level_id,
+        seat_level_name: seat.seat_level_name,
+        seat_level_display_name: seat.seat_level_display_name,
+        price_at_time: finalPrice,
+        ticket_number: generateTicketNumber(seat.seat_label),
+        ticket_type: "regular",
+        is_checked_in: false,
+        created_at: new Date().toISOString(),
+      };
+    });
 
     console.log(`🎫 Creating ${reservedSeatsData.length} reserved seats...`);
-
     const { error: reservedSeatsError } = await supabase
       .from("reserved_seats")
       .insert(reservedSeatsData);
@@ -202,8 +395,7 @@ export async function registerBooking(
 
     console.log("✅ Reserved seats created");
 
-    // Update seat statuses to 'reserved'
-    const seatIds = data.selectedSeats.map((seat) => seat.id);
+    // Step 7: Update seat statuses to 'reserved'
     const { error: updateSeatsError } = await supabase
       .from("seats")
       .update({
@@ -219,18 +411,16 @@ export async function registerBooking(
         "⚠️ Error updating seats (non-critical):",
         updateSeatsError,
       );
-      // Don't fail the booking, just log the error
     } else {
       console.log("✅ Seats updated to reserved");
     }
 
-    // Update schedule available seats
+    // Step 8: Update schedule available seats
     if (data.schedule.availableSeats !== undefined) {
       const newAvailableSeats = Math.max(
         0,
         (data.schedule.availableSeats || 0) - data.selectedSeats.length,
       );
-
       const { error: updateScheduleError } = await supabase
         .from("event_schedules")
         .update({ available_seats: newAvailableSeats })
@@ -248,8 +438,8 @@ export async function registerBooking(
       }
     }
 
-    // Generate tickets
-    const tickets = generateTickets(reservation.id, data);
+    // Step 9: Generate tickets with correct prices
+    const tickets = generateTickets(reservation.id, data, seatPrices);
 
     console.log("🎉 Booking registration completed successfully!");
 
@@ -291,7 +481,6 @@ export async function getBookingById(
       )
       .eq("id", bookingId);
 
-    // If email and phone provided, verify they match (for guest lookup)
     if (email && phone) {
       query = query.eq("customer_email", email).eq("customer_phone", phone);
     }
@@ -368,13 +557,11 @@ export async function cancelBooking(
   phone?: string,
 ): Promise<BookingResult> {
   try {
-    // Build query to find the reservation
     let query = supabase
       .from("reservations")
       .select("*, reserved_seats(*)")
       .eq("id", bookingId);
 
-    // If email and phone provided, verify ownership
     if (email && phone) {
       query = query.eq("customer_email", email).eq("customer_phone", phone);
     }
@@ -388,7 +575,6 @@ export async function cancelBooking(
       };
     }
 
-    // Update reservation status to cancelled
     const { error: updateError } = await supabase
       .from("reservations")
       .update({
@@ -405,7 +591,6 @@ export async function cancelBooking(
       };
     }
 
-    // Free up the seats
     if (reservation.reserved_seats && reservation.reserved_seats.length > 0) {
       const seatIds = reservation.reserved_seats.map((rs: any) => rs.seat_id);
 
@@ -423,7 +608,6 @@ export async function cancelBooking(
         console.error("⚠️ Error freeing seats:", updateSeatsError);
       }
 
-      // Update reserved_seats status
       await supabase
         .from("reserved_seats")
         .update({
@@ -433,7 +617,6 @@ export async function cancelBooking(
         .eq("reservation_id", bookingId);
     }
 
-    // Update schedule available seats
     if (reservation.schedule_id) {
       const { data: schedule } = await supabase
         .from("event_schedules")
@@ -478,7 +661,6 @@ export async function getUserBookings(
   phone?: string,
 ): Promise<BookingResult> {
   try {
-    // Try to get authenticated user first
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -496,10 +678,8 @@ export async function getUserBookings(
       .order("created_at", { ascending: false });
 
     if (user) {
-      // Logged in user
       query = query.eq("user_id", user.id);
     } else if (email && phone) {
-      // Guest with email/phone
       query = query.eq("customer_email", email).eq("customer_phone", phone);
     } else {
       return {

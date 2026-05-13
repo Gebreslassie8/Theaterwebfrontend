@@ -68,6 +68,7 @@ interface Schedule {
     id: string;
     name: string;
   };
+  customPrices?: Record<string, number>;
 }
 
 interface UserData {
@@ -125,7 +126,6 @@ const ManageEvent: React.FC = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [showReasonModal, setShowReasonModal] = useState(false);
 
-  // Helper functions
   const formatDate = (dateString: string) => {
     try {
       return new Date(dateString).toLocaleDateString();
@@ -139,7 +139,6 @@ const ManageEvent: React.FC = () => {
     return timeString.substring(0, 5);
   };
 
-  // Get current user from storage
   const getCurrentUser = useCallback(async () => {
     try {
       const userStr =
@@ -154,10 +153,8 @@ const ManageEvent: React.FC = () => {
     }
   }, []);
 
-  // Get theater ID based on user role
   const getTheaterIdByRole = useCallback(async (user: UserData) => {
     const role = user.role;
-
     if (role === "admin") {
       const { data: theater } = await supabase
         .from("theaters")
@@ -166,7 +163,6 @@ const ManageEvent: React.FC = () => {
         .maybeSingle();
       return theater?.id || null;
     }
-
     if (role === "theater_owner" || role === "owner") {
       const { data: theaterData } = await supabase
         .from("theaters")
@@ -175,7 +171,6 @@ const ManageEvent: React.FC = () => {
         .maybeSingle();
       return theaterData?.id || null;
     }
-
     if (
       [
         "manager",
@@ -192,11 +187,9 @@ const ManageEvent: React.FC = () => {
         .maybeSingle();
       return employeeData?.theater_id || user.theater_id || null;
     }
-
     return user.theater_id || null;
   }, []);
 
-  // Fetch theater details
   const fetchTheaterDetails = useCallback(async (theaterId: string) => {
     const { data: theater } = await supabase
       .from("theaters")
@@ -208,25 +201,70 @@ const ManageEvent: React.FC = () => {
       : null;
   }, []);
 
-  // Fetch price range for event
-  const fetchEventPriceRange = useCallback(async (eventId: string) => {
-    const { data: priceData } = await supabase
-      .from("seat_price")
-      .select("price")
-      .eq("event_id", eventId)
-      .eq("is_active", true);
+  const fetchSchedulePrices = useCallback(
+    async (eventId: string, scheduleId: string) => {
+      const { data: priceData, error } = await supabase
+        .from("seat_price")
+        .select("seat_level_id, price")
+        .eq("event_id", eventId)
+        .eq("schedule_id", scheduleId)
+        .eq("is_active", true);
 
-    if (priceData && priceData.length > 0) {
-      const prices = priceData.map((p) => p.price);
+      if (error || !priceData) return {};
+
+      const priceMap: Record<string, number> = {};
+      priceData.forEach((item) => {
+        priceMap[item.seat_level_id] = item.price;
+      });
+      return priceMap;
+    },
+    [],
+  );
+
+  const fetchEventPriceRange = useCallback(
+    async (eventId: string, scheduleId?: string) => {
+      let query = supabase
+        .from("seat_price")
+        .select("price")
+        .eq("event_id", eventId)
+        .eq("is_active", true);
+
+      if (scheduleId) {
+        query = query.eq("schedule_id", scheduleId);
+      }
+
+      const { data: seatPriceData, error: seatPriceError } = await query;
+
+      if (seatPriceError) {
+        console.error("Error fetching seat prices:", seatPriceError);
+      }
+
+      if (seatPriceData && seatPriceData.length > 0) {
+        const prices = seatPriceData.map((p) => p.price);
+        return {
+          min: Math.min(...prices),
+          max: Math.max(...prices),
+        };
+      }
+
+      const { data: levelData, error: levelError } = await supabase
+        .from("seat_levels")
+        .select("price")
+        .eq("is_active", true);
+
+      if (levelError || !levelData || levelData.length === 0) {
+        return { min: 0, max: 0 };
+      }
+
+      const prices = levelData.map((l) => l.price);
       return {
         min: Math.min(...prices),
         max: Math.max(...prices),
       };
-    }
-    return { min: 0, max: 0 };
-  }, []);
+    },
+    [],
+  );
 
-  // Fetch total available seats for event
   const fetchEventSeatAvailability = useCallback(async (hallId: string) => {
     const { data: seats } = await supabase
       .from("seats")
@@ -248,7 +286,6 @@ const ManageEvent: React.FC = () => {
     return { available: 0, total: 0, percentage: 0 };
   }, []);
 
-  // Fetch events with their schedules
   const fetchEventsWithSchedules = useCallback(
     async (theaterId: string) => {
       try {
@@ -271,24 +308,38 @@ const ManageEvent: React.FC = () => {
           .order("show_date", { ascending: true });
 
         const schedulesMap = new Map<string, Schedule[]>();
-        schedulesData?.forEach((schedule: any) => {
+
+        for (const schedule of schedulesData || []) {
           if (!schedulesMap.has(schedule.event_id)) {
             schedulesMap.set(schedule.event_id, []);
           }
+
+          // Fetch schedule-specific prices
+          const schedulePrices = await fetchSchedulePrices(
+            schedule.event_id,
+            schedule.id,
+          );
+
           schedulesMap.get(schedule.event_id)!.push({
             ...schedule,
             hall: schedule.hall,
+            customPrices: schedulePrices,
           });
-        });
+        }
 
         const eventsWithDetails = await Promise.all(
           eventsData.map(async (event) => {
             const schedules = schedulesMap.get(event.id) || [];
-            const firstHallId = schedules[0]?.hall_id;
-            const priceRange = await fetchEventPriceRange(event.id);
+            const firstSchedule = schedules[0];
+            const priceRange = await fetchEventPriceRange(
+              event.id,
+              firstSchedule?.id,
+            );
             let seatAvailability = { available: 0, total: 0, percentage: 0 };
-            if (firstHallId) {
-              seatAvailability = await fetchEventSeatAvailability(firstHallId);
+            if (firstSchedule?.hall_id) {
+              seatAvailability = await fetchEventSeatAvailability(
+                firstSchedule.hall_id,
+              );
             }
 
             return {
@@ -309,10 +360,9 @@ const ManageEvent: React.FC = () => {
         return [];
       }
     },
-    [fetchEventPriceRange, fetchEventSeatAvailability],
+    [fetchEventPriceRange, fetchEventSeatAvailability, fetchSchedulePrices],
   );
 
-  // Main fetch function
   const fetchUserAndEvents = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -359,7 +409,6 @@ const ManageEvent: React.FC = () => {
     fetchUserAndEvents();
   }, [fetchUserAndEvents]);
 
-  // Filter events
   const filteredEvents = events.filter((event) => {
     const matchSearch = event.title
       .toLowerCase()
@@ -390,7 +439,6 @@ const ManageEvent: React.FC = () => {
     setCancelReason("");
   };
 
-  // Create event handler
   const handleCreateEvent = async (formData: any, posterUrl: string | null) => {
     if (!userTheater || !currentUser) {
       setSuccessMessage(
@@ -430,21 +478,58 @@ const ManageEvent: React.FC = () => {
       if (eventError) throw eventError;
 
       if (eventSchedules && eventSchedules.length > 0) {
-        const scheduleRecords = eventSchedules.map((schedule: any) => ({
-          event_id: createdEvent.id,
-          hall_id: schedule.hallId,
-          show_date: schedule.date,
-          start_time: schedule.startTime,
-          end_time: schedule.endTime,
-          is_active: true,
-        }));
+        const allSeatPriceRecords = [];
 
-        const { error: scheduleError } = await supabase
-          .from("event_schedules")
-          .insert(scheduleRecords);
+        for (const schedule of eventSchedules) {
+          const scheduleRecord = {
+            event_id: createdEvent.id,
+            hall_id: schedule.hallId,
+            show_date: schedule.date,
+            start_time: schedule.startTime,
+            end_time: schedule.endTime,
+            is_active: true,
+          };
 
-        if (scheduleError) {
-          console.error("Error creating schedules:", scheduleError);
+          const { data: createdSchedule, error: scheduleError } = await supabase
+            .from("event_schedules")
+            .insert([scheduleRecord])
+            .select()
+            .single();
+
+          if (scheduleError) {
+            console.error("Error creating schedule:", scheduleError);
+            throw scheduleError;
+          }
+
+          if (schedule.customPrices) {
+            Object.entries(schedule.customPrices).forEach(
+              ([levelId, price]) => {
+                if (price && Number(price) > 0) {
+                  allSeatPriceRecords.push({
+                    event_id: createdEvent.id,
+                    schedule_id: createdSchedule.id,
+                    seat_level_id: levelId,
+                    price: Number(price),
+                    is_active: true,
+                  });
+                }
+              },
+            );
+          }
+        }
+
+        if (allSeatPriceRecords.length > 0) {
+          const { error: seatPriceError } = await supabase
+            .from("seat_price")
+            .insert(allSeatPriceRecords);
+
+          if (seatPriceError) {
+            console.error("Error inserting seat prices:", seatPriceError);
+          } else {
+            console.log(
+              `✅ Inserted ${allSeatPriceRecords.length} seat price records`,
+            );
+          }
         }
       }
 
@@ -466,7 +551,6 @@ const ManageEvent: React.FC = () => {
     await handleCreateEvent(formData, posterUrl);
   };
 
-  // Update event handler
   const handleUpdateEvent = async (formData: any) => {
     if (!selectedEventForEdit) return;
 
@@ -494,28 +578,63 @@ const ManageEvent: React.FC = () => {
 
       if (eventError) throw eventError;
 
-      if (eventSchedules) {
-        await supabase
-          .from("event_schedules")
-          .delete()
-          .eq("event_id", selectedEventForEdit.id);
+      await supabase
+        .from("seat_price")
+        .delete()
+        .eq("event_id", selectedEventForEdit.id);
+      await supabase
+        .from("event_schedules")
+        .delete()
+        .eq("event_id", selectedEventForEdit.id);
 
-        if (eventSchedules.length > 0) {
-          const scheduleRecords = eventSchedules.map((schedule: any) => ({
+      if (eventSchedules && eventSchedules.length > 0) {
+        const allSeatPriceRecords = [];
+
+        for (const schedule of eventSchedules) {
+          const scheduleRecord = {
             event_id: selectedEventForEdit.id,
             hall_id: schedule.hallId,
             show_date: schedule.date,
             start_time: schedule.startTime,
             end_time: schedule.endTime,
             is_active: true,
-          }));
+          };
 
-          const { error: scheduleError } = await supabase
+          const { data: createdSchedule, error: scheduleError } = await supabase
             .from("event_schedules")
-            .insert(scheduleRecords);
+            .insert([scheduleRecord])
+            .select()
+            .single();
 
           if (scheduleError) {
-            console.error("Error updating schedules:", scheduleError);
+            console.error("Error creating schedule:", scheduleError);
+            throw scheduleError;
+          }
+
+          if (schedule.customPrices) {
+            Object.entries(schedule.customPrices).forEach(
+              ([levelId, price]) => {
+                if (price && Number(price) > 0) {
+                  allSeatPriceRecords.push({
+                    event_id: selectedEventForEdit.id,
+                    schedule_id: createdSchedule.id,
+                    seat_level_id: levelId,
+                    price: Number(price),
+                    is_active: true,
+                  });
+                }
+              },
+            );
+          }
+        }
+
+        if (allSeatPriceRecords.length > 0) {
+          const { error: seatPriceError } = await supabase
+            .from("seat_price")
+            .insert(allSeatPriceRecords);
+
+          if (seatPriceError) {
+            console.error("Error updating seat prices:", seatPriceError);
           }
         }
       }
@@ -533,11 +652,14 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Delete event handler
   const handleDeleteEvent = async () => {
     if (!selectedEventForDelete) return;
 
     try {
+      await supabase
+        .from("seat_price")
+        .delete()
+        .eq("event_id", selectedEventForDelete.id);
       await supabase
         .from("event_schedules")
         .delete()
@@ -562,17 +684,13 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Cancel event handler
   const handleCancelEvent = async () => {
     if (!eventToCancel) return;
 
     try {
       const { error } = await supabase
         .from("events")
-        .update({
-          status: "cancelled",
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: "cancelled", updated_at: new Date().toISOString() })
         .eq("id", eventToCancel.id);
 
       if (error) throw error;
@@ -592,7 +710,6 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Reactivate event handler
   const handleReactivateEvent = async () => {
     if (!selectedEventForReactivate) return;
 
@@ -622,15 +739,11 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // End event handler
   const handleEndEvent = async (event: Event) => {
     try {
       const { error } = await supabase
         .from("events")
-        .update({
-          status: "ended",
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status: "ended", updated_at: new Date().toISOString() })
         .eq("id", event.id);
 
       if (error) throw error;
@@ -647,7 +760,6 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Modal handlers
   const openViewModal = (event: Event) => {
     setSelectedEventForView(event);
     setShowViewModal(true);
@@ -674,7 +786,6 @@ const ManageEvent: React.FC = () => {
     setShowDeleteModal(true);
   };
 
-  // UI helpers
   const getStatusColor = (status: string) => {
     switch (status) {
       case "avaliable_now":
@@ -714,7 +825,6 @@ const ManageEvent: React.FC = () => {
     }
   };
 
-  // Table columns - ALL WITH UNIQUE ACCESSORS
   const columns: Column[] = [
     {
       Header: "Event",
@@ -944,7 +1054,6 @@ const ManageEvent: React.FC = () => {
       className="min-h-screen bg-gray-50"
     >
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -969,7 +1078,6 @@ const ManageEvent: React.FC = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <StatCard
             title="Total Events"
@@ -998,7 +1106,6 @@ const ManageEvent: React.FC = () => {
           />
         </div>
 
-        {/* Search, Filter, and Create */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative min-w-[250px]">
@@ -1030,7 +1137,6 @@ const ManageEvent: React.FC = () => {
           </button>
         </div>
 
-        {/* Events Table */}
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
           <ReusableTable
             columns={columns}
@@ -1043,7 +1149,6 @@ const ManageEvent: React.FC = () => {
           />
         </div>
 
-        {/* Modals */}
         {showCreateModal && (
           <CreateEventForm
             onSubmit={handleCreateEventWrapper}
@@ -1076,8 +1181,6 @@ const ManageEvent: React.FC = () => {
           />
         )}
 
-        {/* Delete Modal */}
-        {/* Delete Modal */}
         <DeleteConfirmModal
           employee={
             selectedEventForDelete
@@ -1091,7 +1194,6 @@ const ManageEvent: React.FC = () => {
           onCancel={() => closeAllModals()}
         />
 
-        {/* Cancel with Reason Modal */}
         {showReasonModal && eventToCancel && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -1138,7 +1240,6 @@ const ManageEvent: React.FC = () => {
           </div>
         )}
 
-        {/* Reactivate Modal */}
         {showCancelModal && selectedEventForReactivate && (
           <CancelEventModal
             event={selectedEventForReactivate as any}

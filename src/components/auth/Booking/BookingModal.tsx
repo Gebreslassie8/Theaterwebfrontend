@@ -149,6 +149,63 @@ const generateTransactionRef = (): string => {
   return `TXT-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 };
 
+// Helper function to fetch schedule-specific seat prices
+const fetchScheduleSeatPrices = async (
+  eventId: string,
+  scheduleId: string,
+  seatLevelIds: string[],
+): Promise<Record<string, number>> => {
+  try {
+    // First, try to get schedule-specific prices
+    const { data: schedulePriceData, error: scheduleError } = await supabase
+      .from("seat_price")
+      .select("seat_level_id, price")
+      .eq("event_id", eventId)
+      .eq("schedule_id", scheduleId)
+      .eq("is_active", true)
+      .in("seat_level_id", seatLevelIds);
+
+    if (scheduleError) {
+      console.error("Error fetching schedule seat prices:", scheduleError);
+    }
+
+    const priceMap: Record<string, number> = {};
+
+    // Add schedule-specific prices
+    schedulePriceData?.forEach((item) => {
+      priceMap[item.seat_level_id] = item.price;
+    });
+
+    // If no schedule-specific prices found, fetch event-level prices as fallback
+    if (Object.keys(priceMap).length === 0) {
+      console.log(
+        "No schedule-specific prices found, checking event-level prices...",
+      );
+      const { data: eventPriceData, error: eventError } = await supabase
+        .from("seat_price")
+        .select("seat_level_id, price")
+        .eq("event_id", eventId)
+        .is("schedule_id", null)
+        .eq("is_active", true)
+        .in("seat_level_id", seatLevelIds);
+
+      if (eventError) {
+        console.error("Error fetching event seat prices:", eventError);
+      }
+
+      eventPriceData?.forEach((item) => {
+        priceMap[item.seat_level_id] = item.price;
+      });
+    }
+
+    console.log(`🎫 Prices for schedule ${scheduleId}:`, priceMap);
+    return priceMap;
+  } catch (error) {
+    console.error("Error in fetchScheduleSeatPrices:", error);
+    return {};
+  }
+};
+
 const BookingModal: React.FC<BookingModalProps> = ({
   show,
   isOpen,
@@ -284,7 +341,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     }
   }, [isOpen, show.id]);
 
-  // Fetch seat data based on selected schedule - ONLY for THIS specific schedule
+  // Fetch seat data based on selected schedule - WITH SCHEDULE-SPECIFIC PRICING
   useEffect(() => {
     const fetchSeatData = async () => {
       if (!selectedSchedule?.hallId) {
@@ -319,10 +376,35 @@ const BookingModal: React.FC<BookingModalProps> = ({
           .order("display_order", { ascending: true });
 
         if (levelsError) throw levelsError;
-        setSeatLevels(levelsData || []);
 
-        // IMPORTANT: Get seats reserved ONLY for THIS specific schedule
-        // This ensures seats booked for different schedules/events remain available
+        // Fetch schedule-specific prices from seat_price table
+        const seatLevelIds = levelsData?.map((level) => level.id) || [];
+        const schedulePrices = await fetchScheduleSeatPrices(
+          show.id,
+          selectedSchedule.id,
+          seatLevelIds,
+        );
+
+        // Merge prices: schedule-specific price overrides default price
+        const levelsWithPrices =
+          levelsData?.map((level) => ({
+            ...level,
+            price: schedulePrices[level.id] || level.price,
+          })) || [];
+
+        console.log(
+          "🎫 Seat levels with prices for schedule",
+          selectedSchedule.id,
+          ":",
+          levelsWithPrices.map((l) => ({
+            name: l.display_name,
+            price: l.price,
+            defaultPrice: l.price,
+          })),
+        );
+        setSeatLevels(levelsWithPrices);
+
+        // Get seats reserved ONLY for THIS specific schedule
         const { data: reservedSeatsForThisSchedule, error: reservedError } =
           await supabase
             .from("reserved_seats")
@@ -351,7 +433,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         console.log(
           `🔒 Found ${reservedSeatIds.size} reserved seats for THIS schedule only`,
         );
-        console.log(`   (Seats for other schedules/events remain available)`);
 
         // Fetch all seats
         const { data: seatsData, error: seatsError } = await supabase
@@ -364,7 +445,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
         if (seatsError) throw seatsError;
 
-        // Mark seats as reserved ONLY if they are reserved for THIS schedule
         const seatsWithReservationStatus =
           seatsData?.map((seat) => ({
             ...seat,
@@ -396,7 +476,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
     if (isOpen && selectedSchedule?.hallId) {
       fetchSeatData();
     }
-  }, [isOpen, selectedSchedule]);
+  }, [isOpen, selectedSchedule, show.id]);
 
   // Verify seats are still available for THIS schedule before proceeding
   const verifySeatsAvailability = async (): Promise<boolean> => {
@@ -404,7 +484,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
 
     const seatIds = selectedSeats.map((seat) => seat.id);
 
-    // Check ONLY for this specific schedule
     const { data: existingReservations, error } = await supabase
       .from("reserved_seats")
       .select(
@@ -440,7 +519,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         `Seats ${unavailableSeats.map((s) => s.seat_label).join(", ")} are no longer available for this show time. Please select different seats.`,
       );
 
-      // Refresh seat data to show updated availability
+      // Refresh seat data
       const { data: freshReserved } = await supabase
         .from("reserved_seats")
         .select(
@@ -557,7 +636,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
         setError("Please select at least one seat");
         return;
       }
-      // Verify seats are still available before proceeding
       const stillAvailable = await verifySeatsAvailability();
       if (!stillAvailable) {
         return;
@@ -601,7 +679,6 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setError("");
 
     try {
-      // Final availability check before booking
       const stillAvailable = await verifySeatsAvailability();
       if (!stillAvailable) {
         setIsProcessing(false);
