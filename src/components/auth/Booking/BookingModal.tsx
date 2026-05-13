@@ -32,6 +32,7 @@ import {
   type BookingRegistrationData,
   type SeatInfo,
 } from "./register_booking";
+import ChapaCheckout from "./ChapaCheckout";
 
 // Types
 interface EventSchedule {
@@ -235,6 +236,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [hallData, setHallData] = useState<{ id: string; name: string } | null>(
     null,
   );
+  const [chapaTxRef, setChapaTxRef] = useState<string>("");
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -669,8 +671,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setStep((prev) => prev - 1);
   };
 
-  const handleConfirm = async (e?: React.MouseEvent): Promise<void> => {
-    if (e) {
+  const handleConfirm = async (
+    e?: React.MouseEvent | { chapaTxRef?: string },
+  ): Promise<void> => {
+    if (e && "preventDefault" in e) {
       e.preventDefault();
       e.stopPropagation();
     }
@@ -708,6 +712,12 @@ const BookingModal: React.FC<BookingModalProps> = ({
         availableSeats: selectedSchedule!.availableSeats,
       };
 
+      // Use Chapa transaction reference if available, otherwise generate one
+      const txRef =
+        e && "chapaTxRef" in e && e.chapaTxRef
+          ? e.chapaTxRef
+          : chapaTxRef || generateTransactionRef();
+
       const registrationData: BookingRegistrationData = {
         eventId: show.id,
         eventTitle: show.title,
@@ -718,7 +728,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         customerInfo: customerInfo,
         totalAmount: calculateTotal(),
         paymentMethod: "chapa",
-        transactionReference: generateTransactionRef(),
+        transactionReference: txRef,
       };
 
       const result = await registerBooking(registrationData);
@@ -739,7 +749,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         totalAmountBirr: formatCurrency(calculateTotal()),
         customerInfo,
         paymentMethod: "chapa",
-        paymentDetails: { transactionReference: generateTransactionRef() },
+        paymentDetails: { transactionReference: txRef },
         bookingDate: new Date().toISOString(),
         status: "confirmed",
         tickets: selectedSeats.map((seat) => {
@@ -760,6 +770,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
         selectedSchedule: selectedSchedule!,
       };
 
+      // Store booking in localStorage for persistence
       const bookings = JSON.parse(
         localStorage.getItem("theater_bookings") || "[]",
       );
@@ -779,6 +790,17 @@ const BookingModal: React.FC<BookingModalProps> = ({
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  // Handle successful Chapa payment
+  const handleChapaSuccess = async (data: {
+    txRef: string;
+    transactionId?: string;
+    message: string;
+  }) => {
+    setChapaTxRef(data.txRef);
+    // Create the booking after successful payment
+    await handleConfirm({ chapaTxRef: data.txRef });
   };
 
   const printBooking = (): void => {
@@ -859,6 +881,7 @@ const BookingModal: React.FC<BookingModalProps> = ({
       setCustomerInfo({ name: "", email: "", phone: "" });
       setSelectedSchedule(null);
       setError("");
+      setChapaTxRef("");
     }, 300);
   };
 
@@ -1373,75 +1396,30 @@ const BookingModal: React.FC<BookingModalProps> = ({
                     </div>
                   )}
 
-                  {/* Step 3: Payment */}
+                  {/* Step 3: Payment with Chapa Integration */}
                   {step === 3 && (
                     <div className="max-w-lg mx-auto">
-                      <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-2xl p-8 text-center mb-6">
-                        <div className="text-5xl font-bold text-teal-600 mb-2">
-                          {formatCurrency(calculateTotal())}
-                        </div>
-                        <p className="text-gray-600">
-                          for {selectedSeats.length} ticket(s)
-                        </p>
-                        <div className="mt-3 inline-flex items-center gap-1 bg-white/50 rounded-full px-3 py-1 text-xs">
-                          <Ticket className="h-3 w-3" />
-                          {selectedSeats.map((s) => s.seat_label).join(", ")}
-                        </div>
-                      </div>
-
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200 mb-6">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-14 h-14 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full flex items-center justify-center">
-                            <Wallet className="h-7 w-7 text-white" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-green-800 text-lg">
-                              Secure Payment
-                            </h4>
-                            <p className="text-xs text-green-600">
-                              Powered by Chapa Payment Gateway
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          {[
-                            { icon: CreditCard, name: "Credit/Debit Card" },
-                            { icon: Phone, name: "Telebirr" },
-                            { icon: Wallet, name: "CBE Birr" },
-                          ].map((method) => (
-                            <div
-                              key={method.name}
-                              className="flex items-center gap-3 p-3 bg-white dark:bg-dark-800 rounded-xl hover:shadow-md transition cursor-pointer border border-transparent hover:border-green-300"
-                            >
-                              <method.icon className="h-5 w-5 text-green-600" />
-                              <span className="text-sm">{method.name}</span>
-                              <div className="ml-auto">
-                                <div className="w-4 h-4 rounded-full border-2 border-green-600" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={handleConfirm}
-                        disabled={isProcessing}
-                        className="w-full py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 text-lg flex items-center justify-center gap-2"
-                        type="button"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="animate-spin h-5 w-5" />{" "}
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="h-5 w-5" /> Pay{" "}
-                            {formatCurrency(calculateTotal())}
-                          </>
-                        )}
-                      </button>
+                      <ChapaCheckout
+                        amount={calculateTotal()}
+                        email={customerInfo.email}
+                        firstName={
+                          customerInfo.name.split(" ")[0] || customerInfo.name
+                        }
+                        lastName={
+                          customerInfo.name.split(" ").slice(1).join(" ") || ""
+                        }
+                        phone={customerInfo.phone}
+                        eventTitle={show.title}
+                        eventId={show.id}
+                        scheduleId={selectedSchedule?.id || ""}
+                        selectedSeats={selectedSeats.map((s) => s.seat_label)}
+                        customerName={customerInfo.name}
+                        onSuccess={handleChapaSuccess}
+                        onCancel={() => setStep(2)}
+                        onError={(errorMsg) => {
+                          setError(errorMsg);
+                        }}
+                      />
                     </div>
                   )}
                 </div>
