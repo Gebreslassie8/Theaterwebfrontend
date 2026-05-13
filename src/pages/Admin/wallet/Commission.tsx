@@ -3,35 +3,24 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
     TrendingUp,
-    TrendingDown,
     Download,
-    Filter,
     RefreshCw,
     Search,
-    Eye,
-    CheckCircle,
-    XCircle,
-    Clock,
-    AlertCircle,
     Wallet,
     Building,
     Percent,
     CreditCard,
-    Activity,
-    ArrowUpRight,
-    ArrowDownRight,
-    Users,
-    Receipt,
-    Award,
+    Clock,
+    AlertCircle,
     Smartphone,
     Banknote,
-    Send,
     Calendar as CalendarIcon,
-    Loader2
+    Loader2,
+    Award,
+    Receipt,
+    DollarSign
 } from 'lucide-react';
 import {
-    LineChart,
-    Line,
     AreaChart,
     Area,
     PieChart as RePieChart,
@@ -62,7 +51,7 @@ interface CommissionTransaction {
     status: 'paid' | 'pending' | 'overdue';
     dueDate: string;
     paidDate?: string;
-    paymentMethod: 'cash' | 'chapa' | 'telebirr' | 'bank_transfer';
+    paymentMethod: string;
     period: { start: string; end: string };
     ticketsSold: number;
     eventsCount: number;
@@ -76,6 +65,12 @@ interface TopTheater {
     ticketsSold: number;
     eventsCount: number;
     rank: number;
+}
+
+interface SystemWallet {
+    balance: number;
+    total_commission_earned: number;
+    total_paid_out: number;
 }
 
 type DateRangeType = 'daily' | 'monthly' | 'yearly' | 'custom';
@@ -92,16 +87,26 @@ const CommissionAnalytics: React.FC = () => {
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
     const [topTheaters, setTopTheaters] = useState<TopTheater[]>([]);
+    const [systemWallet, setSystemWallet] = useState<SystemWallet | null>(null);
 
     // ============================================
-    // INLINE BACKEND - SUPABASE QUERIES
+    // FETCH REAL DATA FROM SUPABASE
     // ============================================
 
-    // Fetch commission data from database
     const fetchCommissionData = async () => {
         setIsLoading(true);
         try {
-            // Get earnings data with theater info
+            // 1. Fetch system wallet
+            const { data: walletData, error: walletError } = await supabase
+                .from('system_wallet')
+                .select('*')
+                .single();
+
+            if (!walletError && walletData) {
+                setSystemWallet(walletData);
+            }
+
+            // 2. Fetch earnings with theater and contract info
             const { data: earnings, error: earningsError } = await supabase
                 .from('earnings')
                 .select(`
@@ -111,36 +116,70 @@ const CommissionAnalytics: React.FC = () => {
                     net_amount,
                     created_at,
                     theater_id,
-                    booking_id,
-                    theaters (
+                    reservation_id,
+                    contract_id,
+                    is_subscription_payment,
+                    theaters:theater_id (
                         id,
                         legal_business_name,
                         city,
-                        address
+                        address,
+                        email,
+                        phone
+                    ),
+                    owners_contracts:contract_id (
+                        contract_type,
+                        commission_rate
                     )
                 `)
+                .eq('is_subscription_payment', false)
                 .order('created_at', { ascending: false });
 
             if (earningsError) throw earningsError;
 
-            // Get payment data for status
-            const { data: payments, error: paymentsError } = await supabase
-                .from('payments')
-                .select('id, booking_id, payment_status, payment_method, created_at')
-                .eq('payment_status', 'completed');
+            // 3. Fetch payment information from reservations
+            const { data: reservations, error: reservationsError } = await supabase
+                .from('reservations')
+                .select('id, payment_status, payment_method, created_at')
+                .in('status', ['confirmed', 'completed']);
 
-            if (paymentsError) throw paymentsError;
+            if (reservationsError) throw reservationsError;
+
+            // 4. Fetch contract info for commission rates
+            const { data: contracts, error: contractsError } = await supabase
+                .from('owners_contracts')
+                .select('theater_id, commission_rate, contract_type')
+                .eq('status', 'active');
+
+            if (contractsError) throw contractsError;
+
+            // Build contract rate map
+            const contractRateMap: Record<string, number> = {};
+            contracts?.forEach(contract => {
+                contractRateMap[contract.theater_id] = contract.commission_rate;
+            });
+
+            // Build payment map
+            const paymentMap: Record<string, { status: string; method: string; date: string }> = {};
+            reservations?.forEach(res => {
+                paymentMap[res.id] = {
+                    status: res.payment_status || 'pending',
+                    method: res.payment_method || 'bank_transfer',
+                    date: res.created_at
+                };
+            });
 
             // Transform data
             const transactions: CommissionTransaction[] = earnings?.map(earning => {
-                const relatedPayment = payments?.find(p => p.booking_id === earning.booking_id);
+                const theater = earning.theaters;
+                const contract = earning.owners_contracts;
+                const payment = paymentMap[earning.reservation_id || ''] || { status: 'pending', method: 'bank_transfer', date: '' };
                 
                 // Determine status based on payment
                 let status: 'paid' | 'pending' | 'overdue' = 'pending';
-                if (relatedPayment?.payment_status === 'completed') {
+                if (payment.status === 'completed' || payment.status === 'confirmed') {
                     status = 'paid';
                 } else {
-                    // Check if overdue (older than 30 days)
                     const createdDate = new Date(earning.created_at);
                     const now = new Date();
                     const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 3600 * 24);
@@ -150,20 +189,18 @@ const CommissionAnalytics: React.FC = () => {
                 return {
                     id: earning.id,
                     theaterId: earning.theater_id,
-                    theaterName: earning.theaters?.legal_business_name || 'Unknown Theater',
-                    theaterLocation: `${earning.theaters?.city || 'Unknown'}, ${earning.theaters?.address || ''}`,
-                    commissionRate: earning.commission_amount && earning.gross_amount 
-                        ? (earning.commission_amount / earning.gross_amount) * 100 
-                        : 8,
+                    theaterName: theater?.legal_business_name || 'Unknown Theater',
+                    theaterLocation: `${theater?.city || 'Unknown'}, ${theater?.address || ''}`,
+                    commissionRate: contract?.commission_rate || contractRateMap[earning.theater_id] || 8,
                     totalRevenue: earning.gross_amount || 0,
                     commissionAmount: earning.commission_amount || 0,
                     status,
                     dueDate: earning.created_at,
-                    paidDate: relatedPayment?.created_at,
-                    paymentMethod: (relatedPayment?.payment_method as any) || 'bank_transfer',
+                    paidDate: payment.date || undefined,
+                    paymentMethod: payment.method,
                     period: {
-                        start: new Date(earning.created_at).toISOString(),
-                        end: new Date(earning.created_at).toISOString()
+                        start: earning.created_at,
+                        end: earning.created_at
                     },
                     ticketsSold: 1,
                     eventsCount: 1
@@ -186,7 +223,6 @@ const CommissionAnalytics: React.FC = () => {
         }
     };
 
-    // Calculate top performing theaters
     const calculateTopTheaters = (data: CommissionTransaction[]) => {
         const theaterMap = new Map<string, TopTheater>();
         
@@ -217,12 +253,10 @@ const CommissionAnalytics: React.FC = () => {
         setTopTheaters(sorted);
     };
 
-    // Load data on mount
     useEffect(() => {
         fetchCommissionData();
     }, []);
 
-    // Date filtering logic
     const filterByDateRange = (transaction: CommissionTransaction): boolean => {
         const transactionDate = new Date(transaction.dueDate);
         const now = new Date();
@@ -249,14 +283,10 @@ const CommissionAnalytics: React.FC = () => {
         }
     };
 
-    // Filtered data
     const filteredCommissions = useMemo(() => {
         let filtered = [...commissions];
-        
-        // Apply date range filter
         filtered = filtered.filter(filterByDateRange);
         
-        // Apply search filter
         if (searchTerm) {
             filtered = filtered.filter(c =>
                 c.theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -264,12 +294,10 @@ const CommissionAnalytics: React.FC = () => {
             );
         }
         
-        // Apply status filter
         if (filterStatus !== 'all') {
             filtered = filtered.filter(c => c.status === filterStatus);
         }
         
-        // Apply payment method filter
         if (filterPaymentMethod !== 'all') {
             filtered = filtered.filter(c => c.paymentMethod === filterPaymentMethod);
         }
@@ -277,7 +305,6 @@ const CommissionAnalytics: React.FC = () => {
         return filtered;
     }, [commissions, searchTerm, filterStatus, filterPaymentMethod, dateRangeType, customStartDate, customEndDate]);
 
-    // Calculate totals (removed totalRevenue and overdueTotal from display)
     const totals = useMemo(() => {
         const totalCommission = filteredCommissions.reduce((sum, c) => sum + c.commissionAmount, 0);
         const cashTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'cash').reduce((sum, c) => sum + c.commissionAmount, 0);
@@ -293,10 +320,8 @@ const CommissionAnalytics: React.FC = () => {
         };
     }, [filteredCommissions]);
 
-    // Trend data based on date range
     const trendData = useMemo(() => {
         if (dateRangeType === 'daily') {
-            // Last 7 days
             const last7Days = Array.from({ length: 7 }, (_, i) => {
                 const d = new Date();
                 d.setDate(d.getDate() - (6 - i));
@@ -315,7 +340,6 @@ const CommissionAnalytics: React.FC = () => {
                 };
             });
         } else if (dateRangeType === 'yearly') {
-            // Last 5 years
             const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - (4 - i));
             return years.map(year => {
                 const yearCommissions = filteredCommissions.filter(c => 
@@ -329,7 +353,6 @@ const CommissionAnalytics: React.FC = () => {
                 };
             });
         } else {
-            // Monthly - last 12 months
             const months = Array.from({ length: 12 }, (_, i) => {
                 const d = new Date();
                 d.setMonth(d.getMonth() - (11 - i));
@@ -350,7 +373,6 @@ const CommissionAnalytics: React.FC = () => {
         }
     }, [filteredCommissions, dateRangeType]);
 
-    // Payment method distribution
     const paymentMethodData = useMemo(() => {
         return [
             { name: 'Cash', value: totals.cashTotal, color: '#10B981' },
@@ -360,7 +382,51 @@ const CommissionAnalytics: React.FC = () => {
         ].filter(item => item.value > 0);
     }, [totals]);
 
-    // Top Theaters for ReusableTable
+    const formatETB = (amount: number) => {
+        if (amount === 0) return 'ETB 0';
+        return `ETB ${amount.toLocaleString()}`;
+    };
+
+    const handleResetFilters = () => {
+        setSearchTerm('');
+        setFilterStatus('all');
+        setFilterPaymentMethod('all');
+        setDateRangeType('monthly');
+        setCustomStartDate('');
+        setCustomEndDate('');
+        setPopupMessage({ title: 'Filters Reset', message: 'All filters have been cleared', type: 'success' });
+        setShowSuccessPopup(true);
+    };
+
+    const handleExport = () => {
+        const csvContent = [
+            ['Theater Name', 'Location', 'Commission Amount', 'Status', 'Payment Method', 'Date'],
+            ...filteredCommissions.map(c => [
+                c.theaterName,
+                c.theaterLocation,
+                c.commissionAmount,
+                c.status,
+                c.paymentMethod,
+                new Date(c.dueDate).toLocaleDateString()
+            ])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `commission_analytics_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        setPopupMessage({
+            title: 'Export Successful',
+            message: 'Commission data exported to CSV',
+            type: 'success'
+        });
+        setShowSuccessPopup(true);
+    };
+
     const topTheatersColumns = [
         {
             Header: 'Rank',
@@ -388,7 +454,15 @@ const CommissionAnalytics: React.FC = () => {
             accessor: 'totalCommission',
             sortable: true,
             Cell: (row: TopTheater) => (
-                <p className="font-bold text-teal-600">ETB {row.totalCommission.toLocaleString()}</p>
+                <p className="font-bold text-teal-600">{formatETB(row.totalCommission)}</p>
+            )
+        },
+        {
+            Header: 'Revenue',
+            accessor: 'totalRevenue',
+            sortable: true,
+            Cell: (row: TopTheater) => (
+                <p className="text-sm text-gray-900">{formatETB(row.totalRevenue)}</p>
             )
         },
         {
@@ -397,14 +471,6 @@ const CommissionAnalytics: React.FC = () => {
             sortable: true,
             Cell: (row: TopTheater) => (
                 <p className="text-sm text-gray-900">{row.ticketsSold.toLocaleString()}</p>
-            )
-        },
-        {
-            Header: 'Events',
-            accessor: 'eventsCount',
-            sortable: true,
-            Cell: (row: TopTheater) => (
-                <p className="text-sm text-gray-900">{row.eventsCount}</p>
             )
         }
     ];
@@ -432,11 +498,19 @@ const CommissionAnalytics: React.FC = () => {
             )
         },
         {
+            Header: 'Revenue',
+            accessor: 'totalRevenue',
+            sortable: true,
+            Cell: (row: CommissionTransaction) => (
+                <p className="text-sm font-semibold text-green-600">{formatETB(row.totalRevenue)}</p>
+            )
+        },
+        {
             Header: 'Commission',
             accessor: 'commissionAmount',
             sortable: true,
             Cell: (row: CommissionTransaction) => (
-                <p className="text-sm font-bold text-teal-600">ETB {row.commissionAmount.toLocaleString()}</p>
+                <p className="text-sm font-bold text-teal-600">{formatETB(row.commissionAmount)}</p>
             )
         },
         {
@@ -472,24 +546,11 @@ const CommissionAnalytics: React.FC = () => {
                     telebirr: { bg: 'bg-purple-100', text: 'text-purple-700', label: '📱 Telebirr' },
                     bank_transfer: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: '🏦 Bank Transfer' }
                 };
-                const c = config[row.paymentMethod];
+                const c = config[row.paymentMethod] || config.bank_transfer;
                 return <span className={`px-2 py-1 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{c.label}</span>;
             }
         }
     ];
-
-    const formatETB = (amount: number) => `ETB ${amount.toLocaleString()}`;
-
-    const handleResetFilters = () => {
-        setSearchTerm('');
-        setFilterStatus('all');
-        setFilterPaymentMethod('all');
-        setDateRangeType('monthly');
-        setCustomStartDate('');
-        setCustomEndDate('');
-        setPopupMessage({ title: 'Filters Reset', message: 'All filters have been cleared', type: 'success' });
-        setShowSuccessPopup(true);
-    };
 
     if (isLoading) {
         return (
@@ -507,15 +568,15 @@ const CommissionAnalytics: React.FC = () => {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Commission Analytics</h1>
-                <p className="text-sm text-gray-500">Track and analyze theater commissions</p>
+                <p className="text-sm text-gray-500">Track and analyze theater commissions from real data</p>
             </div>
 
-            {/* Stats Cards - Removed Total Revenue and Overdue Payment */}
+            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-3 bg-emerald-500 rounded-xl text-white"><Wallet className="h-5 w-5" /></div>
-                        <span className="text-green-600 text-sm">+12.5%</span>
+                        <span className="text-green-600 text-sm">{filteredCommissions.length} transactions</span>
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.totalCommission)}</p>
                     <p className="text-sm text-gray-500">Total Commission</p>
@@ -523,7 +584,6 @@ const CommissionAnalytics: React.FC = () => {
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-3 bg-green-500 rounded-xl text-white"><Banknote className="h-5 w-5" /></div>
-                        <span className="text-green-600 text-sm">+15.3%</span>
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.paidTotal)}</p>
                     <p className="text-sm text-gray-500">Paid Commission</p>
@@ -531,20 +591,41 @@ const CommissionAnalytics: React.FC = () => {
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-3 bg-yellow-500 rounded-xl text-white"><Clock className="h-5 w-5" /></div>
-                        <span className="text-yellow-600 text-sm">Pending</span>
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.pendingTotal)}</p>
                     <p className="text-sm text-gray-500">Pending Payment</p>
                 </div>
                 <div className="bg-white rounded-xl p-5 shadow-lg border">
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-purple-500 rounded-xl text-white"><Smartphone className="h-5 w-5" /></div>
-                        <span className="text-green-600 text-sm">+8.2%</span>
+                        <div className="p-3 bg-blue-500 rounded-xl text-white"><Smartphone className="h-5 w-5" /></div>
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.chapaTotal)}</p>
-                    <p className="text-sm text-gray-500">Chapa Payments</p>
+                    <p className="text-sm text-gray-500">Digital Payments</p>
                 </div>
             </div>
+
+            {/* System Wallet Card */}
+            {systemWallet && (
+                <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2.5 bg-white/20 rounded-xl">
+                            <DollarSign className="h-6 w-6 text-white" />
+                        </div>
+                        <span className="text-white/80 text-base font-medium">System Wallet Balance</span>
+                    </div>
+                    <p className="text-3xl font-bold">{formatETB(systemWallet.balance)}</p>
+                    <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-white/20">
+                        <div>
+                            <p className="text-white/60 text-xs">Total Commission Earned</p>
+                            <p className="text-white font-semibold">{formatETB(systemWallet.total_commission_earned)}</p>
+                        </div>
+                        <div>
+                            <p className="text-white/60 text-xs">Total Paid Out</p>
+                            <p className="text-white font-semibold">{formatETB(systemWallet.total_paid_out)}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Date Range Selector */}
             <div className="bg-white rounded-xl p-5 shadow-lg border">
@@ -554,46 +635,19 @@ const CommissionAnalytics: React.FC = () => {
                         <span className="text-sm font-medium text-gray-700">Date Range:</span>
                     </div>
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => setDateRangeType('daily')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                dateRangeType === 'daily' 
-                                    ? 'bg-teal-600 text-white' 
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                            Daily
-                        </button>
-                        <button
-                            onClick={() => setDateRangeType('monthly')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                dateRangeType === 'monthly' 
-                                    ? 'bg-teal-600 text-white' 
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                            Monthly
-                        </button>
-                        <button
-                            onClick={() => setDateRangeType('yearly')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                dateRangeType === 'yearly' 
-                                    ? 'bg-teal-600 text-white' 
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                            Yearly
-                        </button>
-                        <button
-                            onClick={() => setDateRangeType('custom')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                dateRangeType === 'custom' 
-                                    ? 'bg-teal-600 text-white' 
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                            Custom
-                        </button>
+                        {['daily', 'monthly', 'yearly', 'custom'].map((range) => (
+                            <button
+                                key={range}
+                                onClick={() => setDateRangeType(range as DateRangeType)}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+                                    dateRangeType === range 
+                                        ? 'bg-teal-600 text-white' 
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                            >
+                                {range}
+                            </button>
+                        ))}
                     </div>
                     
                     {dateRangeType === 'custom' && (
@@ -667,11 +721,19 @@ const CommissionAnalytics: React.FC = () => {
                         Reset Filters
                     </button>
                 </div>
+                <div>
+                    <button
+                        onClick={handleExport}
+                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors mt-6"
+                    >
+                        <Download className="h-4 w-4 inline mr-2" />
+                        Export Data
+                    </button>
+                </div>
             </div>
 
             {/* Charts Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Area Chart - Commission Trend */}
                 <div className="bg-white rounded-xl p-5 shadow-lg">
                     <h3 className="text-lg font-semibold mb-4">
                         Commission Trend ({dateRangeType === 'daily' ? 'Daily' : dateRangeType === 'yearly' ? 'Yearly' : 'Monthly'})
@@ -693,7 +755,6 @@ const CommissionAnalytics: React.FC = () => {
                     </ResponsiveContainer>
                 </div>
 
-                {/* Pie Chart - Payment Methods */}
                 <div className="bg-white rounded-xl p-5 shadow-lg">
                     <h3 className="text-lg font-semibold mb-4">Payment Methods Distribution</h3>
                     <ResponsiveContainer width="100%" height={300}>
@@ -726,7 +787,7 @@ const CommissionAnalytics: React.FC = () => {
                 </div>
             </div>
 
-            {/* Bar Chart - Cash vs Chapa */}
+            {/* Bar Chart */}
             <div className="bg-white rounded-xl p-5 shadow-lg">
                 <h3 className="text-lg font-semibold mb-4">Payment Method Collection Comparison</h3>
                 <ResponsiveContainer width="100%" height={300}>
@@ -742,7 +803,7 @@ const CommissionAnalytics: React.FC = () => {
                 </ResponsiveContainer>
             </div>
 
-            {/* Top Performing Theaters Table using ReusableTable */}
+            {/* Top Performing Theaters Table */}
             <ReusableTable
                 columns={topTheatersColumns}
                 data={topTheaters}
@@ -754,7 +815,7 @@ const CommissionAnalytics: React.FC = () => {
                 itemsPerPage={10}
             />
 
-            {/* Commission Transactions Table using ReusableTable */}
+            {/* Commission Transactions Table */}
             <ReusableTable
                 columns={transactionColumns}
                 data={filteredCommissions}
