@@ -4,9 +4,7 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     UsersRound,
-    UserPlus,
     Eye,
-    Edit,
     Trash2,
     RefreshCw,
     Ban,
@@ -15,7 +13,6 @@ import {
     XCircle,
     AlertCircle,
     Search,
-    Activity,
     UserCheck,
     ShieldCheck,
     Crown,
@@ -26,19 +23,16 @@ import {
     Calendar,
     AlertTriangle,
     UserX,
-    Trash,
     Clock,
     Loader2
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
-import AddUser from './AddNewUser';
-import UpdateUser from './UpdateUser';
 import ViewUsers from './ViewUsers';
 import supabase from '@/config/supabaseClient';
 
-// User Type Definition
+// User Type Definition matching your schema
 interface User {
     id: string;
     username: string;
@@ -48,10 +42,12 @@ interface User {
     password?: string;
     profile_image_url?: string;
     role: 'super_admin' | 'theater_owner' | 'theater_manager' | 'sales_person' | 'qr_scanner' | 'customer';
-    status: 'active' | 'inactive' | 'pending';
+    status: 'active' | 'inactive' | 'suspended';
     created_at?: string;
     updated_at?: string;
     last_login?: string;
+    bio?: string;
+    location?: string;
 }
 
 // Animation variants
@@ -270,10 +266,7 @@ const ReactivateUserModal: React.FC<ReactivateUserModalProps> = ({ user, onClose
 const UserManagement: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [viewingUser, setViewingUser] = useState<User | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showDeactivateModal, setShowDeactivateModal] = useState(false);
@@ -314,7 +307,9 @@ const UserManagement: React.FC = () => {
                 status: user.status,
                 created_at: user.created_at,
                 updated_at: user.updated_at,
-                last_login: user.last_login
+                last_login: user.last_login,
+                bio: user.bio,
+                location: user.location
             }));
 
             setUsers(formattedUsers);
@@ -335,7 +330,7 @@ const UserManagement: React.FC = () => {
         totalUsers: users.length,
         activeUsers: users.filter(u => u.status === 'active').length,
         inactiveUsers: users.filter(u => u.status === 'inactive').length,
-        pendingUsers: users.filter(u => u.status === 'pending').length,
+        suspendedUsers: users.filter(u => u.status === 'suspended').length,
         newThisMonth: users.filter(u => {
             if (u.created_at) {
                 const createdDate = new Date(u.created_at);
@@ -453,17 +448,6 @@ const UserManagement: React.FC = () => {
         }
     };
 
-    const handleAddUser = () => {
-        fetchUsers();
-        setShowAddModal(false);
-    };
-
-    const handleUpdateUser = () => {
-        fetchUsers();
-        setShowUpdateModal(false);
-        setSelectedUser(null);
-    };
-
     const getRoleDisplay = (role: string) => {
         const roles: Record<string, { label: string; icon: React.ElementType; color: string }> = {
             super_admin: { label: 'Super Admin', icon: ShieldCheck, color: 'bg-red-100 text-red-700' },
@@ -480,7 +464,7 @@ const UserManagement: React.FC = () => {
         const statuses: Record<string, { label: string; icon: React.ElementType; color: string }> = {
             active: { label: 'Active', icon: CheckCircle, color: 'bg-green-100 text-green-700' },
             inactive: { label: 'Inactive', icon: XCircle, color: 'bg-yellow-100 text-yellow-700' },
-            pending: { label: 'Pending', icon: Clock, color: 'bg-orange-100 text-orange-700' }
+            suspended: { label: 'Suspended', icon: AlertTriangle, color: 'bg-red-100 text-red-700' }
         };
         return statuses[status] || statuses.active;
     };
@@ -584,17 +568,6 @@ const UserManagement: React.FC = () => {
                 <Eye className="h-4 w-4 text-blue-600" />
             </button>
 
-            <button
-                onClick={() => {
-                    setSelectedUser(row);
-                    setShowUpdateModal(true);
-                }}
-                className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-all duration-200"
-                title="Edit User"
-            >
-                <Edit className="h-4 w-4 text-teal-600" />
-            </button>
-
             {canDeactivate(row) && (
                 <button
                     onClick={() => {
@@ -642,7 +615,7 @@ const UserManagement: React.FC = () => {
             Header: 'Actions',
             accessor: 'actions',
             Cell: renderActions,
-            width: '280px',
+            width: '200px',
             align: 'left' as const
         }
     ];
@@ -662,7 +635,7 @@ const UserManagement: React.FC = () => {
         { title: 'Total Users', value: stats.totalUsers, icon: UsersRound, color: 'from-teal-500 to-teal-600', delay: 0.1, link: '/admin/users' },
         { title: 'Active Users', value: stats.activeUsers, icon: UserCheck, color: 'from-green-500 to-emerald-600', delay: 0.15, link: '/admin/users?status=active' },
         { title: 'Inactive Users', value: stats.inactiveUsers, icon: UserX, color: 'from-yellow-500 to-orange-600', delay: 0.2, link: '/admin/users?status=inactive' },
-        { title: 'Pending', value: stats.pendingUsers, icon: Clock, color: 'from-orange-500 to-red-600', delay: 0.25, link: '/admin/users?status=pending' },
+        { title: 'Suspended', value: stats.suspendedUsers, icon: AlertTriangle, color: 'from-red-500 to-red-600', delay: 0.25, link: '/admin/users?status=suspended' },
         { title: 'New This Month', value: stats.newThisMonth, icon: Calendar, color: 'from-purple-500 to-indigo-600', delay: 0.3, link: '/admin/users?filter=recent' }
     ];
 
@@ -700,7 +673,7 @@ const UserManagement: React.FC = () => {
                     ))}
                 </motion.div>
 
-                {/* Search and Filters */}
+                {/* Search and Filters - Removed Add User Button */}
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="relative min-w-[250px]">
@@ -734,15 +707,10 @@ const UserManagement: React.FC = () => {
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
-                            <option value="pending">Pending</option>
+                            <option value="suspended">Suspended</option>
                         </select>
                     </div>
-                    <ReusableButton
-                        onClick={() => setShowAddModal(true)}
-                        icon="UserPlus"
-                        label="Add New User"
-                        className="px-5 py-2.5 text-sm whitespace-nowrap bg-teal-600 hover:bg-teal-700 text-white"
-                    />
+                    {/* Add User Button REMOVED */}
                 </div>
 
                 {/* Table */}
@@ -756,29 +724,7 @@ const UserManagement: React.FC = () => {
                     itemsPerPage={10}
                 />
 
-                {/* Modals */}
-                {showAddModal && (
-                    <AddUser
-                        onSubmit={handleAddUser}
-                        onClose={() => setShowAddModal(false)}
-                        onUserAdded={fetchUsers}
-                        formTitle="Add New User"
-                    />
-                )}
-
-                {showUpdateModal && selectedUser && (
-                    <UpdateUser
-                        user={selectedUser}
-                        isOpen={showUpdateModal}
-                        onClose={() => {
-                            setShowUpdateModal(false);
-                            setSelectedUser(null);
-                        }}
-                        onUpdate={handleUpdateUser}
-                        onUserUpdated={fetchUsers}
-                    />
-                )}
-
+                {/* View Modal */}
                 {showViewModal && viewingUser && (
                     <ViewUsers
                         user={viewingUser}
@@ -786,11 +732,6 @@ const UserManagement: React.FC = () => {
                         onClose={() => {
                             setShowViewModal(false);
                             setViewingUser(null);
-                        }}
-                        onEdit={(user) => {
-                            setShowViewModal(false);
-                            setSelectedUser(user);
-                            setShowUpdateModal(true);
                         }}
                     />
                 )}
