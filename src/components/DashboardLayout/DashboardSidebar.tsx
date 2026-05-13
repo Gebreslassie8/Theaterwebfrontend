@@ -188,7 +188,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             ],
           },
           {
-     name: "Manage Contract Type",
+     name: "Manage Contract ",
      to: "/admin/settings",
     icon: Settings,
  

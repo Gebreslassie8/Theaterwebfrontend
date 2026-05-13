@@ -3,13 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Mail, Phone, MapPin, Clock, Send, MessageCircle,
-    Headphones, Award, Globe, Users,
-    CheckCircle, AlertCircle, ArrowRight,
-    Calendar, Building, Star, Heart, Gift, Ticket,
-    HelpCircle, UserCog, Theater, ChevronDown,
-    Info, Navigation, ExternalLink, Facebook, Instagram, Twitter, Linkedin, Youtube
+    ArrowRight, UserCog, Theater, ChevronDown,
+    Info, ExternalLink, Globe, Navigation, Star, Loader
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import {
     FaFacebook,
     FaTwitter,
@@ -21,6 +17,7 @@ import {
 } from 'react-icons/fa';
 import SuccessPopup from '../components/Reusable/SuccessPopup';
 import { useTranslation } from 'react-i18next';
+import supabase from "@/config/supabaseClient";
 
 // Types
 interface ContactFormData {
@@ -44,40 +41,99 @@ interface FormErrors {
     theaterId?: string;
 }
 
-interface Theater {
-    id: string;
-    name: string;
-    location: string;
-    ownerName: string;
-    phone: string;
-    email: string;
-    address: string;
-    description?: string;
-    socialMedia?: {
-        facebook?: string;
-        twitter?: string;
-        instagram?: string;
-        linkedin?: string;
-        youtube?: string;
-        telegram?: string;
-        tiktok?: string;
-    };
+interface SocialLinks {
+    facebook: string | null;
+    twitter: string | null;
+    instagram: string | null;
+    linkedin: string | null;
+    youtube: string | null;
+    telegram: string | null;
+    tiktok: string | null;
 }
 
-// Theater Social Links Component (translated)
+interface Theater {
+    id: string;
+    legal_business_name: string;
+    city: string;
+    email: string;
+    phone: string;
+    address: string;
+    description?: string;
+    logo_url?: string;
+    latitude?: number;
+    longitude?: number;
+    status?: string;
+    is_approved?: boolean;
+    social_links?: SocialLinks;
+}
+
+// Dynamic Theater Social Links Component - Shows only social links that the theater has added
 const TheaterSocialLinks: React.FC<{ theater: Theater }> = ({ theater }) => {
     const { t } = useTranslation();
-    const socialLinks = [
-        { icon: FaFacebook, href: theater.socialMedia?.facebook || 'https://facebook.com', brandColor: '#1877F2', label: 'Facebook', bgClass: 'bg-[#1877F2]' },
-        { icon: FaTwitter, href: theater.socialMedia?.twitter || 'https://twitter.com', brandColor: '#1DA1F2', label: 'Twitter', bgClass: 'bg-[#1DA1F2]' },
-        { icon: FaInstagram, href: theater.socialMedia?.instagram || 'https://instagram.com', brandColor: '#E4405F', label: 'Instagram', bgClass: 'bg-[#E4405F]' },
-        { icon: FaLinkedin, href: theater.socialMedia?.linkedin || 'https://linkedin.com', brandColor: '#0A66C2', label: 'LinkedIn', bgClass: 'bg-[#0A66C2]' },
-        { icon: FaYoutube, href: theater.socialMedia?.youtube || 'https://youtube.com', brandColor: '#FF0000', label: 'YouTube', bgClass: 'bg-[#FF0000]' },
-        { icon: FaTelegram, href: theater.socialMedia?.telegram || 'https://t.me/theaterhub', brandColor: '#0088cc', label: 'Telegram', bgClass: 'bg-[#0088cc]' },
-        { icon: FaTiktok, href: theater.socialMedia?.tiktok || 'https://tiktok.com', brandColor: '#000000', label: 'TikTok', bgClass: 'bg-[#000000]' }
+    
+    // Define available social platforms with their icons and colors
+    const socialPlatforms = [
+        { 
+            key: 'facebook', 
+            icon: FaFacebook, 
+            label: 'Facebook', 
+            bgClass: 'bg-[#1877F2]',
+            brandColor: '#1877F2'
+        },
+        { 
+            key: 'twitter', 
+            icon: FaTwitter, 
+            label: 'Twitter', 
+            bgClass: 'bg-[#1DA1F2]',
+            brandColor: '#1DA1F2'
+        },
+        { 
+            key: 'instagram', 
+            icon: FaInstagram, 
+            label: 'Instagram', 
+            bgClass: 'bg-[#E4405F]',
+            brandColor: '#E4405F'
+        },
+        { 
+            key: 'linkedin', 
+            icon: FaLinkedin, 
+            label: 'LinkedIn', 
+            bgClass: 'bg-[#0A66C2]',
+            brandColor: '#0A66C2'
+        },
+        { 
+            key: 'youtube', 
+            icon: FaYoutube, 
+            label: 'YouTube', 
+            bgClass: 'bg-[#FF0000]',
+            brandColor: '#FF0000'
+        },
+        { 
+            key: 'telegram', 
+            icon: FaTelegram, 
+            label: 'Telegram', 
+            bgClass: 'bg-[#0088cc]',
+            brandColor: '#0088cc'
+        },
+        { 
+            key: 'tiktok', 
+            icon: FaTiktok, 
+            label: 'TikTok', 
+            bgClass: 'bg-[#000000]',
+            brandColor: '#000000'
+        }
     ];
 
-    const availableLinks = socialLinks.filter(link => link.href);
+    // Filter only social links that the theater has provided
+    const activeSocialLinks = socialPlatforms.filter(platform => {
+        const socialLinks = theater.social_links as SocialLinks;
+        return socialLinks && socialLinks[platform.key as keyof SocialLinks];
+    });
+
+    // If no social links, don't show the section
+    if (activeSocialLinks.length === 0) {
+        return null;
+    }
 
     return (
         <div className="mt-auto pt-4 border-t border-gray-200">
@@ -85,19 +141,26 @@ const TheaterSocialLinks: React.FC<{ theater: Theater }> = ({ theater }) => {
                 <div className="p-1.5 rounded-lg bg-teal-100">
                     <Globe className="h-4 w-4 text-teal-600" />
                 </div>
-                <h3 className="text-sm font-semibold text-gray-900">{t('contact.theaterSocial.title', { name: theater.name })}</h3>
+                <h3 className="text-sm font-semibold text-gray-900">
+                    {t('contact.theaterSocial.title', { name: theater.legal_business_name })}
+                </h3>
             </div>
             <div className="flex flex-wrap gap-3">
-                {availableLinks.map((social, index) => {
+                {activeSocialLinks.map((social, index) => {
                     const Icon = social.icon;
+                    const socialLinks = theater.social_links as SocialLinks;
+                    const href = socialLinks[social.key as keyof SocialLinks];
+                    if (!href) return null;
+                    
                     return (
                         <a
                             key={index}
-                            href={social.href}
+                            href={href}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`w-10 h-10 flex items-center justify-center rounded-xl text-white transition-all duration-300 transform ${social.bgClass} hover:scale-110 hover:-translate-y-1 shadow-md hover:shadow-lg`}
                             aria-label={social.label}
+                            title={social.label}
                         >
                             <Icon className="h-5 w-5" />
                         </a>
@@ -105,24 +168,89 @@ const TheaterSocialLinks: React.FC<{ theater: Theater }> = ({ theater }) => {
                 })}
             </div>
             <p className="text-xs text-gray-400 mt-4 text-center">
-                {t('contact.theaterSocial.followText', { name: theater.name })}
+                {t('contact.theaterSocial.followText', { name: theater.legal_business_name })}
             </p>
         </div>
     );
 };
 
-// Global Social Links Component (translated)
+// Dynamic Global Social Links Component - Fetches from database
 const GlobalSocialLinks: React.FC = () => {
     const { t } = useTranslation();
-    const socialLinks = [
-        { icon: FaFacebook, href: 'https://facebook.com', brandColor: '#1877F2', label: 'Facebook', bgClass: 'bg-[#1877F2]' },
-        { icon: FaTwitter, href: 'https://twitter.com', brandColor: '#1DA1F2', label: 'Twitter', bgClass: 'bg-[#1DA1F2]' },
-        { icon: FaInstagram, href: 'https://instagram.com', brandColor: '#E4405F', label: 'Instagram', bgClass: 'bg-[#E4405F]' },
-        { icon: FaLinkedin, href: 'https://linkedin.com', brandColor: '#0A66C2', label: 'LinkedIn', bgClass: 'bg-[#0A66C2]' },
-        { icon: FaYoutube, href: 'https://youtube.com', brandColor: '#FF0000', label: 'YouTube', bgClass: 'bg-[#FF0000]' },
-        { icon: FaTelegram, href: 'https://t.me/theaterhub', brandColor: '#0088cc', label: 'Telegram', bgClass: 'bg-[#0088cc]' },
-        { icon: FaTiktok, href: 'https://tiktok.com/@theaterhub', brandColor: '#000000', label: 'TikTok', bgClass: 'bg-[#000000]' }
+    const [socialLinks, setSocialLinks] = useState<SocialLinks | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    // Fetch admin social links from database
+    useEffect(() => {
+        const fetchAdminSocialLinks = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('system_settings')
+                    .select('setting_value')
+                    .eq('setting_key', 'admin_social_links')
+                    .single();
+
+                if (error) throw error;
+                
+                if (data && data.setting_value) {
+                    setSocialLinks(data.setting_value);
+                }
+            } catch (error) {
+                console.error('Error fetching admin social links:', error);
+                // Set default fallback links if database fetch fails
+                setSocialLinks({
+                    facebook: 'https://facebook.com',
+                    twitter: 'https://twitter.com',
+                    instagram: 'https://instagram.com',
+                    linkedin: 'https://linkedin.com',
+                    youtube: 'https://youtube.com',
+                    telegram: 'https://t.me',
+                    tiktok: 'https://tiktok.com'
+                });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAdminSocialLinks();
+    }, []);
+
+    // Define social platforms configuration
+    const socialPlatforms = [
+        { key: 'facebook', icon: FaFacebook, label: 'Facebook', bgClass: 'bg-[#1877F2]' },
+        { key: 'twitter', icon: FaTwitter, label: 'Twitter', bgClass: 'bg-[#1DA1F2]' },
+        { key: 'instagram', icon: FaInstagram, label: 'Instagram', bgClass: 'bg-[#E4405F]' },
+        { key: 'linkedin', icon: FaLinkedin, label: 'LinkedIn', bgClass: 'bg-[#0A66C2]' },
+        { key: 'youtube', icon: FaYoutube, label: 'YouTube', bgClass: 'bg-[#FF0000]' },
+        { key: 'telegram', icon: FaTelegram, label: 'Telegram', bgClass: 'bg-[#0088cc]' },
+        { key: 'tiktok', icon: FaTiktok, label: 'TikTok', bgClass: 'bg-[#000000]' }
     ];
+
+    // Filter only social links that exist in database
+    const activeSocialLinks = socialPlatforms.filter(platform => {
+        return socialLinks && socialLinks[platform.key as keyof SocialLinks];
+    });
+
+    if (loading) {
+        return (
+            <div className="mt-auto pt-4 border-t border-gray-200">
+                <div className="flex items-center gap-3 mb-4">
+                    <div className="p-1.5 rounded-lg bg-teal-100">
+                        <Globe className="h-4 w-4 text-teal-600" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">{t('contact.globalSocial.title')}</h3>
+                </div>
+                <div className="flex justify-center py-4">
+                    <Loader className="h-5 w-5 text-teal-600 animate-spin" />
+                </div>
+            </div>
+        );
+    }
+
+    // Don't show section if no social links are configured
+    if (!socialLinks || activeSocialLinks.length === 0) {
+        return null;
+    }
 
     return (
         <div className="mt-auto pt-4 border-t border-gray-200">
@@ -133,16 +261,20 @@ const GlobalSocialLinks: React.FC = () => {
                 <h3 className="text-sm font-semibold text-gray-900">{t('contact.globalSocial.title')}</h3>
             </div>
             <div className="flex flex-wrap gap-3">
-                {socialLinks.map((social, index) => {
+                {activeSocialLinks.map((social, index) => {
                     const Icon = social.icon;
+                    const href = socialLinks[social.key as keyof SocialLinks];
+                    if (!href) return null;
+                    
                     return (
                         <a
                             key={index}
-                            href={social.href}
+                            href={href}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`w-10 h-10 flex items-center justify-center rounded-xl text-white transition-all duration-300 transform ${social.bgClass} hover:scale-110 hover:-translate-y-1 shadow-md hover:shadow-lg`}
                             aria-label={social.label}
+                            title={social.label}
                         >
                             <Icon className="h-5 w-5" />
                         </a>
@@ -173,41 +305,82 @@ const Contact: React.FC = () => {
     const [showSuccessPopup, setShowSuccessPopup] = useState<boolean>(false);
     const [theaters, setTheaters] = useState<Theater[]>([]);
     const [loadingTheaters, setLoadingTheaters] = useState<boolean>(false);
+    const [fetchError, setFetchError] = useState<string | null>(null);
 
-    // Fetch registered theaters with their social media links
+    // Fetch registered theaters from database with social links
     useEffect(() => {
         const fetchTheaters = async () => {
+            console.log("Fetching theaters with social links...");
             setLoadingTheaters(true);
-            // Simulate API call - replace with actual API
-            setTimeout(() => {
-                const mockTheaters: Theater[] = [
-                    { 
-                        id: '1', 
-                        name: 'Grand Theater', 
-                        location: 'Addis Ababa, Bole', 
-                        ownerName: 'John Doe',
-                        phone: '+251 911 234 567',
-                        email: 'info@grandtheater.com',
-                        address: 'Bole Road, Addis Ababa, Ethiopia',
-                        description: 'Premier cinema in Bole area with luxury seating',
-                        socialMedia: {
-                            facebook: 'https://facebook.com/grandtheater',
-                            instagram: 'https://instagram.com/grandtheater',
-                            twitter: 'https://twitter.com/grandtheater',
-                            youtube: 'https://youtube.com/grandtheater',
-                            telegram: 'https://t.me/grandtheater'
+            setFetchError(null);
+            
+            try {
+                // Fetch approved theaters with all fields including social_links
+                const { data, error } = await supabase
+                    .from('theaters')
+                    .select('id, legal_business_name, city, email, phone, address, description, logo_url, status, is_approved, social_links')
+                    .eq('status', 'approved')
+                    .eq('is_approved', true)
+                    .order('legal_business_name', { ascending: true });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    setFetchError(error.message);
+                    throw error;
+                }
+                
+                console.log("Fetched theaters with social links:", data);
+                
+                if (data && data.length > 0) {
+                    const mappedTheaters: Theater[] = data.map(theater => ({
+                        id: theater.id,
+                        legal_business_name: theater.legal_business_name,
+                        city: theater.city || 'Address not provided',
+                        email: theater.email,
+                        phone: theater.phone,
+                        address: theater.address || 'Address not provided',
+                        description: theater.description,
+                        logo_url: theater.logo_url,
+                        status: theater.status,
+                        is_approved: theater.is_approved,
+                        social_links: theater.social_links || {
+                            facebook: null,
+                            twitter: null,
+                            instagram: null,
+                            linkedin: null,
+                            youtube: null,
+                            telegram: null,
+                            tiktok: null
                         }
-                    },
-                    // ... other theaters (keep as before)
-                ];
-                setTheaters(mockTheaters);
+                    }));
+                    
+                    setTheaters(mappedTheaters);
+                    
+                    // Log which theaters have social links
+                    mappedTheaters.forEach(theater => {
+                        const hasSocialLinks = Object.values(theater.social_links || {}).some(link => link);
+                        if (hasSocialLinks) {
+                            console.log(`📱 ${theater.legal_business_name} has social media links:`, theater.social_links);
+                        }
+                    });
+                    
+                } else {
+                    console.log("No approved theaters found");
+                    setTheaters([]);
+                }
+                
+            } catch (error: any) {
+                console.error('Error fetching theaters:', error);
+                setFetchError(error.message);
+            } finally {
                 setLoadingTheaters(false);
-            }, 500);
+            }
         };
+        
         fetchTheaters();
     }, []);
 
-    // Contact Information (translated labels)
+    // Contact Information
     const contactInfo = [
         {
             icon: Phone,
@@ -276,15 +449,60 @@ const Contact: React.FC = () => {
         return Object.keys(newErrors).length === 0;
     };
 
+    // Submit to database
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
+        
         setIsSubmitting(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            console.log('Form submitted');
+        try {
+            // Get IP address
+            let ipAddress = '';
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                ipAddress = ipData.ip;
+            } catch (error) {
+                console.error('Error fetching IP:', error);
+            }
+
+            // Get selected theater details
+            const selectedTheater = theaters.find(t => t.id === formData.theaterId);
+            const recipientName = formData.recipientType === 'admin' 
+                ? 'Admin Support' 
+                : selectedTheater?.legal_business_name || 'Theater';
+
+            // Insert into contact_messages table
+            const { data, error } = await supabase
+                .from('contact_messages')
+                .insert({
+                    sender_name: formData.name,
+                    sender_email: formData.email,
+                    sender_phone: formData.phone || null,
+                    subject: `[${recipientName}] ${formData.subject}`,
+                    message: formData.message,
+                    message_category: formData.category,
+                    recipient_type: formData.recipientType,
+                    theater_id: formData.recipientType === 'theater' ? formData.theaterId : null,
+                    status: 'pending',
+                    ip_address: ipAddress,
+                    user_agent: navigator.userAgent,
+                    referrer_url: window.location.href,
+                })
+                .select();
+
+            if (error) {
+                console.error('Insert error:', error);
+                throw error;
+            }
+
+            console.log('Message sent successfully:', data);
+            
+            // Show success popup
             setShowSuccessPopup(true);
+            
+            // Reset form
             setFormData({
                 name: '',
                 email: '',
@@ -295,8 +513,18 @@ const Contact: React.FC = () => {
                 recipientType: 'admin',
                 theaterId: ''
             });
+
+            // Auto close popup after 5 seconds
+            setTimeout(() => {
+                setShowSuccessPopup(false);
+            }, 5000);
+
+        } catch (error: any) {
+            console.error('Error submitting form:', error);
+            alert(error.message || t('contact.errors.submitFailed') || 'Failed to send message. Please try again.');
+        } finally {
             setIsSubmitting(false);
-        }, 1500);
+        }
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -322,7 +550,7 @@ const Contact: React.FC = () => {
         <>
             <div className="min-h-screen bg-gray-50">
                 {/* Hero Section */}
-                <div className="bg-gradient-to-br from-deepTeal via-deepBlue to-deepTeal text-white relative overflow-hidden">
+            <div className="bg-gradient-to-br from-deepTeal via-deepBlue to-deepTeal text-white relative overflow-hidden">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
                         <div className="text-center max-w-3xl mx-auto">
                             <motion.div
@@ -453,26 +681,55 @@ const Contact: React.FC = () => {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             {t('contact.form.selectTheater')} <span className="text-red-500">*</span>
                                         </label>
-                                        <div className="relative">
-                                            <Theater className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                            <select
-                                                name="theaterId"
-                                                value={formData.theaterId}
-                                                onChange={handleChange}
-                                                className={`w-full pl-10 pr-4 py-3 border ${errors.theaterId ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none appearance-none bg-white`}
-                                                disabled={loadingTheaters}
-                                            >
-                                                <option value="">{t('contact.form.selectTheaterPlaceholder')}</option>
-                                                {theaters.map(theater => (
-                                                    <option key={theater.id} value={theater.id}>
-                                                        {theater.name} - {theater.location}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                        </div>
-                                        {loadingTheaters && <p className="text-xs text-gray-500 mt-1">{t('contact.form.loadingTheaters')}</p>}
+                                        
+                                        {loadingTheaters ? (
+                                            <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-xl">
+                                                <Loader className="h-5 w-5 text-teal-600 animate-spin" />
+                                                <span className="text-sm text-gray-600">{t('contact.form.loadingTheaters')}</span>
+                                            </div>
+                                        ) : fetchError ? (
+                                            <div className="p-4 bg-red-50 rounded-xl border border-red-200">
+                                                <p className="text-sm text-red-600">Error loading theaters: {fetchError}</p>
+                                                <button 
+                                                    onClick={() => window.location.reload()}
+                                                    className="mt-2 text-sm text-teal-600 hover:underline"
+                                                >
+                                                    Try again
+                                                </button>
+                                            </div>
+                                        ) : theaters.length === 0 ? (
+                                            <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                                                <p className="text-sm text-yellow-700">
+                                                    No registered theaters found. Please contact admin to register theaters.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className="relative">
+                                                <Theater className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+                                                <select
+                                                    name="theaterId"
+                                                    value={formData.theaterId}
+                                                    onChange={handleChange}
+                                                    className={`w-full pl-10 pr-4 py-3 border ${errors.theaterId ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none appearance-none bg-white`}
+                                                >
+                                                    <option value="">{t('contact.form.selectTheaterPlaceholder')}</option>
+                                                    {theaters.map(theater => (
+                                                        <option key={theater.id} value={theater.id}>
+                                                            {theater.legal_business_name} - {theater.city}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                                            </div>
+                                        )}
+                                        
                                         {errors.theaterId && <p className="text-red-500 text-xs mt-1">{errors.theaterId}</p>}
+                                        
+                                        {!loadingTheaters && theaters.length > 0 && (
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                {theaters.length} theater{theaters.length !== 1 ? 's' : ''} available
+                                            </p>
+                                        )}
                                     </div>
                                 )}
 
@@ -591,7 +848,7 @@ const Contact: React.FC = () => {
                             </form>
                         </motion.div>
 
-                        {/* Find Us / Theater Info Section */}
+                        {/* Theater Info Section - Shows selected theater details with dynamic social links */}
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -600,10 +857,17 @@ const Contact: React.FC = () => {
                             {formData.recipientType === 'theater' && selectedTheater ? (
                                 <>
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-2 rounded-lg bg-teal-100">
-                                            <Theater className="h-6 w-6 text-teal-600" />
+                                        {selectedTheater.logo_url ? (
+                                            <img src={selectedTheater.logo_url} alt={selectedTheater.legal_business_name} className="w-12 h-12 rounded-lg object-cover" />
+                                        ) : (
+                                            <div className="p-2 rounded-lg bg-teal-100">
+                                                <Theater className="h-6 w-6 text-teal-600" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <h2 className="text-2xl font-bold text-gray-900">{selectedTheater.legal_business_name}</h2>
+                                            <p className="text-sm text-gray-500">{selectedTheater.city}</p>
                                         </div>
-                                        <h2 className="text-2xl font-bold text-gray-900">{selectedTheater.name}</h2>
                                     </div>
 
                                     <div className="space-y-4 mb-6">
@@ -612,7 +876,6 @@ const Contact: React.FC = () => {
                                             <div>
                                                 <p className="text-xs text-teal-600 font-medium">{t('contact.theaterDetail.phoneSupport')}</p>
                                                 <p className="font-semibold text-gray-900">{selectedTheater.phone}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{t('contact.theaterDetail.phoneHours')}</p>
                                                 <a href={`tel:${selectedTheater.phone.replace(/\s/g, '')}`} className="text-teal-600 text-sm mt-2 inline-flex items-center gap-1 hover:gap-2 transition-all">
                                                     {t('contact.theaterDetail.callNow')} <ArrowRight className="h-3 w-3" />
                                                 </a>
@@ -624,7 +887,6 @@ const Contact: React.FC = () => {
                                             <div>
                                                 <p className="text-xs text-blue-600 font-medium">{t('contact.theaterDetail.emailUs')}</p>
                                                 <p className="font-semibold text-gray-900">{selectedTheater.email}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{t('contact.theaterDetail.emailResponse')}</p>
                                                 <a href={`mailto:${selectedTheater.email}`} className="text-blue-600 text-sm mt-2 inline-flex items-center gap-1 hover:gap-2 transition-all">
                                                     {t('contact.theaterDetail.sendEmail')} <ArrowRight className="h-3 w-3" />
                                                 </a>
@@ -636,10 +898,7 @@ const Contact: React.FC = () => {
                                             <div>
                                                 <p className="text-xs text-emerald-600 font-medium">{t('contact.theaterDetail.visitUs')}</p>
                                                 <p className="font-semibold text-gray-900">{selectedTheater.address}</p>
-                                                <p className="text-xs text-gray-500 mt-1">{t('contact.theaterDetail.nearby')}</p>
-                                                <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 text-sm mt-2 inline-flex items-center gap-1 hover:gap-2 transition-all">
-                                                    {t('contact.theaterDetail.getDirections')} <ExternalLink className="h-3 w-3" />
-                                                </a>
+                                                <p className="text-xs text-gray-500 mt-1">{selectedTheater.city}</p>
                                             </div>
                                         </div>
 
@@ -654,6 +913,7 @@ const Contact: React.FC = () => {
                                         )}
                                     </div>
 
+                                    {/* Dynamic Social Links - Only shows if theater has added them in dashboard */}
                                     <TheaterSocialLinks theater={selectedTheater} />
                                 </>
                             ) : (
@@ -698,6 +958,7 @@ const Contact: React.FC = () => {
                                         </div>
                                     </div>
 
+                                    {/* Dynamic Global Social Links - Fetched from database */}
                                     <GlobalSocialLinks />
                                 </>
                             )}
@@ -712,11 +973,11 @@ const Contact: React.FC = () => {
                 onClose={handlePopupClose}
                 type="contact"
                 title={t('contact.success.title')}
-                message={t('contact.success.message', { theaterName: selectedTheater ? selectedTheater.name : '' })}
+                message={t('contact.success.message', { theaterName: selectedTheater ? selectedTheater.legal_business_name : '' })}
                 details={{
                     [t('contact.success.details.name')]: formData.name || t('contact.success.details.notProvided'),
                     [t('contact.success.details.email')]: formData.email || t('contact.success.details.notProvided'),
-                    [t('contact.success.details.recipient')]: formData.recipientType === 'admin' ? t('contact.success.details.adminRecipient') : (selectedTheater?.name || t('contact.success.details.theaterOwner')),
+                    [t('contact.success.details.recipient')]: formData.recipientType === 'admin' ? t('contact.success.details.adminRecipient') : (selectedTheater?.legal_business_name || t('contact.success.details.theaterOwner')),
                     [t('contact.success.details.category')]: t(`contact.categories.${formData.category}`) || formData.category,
                     [t('contact.success.details.responseTime')]: t('contact.success.details.responseTimeValue')
                 }}
