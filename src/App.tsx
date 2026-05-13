@@ -6,6 +6,7 @@ import Login from "@/components/auth/Login";
 import ForgotPassword from "./components/auth/Forgotpassword"; // ✅ keep this
 
 import MainLayout from "./layouts/MainLayout";
+import BookingSuccess from "./components/auth/Booking/BookingSuccess";
 
 import { getAdminRoutes } from "./pages/Admin/AdminRoutes";
 import { getCustomerRoutes } from "./pages/Customer/CustomerRoutes";
@@ -106,6 +107,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       {/* ---------- PUBLIC ROUTES ---------- */}
+      <Route path="/booking/success" element={<BookingSuccess />} />
       <Route
         path="/"
         element={
