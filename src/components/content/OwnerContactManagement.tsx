@@ -23,48 +23,35 @@ import {
   AlertCircle,
   Send,
   Loader2,
+  Globe
 } from "lucide-react";
-import ReusableTable from "../Reusable/ReusableTable";
-import SuccessPopup from "..//Reusable/SuccessPopup";
+import ReusableTable from "../../components/Reusable/ReusableTable";
+import SuccessPopup from "../../components/Reusable/SuccessPopup";
+import SocialLinksManager from "../../components/socialinkmanage/SocialLinksManager";
+import ReplyContactReusable, { FlexibleContactMessage } from "../../components/content/ReplyContactReusable";
 import supabase from "@/config/supabaseClient";
 
 // ==================== Types ====================
 interface ContactMessage {
   id: string;
-  name: string;
-  email: string;
-  phone: string | null;
+  sender_name: string;
+  sender_email: string;
+  sender_phone: string | null;
   subject: string;
   message: string;
-  category: "general" | "booking" | "feedback" | "support";
+  message_category: string;
   recipient_type: "theater" | "admin";
   theater_id: string | null;
-  theater_name: string | null;
-  status: "unread" | "read" | "replied";
-  reply_message: string | null;
-  replied_by: string | null;
-  replied_by_id: string | null;
-  replied_at: string | null;
+  status: "pending" | "read" | "replied" | "archived";
+  ip_address: string;
+  user_agent: string;
+  referrer_url: string;
   created_at: string;
   updated_at: string;
-}
-
-interface TheaterContactInfo {
-  id: string;
-  theater_id: string;
-  phone: string;
-  email: string;
-  address: string;
-  description: string;
-  facebook_url: string;
-  twitter_url: string;
-  instagram_url: string;
-  linkedin_url: string;
-  youtube_url: string;
-  telegram_username: string;
-  tiktok_url: string;
-  created_at: string;
-  updated_at: string;
+  theater_name?: string;
+  reply_message?: string;
+  replied_at?: string;
+  replied_by?: string;
 }
 
 interface TheaterInfo {
@@ -75,6 +62,9 @@ interface TheaterInfo {
   address: string;
   phone: string;
   email: string;
+  logo_url?: string;
+  description?: string;
+  social_links?: any;
 }
 
 // ==================== Animation Variants ====================
@@ -162,372 +152,6 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-// ==================== Edit Contact Info Modal ====================
-interface EditContactInfoModalProps {
-  theaterInfo: TheaterInfo | null;
-  contactInfo: TheaterContactInfo | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: (data: Partial<TheaterContactInfo>) => Promise<void>;
-}
-
-const EditContactInfoModal: React.FC<EditContactInfoModalProps> = ({
-  theaterInfo,
-  contactInfo,
-  isOpen,
-  onClose,
-  onSave,
-}) => {
-  const [formData, setFormData] = useState({
-    phone: "",
-    email: "",
-    address: "",
-    description: "",
-    facebook_url: "",
-    twitter_url: "",
-    instagram_url: "",
-    linkedin_url: "",
-    youtube_url: "",
-    telegram_username: "",
-    tiktok_url: "",
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (contactInfo) {
-      setFormData({
-        phone: contactInfo.phone || "",
-        email: contactInfo.email || "",
-        address: contactInfo.address || "",
-        description: contactInfo.description || "",
-        facebook_url: contactInfo.facebook_url || "",
-        twitter_url: contactInfo.twitter_url || "",
-        instagram_url: contactInfo.instagram_url || "",
-        linkedin_url: contactInfo.linkedin_url || "",
-        youtube_url: contactInfo.youtube_url || "",
-        telegram_username: contactInfo.telegram_username || "",
-        tiktok_url: contactInfo.tiktok_url || "",
-      });
-    }
-  }, [contactInfo]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    await onSave(formData);
-    setIsSubmitting(false);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">
-              Edit Theater Information
-            </h2>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-white/20 rounded-lg transition"
-            >
-              <XCircle className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Theater Name
-            </label>
-            <input
-              type="text"
-              value={theaterInfo?.legal_business_name || ""}
-              disabled
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Phone Number
-            </label>
-            <input
-              type="text"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              placeholder="Contact phone number"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              placeholder="Contact email address"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Address
-            </label>
-            <input
-              type="text"
-              value={formData.address}
-              onChange={(e) =>
-                setFormData({ ...formData, address: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              placeholder="Theater address"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              rows={3}
-              className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              placeholder="Theater description"
-            />
-          </div>
-
-          <div className="border-t pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Social Media Links
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <input
-                type="text"
-                placeholder="Facebook URL"
-                value={formData.facebook_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, facebook_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="Twitter URL"
-                value={formData.twitter_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, twitter_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="Instagram URL"
-                value={formData.instagram_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, instagram_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="LinkedIn URL"
-                value={formData.linkedin_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, linkedin_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="YouTube URL"
-                value={formData.youtube_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, youtube_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="Telegram Username"
-                value={formData.telegram_username}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    telegram_username: e.target.value,
-                  })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-              <input
-                type="text"
-                placeholder="TikTok URL"
-                value={formData.tiktok_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, tiktok_url: e.target.value })
-                }
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
-          >
-            {isSubmitting ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
-// ==================== Reply Modal ====================
-interface ReplyModalProps {
-  message: ContactMessage | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onReply: (messageId: string, replyContent: string) => Promise<void>;
-  theaterName: string;
-}
-
-const ReplyModal: React.FC<ReplyModalProps> = ({
-  message,
-  isOpen,
-  onClose,
-  onReply,
-  theaterName,
-}) => {
-  const [replyContent, setReplyContent] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setReplyContent("");
-    }
-  }, [isOpen]);
-
-  if (!isOpen || !message) return null;
-
-  const handleSubmit = async () => {
-    if (!replyContent.trim()) {
-      alert("Please enter a reply message");
-      return;
-    }
-    setIsSubmitting(true);
-    await onReply(message.id, replyContent);
-    setIsSubmitting(false);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-2xl max-w-lg w-full"
-      >
-        <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Reply className="h-5 w-5 text-white" />
-              <h2 className="text-xl font-bold text-white">
-                Reply to Customer
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-1 hover:bg-white/20 rounded-lg transition"
-            >
-              <XCircle className="h-5 w-5 text-white" />
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-4">
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">From:</p>
-            <p className="font-medium text-gray-900">{message.name}</p>
-            <p className="text-sm text-gray-600">{message.email}</p>
-            {message.phone && (
-              <p className="text-sm text-gray-600">Phone: {message.phone}</p>
-            )}
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Subject:</p>
-            <p className="font-medium text-gray-900">{message.subject}</p>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Original Message:</p>
-            <p className="text-sm text-gray-700 max-h-32 overflow-y-auto">
-              {message.message}
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Your Reply *
-            </label>
-            <textarea
-              rows={5}
-              value={replyContent}
-              onChange={(e) => setReplyContent(e.target.value)}
-              placeholder={`Write your reply to ${message.name}...`}
-              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-teal-500 resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50 flex items-center gap-2"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
-            Send Reply
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
-
 // ==================== View Modal ====================
 interface ViewModalProps {
   message: ContactMessage | null;
@@ -554,32 +178,12 @@ const ViewModal: React.FC<ViewModalProps> = ({
     });
   };
 
-  const getCategoryLabel = (category: string) => {
-    const labels: Record<string, string> = {
-      general: "General",
-      booking: "Booking",
-      feedback: "Feedback",
-      support: "Support",
-    };
-    return labels[category] || category;
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      general: "bg-gray-100 text-gray-700",
-      booking: "bg-blue-100 text-blue-700",
-      feedback: "bg-green-100 text-green-700",
-      support: "bg-yellow-100 text-yellow-700",
-    };
-    return colors[category] || colors.general;
-  };
-
   const getStatusBadge = () => {
     switch (message.status) {
-      case "unread":
+      case "pending":
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-            <Clock className="h-3 w-3" /> Unread
+            <Clock className="h-3 w-3" /> Pending
           </span>
         );
       case "read":
@@ -632,12 +236,12 @@ const ViewModal: React.FC<ViewModalProps> = ({
           <div className="grid grid-cols-2 gap-4 border-b border-gray-200 pb-4">
             <div>
               <p className="text-xs text-gray-500 uppercase mb-1">From</p>
-              <p className="font-medium text-gray-900">{message.name}</p>
-              <p className="text-sm text-gray-600">{message.email}</p>
+              <p className="font-medium text-gray-900">{message.sender_name}</p>
+              <p className="text-sm text-gray-600">{message.sender_email}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase mb-1">Phone</p>
-              <p className="text-sm text-gray-900">{message.phone || "N/A"}</p>
+              <p className="text-sm text-gray-900">{message.sender_phone || "N/A"}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase mb-1">Subject</p>
@@ -645,11 +249,7 @@ const ViewModal: React.FC<ViewModalProps> = ({
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase mb-1">Category</p>
-              <span
-                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(message.category)}`}
-              >
-                {getCategoryLabel(message.category)}
-              </span>
+              <p className="text-sm text-gray-600">{message.message_category}</p>
             </div>
             <div>
               <p className="text-xs text-gray-500 uppercase mb-1">Received</p>
@@ -716,22 +316,17 @@ const ViewModal: React.FC<ViewModalProps> = ({
 const OwnerContactManagement: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [theaterInfo, setTheaterInfo] = useState<TheaterInfo | null>(null);
-  const [contactInfo, setContactInfo] = useState<TheaterContactInfo | null>(
-    null,
-  );
   const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [responses, setResponses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(
-    null,
-  );
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [showReplyModal, setShowReplyModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showSocialManager, setShowSocialManager] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
   const [popupMessage, setPopupMessage] = useState({
     title: "",
     message: "",
@@ -740,11 +335,19 @@ const OwnerContactManagement: React.FC = () => {
 
   // Get current user from session
   useEffect(() => {
-    const getCurrentUser = () => {
-      const userStr =
-        localStorage.getItem("user") || sessionStorage.getItem("user");
-      if (userStr) {
-        setCurrentUser(JSON.parse(userStr));
+    const getCurrentUser = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          setCurrentUser(user);
+        } else {
+          const userStr = localStorage.getItem("user") || sessionStorage.getItem("user");
+          if (userStr) {
+            setCurrentUser(JSON.parse(userStr));
+          }
+        }
+      } catch (error) {
+        console.error("Error getting user:", error);
       }
     };
     getCurrentUser();
@@ -764,27 +367,30 @@ const OwnerContactManagement: React.FC = () => {
         .single();
 
       if (theaterError) throw theaterError;
+      
       setTheaterInfo(theaterData);
-
-      // Get contact info for this theater
-      const { data: contactData, error: contactError } = await supabase
-        .from("theater_contact_info")
-        .select("*")
-        .eq("theater_id", theaterData.id)
-        .maybeSingle();
-
-      if (!contactError && contactData) {
-        setContactInfo(contactData);
-      }
 
       // Get messages for this theater
       const { data: messagesData, error: messagesError } = await supabase
         .from("contact_messages")
         .select("*")
         .eq("theater_id", theaterData.id)
+        .eq("recipient_type", "theater")
         .order("created_at", { ascending: false });
 
       if (messagesError) throw messagesError;
+
+      // Get responses
+      if (messagesData && messagesData.length > 0) {
+        const messageIds = messagesData.map(m => m.id);
+        const { data: responsesData } = await supabase
+          .from("contact_responses")
+          .select("*")
+          .in("contact_message_id", messageIds);
+        
+        if (responsesData) setResponses(responsesData);
+      }
+
       setMessages(messagesData || []);
     } catch (error) {
       console.error("Error loading data:", error);
@@ -799,194 +405,169 @@ const OwnerContactManagement: React.FC = () => {
     }
   }, [currentUser?.id, loadData]);
 
-  // Create or update contact info
-  const handleSaveContactInfo = async (data: Partial<TheaterContactInfo>) => {
-    if (!theaterInfo) return;
-
-    try {
-      if (contactInfo) {
-        // Update existing
-        const { error } = await supabase
-          .from("theater_contact_info")
-          .update(data)
-          .eq("id", contactInfo.id);
-
-        if (error) throw error;
-      } else {
-        // Create new
-        const { error } = await supabase.from("theater_contact_info").insert({
-          theater_id: theaterInfo.id,
-          ...data,
-        });
-
-        if (error) throw error;
-      }
-
-      await loadData();
-      setPopupMessage({
-        title: "Success!",
-        message: "Theater information updated successfully",
-        type: "success",
-      });
-      setShowSuccessPopup(true);
-    } catch (error: any) {
-      console.error("Error saving contact info:", error);
-      setPopupMessage({
-        title: "Error!",
-        message: error.message,
-        type: "error",
-      });
-      setShowSuccessPopup(true);
-    }
+  // Get reply for a message
+  const getReplyForMessage = (messageId: string) => {
+    return responses.find(r => r.contact_message_id === messageId);
   };
 
   // Mark message as read
   const handleMarkAsRead = useCallback(async (message: ContactMessage) => {
-    if (message.status === "unread") {
-      try {
-        const { error } = await supabase
-          .from("contact_messages")
-          .update({ status: "read", updated_at: new Date().toISOString() })
-          .eq("id", message.id);
-
-        if (error) throw error;
-
-        setMessages((prev) =>
-          prev.map((m) => (m.id === message.id ? { ...m, status: "read" } : m)),
-        );
-      } catch (error) {
-        console.error("Error marking as read:", error);
+    if (message.status === "pending") {
+      const { error } = await supabase
+        .from("contact_messages")
+        .update({ status: "read", updated_at: new Date().toISOString() })
+        .eq("id", message.id);
+      
+      if (!error) {
+        setMessages(prev => prev.map(m => m.id === message.id ? { ...m, status: "read" } : m));
       }
     }
   }, []);
 
-  // Handle reply
-  const handleReply = useCallback(
-    async (messageId: string, replyContent: string) => {
-      try {
-        const { error } = await supabase
-          .from("contact_messages")
-          .update({
-            status: "replied",
-            reply_message: replyContent,
-            replied_by: currentUser?.name || currentUser?.full_name,
-            replied_by_id: currentUser?.id,
-            replied_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", messageId);
-
-        if (error) throw error;
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === messageId
-              ? {
-                  ...m,
-                  status: "replied",
-                  reply_message: replyContent,
-                  replied_by: currentUser?.name || currentUser?.full_name,
-                  replied_at: new Date().toISOString(),
-                }
-              : m,
-          ),
-        );
-
-        setPopupMessage({
-          title: "✓ Reply Sent",
-          message: `Your reply has been sent successfully`,
-          type: "success",
+  // Handle reply using ReplyContactReusable
+  const handleSendReply = useCallback(async (messageId: string, replyContent: string, ccSelf?: boolean) => {
+    if (!currentUser) return;
+    
+    setSendingReply(true);
+    
+    try {
+      // Insert response
+      const { error: responseError } = await supabase
+        .from("contact_responses")
+        .insert({
+          contact_message_id: messageId,
+          response_message: replyContent,
+          responded_by: currentUser.id,
+          responder_role: "theater_owner",
+          response_type: "direct",
+          email_sent: false,
+          email_sent_at: new Date().toISOString(),
+          email_status: "pending"
         });
-        setShowSuccessPopup(true);
-      } catch (error: any) {
-        console.error("Error sending reply:", error);
-        setPopupMessage({
-          title: "Error!",
-          message: error.message,
-          type: "error",
-        });
-        setShowSuccessPopup(true);
-      }
-    },
-    [currentUser],
-  );
+      
+      if (responseError) throw responseError;
+      
+      // Update message status
+      const { error: updateError } = await supabase
+        .from("contact_messages")
+        .update({
+          status: "replied",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", messageId);
+      
+      if (updateError) throw updateError;
+      
+      // Update local state
+      setMessages(prev => prev.map(m => 
+        m.id === messageId ? { ...m, status: "replied", reply_message: replyContent, replied_at: new Date().toISOString() } : m
+      ));
+      
+      setResponses(prev => [...prev, {
+        contact_message_id: messageId,
+        response_message: replyContent,
+        created_at: new Date().toISOString()
+      }]);
+      
+      setPopupMessage({
+        title: "✓ Reply Sent",
+        message: "Your reply has been sent successfully",
+        type: "success",
+      });
+      setShowSuccessPopup(true);
+      
+      // Auto close popup after 3 seconds
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+      
+    } catch (error: any) {
+      console.error("Error sending reply:", error);
+      setPopupMessage({
+        title: "Error!",
+        message: error.message || "Failed to send reply",
+        type: "error",
+      });
+      setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
+    } finally {
+      setSendingReply(false);
+    }
+  }, [currentUser]);
 
   // Delete message
   const handleDelete = useCallback(async () => {
     if (!selectedMessage) return;
-
+    
     try {
-      const { error } = await supabase
-        .from("contact_messages")
-        .delete()
-        .eq("id", selectedMessage.id);
-
+      await supabase.from("contact_responses").delete().eq("contact_message_id", selectedMessage.id);
+      
+      const { error } = await supabase.from("contact_messages").delete().eq("id", selectedMessage.id);
       if (error) throw error;
-
-      setMessages((prev) => prev.filter((m) => m.id !== selectedMessage.id));
+      
+      setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
+      setResponses(prev => prev.filter(r => r.contact_message_id !== selectedMessage.id));
       setShowDeleteConfirm(false);
       setSelectedMessage(null);
-      setPopupMessage({
-        title: "Deleted",
-        message: `Message from ${selectedMessage.name} has been deleted`,
-        type: "success",
-      });
+      
+      setPopupMessage({ title: "Deleted", message: "Message has been deleted", type: "success" });
       setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error: any) {
-      console.error("Error deleting message:", error);
-      setPopupMessage({
-        title: "Error!",
-        message: error.message,
-        type: "error",
-      });
+      setPopupMessage({ title: "Error!", message: error.message, type: "error" });
       setShowSuccessPopup(true);
+      setTimeout(() => setShowSuccessPopup(false), 3000);
     }
   }, [selectedMessage]);
+
+  // Convert message to FlexibleContactMessage for ReplyContactReusable
+  const convertToFlexibleMessage = (message: ContactMessage): FlexibleContactMessage => {
+    return {
+      id: message.id,
+      name: message.sender_name,
+      email: message.sender_email,
+      phone: message.sender_phone || undefined,
+      subject: message.subject,
+      message: message.message,
+      category: message.message_category,
+      recipientType: message.recipient_type,
+      theaterId: message.theater_id || undefined,
+      theaterName: theaterInfo?.legal_business_name,
+      status: message.status,
+      createdAt: message.created_at,
+      repliedAt: message.replied_at,
+      replyMessage: message.reply_message,
+    };
+  };
 
   // Open view modal
   const openViewModal = (message: ContactMessage) => {
     setSelectedMessage(message);
     setShowViewModal(true);
-    if (message.status === "unread") handleMarkAsRead(message);
-  };
-
-  // Open reply modal
-  const openReplyModal = (message: ContactMessage) => {
-    setSelectedMessage(message);
-    setShowReplyModal(true);
+    if (message.status === "pending") handleMarkAsRead(message);
   };
 
   // Reset filters
   const resetFilters = () => {
     setSearchTerm("");
     setFilterStatus("all");
-    setFilterCategory("all");
   };
 
   // Filtered messages
   const filteredMessages = useMemo(() => {
     return messages.filter((m) => {
-      const matchesSearch =
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.subject.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = m.sender_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.sender_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        m.subject?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = filterStatus === "all" || m.status === filterStatus;
-      const matchesCategory =
-        filterCategory === "all" || m.category === filterCategory;
-      return matchesSearch && matchesStatus && matchesCategory;
+      return matchesSearch && matchesStatus;
     });
-  }, [messages, searchTerm, filterStatus, filterCategory]);
+  }, [messages, searchTerm, filterStatus]);
 
-  // Stats
-  const stats = useMemo(
-    () => ({
-      total: messages.length,
-      unread: messages.filter((m) => m.status === "unread").length,
-      booking: messages.filter((m) => m.category === "booking").length,
-      general: messages.filter((m) => m.category === "general").length,
-    }),
-    [messages],
-  );
+  const stats = useMemo(() => ({
+    total: messages.length,
+    pending: messages.filter(m => m.status === "pending").length,
+    read: messages.filter(m => m.status === "read").length,
+    replied: messages.filter(m => m.status === "replied").length,
+  }), [messages]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -998,43 +579,14 @@ const OwnerContactManagement: React.FC = () => {
     });
   };
 
-  const getCategoryBadge = (category: string) => {
-    const config: Record<string, { color: string; label: string }> = {
-      general: { color: "bg-gray-100 text-gray-700", label: "General" },
-      booking: { color: "bg-blue-100 text-blue-700", label: "Booking" },
-      feedback: { color: "bg-green-100 text-green-700", label: "Feedback" },
-      support: { color: "bg-yellow-100 text-yellow-700", label: "Support" },
-    };
-    const c = config[category] || config.general;
-    return (
-      <span
-        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${c.color}`}
-      >
-        {c.label}
-      </span>
-    );
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "unread":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-            <Clock className="h-3 w-3" /> Unread
-          </span>
-        );
+      case "pending":
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><Clock className="h-3 w-3" /> Pending</span>;
       case "read":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-            <Eye className="h-3 w-3" /> Read
-          </span>
-        );
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700"><Eye className="h-3 w-3" /> Read</span>;
       case "replied":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <CheckCircle className="h-3 w-3" /> Replied
-          </span>
-        );
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Replied</span>;
       default:
         return null;
     }
@@ -1043,12 +595,12 @@ const OwnerContactManagement: React.FC = () => {
   const columns = [
     {
       Header: "From",
-      accessor: "name",
+      accessor: "sender_name",
       sortable: true,
       Cell: (row: ContactMessage) => (
         <div>
-          <p className="font-medium text-gray-900">{row.name}</p>
-          <p className="text-xs text-gray-500">{row.email}</p>
+          <p className="font-medium text-gray-900">{row.sender_name}</p>
+          <p className="text-xs text-gray-500">{row.sender_email}</p>
         </div>
       ),
     },
@@ -1059,9 +611,7 @@ const OwnerContactManagement: React.FC = () => {
       Cell: (row: ContactMessage) => (
         <div className="max-w-xs">
           <p className="text-sm text-gray-800 truncate">{row.subject}</p>
-          <div className="flex flex-wrap gap-1 mt-1">
-            {getCategoryBadge(row.category)}
-          </div>
+          <p className="text-xs text-gray-400 mt-0.5">{row.message_category}</p>
         </div>
       ),
     },
@@ -1069,9 +619,7 @@ const OwnerContactManagement: React.FC = () => {
       Header: "Received",
       accessor: "created_at",
       sortable: true,
-      Cell: (row: ContactMessage) => (
-        <p className="text-sm text-gray-600">{formatDate(row.created_at)}</p>
-      ),
+      Cell: (row: ContactMessage) => <p className="text-sm text-gray-600">{formatDate(row.created_at)}</p>,
     },
     {
       Header: "Status",
@@ -1083,78 +631,48 @@ const OwnerContactManagement: React.FC = () => {
       Header: "Actions",
       accessor: "id",
       sortable: false,
-      Cell: (row: ContactMessage) => (
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => openViewModal(row)}
-            className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
-            title="View Details"
-          >
-            <Eye className="h-4 w-4 text-blue-600" />
-          </button>
-
-          {row.status !== "replied" && (
+      Cell: (row: ContactMessage) => {
+        const reply = getReplyForMessage(row.id);
+        return (
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => openReplyModal(row)}
-              className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition-colors"
-              title="Reply"
+              onClick={() => openViewModal(row)}
+              className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+              title="View Details"
             >
-              <Reply className="h-4 w-4 text-teal-600" />
+              <Eye className="h-4 w-4 text-blue-600" />
             </button>
-          )}
 
-          <button
-            onClick={() => {
-              setSelectedMessage(row);
-              setShowDeleteConfirm(true);
-            }}
-            className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
-            title="Delete"
-          >
-            <Trash2 className="h-4 w-4 text-red-600" />
-          </button>
-        </div>
-      ),
+            {row.status !== "replied" && !reply && (
+              <ReplyContactReusable
+                message={convertToFlexibleMessage(row)}
+                onReply={handleSendReply}
+                theaterName={theaterInfo?.legal_business_name}
+                isSubmitting={sendingReply}
+              />
+            )}
+
+            <button
+              onClick={() => {
+                setSelectedMessage(row);
+                setShowDeleteConfirm(true);
+              }}
+              className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="h-4 w-4 text-red-600" />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
   const statsCards = [
-    {
-      title: "Total Messages",
-      value: stats.total,
-      icon: Inbox,
-      color: "from-teal-500 to-teal-600",
-      delay: 0.1,
-      notification: true,
-      notificationCount: stats.total,
-    },
-    {
-      title: "Unread",
-      value: stats.unread,
-      icon: Mail,
-      color: "from-red-500 to-red-600",
-      delay: 0.15,
-      notification: true,
-      notificationCount: stats.unread,
-    },
-    {
-      title: "Booking",
-      value: stats.booking,
-      icon: Ticket,
-      color: "from-blue-500 to-blue-600",
-      delay: 0.2,
-      notification: true,
-      notificationCount: stats.booking,
-    },
-    {
-      title: "General",
-      value: stats.general,
-      icon: MessageCircle,
-      color: "from-green-500 to-green-600",
-      delay: 0.25,
-      notification: true,
-      notificationCount: stats.general,
-    },
+    { title: "Total Messages", value: stats.total, icon: Inbox, color: "from-teal-500 to-teal-600", delay: 0.1, notification: false, notificationCount: stats.total },
+    { title: "Pending", value: stats.pending, icon: Mail, color: "from-red-500 to-red-600", delay: 0.15, notification: true, notificationCount: stats.pending },
+    { title: "Read", value: stats.read, icon: Eye, color: "from-blue-500 to-blue-600", delay: 0.2, notification: false },
+    { title: "Replied", value: stats.replied, icon: Reply, color: "from-green-500 to-green-600", delay: 0.25, notification: false },
   ];
 
   if (loading) {
@@ -1183,48 +701,30 @@ const OwnerContactManagement: React.FC = () => {
               <Theater className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Customer Messages
-              </h1>
+              <h1 className="text-2xl font-bold text-gray-900">Customer Messages</h1>
               <p className="text-sm text-gray-500 mt-1">
-                Manage customer inquiries for{" "}
-                {theaterInfo?.legal_business_name || "your theater"}
+                Manage customer inquiries for {theaterInfo?.legal_business_name || "your theater"}
               </p>
             </div>
           </div>
           <button
-            onClick={() => setShowEditModal(true)}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+            onClick={() => setShowSocialManager(true)}
+            className="px-4 py-2 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition flex items-center gap-2 shadow-md"
           >
-            <Settings className="h-4 w-4" />
-            Edit Theater Info
+            <Globe className="h-4 w-4" />
+            Manage Social Links
           </button>
         </div>
 
         {/* Stats Cards */}
-        <motion.div
-          variants={itemVariants}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8"
-        >
+        <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {statsCards.map((card, index) => (
-            <StatCard
-              key={index}
-              title={card.title}
-              value={card.value}
-              icon={card.icon}
-              color={card.color}
-              delay={card.delay}
-              notification={card.notification}
-              notificationCount={card.notificationCount}
-            />
+            <StatCard key={index} title={card.title} value={card.value} icon={card.icon} color={card.color} delay={card.delay} notification={card.notification} notificationCount={card.notificationCount} />
           ))}
         </motion.div>
 
         {/* Search and Filters */}
-        <motion.div
-          variants={itemVariants}
-          className="bg-white rounded-xl p-4 shadow-md border border-gray-100 mb-6"
-        >
+        <motion.div variants={itemVariants} className="bg-white rounded-xl p-4 shadow-md border border-gray-100 mb-6">
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -1242,25 +742,11 @@ const OwnerContactManagement: React.FC = () => {
               className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 outline-none"
             >
               <option value="all">All Status</option>
-              <option value="unread">Unread</option>
+              <option value="pending">Pending</option>
               <option value="read">Read</option>
               <option value="replied">Replied</option>
             </select>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-xl bg-white focus:ring-2 focus:ring-teal-500 outline-none"
-            >
-              <option value="all">All Categories</option>
-              <option value="general">General</option>
-              <option value="booking">Booking</option>
-              <option value="feedback">Feedback</option>
-              <option value="support">Support</option>
-            </select>
-            <button
-              onClick={resetFilters}
-              className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition flex items-center gap-2"
-            >
+            <button onClick={resetFilters} className="px-4 py-2 border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-50 transition flex items-center gap-2">
               <RefreshCw className="h-4 w-4" />
               Reset
             </button>
@@ -1281,7 +767,7 @@ const OwnerContactManagement: React.FC = () => {
           />
         </motion.div>
 
-        {/* Modals */}
+        {/* View Modal */}
         <ViewModal
           message={selectedMessage}
           isOpen={showViewModal}
@@ -1291,28 +777,39 @@ const OwnerContactManagement: React.FC = () => {
           }}
           onReply={() => {
             setShowViewModal(false);
-            setShowReplyModal(true);
           }}
         />
 
-        <ReplyModal
-          message={selectedMessage}
-          isOpen={showReplyModal}
-          onClose={() => {
-            setShowReplyModal(false);
-            setSelectedMessage(null);
-          }}
-          onReply={handleReply}
-          theaterName={theaterInfo?.legal_business_name || "Theater"}
-        />
 
-        <EditContactInfoModal
-          theaterInfo={theaterInfo}
-          contactInfo={contactInfo}
-          isOpen={showEditModal}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleSaveContactInfo}
+{showSocialManager && theaterInfo && (
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowSocialManager(false)}>
+    <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Globe className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-bold text-white">Social Media Links</h2>
+          </div>
+          <button onClick={() => setShowSocialManager(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
+            <XCircle className="h-5 w-5 text-white" />
+          </button>
+        </div>
+        <p className="text-teal-100 text-sm mt-2 ml-14">
+          Manage your theater's social media presence
+        </p>
+      </div>
+      <div className="p-6">
+        <SocialLinksManager 
+          theaterId={theaterInfo.id} 
+          onClose={() => setShowSocialManager(false)} 
         />
+      </div>
+      {/* Removed the Close button from here since SocialLinksManager handles it */}
+    </div>
+  </div>
+)}
 
         {/* Delete Confirm Modal */}
         {showDeleteConfirm && selectedMessage && (
@@ -1322,27 +819,12 @@ const OwnerContactManagement: React.FC = () => {
                 <div className="p-2 bg-red-100 rounded-lg">
                   <Trash2 className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
-                  Delete Message
-                </h3>
+                <h3 className="text-xl font-bold text-gray-900">Delete Message</h3>
               </div>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete this message? This action cannot
-                be undone.
-              </p>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this message? This action cannot be undone.</p>
               <div className="flex gap-3">
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Delete
-                </button>
+                <button onClick={() => setShowDeleteConfirm(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
+                <button onClick={handleDelete} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
               </div>
             </div>
           </div>
