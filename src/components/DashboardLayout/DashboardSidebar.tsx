@@ -137,7 +137,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: Coins,
               },
               {
-                name: "Commission & Fees System",
+                name: "System Commission Analaytics  ",
                 to: "/admin/wallet/commission",
                 icon: Percent,
               },

@@ -1,13 +1,11 @@
 // src/pages/scanner/ScanQRCode.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
     QrCode,
     CheckCircle,
     XCircle,
-    Camera,
-    RefreshCw,
     Activity,
     Volume2,
     VolumeX,
@@ -17,133 +15,51 @@ import {
     Check,
     AlertTriangle,
     Edit,
-    X
+    X,
+    Loader2,
+    Camera,
+    CameraOff
 } from 'lucide-react';
 import jsQR from 'jsqr';
+import supabase from '@/config/supabaseClient';
 
 // ============= Types =============
-interface TicketData {
+interface ScannerSession {
     id: string;
-    ticketNumber: string;
-    eventName: string;
-    eventDate: string;
-    eventTime: string;
-    hallName: string;
-    seatNumber: string;
-    seatRow: string;
-    customerName: string;
-    customerEmail: string;
-    customerPhone: string;
-    price: number;
-    paymentMethod: string;
-    purchaseDate: string;
-    status: 'valid' | 'used';
-    qrCode: string;
-    checkInTime?: string;
-    checkedInBy?: string;
+    scanner_id: string;
+    scanner_name: string;
+    scanner_location: string;
 }
 
-interface ScanResult {
-    success: boolean;
+interface TicketValidationResult {
+    is_valid: boolean;
     message: string;
-    ticket?: TicketData;
-    timestamp: string;
+    ticket_id: string;
+    ticket_number: string;
+    customer_name: string;
+    customer_email: string;
+    customer_phone: string;
+    event_name: string;
+    event_id: string;
+    event_date: string;
+    event_time: string;
+    hall_name: string;
+    seat_info: string;
+    seat_row: string;
+    seat_number: number;
+    price: number;
+    is_checked_in: boolean;
+    checked_in_at: string | null;
 }
 
-// ============= Mock Database =============
-const mockTickets: TicketData[] = [
-    {
-        id: '1',
-        ticketNumber: 'TKT-2024-001',
-        eventName: 'The Lion King',
-        eventDate: '2024-12-25',
-        eventTime: '19:00',
-        hallName: 'Main Hall',
-        seatNumber: '12',
-        seatRow: 'A',
-        customerName: 'John Smith',
-        customerEmail: 'john@email.com',
-        customerPhone: '+251911234567',
-        price: 450,
-        paymentMethod: 'Chapa',
-        purchaseDate: '2024-12-01',
-        status: 'valid',
-        qrCode: 'TKT-2024-001'
-    },
-    {
-        id: '2',
-        ticketNumber: 'TKT-2024-002',
-        eventName: 'Hamilton',
-        eventDate: '2024-12-25',
-        eventTime: '20:30',
-        hallName: 'Main Hall',
-        seatNumber: '5',
-        seatRow: 'B',
-        customerName: 'Sarah Johnson',
-        customerEmail: 'sarah@email.com',
-        customerPhone: '+251912345678',
-        price: 550,
-        paymentMethod: 'Telebirr',
-        purchaseDate: '2024-12-02',
-        status: 'valid',
-        qrCode: 'TKT-2024-002'
-    },
-    {
-        id: '3',
-        ticketNumber: 'TKT-2024-003',
-        eventName: 'Wicked',
-        eventDate: '2024-12-26',
-        eventTime: '18:30',
-        hallName: 'East Hall',
-        seatNumber: '8',
-        seatRow: 'C',
-        customerName: 'Michael Brown',
-        customerEmail: 'michael@email.com',
-        customerPhone: '+251913456789',
-        price: 400,
-        paymentMethod: 'Chapa',
-        purchaseDate: '2024-12-03',
-        status: 'valid',
-        qrCode: 'TKT-2024-003'
-    },
-    {
-        id: '4',
-        ticketNumber: 'TKT-2024-004',
-        eventName: 'Les Misérables',
-        eventDate: '2024-12-27',
-        eventTime: '19:30',
-        hallName: 'West Hall',
-        seatNumber: '3',
-        seatRow: 'D',
-        customerName: 'Emily Wilson',
-        customerEmail: 'emily@email.com',
-        customerPhone: '+251914567890',
-        price: 500,
-        paymentMethod: 'Credit Card',
-        purchaseDate: '2024-12-05',
-        status: 'valid',
-        qrCode: 'TKT-2024-004'
-    }
-];
-
-// Track checked in tickets
-let checkedInTickets: Map<string, TicketData> = new Map();
-
-// ============= Improved Audio Functions =============
+// ============= Audio Functions =============
 const playValidSound = () => {
     try {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume();
         
-        // Resume audio context if suspended (browser policy)
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        
-        // Success sound - rising two-tone beep with higher volume
         const now = audioContext.currentTime;
-        
-        // First beep - lower frequency
         const osc1 = audioContext.createOscillator();
         const gain1 = audioContext.createGain();
         osc1.connect(gain1);
@@ -155,7 +71,6 @@ const playValidSound = () => {
         osc1.start(now);
         osc1.stop(now + 0.2);
         
-        // Second beep - higher frequency (sound like "ding!")
         setTimeout(() => {
             const osc2 = audioContext.createOscillator();
             const gain2 = audioContext.createGain();
@@ -168,55 +83,38 @@ const playValidSound = () => {
             osc2.start();
             osc2.stop(audioContext.currentTime + 0.15);
         }, 150);
-    } catch (error) {
-        console.log('Audio not supported');
-    }
+    } catch (error) { console.log('Audio not supported'); }
 };
 
 const playInvalidSound = () => {
     try {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume();
         
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        
-        // Error sound - descending harsh buzz
         const now = audioContext.currentTime;
-        
         const oscillator = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(audioContext.destination);
-        
         oscillator.frequency.value = 440;
         oscillator.type = 'sawtooth';
         gainNode.gain.setValueAtTime(0.5, now);
         gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
-        
-        // Descending frequency sweep
         oscillator.frequency.setValueAtTime(440, now);
         oscillator.frequency.exponentialRampToValueAtTime(220, now + 0.3);
-        
         oscillator.start(now);
         oscillator.stop(now + 0.4);
-    } catch (error) {
-        console.log('Audio not supported');
-    }
+    } catch (error) { console.log('Audio not supported'); }
 };
 
 const playCheckInSound = () => {
     try {
         const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
         const audioContext = new AudioContextClass();
+        if (audioContext.state === 'suspended') audioContext.resume();
         
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        
-        // Success chime - 3 ascending notes (C, E, G)
-        const frequencies = [523.25, 659.25, 783.99]; // C, E, G
+        const frequencies = [523.25, 659.25, 783.99];
         frequencies.forEach((freq, index) => {
             setTimeout(() => {
                 const oscillator = audioContext.createOscillator();
@@ -231,12 +129,9 @@ const playCheckInSound = () => {
                 oscillator.stop(audioContext.currentTime + 0.2);
             }, index * 120);
         });
-    } catch (error) {
-        console.log('Audio not supported');
-    }
+    } catch (error) { console.log('Audio not supported'); }
 };
 
-// ============= Visual Functions =============
 const triggerFlash = (color: string) => {
     const flash = document.createElement('div');
     flash.style.position = 'fixed';
@@ -258,6 +153,7 @@ const ScanQRCode: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const scanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const isProcessingRef = useRef<boolean>(false);
     
     const [cameraActive, setCameraActive] = useState(true);
     const [cameraError, setCameraError] = useState<string | null>(null);
@@ -265,17 +161,83 @@ const ScanQRCode: React.FC = () => {
     const [showManualInput, setShowManualInput] = useState(false);
     const [manualNumber, setManualNumber] = useState('');
     const [showResult, setShowResult] = useState(false);
-    const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-    const [selectedTicket, setSelectedTicket] = useState<TicketData | null>(null);
+    const [scanResult, setScanResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [selectedTicket, setSelectedTicket] = useState<any | null>(null);
     const [showConfirm, setShowConfirm] = useState(false);
-    const [isScanning, setIsScanning] = useState(true);
-    const [stats, setStats] = useState({
-        checkedIn: 0,
-        invalid: 0
-    });
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [scannerSession, setScannerSession] = useState<ScannerSession | null>(null);
+    const [currentUser, setCurrentUser] = useState<any>(null);
+    const [stats, setStats] = useState({ checkedIn: 0, invalid: 0 });
+    const [cameraInitialized, setCameraInitialized] = useState(false);
 
-    // Cleanup camera on unmount or logout
-    const cleanupCamera = () => {
+    // Get current user and scanner session
+    useEffect(() => {
+        const init = async () => {
+            // Get current user from Supabase Auth
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUser(user);
+            
+            // Get or create scanner session
+            const savedSession = localStorage.getItem('scannerSession');
+            if (savedSession) {
+                setScannerSession(JSON.parse(savedSession));
+            } else {
+                const scannerId = `SCN-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+                const newSession = {
+                    id: scannerId,
+                    scanner_id: scannerId,
+                    scanner_name: `Scanner-${scannerId.slice(-4)}`,
+                    scanner_location: 'Main Gate'
+                };
+                localStorage.setItem('scannerSession', JSON.stringify(newSession));
+                setScannerSession(newSession);
+                
+                // Save to database
+                await supabase.from('scanner_sessions').insert({
+                    scanner_id: scannerId,
+                    scanner_name: newSession.scanner_name,
+                    scanner_location: newSession.scanner_location,
+                    status: 'active',
+                    created_by: user?.id
+                });
+            }
+        };
+        init();
+    }, []);
+
+    // Load stats
+    const loadStats = useCallback(async () => {
+        if (!scannerSession) return;
+        
+        const today = new Date().toISOString().split('T')[0];
+        
+        const { count: todayCheckins } = await supabase
+            .from('ticket_checkins')
+            .select('*', { count: 'exact', head: true })
+            .eq('scanner_id', scannerSession.scanner_id)
+            .gte('check_in_time', `${today}T00:00:00`)
+            .lte('check_in_time', `${today}T23:59:59`);
+        
+        const { count: todayInvalid } = await supabase
+            .from('scan_logs')
+            .select('*', { count: 'exact', head: true })
+            .eq('scanner_id', scannerSession.scanner_id)
+            .eq('status', 'invalid')
+            .gte('scan_time', `${today}T00:00:00`)
+            .lte('scan_time', `${today}T23:59:59`);
+        
+        setStats({
+            checkedIn: todayCheckins || 0,
+            invalid: todayInvalid || 0
+        });
+    }, [scannerSession]);
+
+    useEffect(() => {
+        if (scannerSession) loadStats();
+    }, [scannerSession, loadStats]);
+
+    // Cleanup camera
+    const cleanupCamera = useCallback(() => {
         if (scanIntervalRef.current) {
             clearInterval(scanIntervalRef.current);
             scanIntervalRef.current = null;
@@ -292,39 +254,21 @@ const ScanQRCode: React.FC = () => {
             videoRef.current.srcObject = null;
         }
         
-        setIsScanning(false);
-    };
-
-    // Listen for beforeunload event
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-            cleanupCamera();
-        };
-        
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-            cleanupCamera();
-        };
+        setCameraInitialized(false);
     }, []);
 
-    // Start camera on mount
-    useEffect(() => {
-        if (cameraActive && !showManualInput && !cameraError) {
-            startCamera();
-        }
-        return () => {
-            cleanupCamera();
-        };
-    }, [cameraActive, showManualInput, cameraError]);
-
-    const startCamera = async () => {
+    // Start camera
+    const startCamera = useCallback(async () => {
         cleanupCamera();
+        setCameraError(null);
         
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
+                video: { 
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                }
             });
             
             streamRef.current = stream;
@@ -332,34 +276,51 @@ const ScanQRCode: React.FC = () => {
             if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 videoRef.current.setAttribute('playsinline', 'true');
+                
+                // Wait for video to be ready
+                await new Promise((resolve) => {
+                    if (videoRef.current!.readyState >= 2) {
+                        resolve(true);
+                    } else {
+                        videoRef.current!.oncanplay = () => resolve(true);
+                    }
+                });
+                
                 await videoRef.current.play();
-                setIsScanning(true);
+                setCameraInitialized(true);
                 startQRScanning();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Camera error:', error);
-            setCameraError('Camera access denied. Please allow camera permissions.');
-            setIsScanning(false);
+            if (error.name === 'NotAllowedError') {
+                setCameraError('Camera access denied. Please allow camera permissions.');
+            } else if (error.name === 'NotFoundError') {
+                setCameraError('No camera found on this device.');
+            } else if (error.name === 'NotReadableError') {
+                setCameraError('Camera is already in use by another application.');
+            } else {
+                setCameraError('Failed to start camera. Please check your camera.');
+            }
         }
-    };
+    }, [cleanupCamera]);
 
-    const stopCamera = () => {
+    const stopCamera = useCallback(() => {
         cleanupCamera();
-    };
+    }, [cleanupCamera]);
 
-    const startQRScanning = () => {
-        if (!videoRef.current || !canvasRef.current || !isScanning) return;
+    const startQRScanning = useCallback(() => {
+        if (!videoRef.current || !canvasRef.current || !cameraInitialized) return;
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         if (scanIntervalRef.current) {
             clearInterval(scanIntervalRef.current);
         }
 
         scanIntervalRef.current = setInterval(() => {
-            if (!isScanning || !cameraActive || showManualInput || !video.videoWidth || !video.videoHeight) return;
+            if (!cameraInitialized || !video.videoWidth || !video.videoHeight || isProcessingRef.current || showConfirm || showManualInput) return;
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -369,7 +330,8 @@ const ScanQRCode: React.FC = () => {
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
                 
-                if (code) {
+                if (code && !isProcessingRef.current) {
+                    // Stop scanning while processing
                     if (scanIntervalRef.current) {
                         clearInterval(scanIntervalRef.current);
                         scanIntervalRef.current = null;
@@ -377,51 +339,218 @@ const ScanQRCode: React.FC = () => {
                     processQRCode(code.data);
                 }
             }
-        }, 500);
+        }, 300);
+    }, [cameraInitialized, showConfirm, showManualInput]);
+
+    const logScanAttempt = async (ticketNumber: string, status: string, errorMessage?: string) => {
+        try {
+            await supabase.rpc('log_scan_attempt', {
+                p_ticket_number: ticketNumber,
+                p_status: status,
+                p_error_message: errorMessage,
+                p_scanner_id: scannerSession?.scanner_id,
+                p_scanner_session_id: scannerSession?.id,
+                p_scanned_by_id: currentUser?.id,
+                p_user_agent: navigator.userAgent
+            });
+        } catch (error) {
+            console.error('Error logging scan:', error);
+        }
     };
 
-    const processQRCode = (data: string) => {
-        const match = data.match(/TKT-\d{4}-\d{3}/);
-        if (!match) {
-            showError('Invalid QR code. Please scan a valid ticket.');
-            restartScanning();
-            return;
-        }
-
-        const ticket = mockTickets.find(t => t.ticketNumber === match[0]);
+    const processQRCode = async (data: string) => {
+        if (isProcessingRef.current) return;
+        isProcessingRef.current = true;
+        setIsProcessing(true);
         
-        if (!ticket) {
-            showError('Ticket not found in system.');
-            restartScanning();
-            return;
-        }
-
-        if (checkedInTickets.has(ticket.ticketNumber)) {
-            showError(`Ticket already checked in.`);
-            restartScanning();
-            return;
-        }
-
-        if (soundEnabled) playValidSound();
-        triggerFlash('#22c55e');
-        setSelectedTicket(ticket);
-        setShowConfirm(true);
-        stopCamera();
-    };
-
-    const restartScanning = () => {
-        setTimeout(() => {
-            if (cameraActive && !showManualInput && !showConfirm) {
-                startCamera();
+        // Extract ticket number from QR data (supports multiple formats)
+        let ticketNumber = '';
+        const patterns = [
+            /TKT-\d{4}-\d{3}/,
+            /TKT-\d{4}-\d{3}-\d+/,
+            /ticket[:\s]*([A-Z0-9-]+)/i,
+            /([A-Z0-9]{3,}-\d{4}-\d{3,})/
+        ];
+        
+        for (const pattern of patterns) {
+            const match = data.match(pattern);
+            if (match) {
+                ticketNumber = match[0];
+                break;
             }
-        }, 2000);
+        }
+        
+        if (!ticketNumber) {
+            await logScanAttempt(data, 'invalid', 'Invalid QR code format');
+            showError('Invalid QR code. Please scan a valid ticket QR code.');
+            restartScanning();
+            isProcessingRef.current = false;
+            setIsProcessing(false);
+            return;
+        }
+        
+        try {
+            // Call validate_ticket function
+            const { data: validationResult, error } = await supabase
+                .rpc('validate_ticket', { p_ticket_number: ticketNumber });
+            
+            if (error) throw error;
+            
+            if (!validationResult || !validationResult.is_valid) {
+                await logScanAttempt(ticketNumber, 'invalid', validationResult?.message || 'Ticket not valid');
+                showError(validationResult?.message || 'Ticket not found or invalid');
+                restartScanning();
+                isProcessingRef.current = false;
+                setIsProcessing(false);
+                return;
+            }
+            
+            if (validationResult.is_checked_in) {
+                await logScanAttempt(ticketNumber, 'invalid', 'Ticket already checked in');
+                const checkInTime = validationResult.checked_in_at ? new Date(validationResult.checked_in_at).toLocaleTimeString() : 'previously';
+                showError(`Ticket already checked in at ${checkInTime}`);
+                restartScanning();
+                isProcessingRef.current = false;
+                setIsProcessing(false);
+                return;
+            }
+            
+            // Valid ticket - log valid scan
+            await logScanAttempt(ticketNumber, 'valid');
+            
+            if (soundEnabled) playValidSound();
+            triggerFlash('#22c55e');
+            
+            setSelectedTicket(validationResult);
+            setShowConfirm(true);
+            stopCamera();
+            
+        } catch (error) {
+            console.error('Error processing QR code:', error);
+            showError('Error processing ticket. Please try again.');
+            restartScanning();
+        } finally {
+            isProcessingRef.current = false;
+            setIsProcessing(false);
+        }
     };
+
+    const handleCheckIn = async () => {
+        if (!selectedTicket) return;
+        
+        setIsProcessing(true);
+        isProcessingRef.current = true;
+        
+        try {
+            const { data: checkinResult, error } = await supabase
+                .rpc('checkin_ticket', {
+                    p_ticket_id: selectedTicket.ticket_id,
+                    p_checked_in_by: currentUser?.id,
+                    p_scanner_id: scannerSession?.scanner_id,
+                    p_scanner_session_id: scannerSession?.id,
+                    p_scanner_location: scannerSession?.scanner_location,
+                    p_gate_number: 'Gate 1'
+                });
+            
+            if (error) throw error;
+            
+            if (checkinResult?.success) {
+                if (soundEnabled) playCheckInSound();
+                triggerFlash('#22c55e');
+                
+                setStats(prev => ({ ...prev, checkedIn: prev.checkedIn + 1 }));
+                setScanResult({ 
+                    success: true, 
+                    message: `✓ ${selectedTicket.customer_name} checked in successfully`
+                });
+                
+                setShowConfirm(false);
+                setSelectedTicket(null);
+                setShowResult(true);
+                await loadStats();
+                
+                setTimeout(() => {
+                    setShowResult(false);
+                    setScanResult(null);
+                    restartScanning();
+                }, 2500);
+            } else {
+                showError(checkinResult?.message || 'Check-in failed');
+                restartScanning();
+            }
+        } catch (error) {
+            console.error('Error during check-in:', error);
+            showError('Failed to check in ticket. Please try again.');
+            restartScanning();
+        } finally {
+            setIsProcessing(false);
+            isProcessingRef.current = false;
+        }
+    };
+
+    const handleManualCheckIn = async () => {
+        if (!manualNumber.trim()) {
+            showError('Please enter a ticket number');
+            return;
+        }
+        
+        setIsProcessing(true);
+        isProcessingRef.current = true;
+        
+        try {
+            const { data: validationResult, error } = await supabase
+                .rpc('validate_ticket', { p_ticket_number: manualNumber.toUpperCase() });
+            
+            if (error) throw error;
+            
+            if (!validationResult || !validationResult.is_valid) {
+                await logScanAttempt(manualNumber.toUpperCase(), 'invalid', validationResult?.message);
+                showError(validationResult?.message || 'Ticket not found');
+                setManualNumber('');
+                setIsProcessing(false);
+                isProcessingRef.current = false;
+                return;
+            }
+            
+            if (validationResult.is_checked_in) {
+                await logScanAttempt(manualNumber.toUpperCase(), 'invalid', 'Ticket already checked in');
+                showError('Ticket already checked in');
+                setManualNumber('');
+                setIsProcessing(false);
+                isProcessingRef.current = false;
+                return;
+            }
+            
+            await logScanAttempt(manualNumber.toUpperCase(), 'valid');
+            
+            setSelectedTicket(validationResult);
+            setShowConfirm(true);
+            setManualNumber('');
+            setShowManualInput(false);
+            stopCamera();
+            
+        } catch (error) {
+            console.error('Error in manual check-in:', error);
+            showError('Error processing ticket');
+        } finally {
+            setIsProcessing(false);
+            isProcessingRef.current = false;
+        }
+    };
+
+    const restartScanning = useCallback(() => {
+        setTimeout(async () => {
+            if (!showConfirm && !showManualInput && cameraActive) {
+                await startCamera();
+            }
+        }, 1000);
+    }, [showConfirm, showManualInput, cameraActive, startCamera]);
 
     const showError = (message: string) => {
         if (soundEnabled) playInvalidSound();
         triggerFlash('#ef4444');
         setStats(prev => ({ ...prev, invalid: prev.invalid + 1 }));
-        setScanResult({ success: false, message, timestamp: new Date().toISOString() });
+        setScanResult({ success: false, message });
         setShowResult(true);
         
         setTimeout(() => {
@@ -430,75 +559,30 @@ const ScanQRCode: React.FC = () => {
         }, 2000);
     };
 
-    const handleCheckIn = () => {
-        if (!selectedTicket) return;
-        
-        const checkedIn = { 
-            ...selectedTicket, 
-            status: 'used' as const, 
-            checkInTime: new Date().toLocaleTimeString(),
-            checkedInBy: 'Gate Scanner'
+    // Effect for camera lifecycle
+    useEffect(() => {
+        if (cameraActive && !showManualInput && !cameraError && !showConfirm) {
+            startCamera();
+        }
+        return () => {
+            cleanupCamera();
         };
-        checkedInTickets.set(selectedTicket.ticketNumber, checkedIn);
-        
-        if (soundEnabled) playCheckInSound();
-        triggerFlash('#22c55e');
-        
-        setStats(prev => ({ ...prev, checkedIn: prev.checkedIn + 1 }));
-        setScanResult({ 
-            success: true, 
-            message: `✓ ${selectedTicket.customerName} checked in successfully`,
-            ticket: checkedIn,
-            timestamp: new Date().toISOString()
-        });
-        
-        setShowConfirm(false);
-        setSelectedTicket(null);
-        setShowResult(true);
-        
-        setTimeout(() => {
-            setShowResult(false);
-            setScanResult(null);
-            if (cameraActive && !showManualInput) {
-                startCamera();
-            }
-        }, 2000);
-    };
+    }, [cameraActive, showManualInput, cameraError, showConfirm, startCamera, cleanupCamera]);
 
-    const handleManualCheckIn = () => {
-        if (!manualNumber.trim()) {
-            showError('Please enter a ticket number');
-            return;
+    // Effect for scanning when camera is ready
+    useEffect(() => {
+        if (cameraInitialized && !showConfirm && !showManualInput) {
+            startQRScanning();
         }
+    }, [cameraInitialized, showConfirm, showManualInput, startQRScanning]);
 
-        const ticket = mockTickets.find(t => t.ticketNumber === manualNumber.toUpperCase());
-        
-        if (!ticket) {
-            showError('Ticket not found');
-            setManualNumber('');
-            return;
-        }
-
-        if (checkedInTickets.has(ticket.ticketNumber)) {
-            showError('Ticket already checked in');
-            setManualNumber('');
-            return;
-        }
-
-        setSelectedTicket(ticket);
-        setShowConfirm(true);
-        setManualNumber('');
-        setShowManualInput(false);
-        stopCamera();
-    };
-
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             cleanupCamera();
         };
-    }, []);
+    }, [cleanupCamera]);
 
-    // Info icon component
     const InfoIcon = ({ className }: { className?: string }) => (
         <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -507,6 +591,16 @@ const ScanQRCode: React.FC = () => {
 
     return (
         <div className="fixed inset-0 bg-black">
+            {/* Processing Overlay */}
+            {isProcessing && (
+                <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+                    <div className="text-center">
+                        <Loader2 className="w-12 h-12 text-teal-500 animate-spin mx-auto mb-4" />
+                        <p className="text-white">Processing...</p>
+                    </div>
+                </div>
+            )}
+
             {/* Camera View */}
             {cameraActive && !showManualInput && !cameraError && (
                 <>
@@ -519,19 +613,21 @@ const ScanQRCode: React.FC = () => {
                     />
                     <canvas ref={canvasRef} className="hidden" />
                     
-                    {/* Overlay */}
                     <div className="absolute inset-0">
-                        {/* Dark overlay */}
-                        <div className="absolute inset-0 bg-black/40">
-                            {/* Scan frame */}
-                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80">
-                                <div className="absolute -top-2 -left-2 w-16 h-16 border-t-4 border-l-4 border-teal-400 rounded-tl-2xl" />
-                                <div className="absolute -top-2 -right-2 w-16 h-16 border-t-4 border-r-4 border-teal-400 rounded-tr-2xl" />
-                                <div className="absolute -bottom-2 -left-2 w-16 h-16 border-b-4 border-l-4 border-teal-400 rounded-bl-2xl" />
-                                <div className="absolute -bottom-2 -right-2 w-16 h-16 border-b-4 border-r-4 border-teal-400 rounded-br-2xl" />
+                        {/* Scan Frame Overlay */}
+                        <div className="absolute inset-0 bg-black/50">
+                            {/* Transparent center for scan area */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-transparent">
+                                {/* Corner brackets */}
+                                <div className="absolute -top-2 -left-2 w-12 h-12 border-t-4 border-l-4 border-teal-400 rounded-tl-2xl" />
+                                <div className="absolute -top-2 -right-2 w-12 h-12 border-t-4 border-r-4 border-teal-400 rounded-tr-2xl" />
+                                <div className="absolute -bottom-2 -left-2 w-12 h-12 border-b-4 border-l-4 border-teal-400 rounded-bl-2xl" />
+                                <div className="absolute -bottom-2 -right-2 w-12 h-12 border-b-4 border-r-4 border-teal-400 rounded-br-2xl" />
+                                
+                                {/* Scanning line animation */}
                                 <motion.div
-                                    animate={{ y: [-150, 150] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
+                                    animate={{ y: [-140, 140] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                                     className="absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-teal-400 to-transparent"
                                 />
                             </div>
@@ -565,11 +661,33 @@ const ScanQRCode: React.FC = () => {
                                     >
                                         <Edit className="w-5 h-5 text-white" />
                                     </button>
+                                    <button 
+                                        onClick={() => {
+                                            setCameraActive(false);
+                                            setTimeout(() => {
+                                                setCameraActive(true);
+                                            }, 500);
+                                        }} 
+                                        className="p-2 bg-white/20 backdrop-blur-sm rounded-lg hover:bg-white/30 transition"
+                                    >
+                                        <Camera className="w-5 h-5 text-white" />
+                                    </button>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Right Side - Only Check-in Button */}
+                        {/* Scanner Info */}
+                        {scannerSession && (
+                            <div className="absolute top-20 left-4">
+                                <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-1.5">
+                                    <p className="text-xs text-white/80">
+                                        {scannerSession.scanner_name} | {scannerSession.scanner_location}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Check-in Button */}
                         <div className="absolute top-1/2 right-4 -translate-y-1/2">
                             <button
                                 onClick={() => {
@@ -585,7 +703,7 @@ const ScanQRCode: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Bottom Stats */}
+                        {/* Stats Bar */}
                         <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent">
                             <div className="grid grid-cols-3 gap-4 text-center">
                                 <div>
@@ -619,7 +737,7 @@ const ScanQRCode: React.FC = () => {
                 </>
             )}
 
-            {/* Manual Input */}
+            {/* Manual Input Modal */}
             {showManualInput && (
                 <div className="absolute inset-0 bg-black flex items-center justify-center p-4 z-50">
                     <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white rounded-2xl max-w-md w-full p-6">
@@ -638,6 +756,7 @@ const ScanQRCode: React.FC = () => {
                                 placeholder="TKT-2024-001"
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl font-mono text-center text-lg focus:ring-2 focus:ring-teal-500 outline-none"
                                 autoFocus
+                                disabled={isProcessing}
                             />
                             <div className="bg-blue-50 rounded-lg p-3">
                                 <p className="text-xs text-blue-800 flex items-center gap-2">
@@ -653,13 +772,16 @@ const ScanQRCode: React.FC = () => {
                                     startCamera(); 
                                 }} 
                                 className="flex-1 px-4 py-2 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition"
+                                disabled={isProcessing}
                             >
                                 Cancel
                             </button>
                             <button 
                                 onClick={handleManualCheckIn} 
-                                className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition"
+                                className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition flex items-center justify-center gap-2"
+                                disabled={isProcessing}
                             >
+                                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                                 Verify Ticket
                             </button>
                         </div>
@@ -725,23 +847,23 @@ const ScanQRCode: React.FC = () => {
                             <div className="p-5 space-y-3">
                                 <div className="flex justify-between py-2 border-b border-gray-100">
                                     <span className="text-sm text-gray-500">Ticket Number</span>
-                                    <span className="text-sm font-mono font-semibold text-teal-600">{selectedTicket.ticketNumber}</span>
+                                    <span className="text-sm font-mono font-semibold text-teal-600">{selectedTicket.ticket_number}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-500">Event</span>
-                                    <span className="text-sm font-medium">{selectedTicket.eventName}</span>
+                                    <span className="text-sm font-medium">{selectedTicket.event_name}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-500">Customer</span>
-                                    <span className="text-sm">{selectedTicket.customerName}</span>
+                                    <span className="text-sm">{selectedTicket.customer_name}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-500">Seat</span>
-                                    <span className="text-sm">Row {selectedTicket.seatRow}, Seat {selectedTicket.seatNumber}</span>
+                                    <span className="text-sm">{selectedTicket.seat_info}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-sm text-gray-500">Time</span>
-                                    <span className="text-sm">{selectedTicket.eventDate} at {selectedTicket.eventTime}</span>
+                                    <span className="text-sm">{selectedTicket.event_date} at {selectedTicket.event_time}</span>
                                 </div>
                             </div>
                             <div className="flex gap-3 p-5 border-t border-gray-100">
@@ -752,14 +874,16 @@ const ScanQRCode: React.FC = () => {
                                         startCamera(); 
                                     }} 
                                     className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                                    disabled={isProcessing}
                                 >
                                     Cancel
                                 </button>
                                 <button 
                                     onClick={handleCheckIn} 
                                     className="flex-1 px-4 py-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg hover:shadow-lg transition flex items-center justify-center gap-2"
+                                    disabled={isProcessing}
                                 >
-                                    <Check className="w-4 h-4" />
+                                    {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                     Confirm Check-in
                                 </button>
                             </div>
@@ -790,13 +914,6 @@ const ScanQRCode: React.FC = () => {
                                         {scanResult.success ? 'Check-in Successful' : 'Check-in Failed'}
                                     </h3>
                                     <p className="text-sm text-white/90 mt-1">{scanResult.message}</p>
-                                    {scanResult.ticket && (
-                                        <div className="mt-2 pt-2 border-t border-white/20">
-                                            <p className="text-xs text-white/80">
-                                                Ticket: {scanResult.ticket.ticketNumber} | Time: {scanResult.ticket.checkInTime}
-                                            </p>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         </div>

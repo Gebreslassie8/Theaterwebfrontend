@@ -1,5 +1,5 @@
-// src/pages/QR Scanner/ScannerDailyReport.tsx
-import React, { useState, useMemo } from 'react';
+// src/pages/QRScanner/ScannerDailyReport.tsx
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -10,7 +10,6 @@ import {
     Activity,
     Calendar,
     TrendingUp,
-    Users,
     BarChart3,
     Download,
     Filter,
@@ -19,7 +18,8 @@ import {
     ArrowLeft,
     RefreshCw,
     UserCheck,
-    UserX
+    UserX,
+    Loader2
 } from 'lucide-react';
 import {
     PieChart,
@@ -31,110 +31,117 @@ import {
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
 // Types
-interface StatCardProps {
-    title: string;
-    value: string | number;
-    icon: React.ElementType;
-    color: string;
-    delay: number;
-    change?: string;
-    trend?: 'up' | 'down';
-}
-
-interface ScanRecord {
-    id: number;
-    ticketNumber: string;
-    eventName: string;
-    scanTime: Date;
-    scannedBy: string;
+interface ScanLog {
+    id: string;
+    ticket_number: string;
+    event_name: string;
+    scan_time: string;
+    scanned_by_name: string;
     status: 'valid' | 'invalid' | 'duplicate';
-    scannerId: string;
-    customerName: string;
-    seatInfo: string;
+    scanner_id: string;
+    customer_name: string;
+    seat_info: string;
 }
 
-// Mock Data - Recent Scan Records
-const recentScans: ScanRecord[] = [
-    { id: 1, ticketNumber: 'TKT-2024-001', eventName: 'The Lion King', scanTime: new Date(2024, 3, 28, 19, 23), scannedBy: 'John Scanner', status: 'valid', scannerId: 'SCN-001', customerName: 'John Smith', seatInfo: 'A12' },
-    { id: 2, ticketNumber: 'TKT-2024-002', eventName: 'Hamilton', scanTime: new Date(2024, 3, 28, 19, 15), scannedBy: 'Sarah Operator', status: 'valid', scannerId: 'SCN-001', customerName: 'Sarah Johnson', seatInfo: 'B5' },
-    { id: 3, ticketNumber: 'TKT-2024-003', eventName: 'Wicked', scanTime: new Date(2024, 3, 28, 18, 55), scannedBy: 'Michael Scanner', status: 'invalid', scannerId: 'SCN-002', customerName: 'Michael Brown', seatInfo: 'C8' },
-    { id: 4, ticketNumber: 'TKT-2024-004', eventName: 'Phantom', scanTime: new Date(2024, 3, 28, 19, 45), scannedBy: 'John Scanner', status: 'valid', scannerId: 'SCN-001', customerName: 'Emily Davis', seatInfo: 'D3' },
-    { id: 5, ticketNumber: 'TKT-2024-005', eventName: 'Chicago', scanTime: new Date(2024, 3, 28, 18, 30), scannedBy: 'David Operator', status: 'valid', scannerId: 'SCN-003', customerName: 'David Wilson', seatInfo: 'E7' },
-    { id: 6, ticketNumber: 'TKT-2024-006', eventName: 'Lion King', scanTime: new Date(2024, 3, 28, 19, 10), scannedBy: 'Sarah Operator', status: 'duplicate', scannerId: 'SCN-001', customerName: 'Lisa Anderson', seatInfo: 'F2' },
-    { id: 7, ticketNumber: 'TKT-2024-007', eventName: 'Les Misérables', scanTime: new Date(2024, 3, 28, 18, 45), scannedBy: 'Michael Scanner', status: 'valid', scannerId: 'SCN-002', customerName: 'Robert Taylor', seatInfo: 'G9' },
-    { id: 8, ticketNumber: 'TKT-2024-008', eventName: 'Hamilton', scanTime: new Date(2024, 3, 28, 19, 30), scannedBy: 'David Operator', status: 'invalid', scannerId: 'SCN-003', customerName: 'Maria Garcia', seatInfo: 'H4' },
-    { id: 9, ticketNumber: 'TKT-2024-009', eventName: 'The Lion King', scanTime: new Date(2024, 3, 28, 20, 15), scannedBy: 'John Scanner', status: 'valid', scannerId: 'SCN-001', customerName: 'James Wilson', seatInfo: 'B12' },
-    { id: 10, ticketNumber: 'TKT-2024-010', eventName: 'Wicked', scanTime: new Date(2024, 3, 28, 20, 30), scannedBy: 'Sarah Operator', status: 'valid', scannerId: 'SCN-001', customerName: 'Patricia Brown', seatInfo: 'D8' },
-];
+interface DailyReport {
+    scan_date: string;
+    total_scans: number;
+    valid_scans: number;
+    invalid_scans: number;
+    duplicate_scans: number;
+    active_scanners: number;
+    active_operators: number;
+    unique_tickets_scanned: number;
+}
 
-// Get today's scans (for demo, using current date)
-const getTodaysScans = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return recentScans.filter(scan => {
-        const scanDate = new Date(scan.scanTime);
-        scanDate.setHours(0, 0, 0, 0);
-        return scanDate.getTime() === today.getTime();
-    }).length;
-};
-
-// Stat Card Component
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon: Icon, color, delay, change, trend }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay, type: "spring", stiffness: 100 }}
-            whileHover={{ y: -2 }}
-            className="bg-white rounded-xl p-4 shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-        >
-            <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center shadow-md transition-all duration-300 ${isHovered ? 'scale-105' : ''}`}>
-                    <Icon className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex-1">
-                    <p className="text-xs text-gray-500">{title}</p>
-                    <p className="text-xl font-bold text-gray-900">{value}</p>
-                    {change && (
-                        <div className={`flex items-center gap-1 text-xs mt-0.5 ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                            <TrendingUp className="h-3 w-3" />
-                            <span>{change}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </motion.div>
-    );
-};
-
-// Colors for pie chart
-const COLORS = ['#10B981', '#EF4444', '#F59E0B'];
+interface EventSummary {
+    event_id: string;
+    event_name: string;
+    event_date: string;
+    total_scans: number;
+    valid_scans: number;
+    invalid_scans: number;
+    checked_in_count: number;
+    total_tickets_sold: number;
+    checkin_percentage: number;
+}
 
 const ScannerDailyReport: React.FC = () => {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+    const [dailyReports, setDailyReports] = useState<DailyReport[]>([]);
+    const [eventSummaries, setEventSummaries] = useState<EventSummary[]>([]);
+    const [recentScans, setRecentScans] = useState<ScanLog[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [filterScannedBy, setFilterScannedBy] = useState<string>('all');
+    const [filterEvent, setFilterEvent] = useState<string>('all');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
 
-    // Calculate Summary Statistics
-    const totalScans = recentScans.length;
-    const totalValid = recentScans.filter(scan => scan.status === 'valid').length;
-    const totalInvalid = recentScans.filter(scan => scan.status === 'invalid').length;
-    const totalDuplicate = recentScans.filter(scan => scan.status === 'duplicate').length;
-    const todayScanned = getTodaysScans();
-    const validityRate = ((totalValid / totalScans) * 100).toFixed(1);
+    // Load all data
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            // Load daily reports from view
+            const { data: reportsData, error: reportsError } = await supabase
+                .from('daily_scan_report')
+                .select('*')
+                .order('scan_date', { ascending: false });
+            
+            if (reportsError) throw reportsError;
+            setDailyReports(reportsData || []);
+            
+            // Load event summaries from view
+            const { data: eventsData, error: eventsError } = await supabase
+                .from('event_scan_summary')
+                .select('*')
+                .order('event_date', { ascending: false });
+            
+            if (eventsError) throw eventsError;
+            setEventSummaries(eventsData || []);
+            
+            // Load recent scan logs
+            const { data: scansData, error: scansError } = await supabase
+                .from('scan_logs')
+                .select('*')
+                .order('scan_time', { ascending: false })
+                .limit(100);
+            
+            if (scansError) throw scansError;
+            setRecentScans(scansData || []);
+            
+        } catch (error) {
+            console.error('Error loading data:', error);
+            setPopupMessage({
+                title: 'Error',
+                message: 'Failed to load report data',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    // Get unique scanners
-    const uniqueScanners = useMemo(() => 
-        Array.from(new Set(recentScans.map(scan => scan.scannedBy))), []
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    // Calculate summary statistics from daily reports
+    const totalScans = dailyReports.reduce((sum, r) => sum + r.total_scans, 0);
+    const totalValid = dailyReports.reduce((sum, r) => sum + r.valid_scans, 0);
+    const totalInvalid = dailyReports.reduce((sum, r) => sum + r.invalid_scans, 0);
+    const totalDuplicate = dailyReports.reduce((sum, r) => sum + r.duplicate_scans, 0);
+    const todayScanned = dailyReports[0]?.total_scans || 0;
+    const validityRate = totalScans > 0 ? ((totalValid / totalScans) * 100).toFixed(1) : '0';
+
+    // Get unique events for filter
+    const uniqueEvents = useMemo(() => 
+        Array.from(new Set(recentScans.map(scan => scan.event_name).filter(Boolean))), 
+        [recentScans]
     );
 
     // Filter recent scans
@@ -144,9 +151,9 @@ const ScannerDailyReport: React.FC = () => {
         if (searchTerm) {
             const query = searchTerm.toLowerCase();
             filtered = filtered.filter(scan =>
-                scan.ticketNumber.toLowerCase().includes(query) ||
-                scan.eventName.toLowerCase().includes(query) ||
-                scan.customerName.toLowerCase().includes(query)
+                scan.ticket_number?.toLowerCase().includes(query) ||
+                scan.event_name?.toLowerCase().includes(query) ||
+                scan.customer_name?.toLowerCase().includes(query)
             );
         }
 
@@ -154,17 +161,17 @@ const ScannerDailyReport: React.FC = () => {
             filtered = filtered.filter(scan => scan.status === filterStatus);
         }
 
-        if (filterScannedBy !== 'all') {
-            filtered = filtered.filter(scan => scan.scannedBy === filterScannedBy);
+        if (filterEvent !== 'all') {
+            filtered = filtered.filter(scan => scan.event_name === filterEvent);
         }
 
         return filtered;
-    }, [recentScans, searchTerm, filterStatus, filterScannedBy]);
+    }, [recentScans, searchTerm, filterStatus, filterEvent]);
 
     const clearFilters = () => {
         setSearchTerm('');
         setFilterStatus('all');
-        setFilterScannedBy('all');
+        setFilterEvent('all');
         setPopupMessage({
             title: 'Filters Cleared',
             message: 'All filters have been reset',
@@ -184,7 +191,9 @@ const ScannerDailyReport: React.FC = () => {
                 todayScanned,
                 validityRate: `${validityRate}%`
             },
-            recentScans: recentScans
+            dailyReports,
+            eventSummaries,
+            recentScans
         };
 
         const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
@@ -203,16 +212,26 @@ const ScannerDailyReport: React.FC = () => {
         setShowSuccessPopup(true);
     };
 
-    // Scan History Columns - Using "Scanned By" instead of "Gate"
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    // Scan History Columns
     const historyColumns = [
-        { Header: 'Ticket Number', accessor: 'ticketNumber', Cell: (row: ScanRecord) => <span className="font-mono text-sm">{row.ticketNumber}</span> },
-        { Header: 'Customer', accessor: 'customerName' },
-        { Header: 'Event', accessor: 'eventName' },
-        { Header: 'Seat', accessor: 'seatInfo' },
-        { Header: 'Scanned By', accessor: 'scannedBy' },
-        { Header: 'Time', accessor: 'scanTime', Cell: (row: ScanRecord) => row.scanTime.toLocaleTimeString() },
+        { Header: 'Ticket Number', accessor: 'ticket_number', Cell: (row: ScanLog) => <span className="font-mono text-sm">{row.ticket_number}</span> },
+        { Header: 'Customer', accessor: 'customer_name', Cell: (row: ScanLog) => row.customer_name || 'N/A' },
+        { Header: 'Event', accessor: 'event_name', Cell: (row: ScanLog) => row.event_name || 'N/A' },
+        { Header: 'Seat', accessor: 'seat_info', Cell: (row: ScanLog) => row.seat_info || 'N/A' },
+        { Header: 'Scanned By', accessor: 'scanned_by_name', Cell: (row: ScanLog) => row.scanned_by_name || 'System' },
+        { Header: 'Time', accessor: 'scan_time', Cell: (row: ScanLog) => formatDate(row.scan_time) },
         {
-            Header: 'Status', accessor: 'status', Cell: (row: ScanRecord) => {
+            Header: 'Status', accessor: 'status', Cell: (row: ScanLog) => {
                 switch (row.status) {
                     case 'valid': return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Valid</span>;
                     case 'invalid': return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Invalid</span>;
@@ -223,7 +242,7 @@ const ScannerDailyReport: React.FC = () => {
         }
     ];
 
-    // Summary Cards - Total, Valid, Invalid, Today's Scanned
+    // Summary Cards
     const summaryCards = [
         { title: "Total Scans", value: totalScans.toLocaleString(), icon: Scan, color: "from-teal-500 to-emerald-600", delay: 0.1, change: `All time scans`, trend: 'up' as const },
         { title: "Valid Scans", value: totalValid.toLocaleString(), icon: CheckCircle, color: "from-green-500 to-emerald-600", delay: 0.15, change: `${validityRate}% rate`, trend: 'up' as const },
@@ -238,27 +257,38 @@ const ScannerDailyReport: React.FC = () => {
         { name: 'Duplicate', value: totalDuplicate, color: '#F59E0B' }
     ];
 
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Loading report data...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-             {/* Header */}
-<div className="mb-8">
-    <div className="flex items-center gap-3">
-        <button
-            onClick={() => navigate('/scanner/validate/scan')}
-            className="p-2 rounded-lg hover:bg-gray-100 transition"
-        >
-            <ArrowLeft className="h-5 w-5 text-gray-600" />
-        </button>
-        <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
-            <BarChart3 className="h-6 w-6 text-white" />
-        </div>
-        <div>
-            <h1 className="text-2xl font-bold text-gray-900">Scan Report</h1>
-            <p className="text-sm text-gray-500">Overview of ticket scans and validations</p>
-        </div>
-    </div>
-</div>
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => navigate('/scanner/validate/scan')}
+                            className="p-2 rounded-lg hover:bg-gray-100 transition"
+                        >
+                            <ArrowLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <div className="p-2.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 shadow-lg">
+                            <BarChart3 className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-gray-900">Scan Report</h1>
+                            <p className="text-sm text-gray-500">Overview of ticket scans and validations</p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* Summary Cards */}
                 <motion.div
@@ -267,16 +297,23 @@ const ScannerDailyReport: React.FC = () => {
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8"
                 >
                     {summaryCards.map((card, index) => (
-                        <StatCard
-                            key={index}
-                            title={card.title}
-                            value={card.value}
-                            icon={card.icon}
-                            color={card.color}
-                            delay={card.delay}
-                            change={card.change}
-                            trend={card.trend}
-                        />
+                        <div key={index} className="bg-white rounded-xl p-4 shadow-md border border-gray-100">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center shadow-md`}>
+                                    <card.icon className="h-6 w-6 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-xs text-gray-500">{card.title}</p>
+                                    <p className="text-xl font-bold text-gray-900">{card.value}</p>
+                                    {card.change && (
+                                        <div className={`flex items-center gap-1 text-xs mt-0.5 ${card.trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                                            <TrendingUp className="h-3 w-3" />
+                                            <span>{card.change}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     ))}
                 </motion.div>
 
@@ -330,7 +367,7 @@ const ScannerDailyReport: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-2xl font-bold text-red-600">{totalInvalid}</p>
-                                    <p className="text-xs text-gray-500">{((totalInvalid / totalScans) * 100).toFixed(1)}% of total</p>
+                                    <p className="text-xs text-gray-500">{totalScans > 0 ? ((totalInvalid / totalScans) * 100).toFixed(1) : '0'}% of total</p>
                                 </div>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-xl">
@@ -340,7 +377,7 @@ const ScannerDailyReport: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-2xl font-bold text-yellow-600">{totalDuplicate}</p>
-                                    <p className="text-xs text-gray-500">{((totalDuplicate / totalScans) * 100).toFixed(1)}% of total</p>
+                                    <p className="text-xs text-gray-500">{totalScans > 0 ? ((totalDuplicate / totalScans) * 100).toFixed(1) : '0'}% of total</p>
                                 </div>
                             </div>
                         </div>
@@ -356,8 +393,14 @@ const ScannerDailyReport: React.FC = () => {
                                     <Activity className="h-5 w-5 text-teal-600" />
                                     <h2 className="text-lg font-semibold text-gray-900">Recent Scan Activity</h2>
                                 </div>
-                                {/* Export button moved to right side above table */}
                                 <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={loadData}
+                                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center gap-1"
+                                    >
+                                        <RefreshCw className="h-3 w-3" />
+                                        Refresh
+                                    </button>
                                     <ReusableButton
                                         onClick={exportReport}
                                         icon={Download}
@@ -393,16 +436,16 @@ const ScannerDailyReport: React.FC = () => {
                                     <option value="duplicate">Duplicate</option>
                                 </select>
                                 <select
-                                    value={filterScannedBy}
-                                    onChange={(e) => setFilterScannedBy(e.target.value)}
+                                    value={filterEvent}
+                                    onChange={(e) => setFilterEvent(e.target.value)}
                                     className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-teal-500 outline-none"
                                 >
-                                    <option value="all">All Scanners</option>
-                                    {uniqueScanners.map(scanner => (
-                                        <option key={scanner} value={scanner}>{scanner}</option>
+                                    <option value="all">All Events</option>
+                                    {uniqueEvents.map(event => (
+                                        <option key={event} value={event}>{event}</option>
                                     ))}
                                 </select>
-                                {(searchTerm || filterStatus !== 'all' || filterScannedBy !== 'all') && (
+                                {(searchTerm || filterStatus !== 'all' || filterEvent !== 'all') && (
                                     <button
                                         onClick={clearFilters}
                                         className="px-3 py-2 text-sm text-teal-600 hover:text-teal-700 hover:bg-teal-50 rounded-lg transition-colors flex items-center gap-1"
@@ -446,15 +489,6 @@ const ScannerDailyReport: React.FC = () => {
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                {/* Report Footer */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200 print:block hidden">
-                    <div className="flex justify-between items-center text-xs text-gray-500">
-                        <span>Report Generated: {new Date().toLocaleString()}</span>
-                        <span>Theatre Hub Ethiopia - Scan Report</span>
-                        <span>Page 1 of 1</span>
                     </div>
                 </div>
 
