@@ -2,46 +2,10 @@
 import supabase from "@/config/supabaseClient";
 import React, { useState, useRef, ChangeEvent, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Building2,
-  FileText,
-  Upload,
-  CheckCircle,
-  AlertCircle,
-  ChevronRight,
-  ChevronLeft,
-  MapPin,
-  Mail,
-  Phone,
-  Theater,
-  CreditCard,
-  Lock,
-  X,
-  Loader2,
-  Send,
-  FileCheck,
-  Receipt,
-  Calendar,
-  Wallet,
-  ClipboardCheck,
-  Ticket,
-  Award,
-  Star,
-  UserPlus,
-  User,
-  FileSignature,
-  AlertTriangle,
-  Check,
-  Eye,
-  EyeOff,
-  TrendingUp,
-  Percent
-} from "lucide-react";
+import {Building2, FileText, Upload, CheckCircle, AlertCircle, ChevronRight, ChevronLeft,MapPin, Mail, Phone,Theater, CreditCard, Lock, X, Loader2, Send,FileCheck,Receipt,Calendar,Wallet,ClipboardCheck,Ticket,Award,Star,UserPlus,User,FileSignature,AlertTriangle,Check,Eye,EyeOff,TrendingUp,Percent} from "lucide-react";
 
-// ============================================
+
 // TYPES
-// ============================================
-
 interface FormData {
   // Step 1: Owner Account
   ownerFullName: string;
@@ -74,6 +38,7 @@ interface FormData {
   agreedToTerms: boolean;
   agreedToNoRefund: boolean;
 }
+
 
 interface Errors {
   [key: string]: string;
@@ -112,6 +77,8 @@ const CITY_REGION_MAP: Record<string, string[]> = {
   "Southern Nations": ["Arba Minch", "Sodo", "Wolaita Sodo"],
 };
 
+
+
 // Get cities based on selected region
 const getCitiesForRegion = (region: string): string[] => {
   return CITY_REGION_MAP[region] || [];
@@ -128,6 +95,7 @@ const BUSINESS_TYPES = [
   "Non-Profit",
   "Government",
 ];
+
 const YEARS_OPTIONS = [
   "Less than 1 year",
   "1-3 years",

@@ -8,60 +8,70 @@ interface MainLayoutProps {
   children?: React.ReactNode;
 }
 
-// Extend Window interface for Chatbase
 declare global {
   interface Window {
     chatbase?: any;
   }
 }
 
+const CHATBASE_TOKEN_URL =
+  import.meta.env.VITE_CHATBASE_TOKEN_URL ||
+  "https://frrnxbdkumyuvjrxjqxh.supabase.co/functions/v1/chatbase-token";
+
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const scriptLoaded = useRef(false);
 
   useEffect(() => {
-    // Avoid double initialization in React StrictMode
     if (scriptLoaded.current) return;
     scriptLoaded.current = true;
 
-    // --- The exact Chatbase script (IIFE) but fixed for strict mode ---
-    (function () {
-      if (!window.chatbase || window.chatbase("getState") !== "initialized") {
-        // Fixed: changed `...arguments` to `...args`
-        window.chatbase = (...args: any[]) => {
-          if (!window.chatbase.q) {
-            window.chatbase.q = [];
-          }
-          window.chatbase.q.push(args);
-        };
-        window.chatbase = new Proxy(window.chatbase, {
-          get(target, prop) {
-            if (prop === "q") {
-              return target.q;
-            }
-            return (...args: any[]) => target(prop, ...args);
-          },
-        });
-      }
-
-      const onLoad = function () {
-        const script = document.createElement("script");
-        script.src = "https://www.chatbase.co/embed.min.js";
-        script.id = "yN6e9rojCWLb2sw25YmXq";
-        (script as any).domain = "www.chatbase.co";
-        document.body.appendChild(script);
+    // Chatbase queue + proxy setup
+    if (!window.chatbase || window.chatbase("getState") !== "initialized") {
+      window.chatbase = (...args: any[]) => {
+        if (!window.chatbase.q) {
+          window.chatbase.q = [];
+        }
+        window.chatbase.q.push(args);
       };
+      window.chatbase = new Proxy(window.chatbase, {
+        get(target, prop) {
+          if (prop === "q") {
+            return target.q;
+          }
+          return (...args: any[]) => target(prop, ...args);
+        },
+      });
+    }
 
-      if (document.readyState === "complete") {
-        onLoad();
-      } else {
-        window.addEventListener("load", onLoad);
-      }
-    })();
+    // Load the Chatbase embed script
+    const loadChatbaseScript = () => {
+      const script = document.createElement("script");
+      script.src = "https://www.chatbase.co/embed.min.js";
+      script.id = "yN6e9rojCWLb2sw25YmXq";
+      document.body.appendChild(script);
+    };
 
-    // --- Identify the user using a token from your backend ---
+    if (document.readyState === "complete") {
+      loadChatbaseScript();
+    } else {
+      window.addEventListener("load", loadChatbaseScript);
+    }
+
+    // Fetch token and identify user (with anon key)
     const identifyUser = async () => {
       try {
-        const response = await fetch("/api/get-chatbase-token");
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        if (!supabaseAnonKey) {
+          console.error(
+            "Missing VITE_SUPABASE_ANON_KEY – cannot identify Chatbase user",
+          );
+          return;
+        }
+        const response = await fetch(CHATBASE_TOKEN_URL, {
+          headers: {
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+        });
         if (!response.ok) throw new Error("Failed to fetch token");
         const { token } = await response.json();
         if (window.chatbase) {
@@ -74,7 +84,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
     identifyUser();
 
-    // Cleanup: remove the added script on unmount
     return () => {
       const scriptElem = document.getElementById("yN6e9rojCWLb2sw25YmXq");
       if (scriptElem && document.body.contains(scriptElem)) {
