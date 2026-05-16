@@ -77,7 +77,7 @@ type ExpandedItemsState = Record<string, boolean>;
 const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   isOpen,
   onClose,
-  userRole = "super_admin", // Changed from "admin" to "super_admin" to match database
+  userRole = "super_admin",
 }) => {
   const location = useLocation();
   const [expandedItems, setExpandedItems] = useState<ExpandedItemsState>({});
@@ -106,7 +106,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     const allNavigationGroups: NavigationGroup[] = [
       // ==================== SUPER ADMIN ONLY ====================
       {
-        roles: ["super_admin"], // Changed from "admin" to "super_admin"
+        roles: ["super_admin"],
         items: [
           {
             name: "Overview",
@@ -137,13 +137,12 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: Coins,
               },
               {
-                name: "System Commission Analaytics  ",
+                name: "System Commission Analaytics",
                 to: "/admin/wallet/commission",
                 icon: Percent,
               },
             ],
           },
-        
           {
             name: "Content Management",
             icon: FileText,
@@ -169,7 +168,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Activity,
             color: "text-cyan-500",
             subItems: [
-           
               {
                 name: "System Logs",
                 to: "/admin/monitoring/logs",
@@ -188,17 +186,16 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             ],
           },
           {
-     name: "Manage Contract ",
-     to: "/admin/settings",
-    icon: Settings,
- 
-      },
+            name: "Manage Contract",
+            to: "/admin/settings",
+            icon: Settings,
+          },
         ],
       },
 
       // ==================== THEATER OWNER ONLY ====================
       {
-        roles: ["theater_owner"], // Matches database
+        roles: ["theater_owner"],
         items: [
           {
             name: "Dashboard",
@@ -224,7 +221,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Calendar,
             color: "text-orange-500",
           },
-       
           {
             name: "Manage Halls",
             to: "/owner/halls/manage",
@@ -260,7 +256,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: Mail,
               },
               { name: "Gallery", to: "/owner/content/gallery", icon: Image },
-         
             ],
           },
         ],
@@ -268,7 +263,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== THEATER MANAGER ONLY ====================
       {
-        roles: ["theater_manager"], // Changed from "manager" to "theater_manager" to match database
+        roles: ["theater_manager"],
         items: [
           {
             name: "Overview",
@@ -281,7 +276,6 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             to: "/manager/events/create",
             icon: PlusCircle,
           },
-            
           {
             name: "Halls Management",
             to: "/manager/halls",
@@ -300,8 +294,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: BarChart,
             color: "text-indigo-500",
           },
-          
-        {
+          {
             name: "Content Management",
             icon: FileText,
             color: "text-purple-500",
@@ -318,18 +311,14 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                 icon: Mail,
               },
               { name: "Gallery", to: "/manager/content/gallery", icon: Image },
-         
             ],
           },
-           
-
         ],
-        
       },
 
       // ==================== SALESPERSON ONLY ====================
       {
-        roles: ["sales_person"], // Changed from "salesperson" to "sales_person" to match database
+        roles: ["sales_person"],
         items: [
           {
             name: "Dashboard",
@@ -360,7 +349,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== QR SCANNER ONLY ====================
       {
-        roles: ["qr_scanner"], // Changed from "scanner" to "qr_scanner" to match database
+        roles: ["qr_scanner"],
         items: [
           {
             name: "Scan QR Code",
@@ -368,8 +357,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: QrCode,
           },
           {
-            name: "scanned History",
-            to:"/scanner/scan/history ",
+            name: "Scanned History",
+            to: "/scanner/scan/history",
             icon: Users,
           },
         ],
@@ -377,7 +366,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
       // ==================== CUSTOMER ONLY ====================
       {
-        roles: ["customer"], // Matches database
+        roles: ["customer"],
         items: [
           {
             name: "Overview",
@@ -408,24 +397,24 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
 
   const getRoleDisplayName = (role: string): string => {
     const roleNames: Record<string, string> = {
-      super_admin: "System Administrator", // Changed from "admin"
+      super_admin: "System Administrator",
       theater_owner: "Theater Owner",
-      theater_manager: "Theater Manager", // Changed from "manager"
-      sales_person: "Sales Associate", // Changed from "salesperson"
+      theater_manager: "Theater Manager",
+      sales_person: "Sales Associate",
       customer: "Customer",
-      qr_scanner: "Gate Scanner", // Changed from "scanner"
+      qr_scanner: "Gate Scanner",
     };
     return roleNames[role] || "User";
   };
 
   function getRoleIcon(role: string): React.ElementType {
     const icons: Record<string, React.ElementType> = {
-      super_admin: Settings, // Changed from "admin"
+      super_admin: Settings,
       theater_owner: Crown,
-      theater_manager: Users, // Changed from "manager"
-      sales_person: Ticket, // Changed from "salesperson"
+      theater_manager: Users,
+      sales_person: Ticket,
       customer: Users,
-      qr_scanner: QrCode, // Changed from "scanner"
+      qr_scanner: QrCode,
     };
     return icons[role] || Settings;
   }
@@ -557,14 +546,8 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                                   </span>
                                 </div>
 
-                                {/* Right side - Badge and Chevron */}
+                                {/* Right side - Chevron only (Badge removed) */}
                                 <div className="flex items-center gap-1.5">
-                                  {item.subItems &&
-                                    item.subItems.length > 0 && (
-                                      <span className="text-xs font-medium bg-teal-600/10 text-teal-600 px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                                        {item.subItems.length}
-                                      </span>
-                                    )}
                                   {item.subItems &&
                                     item.subItems.length > 0 && (
                                       <ChevronRight
