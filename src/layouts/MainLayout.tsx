@@ -79,7 +79,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           background-color: #ff3b30;
           border-radius: 50%;
           border: 2px solid white;
-          animation: liveDot 0.2s infinite ease-in-out;
+          animation: liveDot 0.5s infinite ease-in-out;
           z-index: 100;
           pointer-events: none;
           box-shadow: 0 0 2px rgba(0,0,0,0.2);
