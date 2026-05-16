@@ -3,22 +3,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
     TrendingUp,
-    Download,
     RefreshCw,
     Search,
     Wallet,
     Building,
     Percent,
     CreditCard,
-    Clock,
-    AlertCircle,
-    Smartphone,
-    Banknote,
     Calendar as CalendarIcon,
     Loader2,
     Award,
     Receipt,
-    DollarSign
+    DollarSign,
+    CheckCircle,
+    Activity,
+    PieChart as PieChartIcon,
+    Smartphone,
+    Banknote,
+    Landmark
 } from 'lucide-react';
 import {
     AreaChart,
@@ -53,7 +54,6 @@ interface CommissionTransaction {
     paidDate?: string;
     paymentMethod: string;
     period: { start: string; end: string };
-    ticketsSold: number;
     eventsCount: number;
 }
 
@@ -62,32 +62,42 @@ interface TopTheater {
     theaterName: string;
     totalCommission: number;
     totalRevenue: number;
-    ticketsSold: number;
     eventsCount: number;
     rank: number;
 }
 
-interface SystemWallet {
-    balance: number;
-    total_commission_earned: number;
-    total_paid_out: number;
+interface PaymentDistribution {
+    name: string;
+    value: number;
+    color: string;
+    count: number;
+    icon: React.ElementType;
 }
 
-type DateRangeType = 'daily' | 'monthly' | 'yearly' | 'custom';
+interface ActiveCommissionTheater {
+    theaterId: string;
+    theaterName: string;
+    commissionRate: number;
+    totalRevenue: number;
+    totalCommission: number;
+    activeEvents: number;
+    monthlyData?: { month: string; commission: number; revenue: number }[];
+}
+
+type DateRangeType = 'daily' | 'monthly' | 'yearly';
 
 const CommissionAnalytics: React.FC = () => {
     const [commissions, setCommissions] = useState<CommissionTransaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState<string>('all');
-    const [filterPaymentMethod, setFilterPaymentMethod] = useState<string>('all');
     const [dateRangeType, setDateRangeType] = useState<DateRangeType>('monthly');
-    const [customStartDate, setCustomStartDate] = useState('');
-    const [customEndDate, setCustomEndDate] = useState('');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
     const [topTheaters, setTopTheaters] = useState<TopTheater[]>([]);
-    const [systemWallet, setSystemWallet] = useState<SystemWallet | null>(null);
+    const [activeCommissionTheaters, setActiveCommissionTheaters] = useState<ActiveCommissionTheater[]>([]);
+    const [paymentDistribution, setPaymentDistribution] = useState<PaymentDistribution[]>([]);
+    const [activeTheatersTrendData, setActiveTheatersTrendData] = useState<any[]>([]);
+    const [filteredSearchTerm, setFilteredSearchTerm] = useState('');
 
     // ============================================
     // FETCH REAL DATA FROM SUPABASE
@@ -96,17 +106,7 @@ const CommissionAnalytics: React.FC = () => {
     const fetchCommissionData = async () => {
         setIsLoading(true);
         try {
-            // 1. Fetch system wallet
-            const { data: walletData, error: walletError } = await supabase
-                .from('system_wallet')
-                .select('*')
-                .single();
-
-            if (!walletError && walletData) {
-                setSystemWallet(walletData);
-            }
-
-            // 2. Fetch earnings with theater and contract info
+            // 1. Fetch earnings with theater and contract info
             const { data: earnings, error: earningsError } = await supabase
                 .from('earnings')
                 .select(`
@@ -125,7 +125,8 @@ const CommissionAnalytics: React.FC = () => {
                         city,
                         address,
                         email,
-                        phone
+                        phone,
+                        status
                     ),
                     owners_contracts:contract_id (
                         contract_type,
@@ -137,18 +138,18 @@ const CommissionAnalytics: React.FC = () => {
 
             if (earningsError) throw earningsError;
 
-            // 3. Fetch payment information from reservations
+            // 2. Fetch payment information from reservations
             const { data: reservations, error: reservationsError } = await supabase
                 .from('reservations')
-                .select('id, payment_status, payment_method, created_at')
+                .select('id, payment_status, payment_method, created_at, total_amount')
                 .in('status', ['confirmed', 'completed']);
 
             if (reservationsError) throw reservationsError;
 
-            // 4. Fetch contract info for commission rates
+            // 3. Fetch contract info for commission rates
             const { data: contracts, error: contractsError } = await supabase
                 .from('owners_contracts')
-                .select('theater_id, commission_rate, contract_type')
+                .select('theater_id, commission_rate, contract_type, status')
                 .eq('status', 'active');
 
             if (contractsError) throw contractsError;
@@ -160,31 +161,47 @@ const CommissionAnalytics: React.FC = () => {
             });
 
             // Build payment map
-            const paymentMap: Record<string, { status: string; method: string; date: string }> = {};
+            const paymentMethodCount: Record<string, { total: number; count: number }> = {};
+            
             reservations?.forEach(res => {
-                paymentMap[res.id] = {
-                    status: res.payment_status || 'pending',
-                    method: res.payment_method || 'bank_transfer',
-                    date: res.created_at
-                };
+                const method = res.payment_method || 'bank_transfer';
+                if (!paymentMethodCount[method]) {
+                    paymentMethodCount[method] = { total: 0, count: 0 };
+                }
+                paymentMethodCount[method].total += res.total_amount || 0;
+                paymentMethodCount[method].count += 1;
             });
 
-            // Transform data
+            // Set payment distribution with deep teal for Cash
+            const paymentConfig: Record<string, { name: string; color: string; icon: React.ElementType }> = {
+                cash: { name: 'Cash', color: '#0D9488', icon: Banknote }, // Deep Teal
+                chapa: { name: 'Chapa', color: '#3B82F6', icon: Smartphone },
+                telebirr: { name: 'Telebirr', color: '#8B5CF6', icon: Smartphone },
+                bank_transfer: { name: 'Bank Transfer', color: '#F59E0B', icon: Landmark }
+            };
+
+            const distribution: PaymentDistribution[] = Object.entries(paymentMethodCount).map(([method, data]) => ({
+                name: paymentConfig[method]?.name || method,
+                value: data.total,
+                color: paymentConfig[method]?.color || '#6B7280',
+                count: data.count,
+                icon: paymentConfig[method]?.icon || CreditCard
+            }));
+
+            setPaymentDistribution(distribution);
+
+            // Transform data for transactions
             const transactions: CommissionTransaction[] = earnings?.map(earning => {
                 const theater = earning.theaters;
                 const contract = earning.owners_contracts;
-                const payment = paymentMap[earning.reservation_id || ''] || { status: 'pending', method: 'bank_transfer', date: '' };
                 
-                // Determine status based on payment
                 let status: 'paid' | 'pending' | 'overdue' = 'pending';
-                if (payment.status === 'completed' || payment.status === 'confirmed') {
-                    status = 'paid';
-                } else {
-                    const createdDate = new Date(earning.created_at);
-                    const now = new Date();
-                    const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 3600 * 24);
-                    if (daysDiff > 30) status = 'overdue';
-                }
+                const createdDate = new Date(earning.created_at);
+                const now = new Date();
+                const daysDiff = (now.getTime() - createdDate.getTime()) / (1000 * 3600 * 24);
+                if (daysDiff <= 30) status = 'paid';
+                else if (daysDiff > 30 && daysDiff <= 60) status = 'pending';
+                else status = 'overdue';
 
                 return {
                     id: earning.id,
@@ -196,19 +213,19 @@ const CommissionAnalytics: React.FC = () => {
                     commissionAmount: earning.commission_amount || 0,
                     status,
                     dueDate: earning.created_at,
-                    paidDate: payment.date || undefined,
-                    paymentMethod: payment.method,
+                    paymentMethod: 'bank_transfer',
                     period: {
                         start: earning.created_at,
                         end: earning.created_at
                     },
-                    ticketsSold: 1,
                     eventsCount: 1
                 };
             }) || [];
 
             setCommissions(transactions);
             calculateTopTheaters(transactions);
+            calculateActiveCommissionTheaters(transactions, contractRateMap);
+            calculateActiveTheatersTrend(transactions);
             
         } catch (error) {
             console.error('Error fetching commission data:', error);
@@ -231,7 +248,6 @@ const CommissionAnalytics: React.FC = () => {
             if (existing) {
                 existing.totalCommission += transaction.commissionAmount;
                 existing.totalRevenue += transaction.totalRevenue;
-                existing.ticketsSold += transaction.ticketsSold;
                 existing.eventsCount += transaction.eventsCount;
             } else {
                 theaterMap.set(transaction.theaterId, {
@@ -239,7 +255,6 @@ const CommissionAnalytics: React.FC = () => {
                     theaterName: transaction.theaterName,
                     totalCommission: transaction.commissionAmount,
                     totalRevenue: transaction.totalRevenue,
-                    ticketsSold: transaction.ticketsSold,
                     eventsCount: transaction.eventsCount,
                     rank: 0
                 });
@@ -251,6 +266,83 @@ const CommissionAnalytics: React.FC = () => {
             .map((theater, index) => ({ ...theater, rank: index + 1 }));
         
         setTopTheaters(sorted);
+    };
+
+    const calculateActiveCommissionTheaters = (data: CommissionTransaction[], contractRateMap: Record<string, number>) => {
+        const theaterMap = new Map<string, ActiveCommissionTheater>();
+        
+        data.forEach(transaction => {
+            const existing = theaterMap.get(transaction.theaterId);
+            if (existing) {
+                existing.totalRevenue += transaction.totalRevenue;
+                existing.totalCommission += transaction.commissionAmount;
+                existing.activeEvents += transaction.eventsCount;
+            } else {
+                theaterMap.set(transaction.theaterId, {
+                    theaterId: transaction.theaterId,
+                    theaterName: transaction.theaterName,
+                    commissionRate: contractRateMap[transaction.theaterId] || 8,
+                    totalRevenue: transaction.totalRevenue,
+                    totalCommission: transaction.commissionAmount,
+                    activeEvents: transaction.eventsCount
+                });
+            }
+        });
+        
+        const sorted = Array.from(theaterMap.values())
+            .sort((a, b) => b.totalCommission - a.totalCommission);
+        
+        setActiveCommissionTheaters(sorted);
+    };
+
+    const calculateActiveTheatersTrend = (data: CommissionTransaction[]) => {
+        // Get months from May to current month
+        const months = [];
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        
+        // Start from May (month 4, since Jan = 0)
+        for (let month = 4; month <= currentMonth; month++) {
+            months.push({
+                year: currentYear,
+                month: month,
+                label: new Date(currentYear, month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            });
+        }
+        
+        // Also include previous year's May to December if current month is after May
+        if (currentMonth >= 4) {
+            for (let month = 4; month <= 11; month++) {
+                if (month < currentMonth || currentYear > new Date().getFullYear()) {
+                    months.unshift({
+                        year: currentYear - 1,
+                        month: month,
+                        label: new Date(currentYear - 1, month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                    });
+                }
+            }
+        }
+        
+        // Sort months chronologically
+        months.sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+        });
+        
+        const trendData = months.map(monthInfo => {
+            const monthStr = `${monthInfo.year}-${String(monthInfo.month + 1).padStart(2, '0')}`;
+            const monthData = data.filter(t => t.dueDate.startsWith(monthStr));
+            
+            return {
+                period: monthInfo.label,
+                totalCommission: monthData.reduce((sum, t) => sum + t.commissionAmount, 0),
+                totalRevenue: monthData.reduce((sum, t) => sum + t.totalRevenue, 0),
+                theatersCount: new Set(monthData.map(t => t.theaterId)).size
+            };
+        });
+        
+        setActiveTheatersTrendData(trendData);
     };
 
     useEffect(() => {
@@ -270,73 +362,84 @@ const CommissionAnalytics: React.FC = () => {
                        transactionDate.getFullYear() === now.getFullYear();
             case 'yearly':
                 return transactionDate.getFullYear() === now.getFullYear();
-            case 'custom':
-                if (customStartDate && customEndDate) {
-                    const start = new Date(customStartDate);
-                    const end = new Date(customEndDate);
-                    end.setHours(23, 59, 59);
-                    return transactionDate >= start && transactionDate <= end;
-                }
-                return true;
             default:
                 return true;
         }
     };
 
-    const filteredCommissions = useMemo(() => {
+    // Apply search filter to commissions
+    const searchFilteredCommissions = useMemo(() => {
         let filtered = [...commissions];
-        filtered = filtered.filter(filterByDateRange);
         
-        if (searchTerm) {
+        if (filteredSearchTerm) {
             filtered = filtered.filter(c =>
-                c.theaterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.theaterLocation.toLowerCase().includes(searchTerm.toLowerCase())
+                c.theaterName.toLowerCase().includes(filteredSearchTerm.toLowerCase()) ||
+                c.theaterLocation.toLowerCase().includes(filteredSearchTerm.toLowerCase())
             );
         }
         
-        if (filterStatus !== 'all') {
-            filtered = filtered.filter(c => c.status === filterStatus);
-        }
-        
-        if (filterPaymentMethod !== 'all') {
-            filtered = filtered.filter(c => c.paymentMethod === filterPaymentMethod);
-        }
-        
         return filtered;
-    }, [commissions, searchTerm, filterStatus, filterPaymentMethod, dateRangeType, customStartDate, customEndDate]);
+    }, [commissions, filteredSearchTerm]);
+
+    const filteredCommissions = useMemo(() => {
+        let filtered = searchFilteredCommissions.filter(filterByDateRange);
+        return filtered;
+    }, [searchFilteredCommissions, dateRangeType]);
 
     const totals = useMemo(() => {
         const totalCommission = filteredCommissions.reduce((sum, c) => sum + c.commissionAmount, 0);
-        const cashTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'cash').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const chapaTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'chapa').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const telebirrTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'telebirr').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const bankTransferTotal = filteredCommissions.filter(c => c.status === 'paid' && c.paymentMethod === 'bank_transfer').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const pendingTotal = filteredCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + c.commissionAmount, 0);
-        const paidTotal = filteredCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0);
+        const totalRevenue = filteredCommissions.reduce((sum, c) => sum + c.totalRevenue, 0);
         
-        return { 
-            totalCommission, cashTotal, chapaTotal, telebirrTotal, 
-            bankTransferTotal, pendingTotal, paidTotal
-        };
+        return { totalCommission, totalRevenue };
     }, [filteredCommissions]);
 
     const trendData = useMemo(() => {
+        // Get months from May to current month for consistent display
+        const months = [];
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth();
+        
+        // Start from May (month 4)
+        for (let month = 4; month <= currentMonth; month++) {
+            months.push({
+                year: currentYear,
+                month: month,
+                label: new Date(currentYear, month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+            });
+        }
+        
+        // Include previous year's May to December if we're past May
+        if (currentMonth >= 4 && currentYear > new Date().getFullYear()) {
+            for (let month = 4; month <= 11; month++) {
+                months.unshift({
+                    year: currentYear - 1,
+                    month: month,
+                    label: new Date(currentYear - 1, month, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                });
+            }
+        }
+        
+        months.sort((a, b) => {
+            if (a.year !== b.year) return a.year - b.year;
+            return a.month - b.month;
+        });
+        
         if (dateRangeType === 'daily') {
-            const last7Days = Array.from({ length: 7 }, (_, i) => {
+            const last30Days = Array.from({ length: 30 }, (_, i) => {
                 const d = new Date();
-                d.setDate(d.getDate() - (6 - i));
+                d.setDate(d.getDate() - (29 - i));
                 return d.toISOString().split('T')[0];
             });
             
-            return last7Days.map(day => {
+            return last30Days.map(day => {
                 const dayCommissions = filteredCommissions.filter(c => 
                     new Date(c.dueDate).toISOString().split('T')[0] === day
                 );
                 return {
-                    period: new Date(day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+                    period: new Date(day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                     commission: dayCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    cash: dayCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
-                    chapa: dayCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
+                    revenue: dayCommissions.reduce((sum, c) => sum + c.totalRevenue, 0)
                 };
             });
         } else if (dateRangeType === 'yearly') {
@@ -348,83 +451,46 @@ const CommissionAnalytics: React.FC = () => {
                 return {
                     period: year.toString(),
                     commission: yearCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    cash: yearCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
-                    chapa: yearCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
+                    revenue: yearCommissions.reduce((sum, c) => sum + c.totalRevenue, 0)
                 };
             });
         } else {
-            const months = Array.from({ length: 12 }, (_, i) => {
-                const d = new Date();
-                d.setMonth(d.getMonth() - (11 - i));
-                return d.toISOString().slice(0, 7);
-            });
-            
-            return months.map(month => {
+            // Monthly - from May to current
+            return months.map(monthInfo => {
+                const monthStr = `${monthInfo.year}-${String(monthInfo.month + 1).padStart(2, '0')}`;
                 const monthCommissions = filteredCommissions.filter(c => 
-                    c.dueDate.startsWith(month)
+                    c.dueDate.startsWith(monthStr)
                 );
                 return {
-                    period: new Date(month).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+                    period: monthInfo.label,
                     commission: monthCommissions.reduce((sum, c) => sum + c.commissionAmount, 0),
-                    cash: monthCommissions.filter(c => c.paymentMethod === 'cash' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0),
-                    chapa: monthCommissions.filter(c => c.paymentMethod === 'chapa' && c.status === 'paid').reduce((sum, c) => sum + c.commissionAmount, 0)
+                    revenue: monthCommissions.reduce((sum, c) => sum + c.totalRevenue, 0)
                 };
             });
         }
     }, [filteredCommissions, dateRangeType]);
-
-    const paymentMethodData = useMemo(() => {
-        return [
-            { name: 'Cash', value: totals.cashTotal, color: '#10B981' },
-            { name: 'Chapa', value: totals.chapaTotal, color: '#3B82F6' },
-            { name: 'Telebirr', value: totals.telebirrTotal, color: '#8B5CF6' },
-            { name: 'Bank Transfer', value: totals.bankTransferTotal, color: '#F59E0B' }
-        ].filter(item => item.value > 0);
-    }, [totals]);
 
     const formatETB = (amount: number) => {
         if (amount === 0) return 'ETB 0';
         return `ETB ${amount.toLocaleString()}`;
     };
 
+    const handleSearch = () => {
+        setFilteredSearchTerm(searchTerm);
+    };
+
     const handleResetFilters = () => {
         setSearchTerm('');
-        setFilterStatus('all');
-        setFilterPaymentMethod('all');
+        setFilteredSearchTerm('');
         setDateRangeType('monthly');
-        setCustomStartDate('');
-        setCustomEndDate('');
         setPopupMessage({ title: 'Filters Reset', message: 'All filters have been cleared', type: 'success' });
         setShowSuccessPopup(true);
     };
 
-    const handleExport = () => {
-        const csvContent = [
-            ['Theater Name', 'Location', 'Commission Amount', 'Status', 'Payment Method', 'Date'],
-            ...filteredCommissions.map(c => [
-                c.theaterName,
-                c.theaterLocation,
-                c.commissionAmount,
-                c.status,
-                c.paymentMethod,
-                new Date(c.dueDate).toLocaleDateString()
-            ])
-        ].map(row => row.join(',')).join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `commission_analytics_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        setPopupMessage({
-            title: 'Export Successful',
-            message: 'Commission data exported to CSV',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
     };
 
     const topTheatersColumns = [
@@ -450,7 +516,7 @@ const CommissionAnalytics: React.FC = () => {
             )
         },
         {
-            Header: 'Commission',
+            Header: 'Total Commission',
             accessor: 'totalCommission',
             sortable: true,
             Cell: (row: TopTheater) => (
@@ -458,7 +524,7 @@ const CommissionAnalytics: React.FC = () => {
             )
         },
         {
-            Header: 'Revenue',
+            Header: 'Total Revenue',
             accessor: 'totalRevenue',
             sortable: true,
             Cell: (row: TopTheater) => (
@@ -466,89 +532,12 @@ const CommissionAnalytics: React.FC = () => {
             )
         },
         {
-            Header: 'Tickets',
-            accessor: 'ticketsSold',
+            Header: 'Events',
+            accessor: 'eventsCount',
             sortable: true,
             Cell: (row: TopTheater) => (
-                <p className="text-sm text-gray-900">{row.ticketsSold.toLocaleString()}</p>
+                <p className="text-sm text-gray-900">{row.eventsCount}</p>
             )
-        }
-    ];
-
-    const transactionColumns = [
-        {
-            Header: 'Theater',
-            accessor: 'theaterName',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <div>
-                    <p className="font-medium text-gray-900">{row.theaterName}</p>
-                    <p className="text-xs text-gray-500">{row.theaterLocation}</p>
-                </div>
-            )
-        },
-        {
-            Header: 'Date',
-            accessor: 'dueDate',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <p className="text-sm text-gray-600">
-                    {new Date(row.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </p>
-            )
-        },
-        {
-            Header: 'Revenue',
-            accessor: 'totalRevenue',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <p className="text-sm font-semibold text-green-600">{formatETB(row.totalRevenue)}</p>
-            )
-        },
-        {
-            Header: 'Commission',
-            accessor: 'commissionAmount',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <p className="text-sm font-bold text-teal-600">{formatETB(row.commissionAmount)}</p>
-            )
-        },
-        {
-            Header: 'Rate',
-            accessor: 'commissionRate',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => (
-                <p className="text-sm text-gray-600">{row.commissionRate.toFixed(1)}%</p>
-            )
-        },
-        {
-            Header: 'Status',
-            accessor: 'status',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => {
-                const config = {
-                    paid: { bg: 'bg-green-100', text: 'text-green-700', label: 'Paid', icon: '✅' },
-                    pending: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending', icon: '⏳' },
-                    overdue: { bg: 'bg-red-100', text: 'text-red-700', label: 'Overdue', icon: '⚠️' }
-                };
-                const c = config[row.status];
-                return <span className={`px-2 py-1 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{c.icon} {c.label}</span>;
-            }
-        },
-        {
-            Header: 'Payment',
-            accessor: 'paymentMethod',
-            sortable: true,
-            Cell: (row: CommissionTransaction) => {
-                const config: Record<string, { bg: string; text: string; label: string }> = {
-                    cash: { bg: 'bg-green-100', text: 'text-green-700', label: '💰 Cash' },
-                    chapa: { bg: 'bg-blue-100', text: 'text-blue-700', label: '📱 Chapa' },
-                    telebirr: { bg: 'bg-purple-100', text: 'text-purple-700', label: '📱 Telebirr' },
-                    bank_transfer: { bg: 'bg-yellow-100', text: 'text-yellow-700', label: '🏦 Bank Transfer' }
-                };
-                const c = config[row.paymentMethod] || config.bank_transfer;
-                return <span className={`px-2 py-1 rounded-full text-xs font-medium ${c.bg} ${c.text}`}>{c.label}</span>;
-            }
         }
     ];
 
@@ -568,74 +557,146 @@ const CommissionAnalytics: React.FC = () => {
             {/* Header */}
             <div>
                 <h1 className="text-2xl font-bold text-gray-900">Commission Analytics</h1>
-                <p className="text-sm text-gray-500">Track and analyze theater commissions from real data</p>
+                <p className="text-sm text-gray-500">Track and analyze theater commissions</p>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                <div className="bg-white rounded-xl p-5 shadow-lg border">
+            {/* Stats Cards - 2 Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="bg-white rounded-xl p-5 shadow-lg border hover:shadow-xl transition-all">
                     <div className="flex justify-between items-start mb-3">
                         <div className="p-3 bg-emerald-500 rounded-xl text-white"><Wallet className="h-5 w-5" /></div>
                         <span className="text-green-600 text-sm">{filteredCommissions.length} transactions</span>
                     </div>
                     <p className="text-2xl font-bold">{formatETB(totals.totalCommission)}</p>
                     <p className="text-sm text-gray-500">Total Commission</p>
+                    <div className="mt-2 text-xs text-gray-400">Across all theaters</div>
                 </div>
-                <div className="bg-white rounded-xl p-5 shadow-lg border">
+                <div className="bg-white rounded-xl p-5 shadow-lg border hover:shadow-xl transition-all">
                     <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-green-500 rounded-xl text-white"><Banknote className="h-5 w-5" /></div>
+                        <div className="p-3 bg-teal-600 rounded-xl text-white"><Building className="h-5 w-5" /></div>
                     </div>
-                    <p className="text-2xl font-bold">{formatETB(totals.paidTotal)}</p>
-                    <p className="text-sm text-gray-500">Paid Commission</p>
-                </div>
-                <div className="bg-white rounded-xl p-5 shadow-lg border">
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-yellow-500 rounded-xl text-white"><Clock className="h-5 w-5" /></div>
-                    </div>
-                    <p className="text-2xl font-bold">{formatETB(totals.pendingTotal)}</p>
-                    <p className="text-sm text-gray-500">Pending Payment</p>
-                </div>
-                <div className="bg-white rounded-xl p-5 shadow-lg border">
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-blue-500 rounded-xl text-white"><Smartphone className="h-5 w-5" /></div>
-                    </div>
-                    <p className="text-2xl font-bold">{formatETB(totals.chapaTotal)}</p>
-                    <p className="text-sm text-gray-500">Digital Payments</p>
+                    <p className="text-2xl font-bold">{activeCommissionTheaters.length}</p>
+                    <p className="text-sm text-gray-500">Active Theaters</p>
+                    <div className="mt-2 text-xs text-gray-400">Currently generating commission</div>
                 </div>
             </div>
 
-            {/* System Wallet Card */}
-            {systemWallet && (
-                <div className="bg-gradient-to-r from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2.5 bg-white/20 rounded-xl">
-                            <DollarSign className="h-6 w-6 text-white" />
+            {/* Search Theater - Above Payment Distribution */}
+            <div className="bg-white rounded-xl p-5 shadow-lg border">
+                <div className="flex flex-wrap gap-4 items-end">
+                    <div className="flex-1 min-w-[250px]">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Search Theater</label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Search by theater name or location..."
+                                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                            />
                         </div>
-                        <span className="text-white/80 text-base font-medium">System Wallet Balance</span>
                     </div>
-                    <p className="text-3xl font-bold">{formatETB(systemWallet.balance)}</p>
-                    <div className="grid grid-cols-2 gap-4 mt-4 pt-3 border-t border-white/20">
-                        <div>
-                            <p className="text-white/60 text-xs">Total Commission Earned</p>
-                            <p className="text-white font-semibold">{formatETB(systemWallet.total_commission_earned)}</p>
-                        </div>
-                        <div>
-                            <p className="text-white/60 text-xs">Total Paid Out</p>
-                            <p className="text-white font-semibold">{formatETB(systemWallet.total_paid_out)}</p>
-                        </div>
+                    <button
+                        onClick={handleSearch}
+                        className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                    >
+                        Search
+                    </button>
+                    {(searchTerm || filteredSearchTerm) && (
+                        <button
+                            onClick={handleResetFilters}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            Clear
+                        </button>
+                    )}
+                </div>
+                {filteredSearchTerm && (
+                    <div className="mt-3 text-sm text-teal-600">
+                        Showing results for: <span className="font-medium">"{filteredSearchTerm}"</span>
+                        {filteredCommissions.length === 0 && (
+                            <span className="text-gray-500 ml-2">(No results found)</span>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Payment Distribution Card */}
+            <div className="bg-white rounded-xl p-5 shadow-lg border">
+                <div className="flex items-center gap-2 mb-4">
+                    <div className="p-2 bg-teal-100 rounded-lg">
+                        <PieChartIcon className="h-5 w-5 text-teal-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">Payment Distribution</h3>
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <ResponsiveContainer width="100%" height={280}>
+                        <RePieChart>
+                            <Pie
+                                data={paymentDistribution}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={100}
+                                paddingAngle={5}
+                                dataKey="value"
+                                label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
+                            >
+                                {paymentDistribution.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip formatter={(value: any) => formatETB(value)} />
+                            <Legend />
+                        </RePieChart>
+                    </ResponsiveContainer>
+                    <div className="space-y-4">
+                        {paymentDistribution.map((item, idx) => {
+                            const Icon = item.icon;
+                            const percentage = totals.totalRevenue > 0 ? (item.value / totals.totalRevenue * 100).toFixed(1) : '0';
+                            return (
+                                <div key={idx} className="p-3 rounded-xl bg-gray-50">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 rounded-lg" style={{ backgroundColor: `${item.color}20` }}>
+                                                <Icon className="h-4 w-4" style={{ color: item.color }} />
+                                            </div>
+                                            <span className="text-sm font-medium text-gray-700">{item.name}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-bold text-gray-900">{formatETB(item.value)}</span>
+                                            <span className="text-xs text-gray-500">({percentage}%)</span>
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                        <div 
+                                            className="h-2 rounded-full transition-all duration-500"
+                                            style={{ 
+                                                width: `${percentage}%`,
+                                                backgroundColor: item.color 
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-400 mt-1">{item.count} transactions</p>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
-            )}
+            </div>
 
-            {/* Date Range Selector */}
+            {/* Commission Trend - Area Chart (Starting from May) */}
             <div className="bg-white rounded-xl p-5 shadow-lg border">
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <CalendarIcon className="h-5 w-5 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">Date Range:</span>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div>
+                        <h3 className="text-lg font-semibold">Commission Trend</h3>
+                        <p className="text-sm text-gray-500">Data from May to present</p>
                     </div>
                     <div className="flex gap-2">
-                        {['daily', 'monthly', 'yearly', 'custom'].map((range) => (
+                        {['daily', 'monthly', 'yearly'].map((range) => (
                             <button
                                 key={range}
                                 onClick={() => setDateRangeType(range as DateRangeType)}
@@ -649,158 +710,89 @@ const CommissionAnalytics: React.FC = () => {
                             </button>
                         ))}
                     </div>
-                    
-                    {dateRangeType === 'custom' && (
-                        <div className="flex gap-3 ml-4">
-                            <input
-                                type="date"
-                                value={customStartDate}
-                                onChange={(e) => setCustomStartDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                            />
-                            <span className="text-gray-500 self-center">to</span>
-                            <input
-                                type="date"
-                                value={customEndDate}
-                                onChange={(e) => setCustomEndDate(e.target.value)}
-                                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                            />
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Search and Filters */}
-            <div className="flex flex-wrap gap-4 items-end bg-white rounded-xl p-5 shadow-lg border">
-                <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Search by theater name or location..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                        />
-                    </div>
-                </div>
-                <div className="w-[180px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                    <select
-                        value={filterStatus}
-                        onChange={(e) => setFilterStatus(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                    >
-                        <option value="all">All Status</option>
-                        <option value="paid">Paid</option>
-                        <option value="pending">Pending</option>
-                        <option value="overdue">Overdue</option>
-                    </select>
-                </div>
-                <div className="w-[180px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                    <select
-                        value={filterPaymentMethod}
-                        onChange={(e) => setFilterPaymentMethod(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                    >
-                        <option value="all">All Methods</option>
-                        <option value="cash">Cash</option>
-                        <option value="chapa">Chapa</option>
-                        <option value="telebirr">Telebirr</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                    </select>
-                </div>
-                <div>
-                    <button
-                        onClick={handleResetFilters}
-                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors mt-6"
-                    >
-                        <RefreshCw className="h-4 w-4 inline mr-2" />
-                        Reset Filters
-                    </button>
-                </div>
-                <div>
-                    <button
-                        onClick={handleExport}
-                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors mt-6"
-                    >
-                        <Download className="h-4 w-4 inline mr-2" />
-                        Export Data
-                    </button>
-                </div>
-            </div>
-
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-white rounded-xl p-5 shadow-lg">
-                    <h3 className="text-lg font-semibold mb-4">
-                        Commission Trend ({dateRangeType === 'daily' ? 'Daily' : dateRangeType === 'yearly' ? 'Yearly' : 'Monthly'})
-                    </h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={trendData}>
-                            <defs>
-                                <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
-                            <XAxis dataKey="period" stroke="#6B7280" tick={{ fontSize: 12 }} />
-                            <YAxis stroke="#6B7280" tickFormatter={(v) => `ETB ${v/1000}k`} tick={{ fontSize: 12 }} />
-                            <Tooltip formatter={(value: any) => formatETB(value)} />
-                            <Area type="monotone" dataKey="commission" stroke="#14b8a6" strokeWidth={2} fill="url(#areaGradient)" name="Commission" />
-                        </AreaChart>
-                    </ResponsiveContainer>
                 </div>
 
-                <div className="bg-white rounded-xl p-5 shadow-lg">
-                    <h3 className="text-lg font-semibold mb-4">Payment Methods Distribution</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <RePieChart>
-                            <Pie
-                                data={paymentMethodData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={100}
-                                paddingAngle={5}
-                                dataKey="value"
-                                label={({ name, percent }) => `${name}: ${((percent || 0) * 100).toFixed(0)}%`}
-                            >
-                                {paymentMethodData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip formatter={(value: any) => formatETB(value)} />
-                        </RePieChart>
-                    </ResponsiveContainer>
-                    <div className="mt-4 grid grid-cols-4 gap-3">
-                        {paymentMethodData.map((item, idx) => (
-                            <div key={idx} className="text-center p-2 bg-gray-50 rounded-lg">
-                                <p className="text-lg font-bold" style={{ color: item.color }}>{formatETB(item.value)}</p>
-                                <p className="text-xs text-gray-500">{item.name}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-
-            {/* Bar Chart */}
-            <div className="bg-white rounded-xl p-5 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4">Payment Method Collection Comparison</h3>
-                <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={trendData}>
+                <ResponsiveContainer width="100%" height={350}>
+                    <AreaChart data={trendData}>
+                        <defs>
+                            <linearGradient id="commissionGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
                         <XAxis dataKey="period" stroke="#6B7280" tick={{ fontSize: 12 }} />
                         <YAxis stroke="#6B7280" tickFormatter={(v) => `ETB ${v/1000}k`} tick={{ fontSize: 12 }} />
                         <Tooltip formatter={(value: any) => formatETB(value)} />
                         <Legend />
-                        <Bar dataKey="cash" name="Cash" fill="#10B981" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="chapa" name="Chapa" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                    </BarChart>
+                        <Area 
+                            type="monotone" 
+                            dataKey="commission" 
+                            stroke="#14b8a6" 
+                            strokeWidth={2} 
+                            fill="url(#commissionGradient)" 
+                            name="Commission"
+                        />
+                        <Area 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#3B82F6" 
+                            strokeWidth={2} 
+                            fill="url(#revenueGradient)" 
+                            name="Revenue"
+                        />
+                    </AreaChart>
                 </ResponsiveContainer>
+            </div>
+
+            {/* Active Commission Theaters - Area Chart */}
+            <div className="bg-white rounded-xl p-5 shadow-lg border">
+                <div>
+                    <h3 className="text-lg font-semibold mb-1">Active Commission Theaters Trend</h3>
+                    <p className="text-sm text-gray-500 mb-4">Monthly commission and revenue from active theaters (May to present)</p>
+                </div>
+                <ResponsiveContainer width="100%" height={350}>
+                    <AreaChart data={activeTheatersTrendData}>
+                        <defs>
+                            <linearGradient id="activeCommissionGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                            </linearGradient>
+                            <linearGradient id="activeRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
+                                <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" opacity={0.5} />
+                        <XAxis dataKey="period" stroke="#6B7280" tick={{ fontSize: 12 }} />
+                        <YAxis stroke="#6B7280" tickFormatter={(v) => `ETB ${v/1000}k`} tick={{ fontSize: 12 }} />
+                        <Tooltip formatter={(value: any) => formatETB(value)} />
+                        <Legend />
+                        <Area 
+                            type="monotone" 
+                            dataKey="totalCommission" 
+                            stroke="#14b8a6" 
+                            strokeWidth={2} 
+                            fill="url(#activeCommissionGradient)" 
+                            name="Commission"
+                        />
+                        <Area 
+                            type="monotone" 
+                            dataKey="totalRevenue" 
+                            stroke="#F59E0B" 
+                            strokeWidth={2} 
+                            fill="url(#activeRevenueGradient)" 
+                            name="Revenue"
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+                <div className="mt-4 text-center text-xs text-gray-400">
+                    <p>Data shows commission and revenue trends for active theaters from May to present</p>
+                </div>
             </div>
 
             {/* Top Performing Theaters Table */}
@@ -815,18 +807,7 @@ const CommissionAnalytics: React.FC = () => {
                 itemsPerPage={10}
             />
 
-            {/* Commission Transactions Table */}
-            <ReusableTable
-                columns={transactionColumns}
-                data={filteredCommissions}
-                title="Commission Transactions"
-                icon={Receipt}
-                showSearch={false}
-                showExport={false}
-                showPrint={false}
-                itemsPerPage={10}
-            />
-
+            {/* Success Popup */}
             <SuccessPopup 
                 isOpen={showSuccessPopup} 
                 onClose={() => setShowSuccessPopup(false)} 

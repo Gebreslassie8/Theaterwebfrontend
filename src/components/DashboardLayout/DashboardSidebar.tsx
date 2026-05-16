@@ -126,7 +126,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Building,
           },
           {
-            name: "Manage Wallet Balance",
+            name: "Wallet Balance",
             to: "/admin/wallet/balance",
             icon: WalletIcon,
             color: "text-emerald-500",

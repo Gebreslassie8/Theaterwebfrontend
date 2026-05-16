@@ -5,16 +5,20 @@ import {
     Wallet,
     Eye,
     EyeOff,
-    Download,
-    Clock,
-    CheckCircle,
     Search,
     Building,
     Loader2,
     Percent,
     DollarSign,
+    Users,
+    Phone,
+    Mail,
+    MapPin,
+    Landmark,
+    Info,
+    CreditCard,
     TrendingUp,
-    Users
+    Calendar
 } from 'lucide-react';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
@@ -55,18 +59,6 @@ const formatCurrency = (amount: number) => {
     }).format(amount || 0);
 };
 
-const formatDate = (dateString: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) return 'Yesterday';
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
 const WalletBalance: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [systemWallet, setSystemWallet] = useState<SystemWallet | null>(null);
@@ -75,6 +67,8 @@ const WalletBalance: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
+    const [selectedTheater, setSelectedTheater] = useState<TheaterBalance | null>(null);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
 
     // Fetch all data from Supabase
     useEffect(() => {
@@ -219,47 +213,141 @@ const WalletBalance: React.FC = () => {
         return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">{type}</span>;
     };
 
-    const handleExport = () => {
-        const csvContent = [
-            ['Theater Name', 'Wallet Balance', 'Total Earned', 'Contract Type', 'Commission Rate', 'Bank Name', 'Email', 'Phone'],
-            ...theaterBalances.map(t => [
-                t.name, 
-                t.walletBalance, 
-                t.totalEarned,
-                t.contractType, 
-                t.commissionRate, 
-                t.bankName,
-                t.email,
-                t.phone
-            ])
-        ].map(row => row.join(',')).join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `theater_wallet_balances_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        setPopupMessage({
-            title: 'Export Successful',
-            message: 'Theater wallet balances exported to CSV',
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-    };
-
     // Filter functions
     const getFilteredTheaters = () => {
         let filtered = theaterBalances;
         if (searchTerm) {
             filtered = filtered.filter(t => 
                 t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                t.id.toLowerCase().includes(searchTerm.toLowerCase())
+                t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                t.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                t.phone.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
         return filtered;
+    };
+
+    const handleViewDetails = (theater: TheaterBalance) => {
+        setSelectedTheater(theater);
+        setShowDetailsModal(true);
+    };
+
+    // Details Modal Component
+    const DetailsModal = () => {
+        if (!selectedTheater) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowDetailsModal(false)}>
+                <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="sticky top-0 bg-gradient-to-r from-teal-600 to-emerald-600 px-6 py-4 rounded-t-2xl">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    <Building className="h-5 w-5 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold text-white">Theater Details</h2>
+                            </div>
+                            <button onClick={() => setShowDetailsModal(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
+                                <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                        <p className="text-teal-100 text-sm mt-2 ml-14">{selectedTheater.name}</p>
+                    </div>
+
+                    <div className="p-6 space-y-6">
+                        {/* Financial Information */}
+                        <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl p-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-teal-600" />
+                                Financial Information
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-500">Wallet Balance</p>
+                                    <p className="text-xl font-bold text-teal-600">{formatCurrency(selectedTheater.walletBalance)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Total Earned</p>
+                                    <p className="text-xl font-bold text-green-600">{formatCurrency(selectedTheater.totalEarned)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Contract Type</p>
+                                    <p className="text-sm font-medium text-gray-900">{selectedTheater.contractType}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Commission Rate</p>
+                                    <p className="text-sm font-medium text-gray-900">{selectedTheater.commissionRate}%</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Contact Information */}
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <Users className="h-4 w-4 text-blue-600" />
+                                Contact Information
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-500">Email</p>
+                                    <p className="text-sm text-gray-900 flex items-center gap-1">
+                                        <Mail className="h-3 w-3 text-gray-400" />
+                                        {selectedTheater.email}
+                                    </p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Phone</p>
+                                    <p className="text-sm text-gray-900 flex items-center gap-1">
+                                        <Phone className="h-3 w-3 text-gray-400" />
+                                        {selectedTheater.phone}
+                                    </p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-xs text-gray-500">Address</p>
+                                    <p className="text-sm text-gray-900 flex items-center gap-1">
+                                        <MapPin className="h-3 w-3 text-gray-400" />
+                                        {selectedTheater.address}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Banking Information */}
+                        <div className="bg-gray-50 rounded-xl p-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <Landmark className="h-4 w-4 text-yellow-600" />
+                                Banking Information
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-xs text-gray-500">Bank Name</p>
+                                    <p className="text-sm font-medium text-gray-900">{selectedTheater.bankName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Account Number</p>
+                                    <p className="text-sm text-gray-900">{selectedTheater.bankAccount}</p>
+                                </div>
+                                <div className="col-span-2">
+                                    <p className="text-xs text-gray-500">Account Name</p>
+                                    <p className="text-sm text-gray-900">{selectedTheater.accountName}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end">
+                        <button
+                            onClick={() => setShowDetailsModal(false)}
+                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
     };
 
     // Column definitions for theater wallets
@@ -314,17 +402,6 @@ const WalletBalance: React.FC = () => {
             )
         },
         {
-            Header: 'Bank',
-            accessor: 'bankName',
-            sortable: true,
-            Cell: (row: TheaterBalance) => (
-                <div>
-                    <p className="text-sm text-gray-900">{row.bankName}</p>
-                    <p className="text-xs text-gray-500">****{row.bankAccount.slice(-4)}</p>
-                </div>
-            )
-        },
-        {
             Header: 'Contact',
             accessor: 'email',
             sortable: true,
@@ -334,11 +411,24 @@ const WalletBalance: React.FC = () => {
                     <p className="text-xs text-gray-500">{row.phone}</p>
                 </div>
             )
+        },
+        {
+            Header: 'Actions',
+            accessor: 'id',
+            sortable: false,
+            Cell: (row: TheaterBalance) => (
+                <button
+                    onClick={() => handleViewDetails(row)}
+                    className="px-3 py-1.5 text-sm bg-teal-50 text-teal-600 rounded-lg hover:bg-teal-100 transition-colors flex items-center gap-1"
+                >
+                    <Info className="h-3.5 w-3.5" />
+                    View Details
+                </button>
+            )
         }
     ];
 
     const totalTheaterBalance = theaterBalances.reduce((sum, t) => sum + t.walletBalance, 0);
-    const totalTheaterEarnings = theaterBalances.reduce((sum, t) => sum + t.totalEarned, 0);
 
     if (loading) {
         return (
@@ -367,14 +457,14 @@ const WalletBalance: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                {/* Stats Cards - 3 Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                     {/* System Wallet Card */}
                     <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 bg-white/20 rounded-xl">
-                                    <DollarSign className="h-6 w-6 text-white" />
+                                    <Wallet className="h-6 w-6 text-white" />
                                 </div>
                                 <span className="text-white/80 text-base font-medium">System Wallet</span>
                             </div>
@@ -407,18 +497,6 @@ const WalletBalance: React.FC = () => {
                         <p className="text-white/70 text-sm mt-3">Across {theaterBalances.length} theaters</p>
                     </div>
 
-                    {/* Total Theater Earnings */}
-                    <div className="bg-gradient-to-br from-green-600 to-emerald-700 rounded-2xl p-6 text-white shadow-xl">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 bg-white/20 rounded-xl">
-                                <TrendingUp className="h-6 w-6 text-white" />
-                            </div>
-                            <span className="text-white/80 text-base font-medium">Total Theater Earnings</span>
-                        </div>
-                        <p className="text-3xl font-bold">{formatCurrency(totalTheaterEarnings)}</p>
-                        <p className="text-white/70 text-sm mt-3">Gross revenue from ticket sales</p>
-                    </div>
-
                     {/* Active Theaters */}
                     <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center gap-3 mb-4">
@@ -432,26 +510,21 @@ const WalletBalance: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Search and Export */}
+                {/* Search */}
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                    <div className="relative min-w-[250px]">
+                    <div className="relative min-w-[300px] flex-1">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <input
                             type="text"
-                            placeholder="Search theaters..."
+                            placeholder="Search theaters by name, ID, email, or phone..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
                         />
                     </div>
-                    <ReusableButton
-                        onClick={handleExport}
-                        label="Export Wallets"
-                        className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white"
-                    />
                 </div>
 
-                {/* Theater Wallets Table */}
+                {/* Theater Wallets Table with View Details Button */}
                 <ReusableTable
                     columns={theaterColumns}
                     data={getFilteredTheaters()}
@@ -462,6 +535,9 @@ const WalletBalance: React.FC = () => {
                     showPrint={false}
                     itemsPerPage={10}
                 />
+
+                {/* Details Modal */}
+                {showDetailsModal && <DetailsModal />}
 
                 {/* Success Popup */}
                 <SuccessPopup
