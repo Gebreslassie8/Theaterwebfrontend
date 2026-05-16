@@ -107,17 +107,15 @@ const YEARS_OPTIONS = [
 // Business type mapping for owners table
 const BUSINESS_TYPE_MAP: Record<string, string> = {
   "Sole Proprietorship": "sole_proprietorship",
-  Partnership: "partnership",
-  LLC: "llc",
-  Corporation: "corporation",
+  "Partnership": "partnership",
+  "LLC": "llc",
+  "Corporation": "corporation",
   "Non-Profit": "non_profit",
-  Government: "government",
+  "Government": "government",
 };
 
-// ============================================
-// STEP INDICATOR COMPONENT
-// ============================================
 
+// STEP INDICATOR COMPONENT
 const StepIndicator: React.FC<{
   currentStep: number;
   steps: { number: number; title: string; icon: React.ElementType }[];
@@ -170,10 +168,8 @@ const StepIndicator: React.FC<{
   );
 };
 
-// ============================================
-// PASSWORD INPUT COMPONENT
-// ============================================
 
+// PASSWORD INPUT COMPONENT
 const PasswordInput: React.FC<{
   name: string;
   value: string;
@@ -216,7 +212,7 @@ const PasswordInput: React.FC<{
   );
 };
 
-// ============================================
+
 // PHONE INPUT COMPONENT
 // ============================================
 
@@ -681,9 +677,8 @@ const TheaterRegistration: React.FC = () => {
     if (formData.pricingModel === "per_ticket") {
       basePrice = 0;
       paymentFrequency = "per_ticket";
-      commissionRateValue = commissionRate; // Use real commission rate from database
+      commissionRateValue = commissionRate;
     } else if (formData.pricingModel === "subscription") {
-      // Find the selected rental plan
       const selectedRental = periodicRentals.find(
         (rental) => rental.id === formData.contractType
       );
@@ -721,7 +716,6 @@ const TheaterRegistration: React.FC = () => {
 
     if (contractError) {
       console.error("Contract insert error:", contractError);
-      // Don't throw - contract is optional
     }
 
     return { userId, ownerId, theaterId, contractNumber };
