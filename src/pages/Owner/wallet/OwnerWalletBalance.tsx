@@ -1,5 +1,5 @@
 // src/pages/Owner/wallet/OwnerWalletBalance.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
     Wallet,
@@ -11,20 +11,22 @@ import {
     XCircle,
     Search,
     History,
-    TrendingUp,
-    ArrowUpRight,
     Send,
     AlertCircle,
     User,
     Users,
-    Building,
-    Calendar,
-    Ticket,
-    Star
+    Loader2,
+    DollarSign,
+    TrendingUp,
+    CreditCard,
+    Info,
+    Check,
+    X
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
 import SuccessPopup from '../../../components/Reusable/SuccessPopup';
+import supabase from '@/config/supabaseClient';
 
 // Types
 interface Transaction {
@@ -35,30 +37,28 @@ interface Transaction {
     status: 'completed' | 'pending' | 'failed';
     date: string;
     reference: string;
-    source?: 'owner' | 'producer';
-    producerName?: string;
     eventName?: string;
+    producerName?: string;
+    admin_notes?: string;
+}
+
+interface ProducerBalance {
+    id: string;
+    name: string;
+    balance: number;
+    totalEarned: number;
+    pendingPayout: number;
+    contactEmail: string;
+    contactPhone: string;
 }
 
 interface OwnerWalletStats {
     ownerBalance: number;
     ownerTotalEarned: number;
     ownerPendingWithdrawal: number;
-    producerBalance: number;
-    producerTotalEarned: number;
-    producerPendingPayout: number;
+    totalProducersBalance: number;
+    totalProducersEarned: number;
     lastTransaction: string;
-}
-
-interface ProducerTransaction {
-    id: string;
-    producerName: string;
-    eventName: string;
-    amount: number;
-    type: 'commission' | 'payout';
-    status: 'completed' | 'pending';
-    date: string;
-    reference: string;
 }
 
 interface WithdrawalRequest {
@@ -67,165 +67,49 @@ interface WithdrawalRequest {
     status: 'pending' | 'approved' | 'rejected';
     requestDate: string;
     processedDate?: string;
+    rejectionReason?: string;
+    admin_notes?: string;
+    bankName: string;
     bankAccount: string;
     accountName: string;
-    type: 'owner' | 'producer';
-    producerName?: string;
+    reason: string;
 }
 
-// Mock Data
-const mockOwnerTransactions: Transaction[] = [
-    {
-        id: 'OWN-001',
-        type: 'credit',
-        amount: 5000,
-        description: 'Commission from The Lion King (Hall A)',
-        status: 'completed',
-        date: '2024-04-05T10:30:00',
-        reference: 'COM-20240405-001',
-        source: 'owner'
-    },
-    {
-        id: 'OWN-002',
-        type: 'credit',
-        amount: 3500,
-        description: 'Commission from Hamilton (Hall B)',
-        status: 'completed',
-        date: '2024-04-04T15:20:00',
-        reference: 'COM-20240404-002',
-        source: 'owner'
-    },
-    {
-        id: 'OWN-003',
-        type: 'debit',
-        amount: 2500,
-        description: 'Withdrawal Request',
-        status: 'pending',
-        date: '2024-04-03T18:45:00',
-        reference: 'WDR-20240403-001',
-        source: 'owner'
-    },
-    {
-        id: 'OWN-004',
-        type: 'credit',
-        amount: 2800,
-        description: 'Commission from Wicked (Hall C)',
-        status: 'completed',
-        date: '2024-04-02T09:15:00',
-        reference: 'COM-20240402-003',
-        source: 'owner'
-    }
-];
-
-const mockProducerTransactions: ProducerTransaction[] = [
-    {
-        id: 'PROD-001',
-        producerName: 'Sunset Entertainment',
-        eventName: 'The Lion King',
-        amount: 15000,
-        type: 'commission',
-        status: 'completed',
-        date: '2024-04-05T10:30:00',
-        reference: 'COM-PROD-001'
-    },
-    {
-        id: 'PROD-002',
-        producerName: 'Star Productions',
-        eventName: 'Hamilton',
-        amount: 12000,
-        type: 'commission',
-        status: 'completed',
-        date: '2024-04-04T15:20:00',
-        reference: 'COM-PROD-002'
-    },
-    {
-        id: 'PROD-003',
-        producerName: 'Sunset Entertainment',
-        eventName: 'Wicked',
-        amount: 5000,
-        type: 'payout',
-        status: 'pending',
-        date: '2024-04-03T18:45:00',
-        reference: 'PAY-PROD-001'
-    }
-];
-
-const mockWithdrawalRequests: WithdrawalRequest[] = [
-    {
-        id: 'WDR-001',
-        amount: 2500,
-        status: 'pending',
-        requestDate: '2024-04-03T18:45:00',
-        bankAccount: '1000123456789',
-        accountName: 'John Doe',
-        type: 'owner'
-    },
-    {
-        id: 'WDR-002',
-        amount: 3000,
-        status: 'approved',
-        requestDate: '2024-03-28T10:30:00',
-        processedDate: '2024-03-29T14:00:00',
-        bankAccount: '1000123456789',
-        accountName: 'John Doe',
-        type: 'owner'
-    },
-    {
-        id: 'WDR-003',
-        amount: 2000,
-        status: 'rejected',
-        requestDate: '2024-03-20T09:15:00',
-        processedDate: '2024-03-21T11:00:00',
-        bankAccount: '1000123456789',
-        accountName: 'John Doe',
-        type: 'owner'
-    }
-];
-
 const OwnerWalletBalance: React.FC = () => {
-    const [transactions] = useState<Transaction[]>(mockOwnerTransactions);
-    const [producerTransactions] = useState<ProducerTransaction[]>(mockProducerTransactions);
-    const [withdrawalRequests] = useState<WithdrawalRequest[]>(mockWithdrawalRequests);
+    const [loading, setLoading] = useState(true);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [withdrawalRequests, setWithdrawalRequests] = useState<WithdrawalRequest[]>([]);
+    const [producers, setProducers] = useState<ProducerBalance[]>([]);
     const [showBalance, setShowBalance] = useState(true);
     const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
-    const [withdrawalAmount, setWithdrawalAmount] = useState('');
-    const [bankAccount, setBankAccount] = useState('');
-    const [accountName, setAccountName] = useState('');
-    const [activeTab, setActiveTab] = useState<'owner' | 'producer'>('owner');
+    const [activeTab, setActiveTab] = useState<'transactions' | 'withdrawals' | 'producers'>('transactions');
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<string>('all');
     const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState({ title: '', message: '', type: 'success' as any });
-
-    // Wallet Statistics - Separate balances
-    const [walletStats] = useState<OwnerWalletStats>({
-        ownerBalance: 12450,
-        ownerTotalEarned: 45600,
-        ownerPendingWithdrawal: 2500,
-        producerBalance: 32000,
-        producerTotalEarned: 125000,
-        producerPendingPayout: 5000,
-        lastTransaction: '2024-04-05T10:30:00'
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [theaterId, setTheaterId] = useState<string | null>(null);
+    const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
+    const [showRequestDetails, setShowRequestDetails] = useState(false);
+    const [formData, setFormData] = useState({
+        amount: '',
+        bankName: '',
+        bankAccount: '',
+        accountName: '',
+        reason: ''
+    });
+    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    
+    const [walletStats, setWalletStats] = useState<OwnerWalletStats>({
+        ownerBalance: 0,
+        ownerTotalEarned: 0,
+        ownerPendingWithdrawal: 0,
+        totalProducersBalance: 0,
+        totalProducersEarned: 0,
+        lastTransaction: new Date().toISOString()
     });
 
-    // Filter owner transactions
-    const filteredTransactions = transactions.filter(transaction => {
-        const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            transaction.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
-        return matchesSearch && matchesStatus;
-    });
-
-    // Filter producer transactions
-    const filteredProducerTransactions = producerTransactions.filter(transaction => {
-        const matchesSearch = transaction.producerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            transaction.eventName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            transaction.reference.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = filterStatus === 'all' || transaction.status === filterStatus;
-        return matchesSearch && matchesStatus;
-    });
-
+    // Helper Functions
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
@@ -238,16 +122,401 @@ const OwnerWalletBalance: React.FC = () => {
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         const now = new Date();
-        const diffTime = Math.abs(now.getTime() - date.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+        const diffDays = Math.ceil((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Yesterday';
         if (diffDays < 7) return `${diffDays} days ago`;
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    const formatTime = (dateString: string) => {
-        return new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const formatDateTime = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
+    const getCurrentUser = () => {
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    };
+
+    // Fetch Data Functions
+    const fetchTheaterId = async (userId: string) => {
+        const { data, error } = await supabase
+            .from('theaters')
+            .select('id')
+            .eq('owner_user_id', userId)
+            .maybeSingle();
+        if (error) return null;
+        return data?.id || null;
+    };
+
+    const fetchWalletBalance = async (theaterId: string) => {
+        const { data, error } = await supabase
+            .from('theaters_wallet')
+            .select('balance')
+            .eq('theater_id', theaterId)
+            .maybeSingle();
+        if (error) return 0;
+        return data?.balance || 0;
+    };
+
+    const fetchTotalEarnings = async (theaterId: string) => {
+        const { data, error } = await supabase
+            .from('earnings')
+            .select('net_amount')
+            .eq('theater_id', theaterId)
+            .eq('is_subscription_payment', false);
+        if (error) return 0;
+        return data?.reduce((sum, e) => sum + (e.net_amount || 0), 0) || 0;
+    };
+
+    const fetchPendingWithdrawals = async (theaterId: string) => {
+        const { data, error } = await supabase
+            .from('withdrawal_requests')
+            .select('amount')
+            .eq('theater_id', theaterId)
+            .eq('status', 'pending');
+        if (error) return 0;
+        return data?.reduce((sum, w) => sum + w.amount, 0) || 0;
+    };
+
+    const fetchProducers = async (theaterId: string) => {
+        const { data: events, error } = await supabase
+            .from('events')
+            .select('event_provider, event_provider_email, event_provider_phone')
+            .eq('theater_id', theaterId)
+            .not('event_provider', 'is', null);
+        
+        if (error) return [];
+
+        const producerMap = new Map<string, ProducerBalance>();
+        events?.forEach(event => {
+            const name = event.event_provider;
+            if (name && !producerMap.has(name)) {
+                producerMap.set(name, {
+                    id: name,
+                    name: name,
+                    balance: 0,
+                    totalEarned: 0,
+                    pendingPayout: 0,
+                    contactEmail: event.event_provider_email || 'N/A',
+                    contactPhone: event.event_provider_phone || 'N/A'
+                });
+            }
+        });
+        return Array.from(producerMap.values());
+    };
+
+    const calculateProducerBalances = async (theaterId: string, producers: ProducerBalance[]) => {
+        const { data: events } = await supabase
+            .from('events')
+            .select('id, event_provider')
+            .eq('theater_id', theaterId);
+        
+        const eventProviderMap = new Map<string, string>();
+        events?.forEach(event => {
+            if (event.event_provider) {
+                eventProviderMap.set(event.id, event.event_provider);
+            }
+        });
+
+        const { data: earnings } = await supabase
+            .from('earnings')
+            .select('net_amount, reservation_id')
+            .eq('theater_id', theaterId)
+            .eq('is_subscription_payment', false);
+
+        const reservationIds = earnings?.map(e => e.reservation_id).filter(Boolean) || [];
+        const { data: reservations } = await supabase
+            .from('reservations')
+            .select('id, event_id')
+            .in('id', reservationIds);
+
+        const producerEarnings = new Map<string, number>();
+        earnings?.forEach(earning => {
+            const reservation = reservations?.find(r => r.id === earning.reservation_id);
+            if (reservation) {
+                const provider = eventProviderMap.get(reservation.event_id);
+                if (provider) {
+                    const current = producerEarnings.get(provider) || 0;
+                    producerEarnings.set(provider, current + (earning.net_amount || 0));
+                }
+            }
+        });
+
+        const { data: pendingPayouts } = await supabase
+            .from('withdrawal_requests')
+            .select('amount, producer_name')
+            .eq('theater_id', theaterId)
+            .eq('status', 'pending');
+
+        const pendingMap = new Map<string, number>();
+        pendingPayouts?.forEach(p => {
+            if (p.producer_name) {
+                const current = pendingMap.get(p.producer_name) || 0;
+                pendingMap.set(p.producer_name, current + p.amount);
+            }
+        });
+
+        return producers.map(producer => ({
+            ...producer,
+            totalEarned: producerEarnings.get(producer.name) || 0,
+            balance: (producerEarnings.get(producer.name) || 0) - (pendingMap.get(producer.name) || 0),
+            pendingPayout: pendingMap.get(producer.name) || 0
+        }));
+    };
+
+    const fetchTransactions = async (theaterId: string) => {
+        const transactionsList: Transaction[] = [];
+
+        // Get earnings (credit transactions)
+        const { data: earnings } = await supabase
+            .from('earnings')
+            .select('id, net_amount, created_at')
+            .eq('theater_id', theaterId)
+            .eq('is_subscription_payment', false)
+            .order('created_at', { ascending: false });
+
+        const { data: events } = await supabase
+            .from('events')
+            .select('id, title, event_provider')
+            .eq('theater_id', theaterId);
+
+        const eventMap = new Map(events?.map(e => [e.id, e]));
+
+        const reservationIds = earnings?.map(e => e.reservation_id).filter(Boolean) || [];
+        const { data: reservations } = await supabase
+            .from('reservations')
+            .select('id, event_id')
+            .in('id', reservationIds);
+
+        const reservationEventMap = new Map<string, string>();
+        reservations?.forEach(r => reservationEventMap.set(r.id, r.event_id));
+
+        earnings?.forEach(earning => {
+            const eventId = reservationEventMap.get(earning.reservation_id || '');
+            const event = eventId ? eventMap.get(eventId) : null;
+            
+            transactionsList.push({
+                id: earning.id,
+                type: 'credit',
+                amount: earning.net_amount || 0,
+                description: `Ticket sales revenue${event?.title ? ` - ${event.title}` : ''}`,
+                status: 'completed',
+                date: earning.created_at,
+                reference: `EARN-${earning.id.slice(-8)}`,
+                eventName: event?.title,
+                producerName: event?.event_provider
+            });
+        });
+
+        // Get withdrawal requests (debit transactions)
+        const { data: withdrawals } = await supabase
+            .from('withdrawal_requests')
+            .select('*')
+            .eq('theater_id', theaterId)
+            .order('created_at', { ascending: false });
+
+        withdrawals?.forEach(withdrawal => {
+            let statusText = withdrawal.status === 'approved' ? 'completed' : withdrawal.status;
+            let description = 'Owner Withdrawal';
+            
+            if (withdrawal.status === 'rejected') {
+                description = `Withdrawal Rejected${withdrawal.rejection_reason ? `: ${withdrawal.rejection_reason}` : ''}`;
+            } else if (withdrawal.status === 'approved') {
+                description = `Withdrawal Approved${withdrawal.admin_notes ? `: ${withdrawal.admin_notes}` : ''}`;
+            }
+            
+            transactionsList.push({
+                id: withdrawal.id,
+                type: 'debit',
+                amount: withdrawal.amount,
+                description: description,
+                status: statusText,
+                date: withdrawal.processed_at || withdrawal.created_at,
+                reference: `WDR-${withdrawal.id.slice(-8)}`,
+                admin_notes: withdrawal.admin_notes || withdrawal.rejection_reason
+            });
+        });
+
+        transactionsList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setTransactions(transactionsList);
+    };
+
+    const fetchWithdrawalRequests = async (theaterId: string) => {
+        const { data, error } = await supabase
+            .from('withdrawal_requests')
+            .select('*')
+            .eq('theater_id', theaterId)
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            const formatted: WithdrawalRequest[] = data.map(w => ({
+                id: w.id,
+                amount: w.amount,
+                status: w.status,
+                requestDate: w.created_at,
+                processedDate: w.processed_at,
+                rejectionReason: w.rejection_reason,
+                admin_notes: w.admin_notes,
+                bankName: w.bank_name || 'N/A',
+                bankAccount: w.bank_account || '****',
+                accountName: w.account_name || 'N/A',
+                reason: w.reason || 'Monthly withdrawal'
+            }));
+            setWithdrawalRequests(formatted);
+        }
+    };
+
+    const loadAllData = async () => {
+        setLoading(true);
+        try {
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+                setLoading(false);
+                return;
+            }
+
+            const theaterId = await fetchTheaterId(currentUser.id);
+            if (!theaterId) {
+                setLoading(false);
+                return;
+            }
+
+            setTheaterId(theaterId);
+
+            const [balance, totalEarned, pendingWithdrawal] = await Promise.all([
+                fetchWalletBalance(theaterId),
+                fetchTotalEarnings(theaterId),
+                fetchPendingWithdrawals(theaterId)
+            ]);
+
+            let producersList = await fetchProducers(theaterId);
+            producersList = await calculateProducerBalances(theaterId, producersList);
+
+            const totalProducersBalance = producersList.reduce((sum, p) => sum + p.balance, 0);
+            const totalProducersEarned = producersList.reduce((sum, p) => sum + p.totalEarned, 0);
+
+            setWalletStats({
+                ownerBalance: balance,
+                ownerTotalEarned: totalEarned,
+                ownerPendingWithdrawal: pendingWithdrawal,
+                totalProducersBalance,
+                totalProducersEarned,
+                lastTransaction: new Date().toISOString()
+            });
+
+            setProducers(producersList);
+
+            await Promise.all([
+                fetchTransactions(theaterId),
+                fetchWithdrawalRequests(theaterId)
+            ]);
+
+        } catch (error) {
+            console.error('Error loading data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadAllData();
+    }, []);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (formErrors[name]) {
+            setFormErrors(prev => ({ ...prev, [name]: '' }));
+        }
+    };
+
+    const validateForm = (): boolean => {
+        const errors: Record<string, string> = {};
+        
+        if (!formData.amount) {
+            errors.amount = 'Amount is required';
+        } else {
+            const amount = parseFloat(formData.amount);
+            if (amount < 500) {
+                errors.amount = 'Minimum withdrawal amount is ETB 500';
+            }
+            if (amount > walletStats.ownerBalance) {
+                errors.amount = `Insufficient balance. Available: ${formatCurrency(walletStats.ownerBalance)}`;
+            }
+        }
+        
+        if (!formData.bankName) errors.bankName = 'Bank name is required';
+        if (!formData.bankAccount) errors.bankAccount = 'Bank account number is required';
+        if (!formData.accountName) errors.accountName = 'Account holder name is required';
+
+        setFormErrors(errors);
+        return Object.keys(errors).length === 0;
+    };
+
+    const handleWithdrawalRequest = async () => {
+        if (!validateForm()) return;
+
+        setIsSubmitting(true);
+
+        try {
+            const { error } = await supabase
+                .from('withdrawal_requests')
+                .insert({
+                    theater_id: theaterId,
+                    amount: parseFloat(formData.amount),
+                    reason: formData.reason || 'Owner withdrawal request',
+                    status: 'pending',
+                    withdrawal_type: 'owner',
+                    bank_name: formData.bankName,
+                    bank_account: formData.bankAccount,
+                    account_name: formData.accountName,
+                    created_at: new Date().toISOString()
+                });
+
+            if (error) throw error;
+
+            setPopupMessage({
+                title: 'Request Submitted',
+                message: `Your withdrawal request of ${formatCurrency(parseFloat(formData.amount))} has been submitted for approval`,
+                type: 'success'
+            });
+            setShowSuccessPopup(true);
+            setShowWithdrawalModal(false);
+            setFormData({ amount: '', bankName: '', bankAccount: '', accountName: '', reason: '' });
+
+            await loadAllData();
+
+        } catch (error) {
+            console.error('Error submitting withdrawal:', error);
+            setPopupMessage({
+                title: 'Error',
+                message: 'Failed to submit request. Please try again.',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleViewRequestDetails = (request: WithdrawalRequest) => {
+        setSelectedRequest(request);
+        setShowRequestDetails(true);
     };
 
     const getStatusBadge = (status: string) => {
@@ -256,30 +525,8 @@ const OwnerWalletBalance: React.FC = () => {
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Completed</span>;
             case 'pending':
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3" /> Pending</span>;
-            case 'failed':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Failed</span>;
-            default:
-                return null;
-        }
-    };
-
-    const getProducerStatusBadge = (status: string) => {
-        switch (status) {
-            case 'completed':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Completed</span>;
-            case 'pending':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3" /> Pending Payout</span>;
-            default:
-                return null;
-        }
-    };
-
-    const getWithdrawalStatusBadge = (status: string) => {
-        switch (status) {
             case 'approved':
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /> Approved</span>;
-            case 'pending':
-                return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><Clock className="h-3 w-3" /> Pending</span>;
             case 'rejected':
                 return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="h-3 w-3" /> Rejected</span>;
             default:
@@ -288,89 +535,101 @@ const OwnerWalletBalance: React.FC = () => {
     };
 
     const handleExport = () => {
-        const dataToExport = activeTab === 'owner' ? filteredTransactions : filteredProducerTransactions;
-        const csvContent = activeTab === 'owner' 
-            ? [
-                ['ID', 'Type', 'Amount', 'Description', 'Status', 'Date', 'Reference'],
-                ...dataToExport.map(t => [t.id, t.type, t.amount, t.description, t.status, t.date, t.reference])
-            ]
-            : [
-                ['ID', 'Producer', 'Event', 'Amount', 'Type', 'Status', 'Date', 'Reference'],
-                ...dataToExport.map(t => [t.id, t.producerName, t.eventName, t.amount, t.type, t.status, t.date, t.reference])
-            ];
-        
+        let dataToExport: any[];
+        let headers: string[];
+
+        switch (activeTab) {
+            case 'transactions':
+                dataToExport = transactions;
+                headers = ['ID', 'Type', 'Amount', 'Description', 'Status', 'Date', 'Reference', 'Admin Notes'];
+                break;
+            case 'withdrawals':
+                dataToExport = withdrawalRequests;
+                headers = ['ID', 'Amount', 'Status', 'Request Date', 'Processed Date', 'Admin Response', 'Bank Name', 'Account Name'];
+                break;
+            case 'producers':
+                dataToExport = producers;
+                headers = ['Producer Name', 'Balance', 'Total Earned', 'Pending Payout', 'Contact Email', 'Contact Phone'];
+                break;
+            default:
+                return;
+        }
+
+        const csvContent = [
+            headers,
+            ...dataToExport.map(item => {
+                if (activeTab === 'producers') {
+                    return [
+                        item.name,
+                        item.balance,
+                        item.totalEarned,
+                        item.pendingPayout,
+                        item.contactEmail,
+                        item.contactPhone
+                    ];
+                }
+                if (activeTab === 'withdrawals') {
+                    return [
+                        item.id.slice(-8),
+                        item.amount,
+                        item.status,
+                        formatDateTime(item.requestDate),
+                        item.processedDate ? formatDateTime(item.processedDate) : 'N/A',
+                        item.rejectionReason || item.admin_notes || 'N/A',
+                        item.bankName,
+                        item.accountName
+                    ];
+                }
+                return [
+                    item.id.slice(-8),
+                    item.type,
+                    item.amount,
+                    item.description,
+                    item.status,
+                    formatDateTime(item.date),
+                    item.reference,
+                    item.admin_notes || 'N/A'
+                ];
+            })
+        ];
+
         const csv = csvContent.map(row => row.join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${activeTab}_wallet_transactions_${new Date().toISOString().split('T')[0]}.csv`;
+        a.download = `${activeTab}_${new Date().toISOString().split('T')[0]}.csv`;
         a.click();
         URL.revokeObjectURL(url);
 
         setPopupMessage({
             title: 'Export Successful',
-            message: 'Transactions exported to CSV',
+            message: 'Data exported to CSV',
             type: 'success'
         });
         setShowSuccessPopup(true);
     };
 
-    const handleWithdrawalRequest = () => {
-        if (!withdrawalAmount || parseFloat(withdrawalAmount) <= 0) {
-            setPopupMessage({
-                title: 'Error',
-                message: 'Please enter a valid amount',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
+    const filteredTransactions = transactions.filter(t => {
+        const matchesSearch = t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            t.reference.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'all' || t.status === filterStatus;
+        return matchesSearch && matchesStatus;
+    });
 
-        if (parseFloat(withdrawalAmount) > walletStats.ownerBalance) {
-            setPopupMessage({
-                title: 'Error',
-                message: 'Insufficient balance for withdrawal',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
+    const filteredWithdrawals = withdrawalRequests.filter(w => {
+        const matchesSearch = w.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            w.bankName.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'all' || w.status === filterStatus;
+        return matchesSearch && matchesStatus;
+    });
 
-        if (!bankAccount) {
-            setPopupMessage({
-                title: 'Error',
-                message: 'Please enter bank account number',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
+    const filteredProducers = producers.filter(p => {
+        return p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.contactEmail.toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
-        if (!accountName) {
-            setPopupMessage({
-                title: 'Error',
-                message: 'Please enter account holder name',
-                type: 'error'
-            });
-            setShowSuccessPopup(true);
-            return;
-        }
-
-        setPopupMessage({
-            title: 'Request Submitted',
-            message: `Your withdrawal request of ${formatCurrency(parseFloat(withdrawalAmount))} has been submitted for approval`,
-            type: 'success'
-        });
-        setShowSuccessPopup(true);
-        setShowWithdrawalModal(false);
-        setWithdrawalAmount('');
-        setBankAccount('');
-        setAccountName('');
-    };
-
-    // Column definitions for owner transactions table
-    const ownerTransactionColumns = [
+    const transactionColumns = [
         {
             Header: 'Transaction',
             accessor: 'description',
@@ -379,6 +638,8 @@ const OwnerWalletBalance: React.FC = () => {
                 <div>
                     <p className="font-medium text-gray-900">{row.description}</p>
                     <p className="text-xs text-gray-500">{row.reference}</p>
+                    {row.producerName && <p className="text-xs text-teal-600">Producer: {row.producerName}</p>}
+                    {row.admin_notes && <p className="text-xs text-orange-500 mt-1">Note: {row.admin_notes}</p>}
                 </div>
             )
         },
@@ -393,15 +654,10 @@ const OwnerWalletBalance: React.FC = () => {
             )
         },
         {
-            Header: 'Date & Time',
+            Header: 'Date',
             accessor: 'date',
             sortable: true,
-            Cell: (row: Transaction) => (
-                <div>
-                    <p className="text-sm text-gray-900">{formatDate(row.date)}</p>
-                    <p className="text-xs text-gray-500">{formatTime(row.date)}</p>
-                </div>
-            )
+            Cell: (row: Transaction) => <p className="text-sm text-gray-900">{formatDate(row.date)}</p>
         },
         {
             Header: 'Status',
@@ -411,147 +667,261 @@ const OwnerWalletBalance: React.FC = () => {
         }
     ];
 
-    // Column definitions for producer transactions table
-    const producerTransactionColumns = [
+    const withdrawalColumns = [
         {
-            Header: 'Producer',
-            accessor: 'producerName',
+            Header: 'ID',
+            accessor: 'id',
             sortable: true,
-            Cell: (row: ProducerTransaction) => (
-                <div>
-                    <p className="font-medium text-gray-900">{row.producerName}</p>
-                    <p className="text-xs text-gray-500">{row.eventName}</p>
-                </div>
-            )
+            Cell: (row: WithdrawalRequest) => <p className="font-medium text-gray-900">{row.id.slice(-8)}</p>
         },
         {
             Header: 'Amount',
             accessor: 'amount',
             sortable: true,
-            Cell: (row: ProducerTransaction) => (
-                <div className={`flex items-center gap-1 font-semibold ${row.type === 'commission' ? 'text-green-600' : 'text-orange-600'}`}>
-                    {row.type === 'commission' ? '+' : '-'} {formatCurrency(row.amount)}
-                </div>
-            )
-        },
-        {
-            Header: 'Type',
-            accessor: 'type',
-            sortable: true,
-            Cell: (row: ProducerTransaction) => (
-                <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${row.type === 'commission' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {row.type === 'commission' ? 'Commission' : 'Payout'}
-                </span>
-            )
-        },
-        {
-            Header: 'Date',
-            accessor: 'date',
-            sortable: true,
-            Cell: (row: ProducerTransaction) => (
-                <div>
-                    <p className="text-sm text-gray-900">{formatDate(row.date)}</p>
-                    <p className="text-xs text-gray-500">{formatTime(row.date)}</p>
-                </div>
-            )
+            Cell: (row: WithdrawalRequest) => <p className="font-semibold text-gray-900">{formatCurrency(row.amount)}</p>
         },
         {
             Header: 'Status',
             accessor: 'status',
             sortable: true,
-            Cell: (row: ProducerTransaction) => getProducerStatusBadge(row.status)
-        }
-    ];
-
-    // Column definitions for withdrawal requests table
-    const withdrawalColumns = [
-        {
-            Header: 'Request ID',
-            accessor: 'id',
-            sortable: true,
-            Cell: (row: WithdrawalRequest) => (
-                <p className="font-medium text-gray-900">{row.id}</p>
-            )
-        },
-        {
-            Header: 'Amount',
-            accessor: 'amount',
-            sortable: true,
-            Cell: (row: WithdrawalRequest) => (
-                <p className="font-semibold text-gray-900">{formatCurrency(row.amount)}</p>
-            )
-        },
-        {
-            Header: 'Bank Account',
-            accessor: 'bankAccount',
-            sortable: true,
-            Cell: (row: WithdrawalRequest) => (
-                <div>
-                    <p className="text-sm text-gray-900">{row.bankAccount}</p>
-                    <p className="text-xs text-gray-500">{row.accountName}</p>
-                </div>
-            )
+            Cell: (row: WithdrawalRequest) => getStatusBadge(row.status)
         },
         {
             Header: 'Request Date',
             accessor: 'requestDate',
             sortable: true,
+            Cell: (row: WithdrawalRequest) => <p className="text-sm text-gray-900">{formatDateTime(row.requestDate)}</p>
+        },
+        {
+            Header: 'Admin Response',
+            accessor: 'admin_notes',
+            sortable: true,
             Cell: (row: WithdrawalRequest) => (
                 <div>
-                    <p className="text-sm text-gray-900">{formatDate(row.requestDate)}</p>
-                    <p className="text-xs text-gray-500">{formatTime(row.requestDate)}</p>
+                    {row.status === 'approved' ? (
+                        <span className="text-green-600 text-xs">✓ Approved</span>
+                    ) : row.status === 'rejected' ? (
+                        <span className="text-red-600 text-xs" title={row.rejectionReason}>
+                            ✗ Rejected{row.rejectionReason ? `: ${row.rejectionReason.substring(0, 30)}${row.rejectionReason.length > 30 ? '...' : ''}` : ''}
+                        </span>
+                    ) : (
+                        <span className="text-yellow-600 text-xs">⏳ Pending Review</span>
+                    )}
                 </div>
             )
         },
         {
-            Header: 'Status',
-            accessor: 'status',
-            sortable: true,
-            Cell: (row: WithdrawalRequest) => getWithdrawalStatusBadge(row.status)
+            Header: 'Actions',
+            accessor: 'id',
+            sortable: false,
+            Cell: (row: WithdrawalRequest) => (
+                <button
+                    onClick={() => handleViewRequestDetails(row)}
+                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                    title="View Details"
+                >
+                    <Info className="h-4 w-4 text-blue-600" />
+                </button>
+            )
         }
     ];
+
+    const producerColumns = [
+        {
+            Header: 'Producer',
+            accessor: 'name',
+            sortable: true,
+            Cell: (row: ProducerBalance) => (
+                <div>
+                    <p className="font-medium text-gray-900">{row.name}</p>
+                    <p className="text-xs text-gray-500">{row.contactEmail}</p>
+                </div>
+            )
+        },
+        {
+            Header: 'Balance',
+            accessor: 'balance',
+            sortable: true,
+            Cell: (row: ProducerBalance) => <p className="font-bold text-teal-600">{formatCurrency(row.balance)}</p>
+        },
+        {
+            Header: 'Total Earned',
+            accessor: 'totalEarned',
+            sortable: true,
+            Cell: (row: ProducerBalance) => <p className="font-semibold text-green-600">{formatCurrency(row.totalEarned)}</p>
+        },
+        {
+            Header: 'Pending Payout',
+            accessor: 'pendingPayout',
+            sortable: true,
+            Cell: (row: ProducerBalance) => <p className="text-orange-600">{formatCurrency(row.pendingPayout)}</p>
+        },
+        {
+            Header: 'Contact',
+            accessor: 'contactPhone',
+            sortable: true,
+            Cell: (row: ProducerBalance) => <p className="text-sm text-gray-900">{row.contactPhone}</p>
+        }
+    ];
+
+    // Request Details Modal
+    const RequestDetailsModal = () => {
+        if (!selectedRequest) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowRequestDetails(false)}>
+                <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className={`sticky top-0 px-6 py-4 rounded-t-2xl ${
+                        selectedRequest.status === 'approved' ? 'bg-gradient-to-r from-green-600 to-emerald-600' :
+                        selectedRequest.status === 'rejected' ? 'bg-gradient-to-r from-red-600 to-rose-600' :
+                        'bg-gradient-to-r from-yellow-600 to-orange-600'
+                    }`}>
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    {selectedRequest.status === 'approved' ? <CheckCircle className="h-5 w-5 text-white" /> :
+                                     selectedRequest.status === 'rejected' ? <XCircle className="h-5 w-5 text-white" /> :
+                                     <Clock className="h-5 w-5 text-white" />}
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">
+                                        {selectedRequest.status === 'approved' ? 'Withdrawal Approved' :
+                                         selectedRequest.status === 'rejected' ? 'Withdrawal Rejected' :
+                                         'Withdrawal Request'}
+                                    </h2>
+                                    <p className="text-white/80 text-sm">ID: {selectedRequest.id.slice(-8)}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowRequestDetails(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
+                                <X className="h-5 w-5 text-white" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        {/* Amount */}
+                        <div className="bg-gray-50 rounded-lg p-4 text-center">
+                            <p className="text-sm text-gray-500">Amount Requested</p>
+                            <p className="text-3xl font-bold text-gray-900">{formatCurrency(selectedRequest.amount)}</p>
+                        </div>
+
+                        {/* Status & Date */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Request Date</p>
+                                <p className="text-sm font-medium text-gray-900">{formatDateTime(selectedRequest.requestDate)}</p>
+                            </div>
+                            {selectedRequest.processedDate && (
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                    <p className="text-xs text-gray-500">Processed Date</p>
+                                    <p className="text-sm font-medium text-gray-900">{formatDateTime(selectedRequest.processedDate)}</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bank Details */}
+                        <div className="border-t pt-4">
+                            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-teal-600" />
+                                Bank Details
+                            </h3>
+                            <div className="space-y-2">
+                                <div>
+                                    <p className="text-xs text-gray-500">Bank Name</p>
+                                    <p className="text-sm text-gray-900">{selectedRequest.bankName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Account Number</p>
+                                    <p className="text-sm text-gray-900">{selectedRequest.bankAccount}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-500">Account Name</p>
+                                    <p className="text-sm text-gray-900">{selectedRequest.accountName}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Admin Response */}
+                        {(selectedRequest.status === 'approved' || selectedRequest.status === 'rejected') && (
+                            <div className={`rounded-lg p-4 ${selectedRequest.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                                <p className="text-sm font-semibold flex items-center gap-2 mb-2">
+                                    {selectedRequest.status === 'approved' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-600" />}
+                                    {selectedRequest.status === 'approved' ? 'Admin Response' : 'Rejection Reason'}
+                                </p>
+                                <p className={`text-sm ${selectedRequest.status === 'approved' ? 'text-green-700' : 'text-red-700'}`}>
+                                    {selectedRequest.rejectionReason || selectedRequest.admin_notes || (selectedRequest.status === 'approved' ? 'Withdrawal request has been approved.' : 'No reason provided.')}
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Original Reason */}
+                        {selectedRequest.reason && (
+                            <div className="bg-gray-50 rounded-lg p-4">
+                                <p className="text-sm font-semibold text-gray-700 mb-2">Your Reason</p>
+                                <p className="text-sm text-gray-600">{selectedRequest.reason}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end">
+                        <button
+                            onClick={() => setShowRequestDetails(false)}
+                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const pendingRequestsCount = withdrawalRequests.filter(w => w.status === 'pending').length;
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+                    <p className="text-gray-500">Loading wallet data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Header */}
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl shadow-lg">
                             <Wallet className="h-6 w-6 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">My Wallet</h1>
-                            <p className="text-gray-600">Manage your earnings and event producer balances</p>
+                            <h1 className="text-2xl font-bold text-gray-900">Wallet Management</h1>
+                            <p className="text-gray-600">Manage your balance and track withdrawal requests</p>
                         </div>
                     </div>
                 </motion.div>
 
-                {/* Two Separate Balance Cards */}
+                {/* Two Wallet Cards - Admin Style */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                    {/* Owner Balance Card - Deep Teal */}
-                    <div className="bg-gradient-to-br from-teal-700 to-teal-800 rounded-2xl p-6 text-white shadow-xl">
+                    {/* Owner Balance Card */}
+                    <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="p-2.5 bg-white/20 rounded-xl">
                                     <User className="h-6 w-6 text-white" />
                                 </div>
-                                <span className="text-white/80 font-medium">Owner Balance</span>
+                                <span className="text-white/80 text-base font-medium">Your Balance</span>
                             </div>
-                            <button
-                                onClick={() => setShowBalance(!showBalance)}
-                                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition"
-                            >
+                            <button onClick={() => setShowBalance(!showBalance)} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
                                 {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                         </div>
                         <div className="mb-4">
-                            <p className="text-5xl font-bold">
-                                {showBalance ? formatCurrency(walletStats.ownerBalance) : '••••••'}
-                            </p>
-                            <p className="text-white/70 text-sm mt-2">
-                                Total earned: {formatCurrency(walletStats.ownerTotalEarned)}
-                            </p>
+                            <p className="text-3xl font-bold">{showBalance ? formatCurrency(walletStats.ownerBalance) : '••••••'}</p>
+                            <p className="text-white/70 text-sm mt-2">Total earned: {formatCurrency(walletStats.ownerTotalEarned)}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
                             <div>
@@ -559,7 +929,7 @@ const OwnerWalletBalance: React.FC = () => {
                                 <p className="font-semibold text-lg">{formatCurrency(walletStats.ownerPendingWithdrawal)}</p>
                             </div>
                             <div>
-                                <p className="text-white/70 text-xs">Last Transaction</p>
+                                <p className="text-white/70 text-xs">Last Activity</p>
                                 <p className="font-semibold text-sm">{formatDate(walletStats.lastTransaction)}</p>
                             </div>
                         </div>
@@ -574,176 +944,114 @@ const OwnerWalletBalance: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Event Producer Balance Card - Deep Blue */}
-                    <div className="bg-gradient-to-br from-blue-700 to-indigo-800 rounded-2xl p-6 text-white shadow-xl">
+                    {/* Producers Balance Card */}
+                    <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2.5 bg-white/20 rounded-xl">
                                 <Users className="h-6 w-6 text-white" />
                             </div>
-                            <span className="text-white/80 font-medium">Event Producer Balance</span>
+                            <span className="text-white/80 text-base font-medium">Producers Balance</span>
                         </div>
                         <div className="mb-4">
-                            <p className="text-5xl font-bold">
-                                {showBalance ? formatCurrency(walletStats.producerBalance) : '••••••'}
-                            </p>
-                            <p className="text-white/70 text-sm mt-2">
-                                Total earned across all producers: {formatCurrency(walletStats.producerTotalEarned)}
-                            </p>
+                            <p className="text-3xl font-bold">{showBalance ? formatCurrency(walletStats.totalProducersBalance) : '••••••'}</p>
+                            <p className="text-white/70 text-sm mt-2">Across {producers.length} producers</p>
                         </div>
                         <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/20">
                             <div>
-                                <p className="text-white/70 text-xs">Pending Payouts</p>
-                                <p className="font-semibold text-lg">{formatCurrency(walletStats.producerPendingPayout)}</p>
+                                <p className="text-white/70 text-xs">Total Earned</p>
+                                <p className="font-semibold text-lg">{formatCurrency(walletStats.totalProducersEarned)}</p>
                             </div>
                             <div>
-                                <p className="text-white/70 text-xs">Active Producers</p>
-                                <p className="font-semibold text-lg">3</p>
+                                <p className="text-white/70 text-xs">Pending Payouts</p>
+                                <p className="font-semibold text-lg">{formatCurrency(producers.reduce((sum, p) => sum + p.pendingPayout, 0))}</p>
                             </div>
-                        </div>
-                        <div className="mt-4">
-                            <button
-                                className="w-full py-2.5 bg-white/20 text-white rounded-xl font-semibold hover:bg-white/30 transition flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
-                                disabled
-                            >
-                                <Building className="h-4 w-4" />
-                                Producer payouts managed by system
-                            </button>
                         </div>
                     </div>
                 </div>
 
+                {/* Withdrawal Requests Status Card */}
+                {pendingRequestsCount > 0 && (
+                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4 mb-6 border border-yellow-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-yellow-100 rounded-lg">
+                                    <Clock className="h-5 w-5 text-yellow-600" />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-yellow-800">Withdrawal Request Status</p>
+                                    <p className="text-xs text-yellow-700">You have {pendingRequestsCount} pending withdrawal request{pendingRequestsCount !== 1 ? 's' : ''} awaiting admin approval</p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setActiveTab('withdrawals')}
+                                className="px-3 py-1.5 text-xs bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition"
+                            >
+                                View Requests
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Tabs */}
-                <div className="flex bg-gray-100 rounded-lg p-1 mb-6 w-fit">
-                    <button
-                        onClick={() => {
-                            setActiveTab('owner');
-                            setSearchTerm('');
-                            setFilterStatus('all');
-                        }}
-                        className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                            activeTab === 'owner' 
-                                ? 'bg-teal-600 text-white shadow-sm' 
-                                : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        <User className="h-4 w-4" />
-                        Owner Transactions
+                <div className="flex flex-wrap gap-2 bg-gray-100 rounded-lg p-1 mb-6 w-fit">
+                    <button onClick={() => { setActiveTab('transactions'); setSearchTerm(''); setFilterStatus('all'); }} className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${activeTab === 'transactions' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
+                        <History className="h-4 w-4" /> Transactions
                     </button>
-                    <button
-                        onClick={() => {
-                            setActiveTab('producer');
-                            setSearchTerm('');
-                            setFilterStatus('all');
-                        }}
-                        className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                            activeTab === 'producer' 
-                                ? 'bg-teal-600 text-white shadow-sm' 
-                                : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        <Users className="h-4 w-4" />
-                        Producer Transactions
+                    <button onClick={() => { setActiveTab('withdrawals'); setSearchTerm(''); setFilterStatus('all'); }} className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 relative ${activeTab === 'withdrawals' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
+                        <Clock className="h-4 w-4" /> Withdrawal History
+                        {pendingRequestsCount > 0 && activeTab !== 'withdrawals' && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                                {pendingRequestsCount}
+                            </span>
+                        )}
                     </button>
-                    <button
-                        onClick={() => {
-                            setActiveTab('withdrawals');
-                            setSearchTerm('');
-                            setFilterStatus('all');
-                        }}
-                        className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
-                            activeTab === 'withdrawals' 
-                                ? 'bg-teal-600 text-white shadow-sm' 
-                                : 'text-gray-600 hover:bg-gray-200'
-                        }`}
-                    >
-                        <Clock className="h-4 w-4" />
-                        Withdrawal History
+                    <button onClick={() => { setActiveTab('producers'); setSearchTerm(''); setFilterStatus('all'); }} className={`px-6 py-2.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center gap-2 ${activeTab === 'producers' ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
+                        <Users className="h-4 w-4" /> Producers
                     </button>
                 </div>
 
                 {/* Search and Filters */}
-                {(activeTab === 'owner' || activeTab === 'producer') && (
-                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                        <div className="flex flex-wrap items-center gap-3">
-                            <div className="relative min-w-[250px]">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                <input
-                                    type="text"
-                                    placeholder={activeTab === 'owner' ? "Search transactions..." : "Search by producer or event..."}
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white"
-                                />
-                            </div>
-                            <select
-                                value={filterStatus}
-                                onChange={(e) => setFilterStatus(e.target.value)}
-                                className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]"
-                            >
-                                <option value="all">All Status</option>
-                                <option value="completed">Completed</option>
-                                <option value="pending">Pending</option>
-                                {activeTab === 'owner' && <option value="failed">Failed</option>}
-                            </select>
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[250px]">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <input type="text" placeholder={activeTab === 'transactions' ? "Search transactions..." : activeTab === 'withdrawals' ? "Search withdrawal requests..." : "Search producers..."} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white" />
                         </div>
-                        <ReusableButton
-                            onClick={handleExport}
-                            icon="Download"
-                            label="Export Transactions"
-                            className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white"
-                        />
+                        {(activeTab === 'transactions' || activeTab === 'withdrawals') && (
+                            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500 bg-white min-w-[140px]">
+                                <option value="all">All Status</option>
+                                {activeTab === 'transactions' ? (
+                                    <>
+                                        <option value="completed">Completed</option>
+                                        <option value="pending">Pending</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="pending">Pending</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="rejected">Rejected</option>
+                                    </>
+                                )}
+                            </select>
+                        )}
                     </div>
-                )}
+                    <ReusableButton onClick={handleExport} icon="Download" label="Export Data" className="px-4 py-2 text-sm bg-teal-600 hover:bg-teal-700 text-white" />
+                </div>
 
-                {/* Content based on active tab */}
-                {activeTab === 'owner' && (
-                    <ReusableTable
-                        columns={ownerTransactionColumns}
-                        data={filteredTransactions}
-                        title="Owner Transaction History"
-                        icon={History}
-                        showSearch={false}
-                        showExport={false}
-                        showPrint={false}
-                        itemsPerPage={10}
-                    />
-                )}
+                {/* Content Tables */}
+                {activeTab === 'transactions' && <ReusableTable columns={transactionColumns} data={filteredTransactions} title="Transaction History" icon={History} showSearch={false} showExport={false} showPrint={false} itemsPerPage={10} />}
+                {activeTab === 'withdrawals' && <ReusableTable columns={withdrawalColumns} data={filteredWithdrawals} title="Withdrawal History" icon={Clock} showSearch={false} showExport={false} showPrint={false} itemsPerPage={10} />}
+                {activeTab === 'producers' && <ReusableTable columns={producerColumns} data={filteredProducers} title="Producers Balance" icon={Users} showSearch={false} showExport={false} showPrint={false} itemsPerPage={10} />}
 
-                {activeTab === 'producer' && (
-                    <ReusableTable
-                        columns={producerTransactionColumns}
-                        data={filteredProducerTransactions}
-                        title="Event Producer Transactions"
-                        icon={Users}
-                        showSearch={false}
-                        showExport={false}
-                        showPrint={false}
-                        itemsPerPage={10}
-                    />
-                )}
-
-                {activeTab === 'withdrawals' && (
-                    <ReusableTable
-                        columns={withdrawalColumns}
-                        data={withdrawalRequests}
-                        title="Withdrawal Request History"
-                        icon={Clock}
-                        showSearch={false}
-                        showExport={false}
-                        showPrint={false}
-                        itemsPerPage={10}
-                    />
-                )}
-
-                {/* Withdrawal Request Modal - Owner Only */}
+                {/* Withdrawal Modal */}
                 {showWithdrawalModal && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <motion.div
                             initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            className="bg-white rounded-2xl max-w-md w-full"
+                            className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
                         >
-                            <div className="border-b px-6 py-4 bg-gradient-to-r from-teal-600 to-teal-700 rounded-t-2xl">
+                            <div className="border-b px-6 py-4 bg-gradient-to-r from-teal-600 to-teal-700 rounded-t-2xl sticky top-0">
                                 <h2 className="text-xl font-bold text-white">Request Withdrawal</h2>
                                 <p className="text-white/80 text-sm">Enter your withdrawal details</p>
                             </div>
@@ -751,74 +1059,117 @@ const OwnerWalletBalance: React.FC = () => {
                                 <div className="bg-teal-50 rounded-lg p-3 border border-teal-200">
                                     <p className="text-sm text-teal-800">Available Balance: {formatCurrency(walletStats.ownerBalance)}</p>
                                 </div>
+                                
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Amount <span className="text-red-500">*</span></label>
                                     <input
                                         type="number"
-                                        value={withdrawalAmount}
-                                        onChange={(e) => setWithdrawalAmount(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
-                                        placeholder="Enter amount"
+                                        name="amount"
+                                        value={formData.amount}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${formErrors.amount ? 'border-red-500' : 'border-gray-200'}`}
+                                        placeholder="Enter amount (min. ETB 500)"
+                                        min="500"
+                                        step="100"
                                     />
+                                    {formErrors.amount && <p className="text-xs text-red-500 mt-1">{formErrors.amount}</p>}
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="bankName"
+                                        value={formData.bankName}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${formErrors.bankName ? 'border-red-500' : 'border-gray-200'}`}
+                                        placeholder="e.g., Commercial Bank of Ethiopia"
+                                    />
+                                    {formErrors.bankName && <p className="text-xs text-red-500 mt-1">{formErrors.bankName}</p>}
+                                </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Bank Account Number <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
-                                        value={bankAccount}
-                                        onChange={(e) => setBankAccount(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                        name="bankAccount"
+                                        value={formData.bankAccount}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${formErrors.bankAccount ? 'border-red-500' : 'border-gray-200'}`}
                                         placeholder="Enter bank account number"
                                     />
+                                    {formErrors.bankAccount && <p className="text-xs text-red-500 mt-1">{formErrors.bankAccount}</p>}
                                 </div>
+
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name <span className="text-red-500">*</span></label>
                                     <input
                                         type="text"
-                                        value={accountName}
-                                        onChange={(e) => setAccountName(e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500"
+                                        name="accountName"
+                                        value={formData.accountName}
+                                        onChange={handleInputChange}
+                                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 ${formErrors.accountName ? 'border-red-500' : 'border-gray-200'}`}
                                         placeholder="Enter account holder name"
                                     />
+                                    {formErrors.accountName && <p className="text-xs text-red-500 mt-1">{formErrors.accountName}</p>}
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason for Withdrawal</label>
+                                    <textarea
+                                        name="reason"
+                                        value={formData.reason}
+                                        onChange={handleInputChange}
+                                        rows={3}
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500 resize-none"
+                                        placeholder="Optional: Tell us why you are withdrawing"
+                                    />
+                                </div>
+
                                 <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
                                     <div className="flex items-start gap-2">
                                         <AlertCircle className="h-4 w-4 text-yellow-600 mt-0.5" />
                                         <p className="text-xs text-yellow-800">
-                                            Withdrawal requests are processed within 2-3 business days. Minimum withdrawal amount is ETB 500.
+                                            Withdrawal requests are processed within 2-3 business days. Minimum amount is ETB 500.
                                         </p>
                                     </div>
                                 </div>
                             </div>
-                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3">
+                            <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end gap-3 sticky bottom-0">
                                 <button
-                                    onClick={() => setShowWithdrawalModal(false)}
+                                    onClick={() => {
+                                        setShowWithdrawalModal(false);
+                                        setFormData({ amount: '', bankName: '', bankAccount: '', accountName: '', reason: '' });
+                                        setFormErrors({});
+                                    }}
                                     className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleWithdrawalRequest}
-                                    className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                                    disabled={isSubmitting}
+                                    className={`px-4 py-2 rounded-lg transition flex items-center gap-2 ${
+                                        isSubmitting 
+                                            ? 'bg-gray-400 cursor-not-allowed' 
+                                            : 'bg-teal-600 hover:bg-teal-700 text-white'
+                                    }`}
                                 >
-                                    <Send className="h-4 w-4" />
-                                    Submit Request
+                                    {isSubmitting ? (
+                                        <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</>
+                                    ) : (
+                                        <><Send className="h-4 w-4" /> Submit Request</>
+                                    )}
                                 </button>
                             </div>
                         </motion.div>
                     </div>
                 )}
 
-                {/* Success Popup */}
-                <SuccessPopup
-                    isOpen={showSuccessPopup}
-                    onClose={() => setShowSuccessPopup(false)}
-                    type={popupMessage.type}
-                    title={popupMessage.title}
-                    message={popupMessage.message}
-                    duration={3000}
-                    position="top-right"
-                />
+                {/* Request Details Modal */}
+                {showRequestDetails && <RequestDetailsModal />}
+
+                <SuccessPopup isOpen={showSuccessPopup} onClose={() => setShowSuccessPopup(false)} type={popupMessage.type} title={popupMessage.title} message={popupMessage.message} duration={3000} position="top-right" />
             </div>
         </div>
     );
