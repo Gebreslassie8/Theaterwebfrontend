@@ -21,7 +21,8 @@ import {
     CreditCard,
     Info,
     Check,
-    X
+    X,
+    Eye as EyeIcon
 } from 'lucide-react';
 import ReusableTable from '../../../components/Reusable/ReusableTable';
 import ReusableButton from '../../../components/Reusable/ReusableButton';
@@ -40,6 +41,10 @@ interface Transaction {
     eventName?: string;
     producerName?: string;
     admin_notes?: string;
+    payment_method?: string;
+    customer_name?: string;
+    customer_email?: string;
+    customer_phone?: string;
 }
 
 interface ProducerBalance {
@@ -90,7 +95,9 @@ const OwnerWalletBalance: React.FC = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [theaterId, setTheaterId] = useState<string | null>(null);
     const [selectedRequest, setSelectedRequest] = useState<WithdrawalRequest | null>(null);
+    const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [showRequestDetails, setShowRequestDetails] = useState(false);
+    const [showTransactionDetails, setShowTransactionDetails] = useState(false);
     const [formData, setFormData] = useState({
         amount: '',
         bankName: '',
@@ -519,6 +526,11 @@ const OwnerWalletBalance: React.FC = () => {
         setShowRequestDetails(true);
     };
 
+    const handleViewTransactionDetails = (transaction: Transaction) => {
+        setSelectedTransaction(transaction);
+        setShowTransactionDetails(true);
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'completed':
@@ -664,6 +676,20 @@ const OwnerWalletBalance: React.FC = () => {
             accessor: 'status',
             sortable: true,
             Cell: (row: Transaction) => getStatusBadge(row.status)
+        },
+        {
+            Header: 'Actions',
+            accessor: 'id',
+            sortable: false,
+            Cell: (row: Transaction) => (
+                <button
+                    onClick={() => handleViewTransactionDetails(row)}
+                    className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
+                    title="View Details"
+                >
+                    <EyeIcon className="h-4 w-4 text-blue-600" />
+                </button>
+            )
         }
     ];
 
@@ -720,7 +746,7 @@ const OwnerWalletBalance: React.FC = () => {
                     className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition-colors"
                     title="View Details"
                 >
-                    <Info className="h-4 w-4 text-blue-600" />
+                    <EyeIcon className="h-4 w-4 text-blue-600" />
                 </button>
             )
         }
@@ -764,6 +790,90 @@ const OwnerWalletBalance: React.FC = () => {
         }
     ];
 
+    // Transaction Details Modal
+    const TransactionDetailsModal = () => {
+        if (!selectedTransaction) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowTransactionDetails(false)}>
+                <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 rounded-t-2xl sticky top-0">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-lg">
+                                    {selectedTransaction.type === 'credit' ? <TrendingUp className="h-5 w-5 text-white" /> : <CreditCard className="h-5 w-5 text-white" />}
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">Transaction Details</h2>
+                                    <p className="text-white/80 text-sm">ID: {selectedTransaction.reference}</p>
+                                </div>
+                            </div>
+                            <button onClick={() => setShowTransactionDetails(false)} className="p-1 hover:bg-white/20 rounded-lg transition">
+                                <X className="h-5 w-5 text-white" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-6 space-y-4">
+                        {/* Amount */}
+                        <div className={`rounded-lg p-4 text-center ${selectedTransaction.type === 'credit' ? 'bg-green-50' : 'bg-red-50'}`}>
+                            <p className="text-sm text-gray-500">Amount</p>
+                            <p className={`text-3xl font-bold ${selectedTransaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                                {selectedTransaction.type === 'credit' ? '+' : '-'} {formatCurrency(selectedTransaction.amount)}
+                            </p>
+                        </div>
+
+                        {/* Description */}
+                        <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs text-gray-500">Description</p>
+                            <p className="text-sm font-medium text-gray-900">{selectedTransaction.description}</p>
+                        </div>
+
+                        {/* Date */}
+                        <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs text-gray-500">Date & Time</p>
+                            <p className="text-sm text-gray-900">{formatDateTime(selectedTransaction.date)}</p>
+                        </div>
+
+                        {/* Status */}
+                        <div className="bg-gray-50 rounded-lg p-3">
+                            <p className="text-xs text-gray-500">Status</p>
+                            {getStatusBadge(selectedTransaction.status)}
+                        </div>
+
+                        {/* Event Info (if available) */}
+                        {selectedTransaction.eventName && (
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Event</p>
+                                <p className="text-sm text-gray-900">{selectedTransaction.eventName}</p>
+                                {selectedTransaction.producerName && (
+                                    <p className="text-xs text-teal-600 mt-1">Producer: {selectedTransaction.producerName}</p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Admin Notes (if available) */}
+                        {selectedTransaction.admin_notes && (
+                            <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                                <p className="text-xs text-orange-600 font-medium">Admin Note</p>
+                                <p className="text-sm text-orange-700">{selectedTransaction.admin_notes}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="border-t px-6 py-4 bg-gray-50 rounded-b-2xl flex justify-end">
+                        <button
+                            onClick={() => setShowTransactionDetails(false)}
+                            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                        >
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     // Request Details Modal
     const RequestDetailsModal = () => {
         if (!selectedRequest) return null;
@@ -799,13 +909,11 @@ const OwnerWalletBalance: React.FC = () => {
                     </div>
 
                     <div className="p-6 space-y-4">
-                        {/* Amount */}
                         <div className="bg-gray-50 rounded-lg p-4 text-center">
                             <p className="text-sm text-gray-500">Amount Requested</p>
                             <p className="text-3xl font-bold text-gray-900">{formatCurrency(selectedRequest.amount)}</p>
                         </div>
 
-                        {/* Status & Date */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-gray-50 rounded-lg p-3">
                                 <p className="text-xs text-gray-500">Request Date</p>
@@ -819,7 +927,6 @@ const OwnerWalletBalance: React.FC = () => {
                             )}
                         </div>
 
-                        {/* Bank Details */}
                         <div className="border-t pt-4">
                             <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                                 <CreditCard className="h-4 w-4 text-teal-600" />
@@ -841,7 +948,6 @@ const OwnerWalletBalance: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Admin Response */}
                         {(selectedRequest.status === 'approved' || selectedRequest.status === 'rejected') && (
                             <div className={`rounded-lg p-4 ${selectedRequest.status === 'approved' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
                                 <p className="text-sm font-semibold flex items-center gap-2 mb-2">
@@ -854,7 +960,6 @@ const OwnerWalletBalance: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Original Reason */}
                         {selectedRequest.reason && (
                             <div className="bg-gray-50 rounded-lg p-4">
                                 <p className="text-sm font-semibold text-gray-700 mb-2">Your Reason</p>
@@ -904,9 +1009,8 @@ const OwnerWalletBalance: React.FC = () => {
                     </div>
                 </motion.div>
 
-                {/* Two Wallet Cards - Admin Style */}
+                {/* Two Wallet Cards */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
-                    {/* Owner Balance Card */}
                     <div className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-3">
@@ -944,7 +1048,6 @@ const OwnerWalletBalance: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Producers Balance Card */}
                     <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-xl">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="p-2.5 bg-white/20 rounded-xl">
@@ -1165,6 +1268,9 @@ const OwnerWalletBalance: React.FC = () => {
                         </motion.div>
                     </div>
                 )}
+
+                {/* Transaction Details Modal */}
+                {showTransactionDetails && <TransactionDetailsModal />}
 
                 {/* Request Details Modal */}
                 {showRequestDetails && <RequestDetailsModal />}
