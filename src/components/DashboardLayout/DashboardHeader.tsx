@@ -1,5 +1,5 @@
 // frontend/src/components/layout/DashboardHeader.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Menu,
   User,
@@ -22,6 +22,7 @@ interface UserData {
   email?: string;
   role?: string;
   profileImage?: string | null;
+  profile_image_url?: string | null;
   phone?: string;
   bio?: string;
   location?: string;
@@ -50,6 +51,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const [currentUser, setCurrentUser] = useState<UserData | null>(user);
   const { logout } = useAuth();
   const navigate = useNavigate();
+
+  // Sync currentUser when user prop changes
+  useEffect(() => {
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, [user]);
 
   // Language options
   const languages = [
@@ -112,12 +120,14 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   };
 
   const handleUserUpdate = (updatedUser: UserData): void => {
-    // Merge the updated user data
+    // Merge the updated user data, ensuring profile image is properly handled
     const mergedUser = {
       ...currentUser,
       ...updatedUser,
-      name: updatedUser.fullName || updatedUser.name,
-      full_name: updatedUser.fullName || updatedUser.name,
+      name: updatedUser.full_name || updatedUser.name || updatedUser.fullName,
+      full_name: updatedUser.full_name || updatedUser.name || updatedUser.fullName,
+      profileImage: updatedUser.profile_image_url || updatedUser.profileImage,
+      profile_image_url: updatedUser.profile_image_url || updatedUser.profileImage,
     };
     
     setCurrentUser(mergedUser);
@@ -126,26 +136,32 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     if (onUserUpdate) onUserUpdate(mergedUser);
     
     // Update localStorage/sessionStorage
-    const storedUser = JSON.parse(
-      localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'
-    );
-    
-    if (storedUser) {
-      const updatedStoredUser = {
-        ...storedUser,
-        name: mergedUser.name,
-        email: mergedUser.email,
-        phone: mergedUser.phone,
-        bio: mergedUser.bio,
-        location: mergedUser.location,
-        profileImage: mergedUser.profileImage,
-      };
-      
-      if (localStorage.getItem('user')) {
-        localStorage.setItem('user', JSON.stringify(updatedStoredUser));
-      }
-      if (sessionStorage.getItem('user')) {
-        sessionStorage.setItem('user', JSON.stringify(updatedStoredUser));
+    const storedUserStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (storedUserStr) {
+      try {
+        const storedUser = JSON.parse(storedUserStr);
+        const updatedStoredUser = {
+          ...storedUser,
+          id: mergedUser.id,
+          name: mergedUser.name,
+          full_name: mergedUser.full_name,
+          email: mergedUser.email,
+          phone: mergedUser.phone,
+          bio: mergedUser.bio,
+          location: mergedUser.location,
+          profileImage: mergedUser.profileImage,
+          profile_image_url: mergedUser.profile_image_url,
+          role: mergedUser.role,
+        };
+        
+        if (localStorage.getItem('user')) {
+          localStorage.setItem('user', JSON.stringify(updatedStoredUser));
+        }
+        if (sessionStorage.getItem('user')) {
+          sessionStorage.setItem('user', JSON.stringify(updatedStoredUser));
+        }
+      } catch (e) {
+        console.error('Error updating stored user:', e);
       }
     }
     
@@ -154,21 +170,29 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   const getUserInitials = (): string => {
     const displayUser = currentUser || user;
-    const name = displayUser?.name || displayUser?.full_name;
+    const name = displayUser?.full_name || displayUser?.name;
     if (name) {
       const names = name.split(" ");
       if (names.length >= 2) return `${names[0].charAt(0)}${names[1].charAt(0)}`.toUpperCase();
       return name.charAt(0).toUpperCase();
     }
+    const email = displayUser?.email;
+    if (email) return email.charAt(0).toUpperCase();
     return "U";
   };
 
   const getUserName = (): string => {
     const displayUser = currentUser || user;
-    return displayUser?.name || displayUser?.full_name || t("dashboard.user");
+    return displayUser?.full_name || displayUser?.name || t("dashboard.user");
+  };
+
+  const getProfileImage = (): string | null => {
+    const displayUser = currentUser || user;
+    return displayUser?.profile_image_url || displayUser?.profileImage || null;
   };
 
   const displayUser = currentUser || user;
+  const profileImage = getProfileImage();
 
   return (
     <>
@@ -245,8 +269,17 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                   <div className={`absolute -inset-1 bg-gradient-to-r ${getRoleGradient(displayUser?.role)} rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-500 ${showProfileDropdown ? "opacity-30" : ""}`} />
                   <div className={`absolute inset-0 rounded-xl transition-all duration-300 ${hoveredItem === "profile" || showProfileDropdown ? "bg-gradient-to-r from-teal-500/5 to-purple-500/5 dark:from-teal-500/10 dark:to-purple-500/10 scale-105" : "bg-white dark:bg-gray-800"}`} />
                   <div className={`relative h-10 w-10 rounded-full bg-gradient-to-r ${getRoleGradient(displayUser?.role)} flex items-center justify-center shadow-lg overflow-hidden`}>
-                    {displayUser?.profileImage ? (
-                      <img src={displayUser.profileImage} alt={getUserName()} className="h-full w-full object-cover" />
+                    {profileImage ? (
+                      <img 
+                        src={profileImage} 
+                        alt={getUserName()} 
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          // If image fails to load, show initials
+                          (e.target as HTMLImageElement).style.display = 'none';
+                          (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-sm">${getUserInitials()}</span>`;
+                        }}
+                      />
                     ) : (
                       <span className="text-white font-bold text-sm">{getUserInitials()}</span>
                     )}
@@ -265,8 +298,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                     <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-teal-500/5 to-purple-500/5 dark:from-teal-500/10 dark:to-purple-500/10">
                       <div className="flex items-center space-x-3">
                         <div className={`h-12 w-12 rounded-full bg-gradient-to-r ${getRoleGradient(displayUser?.role)} flex items-center justify-center overflow-hidden`}>
-                          {displayUser?.profileImage ? (
-                            <img src={displayUser.profileImage} alt={getUserName()} className="h-full w-full object-cover" />
+                          {profileImage ? (
+                            <img 
+                              src={profileImage} 
+                              alt={getUserName()} 
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${getUserInitials()}</span>`;
+                              }}
+                            />
                           ) : (
                             <span className="text-white font-bold text-lg">{getUserInitials()}</span>
                           )}

@@ -63,7 +63,8 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
     const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-    const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+    const [profileImageBase64, setProfileImageBase64] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -98,17 +99,64 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [originalTwoFactor, setOriginalTwoFactor] = useState(false);
 
-    // Load user data when modal opens - DIRECTLY from user prop (no auth session needed)
-    useEffect(() => {
-        if (user && isOpen) {
-            populateFormFromUser(user);
-            
-            // Also try to fetch latest data from database
-            if (user.id) {
-                fetchUserDataFromDB(user.id);
+    // Get current user from localStorage only
+    const getCurrentUserFromLocal = () => {
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch (e) {
+                console.error('Error parsing user from storage:', e);
+                return null;
             }
         }
-    }, [user, isOpen]);
+        return null;
+    };
+
+    // Load user data when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            loadUserData();
+        }
+    }, [isOpen]);
+
+    const loadUserData = async () => {
+        setLoading(true);
+        try {
+            const storedUser = getCurrentUserFromLocal();
+            let userIdToFetch = null;
+            
+            if (storedUser && storedUser.id) {
+                userIdToFetch = storedUser.id;
+            } else if (user && user.id) {
+                userIdToFetch = user.id;
+            } else if (user && user.user_id) {
+                userIdToFetch = user.user_id;
+            }
+            
+            if (userIdToFetch) {
+                await fetchUserDataFromDB(userIdToFetch);
+            } else {
+                setPopupMessage({
+                    title: 'Error',
+                    message: 'Unable to load user profile. Please login again.',
+                    type: 'error'
+                });
+                setShowSuccessPopup(true);
+            }
+            
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            setPopupMessage({
+                title: 'Error',
+                message: 'Failed to load user profile',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const fetchUserDataFromDB = async (id: string) => {
         try {
@@ -167,8 +215,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setProfileImagePreview(userData.profile_image_url || null);
         setTwoFactorEnabled(userData.two_factor_enabled || false);
         setOriginalTwoFactor(userData.two_factor_enabled || false);
-        setUserId(userData.id);
-        setUserRole(userData.role);
         setIsEditing(false);
     };
 
@@ -206,6 +252,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         }));
     };
 
+    // Convert image to Base64 (store locally in database, no external storage)
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -231,42 +278,20 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             return;
         }
 
-        setProfileImageFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
-            setProfileImagePreview(reader.result as string);
+            const base64String = reader.result as string;
+            setProfileImagePreview(base64String);
+            setProfileImageBase64(base64String);
         };
         reader.readAsDataURL(file);
-    };
-
-    const uploadProfileImage = async (userId: string): Promise<string | null> => {
-        if (!profileImageFile) return formData.profile_image_url;
-
-        const fileExt = profileImageFile.name.split('.').pop();
-        const fileName = `${userId}_profile_${Date.now()}.${fileExt}`;
-        const filePath = `profiles/${fileName}`;
-
-        const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, profileImageFile);
-
-        if (uploadError) {
-            console.error('Upload error:', uploadError);
-            return null;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-
-        return publicUrl;
     };
 
     const handleSave = async () => {
         if (!userId) {
             setPopupMessage({
                 title: 'Error',
-                message: 'User not found',
+                message: 'User not found. Please refresh and try again.',
                 type: 'error'
             });
             setShowSuccessPopup(true);
@@ -276,11 +301,10 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setIsSaving(true);
         
         try {
-            // Upload profile image if changed
+            // Use Base64 image if uploaded, otherwise keep existing
             let profileImageUrl = formData.profile_image_url;
-            if (profileImageFile) {
-                const uploadedUrl = await uploadProfileImage(userId);
-                if (uploadedUrl) profileImageUrl = uploadedUrl;
+            if (profileImageBase64) {
+                profileImageUrl = profileImageBase64;
             }
 
             // Verify current password if changing password
@@ -343,7 +367,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             
             // Update the user object in parent component
             const updatedUser = {
-                ...user,
                 id: userId,
                 full_name: formData.fullName,
                 name: formData.fullName,
@@ -359,7 +382,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             
             onUserUpdate(updatedUser);
             
-            // Update local storage
+            // Update localStorage
             const storedUser = localStorage.getItem('user');
             if (storedUser) {
                 const parsedUser = JSON.parse(storedUser);
@@ -367,7 +390,15 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 localStorage.setItem('user', JSON.stringify(updatedStoredUser));
             }
             
-            // Clear password fields
+            // Also update session storage if exists
+            const sessionUser = sessionStorage.getItem('user');
+            if (sessionUser) {
+                const parsedSessionUser = JSON.parse(sessionUser);
+                const updatedSessionUser = { ...parsedSessionUser, ...updatedUser };
+                sessionStorage.setItem('user', JSON.stringify(updatedSessionUser));
+            }
+            
+            // Clear password fields and image states
             setFormData(prev => ({
                 ...prev,
                 currentPassword: "",
@@ -375,7 +406,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 confirmPassword: ""
             }));
             
-            setProfileImageFile(null);
+            setProfileImageBase64(null);
             
             setPopupMessage({
                 title: 'Success!',
@@ -428,6 +459,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             
             // Clear local storage
             localStorage.removeItem('user');
+            sessionStorage.removeItem('user');
             localStorage.removeItem('token');
             
             setPopupMessage({
@@ -459,14 +491,14 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setFormData(JSON.parse(JSON.stringify(originalFormData)));
         setTwoFactorEnabled(originalTwoFactor);
         setProfileImagePreview(originalFormData.profile_image_url);
-        setProfileImageFile(null);
+        setProfileImageBase64(null);
         setIsEditing(false);
     };
 
     const hasChanges = () => {
         return JSON.stringify(formData) !== JSON.stringify(originalFormData) ||
             twoFactorEnabled !== originalTwoFactor ||
-            profileImageFile !== null;
+            profileImageBase64 !== null;
     };
 
     const roleConfig = ROLE_CONFIG[userRole || 'customer'] || ROLE_CONFIG.customer;
@@ -566,7 +598,36 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         </div>
     );
 
-    if (!user || !isOpen) return null;
+    if (!isOpen) return null;
+
+    if (loading) {
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+                <div className="bg-white rounded-2xl p-8 text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+                    <p className="text-gray-600">Loading profile...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!userId) {
+        return (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
+                <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center">
+                    <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Profile</h2>
+                    <p className="text-gray-600 mb-4">Please make sure you are logged in and try again.</p>
+                    <button
+                        onClick={onClose}
+                        className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
