@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// src/pages/Manager/ManagerOverview.tsx
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -13,14 +14,17 @@ import {
   RotateCcw,
   Film,
   Calendar,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 
 import { AreaChart } from '../../components/Overview/AreaChart';
 import { BarChart } from '../../components/Overview/BarChart';
 import { Card, StatCard, MetricCard } from '../../components/Overview/Card';
 import { DonutChart } from '../../components/Overview/PieChart';
+import supabase from '@/config/supabaseClient';
 
-// ==================== Types & Mock Data ====================
+// ==================== Types ====================
 interface HallOccupancyData {
   name: string;
   occupancy: number;
@@ -68,112 +72,599 @@ interface RevenueData {
   tickets: number;
 }
 
-const managerStats: ManagerStats = {
-  totalRevenue: 158750,
-  ticketsSold: 12580,
-  ticketsToday: 156,
-  occupancyRate: 78,
-  activeShows: 8,
-  totalHalls: 6,
-  activeHalls: 5,
-  totalCustomers: 7548,
-  upcomingShows: 12,
-  completedShows: 45,
-};
-
-const hallOccupancyData: HallOccupancyData[] = [
-  { name: 'Grand Hall', occupancy: 85, capacity: 300, color: '#14b8a6' },
-  { name: 'West End Theater', occupancy: 92, capacity: 250, color: '#f59e0b' },
-  { name: 'Disney Theater', occupancy: 68, capacity: 280, color: '#3b82f6' },
-  { name: 'Emerald Theatre', occupancy: 45, capacity: 200, color: '#ef4444' },
-  { name: 'Opera House', occupancy: 78, capacity: 350, color: '#8b5cf6' },
-  { name: 'Broadway Hall', occupancy: 55, capacity: 220, color: '#06b6d4' },
-];
-
-const showsData: ShowData[] = [
-  { id: '1', name: 'The Lion King', sales: 89, capacity: 120, revenue: 4005, status: 'selling', time: '7:00 PM', date: '2026-04-20', hall: 'Grand Hall' },
-  { id: '2', name: 'Hamilton', sales: 95, capacity: 120, revenue: 6175, status: 'almost full', time: '8:30 PM', date: '2026-04-21', hall: 'West End Theater' },
-  { id: '3', name: 'Wicked', sales: 110, capacity: 120, revenue: 6050, status: 'sold out', time: '6:00 PM', date: '2026-04-19', hall: 'Disney Theater' },
-  { id: '4', name: 'Phantom of Opera', sales: 67, capacity: 120, revenue: 4020, status: 'selling', time: '9:00 PM', date: '2026-04-22', hall: 'Emerald Theatre' },
-  { id: '5', name: 'Chicago', sales: 78, capacity: 120, revenue: 3900, status: 'selling', time: '7:30 PM', date: '2026-04-23', hall: 'Opera House' },
-  { id: '6', name: 'Les Misérables', sales: 45, capacity: 120, revenue: 2700, status: 'upcoming', time: '8:00 PM', date: '2026-05-01', hall: 'Broadway Hall' },
-];
-
-const transactions: Transaction[] = [
-  { id: '#TR-2026-001', customer: 'John Doe', amount: 90, tickets: 2, time: '5 min ago', status: 'completed' },
-  { id: '#TR-2026-002', customer: 'Jane Smith', amount: 135, tickets: 3, time: '15 min ago', status: 'completed' },
-  { id: '#TR-2026-003', customer: 'Bob Johnson', amount: 45, tickets: 1, time: '25 min ago', status: 'completed' },
-  { id: '#TR-2026-004', customer: 'Alice Brown', amount: 180, tickets: 4, time: '35 min ago', status: 'completed' },
-  { id: '#TR-2026-005', customer: 'Charlie Wilson', amount: 90, tickets: 2, time: '45 min ago', status: 'refunded' },
-  { id: '#TR-2026-006', customer: 'Emma Davis', amount: 225, tickets: 5, time: '1 hour ago', status: 'completed' },
-];
-
-const dailyRevenueData: RevenueData[] = [
-  { period: 'Mon', revenue: 32450, tickets: 156 },
-  { period: 'Tue', revenue: 28900, tickets: 142 },
-  { period: 'Wed', revenue: 35600, tickets: 178 },
-  { period: 'Thu', revenue: 41200, tickets: 195 },
-  { period: 'Fri', revenue: 52300, tickets: 245 },
-  { period: 'Sat', revenue: 67800, tickets: 312 },
-  { period: 'Sun', revenue: 58900, tickets: 278 },
-];
-
-const monthlyRevenueData: RevenueData[] = [
-  { period: 'Jan', revenue: 125000, tickets: 5850 },
-  { period: 'Feb', revenue: 118000, tickets: 5420 },
-  { period: 'Mar', revenue: 142000, tickets: 6780 },
-  { period: 'Apr', revenue: 158000, tickets: 7450 },
-  { period: 'May', revenue: 172000, tickets: 8150 },
-  { period: 'Jun', revenue: 189000, tickets: 8920 },
-  { period: 'Jul', revenue: 195000, tickets: 9250 },
-  { period: 'Aug', revenue: 182000, tickets: 8680 },
-  { period: 'Sep', revenue: 201000, tickets: 9560 },
-  { period: 'Oct', revenue: 215000, tickets: 10200 },
-  { period: 'Nov', revenue: 235000, tickets: 11150 },
-  { period: 'Dec', revenue: 268000, tickets: 12800 },
-];
-
-const weeklyBookingData: RevenueData[] = [
-  { period: 'Mon', revenue: 10150, tickets: 145 },
-  { period: 'Tue', revenue: 8400, tickets: 120 },
-  { period: 'Wed', revenue: 9450, tickets: 135 },
-  { period: 'Thu', revenue: 11200, tickets: 160 },
-  { period: 'Fri', revenue: 16100, tickets: 230 },
-  { period: 'Sat', revenue: 21700, tickets: 310 },
-  { period: 'Sun', revenue: 15750, tickets: 225 },
-];
-
-const seatDistributionData = [
-  { name: 'Standard', value: 4850, color: '#14b8a6' },
-  { name: 'Premium', value: 2850, color: '#f59e0b' },
-  { name: 'VIP', value: 1250, color: '#8b5cf6' },
-  { name: 'Wheelchair', value: 380, color: '#3b82f6' },
-];
-
-// Helper functions
-const formatCurrency = (amount: number) => {
-  if (amount >= 1000000) return `ETB ${(amount / 1000000).toFixed(1)}M`;
-  if (amount >= 1000) return `ETB ${(amount / 1000).toFixed(0)}K`;
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'ETB', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
-};
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } }
-};
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 12 } }
-};
+interface SeatDistribution {
+  name: string;
+  value: number;
+  color: string;
+}
 
 const ManagerOverview: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [theaterId, setTheaterId] = useState<string | null>(null);
+  const [stats, setStats] = useState<ManagerStats>({
+    totalRevenue: 0,
+    ticketsSold: 0,
+    ticketsToday: 0,
+    occupancyRate: 0,
+    activeShows: 0,
+    totalHalls: 0,
+    activeHalls: 0,
+    totalCustomers: 0,
+    upcomingShows: 0,
+    completedShows: 0,
+  });
+  const [hallOccupancyData, setHallOccupancyData] = useState<HallOccupancyData[]>([]);
+  const [showsData, setShowsData] = useState<ShowData[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dailyRevenueData, setDailyRevenueData] = useState<RevenueData[]>([]);
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState<RevenueData[]>([]);
+  const [weeklyBookingData, setWeeklyBookingData] = useState<RevenueData[]>([]);
+  const [seatDistributionData, setSeatDistributionData] = useState<SeatDistribution[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'monthly'>('monthly');
   const [selectedRevenueType, setSelectedRevenueType] = useState<'revenue' | 'tickets'>('revenue');
+
+  // Colors for charts
+  const colors = ['#14b8a6', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
+
+  // Get current user from localStorage
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+    if (userStr) {
+      try {
+        return JSON.parse(userStr);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  };
+
+  // Fetch theater ID for the logged-in manager
+  const fetchTheaterId = async (userId: string) => {
+    // First check if user is a theater manager in employees table
+    const { data: employee, error: employeeError } = await supabase
+      .from('employees')
+      .select('theater_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (employeeError) {
+      console.error('Employee fetch error:', employeeError);
+    }
+
+    if (employee) {
+      return employee.theater_id;
+    }
+
+    // If not found as employee, check as theater owner
+    const { data: theater, error: theaterError } = await supabase
+      .from('theaters')
+      .select('id')
+      .eq('owner_user_id', userId)
+      .maybeSingle();
+
+    if (theaterError) {
+      console.error('Theater fetch error:', theaterError);
+    }
+
+    return theater?.id || null;
+  };
+
+  // Fetch total revenue from earnings
+  const fetchTotalRevenue = async (theaterId: string) => {
+    const { data, error } = await supabase
+      .from('earnings')
+      .select('net_amount')
+      .eq('theater_id', theaterId)
+      .eq('is_subscription_payment', false);
+
+    if (error) {
+      console.error('Revenue fetch error:', error);
+      return 0;
+    }
+
+    return data?.reduce((sum, e) => sum + (e.net_amount || 0), 0) || 0;
+  };
+
+  // Fetch total tickets sold
+  const fetchTotalTicketsSold = async (theaterId: string) => {
+    const { data: events } = await supabase
+      .from('events')
+      .select('id')
+      .eq('theater_id', theaterId);
+
+    const eventIds = events?.map(e => e.id) || [];
+    
+    if (eventIds.length === 0) return 0;
+
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('id')
+      .in('event_id', eventIds)
+      .eq('status', 'confirmed');
+
+    if (error) {
+      console.error('Tickets fetch error:', error);
+      return 0;
+    }
+
+    return reservations?.length || 0;
+  };
+
+  // Fetch tickets sold today
+  const fetchTicketsToday = async (theaterId: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const { data: events } = await supabase
+      .from('events')
+      .select('id')
+      .eq('theater_id', theaterId);
+
+    const eventIds = events?.map(e => e.id) || [];
+    
+    if (eventIds.length === 0) return 0;
+
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('id')
+      .in('event_id', eventIds)
+      .eq('status', 'confirmed')
+      .gte('created_at', today.toISOString())
+      .lt('created_at', tomorrow.toISOString());
+
+    if (error) {
+      console.error('Tickets today fetch error:', error);
+      return 0;
+    }
+
+    return reservations?.length || 0;
+  };
+
+  // Fetch halls data
+  const fetchHalls = async (theaterId: string) => {
+    const { data, error } = await supabase
+      .from('halls')
+      .select('id, name, capacity')
+      .eq('theater_id', theaterId)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Halls fetch error:', error);
+      return [];
+    }
+
+    return data || [];
+  };
+
+  // Fetch active shows (events with schedules)
+  const fetchActiveShows = async (theaterId: string) => {
+    const { data: events, error: eventsError } = await supabase
+      .from('events')
+      .select('id, title')
+      .eq('theater_id', theaterId);
+
+    if (eventsError) {
+      console.error('Events fetch error:', eventsError);
+      return [];
+    }
+
+    const eventIds = events?.map(e => e.id) || [];
+    
+    if (eventIds.length === 0) return [];
+
+    const { data: schedules, error: schedulesError } = await supabase
+      .from('event_schedules')
+      .select(`
+        id,
+        event_id,
+        hall_id,
+        show_date,
+        start_time,
+        total_seats,
+        available_seats,
+        halls (name)
+      `)
+      .in('event_id', eventIds)
+      .order('show_date', { ascending: true });
+
+    if (schedulesError) {
+      console.error('Schedules fetch error:', schedulesError);
+      return [];
+    }
+
+    const shows: ShowData[] = [];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+
+    for (const schedule of schedules || []) {
+      const event = events.find(e => e.id === schedule.event_id);
+      const soldSeats = (schedule.total_seats || 0) - (schedule.available_seats || 0);
+      const estimatedRevenue = soldSeats * 100; // Placeholder
+      
+      let status: 'selling' | 'almost full' | 'sold out' | 'upcoming' | 'completed' = 'selling';
+      if (schedule.show_date < today) {
+        status = 'completed';
+      } else if (schedule.available_seats === 0) {
+        status = 'sold out';
+      } else if ((schedule.available_seats || 0) < (schedule.total_seats || 0) * 0.2) {
+        status = 'almost full';
+      } else if (schedule.show_date > today) {
+        status = 'upcoming';
+      }
+
+      shows.push({
+        id: schedule.id,
+        name: event?.title || 'Unknown Event',
+        sales: soldSeats,
+        capacity: schedule.total_seats || 0,
+        revenue: estimatedRevenue,
+        status,
+        time: schedule.start_time || 'TBD',
+        date: schedule.show_date,
+        hall: schedule.halls?.name || 'Unknown Hall'
+      });
+    }
+
+    return shows;
+  };
+
+  // Fetch recent transactions
+  const fetchRecentTransactions = async (theaterId: string) => {
+    const { data: events } = await supabase
+      .from('events')
+      .select('id')
+      .eq('theater_id', theaterId);
+
+    const eventIds = events?.map(e => e.id) || [];
+    
+    if (eventIds.length === 0) return [];
+
+    const { data: reservations, error } = await supabase
+      .from('reservations')
+      .select('id, customer_name, total_amount, created_at, status')
+      .in('event_id', eventIds)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Transactions fetch error:', error);
+      return [];
+    }
+
+    return reservations?.map(res => ({
+      id: `#TR-${res.id.slice(-8)}`,
+      customer: res.customer_name || 'Guest',
+      amount: res.total_amount || 0,
+      tickets: 1,
+      time: formatRelativeTime(res.created_at),
+      status: res.status === 'confirmed' ? 'completed' : 'pending'
+    })) || [];
+  };
+
+  // Fetch revenue data for charts
+  const fetchRevenueData = async (theaterId: string) => {
+    const { data: earnings, error } = await supabase
+      .from('earnings')
+      .select('net_amount, created_at')
+      .eq('theater_id', theaterId)
+      .eq('is_subscription_payment', false)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Revenue data fetch error:', error);
+      return;
+    }
+
+    // Daily data - last 7 days
+    const dailyMap = new Map<string, { revenue: number; tickets: number }>();
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - (6 - i));
+      const dayName = days[date.getDay()];
+      dailyMap.set(dayName, { revenue: 0, tickets: 0 });
+    }
+
+    earnings?.forEach(earning => {
+      const date = new Date(earning.created_at);
+      const dayName = days[date.getDay()];
+      const existing = dailyMap.get(dayName);
+      if (existing) {
+        existing.revenue += earning.net_amount || 0;
+        existing.tickets += 1;
+      }
+    });
+
+    const dailyData: RevenueData[] = Array.from(dailyMap.entries()).map(([period, data]) => ({
+      period,
+      revenue: data.revenue,
+      tickets: data.tickets
+    }));
+
+    setDailyRevenueData(dailyData);
+
+    // Monthly data - last 12 months
+    const monthlyMap = new Map<string, { revenue: number; tickets: number }>();
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < 12; i++) {
+      const monthName = monthNames[i];
+      monthlyMap.set(monthName, { revenue: 0, tickets: 0 });
+    }
+
+    earnings?.forEach(earning => {
+      const date = new Date(earning.created_at);
+      const monthName = monthNames[date.getMonth()];
+      const existing = monthlyMap.get(monthName);
+      if (existing) {
+        existing.revenue += earning.net_amount || 0;
+        existing.tickets += 1;
+      }
+    });
+
+    const monthlyData: RevenueData[] = Array.from(monthlyMap.entries()).map(([period, data]) => ({
+      period,
+      revenue: data.revenue,
+      tickets: data.tickets
+    }));
+
+    setMonthlyRevenueData(monthlyData);
+
+    // Weekly booking data
+    const weeklyMap = new Map<string, { revenue: number; tickets: number }>();
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    weekDays.forEach(day => weeklyMap.set(day, { revenue: 0, tickets: 0 }));
+
+    earnings?.forEach(earning => {
+      const date = new Date(earning.created_at);
+      const dayName = weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1];
+      const existing = weeklyMap.get(dayName);
+      if (existing) {
+        existing.revenue += earning.net_amount || 0;
+        existing.tickets += 1;
+      }
+    });
+
+    const weeklyData: RevenueData[] = Array.from(weeklyMap.entries()).map(([period, data]) => ({
+      period,
+      revenue: data.revenue,
+      tickets: data.tickets
+    }));
+
+    setWeeklyBookingData(weeklyData);
+  };
+
+  // Calculate hall occupancy
+  const calculateHallOccupancy = async (theaterId: string, halls: any[]) => {
+    const { data: events } = await supabase
+      .from('events')
+      .select('id')
+      .eq('theater_id', theaterId);
+
+    const eventIds = events?.map(e => e.id) || [];
+    
+    if (eventIds.length === 0) {
+      setHallOccupancyData(halls.map((hall, idx) => ({
+        name: hall.name,
+        occupancy: 0,
+        capacity: hall.capacity,
+        color: colors[idx % colors.length]
+      })));
+      return;
+    }
+
+    const { data: schedules } = await supabase
+      .from('event_schedules')
+      .select('hall_id, total_seats, available_seats')
+      .in('event_id', eventIds);
+
+    const hallOccupancyMap = new Map<string, { name: string; capacity: number; soldSeats: number }>();
+    
+    halls.forEach(hall => {
+      hallOccupancyMap.set(hall.id, {
+        name: hall.name,
+        capacity: hall.capacity,
+        soldSeats: 0
+      });
+    });
+
+    schedules?.forEach(schedule => {
+      const hall = hallOccupancyMap.get(schedule.hall_id);
+      if (hall && schedule.total_seats) {
+        const sold = schedule.total_seats - (schedule.available_seats || 0);
+        hall.soldSeats += sold;
+      }
+    });
+
+    const occupancyData: HallOccupancyData[] = Array.from(hallOccupancyMap.entries()).map(([id, hall], idx) => ({
+      name: hall.name,
+      occupancy: hall.capacity > 0 ? Math.min(Math.round((hall.soldSeats / hall.capacity) * 100), 100) : 0,
+      capacity: hall.capacity,
+      color: colors[idx % colors.length]
+    }));
+
+    setHallOccupancyData(occupancyData);
+
+    // Calculate overall occupancy rate
+    const totalCapacity = occupancyData.reduce((sum, h) => sum + h.capacity, 0);
+    const totalOccupancy = occupancyData.reduce((sum, h) => sum + (h.capacity * (h.occupancy / 100)), 0);
+    const occupancyRate = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+
+    setStats(prev => ({ ...prev, occupancyRate }));
+  };
+
+  // Calculate seat distribution
+  const calculateSeatDistribution = async (theaterId: string, halls: any[]) => {
+    const totalSeats = halls.reduce((sum, h) => sum + h.capacity, 0);
+    
+    // For demo, create distribution based on seat levels
+    const distribution: SeatDistribution[] = [
+      { name: 'Standard', value: Math.round(totalSeats * 0.52), color: '#14b8a6' },
+      { name: 'Premium', value: Math.round(totalSeats * 0.31), color: '#f59e0b' },
+      { name: 'VIP', value: Math.round(totalSeats * 0.13), color: '#8b5cf6' },
+      { name: 'Wheelchair', value: Math.round(totalSeats * 0.04), color: '#3b82f6' },
+    ];
+
+    setSeatDistributionData(distribution);
+  };
+
+  const formatRelativeTime = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+    return `${Math.floor(diffMins / 1440)} days ago`;
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) return `ETB ${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `ETB ${(amount / 1000).toFixed(0)}K`;
+    return new Intl.NumberFormat('en-US', { 
+      style: 'currency', 
+      currency: 'ETB', 
+      minimumFractionDigits: 0, 
+      maximumFractionDigits: 0 
+    }).format(amount);
+  };
+
+  // Load all data
+  const loadAllData = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const currentUser = getCurrentUser();
+      if (!currentUser) {
+        setError('User not found. Please login again.');
+        setLoading(false);
+        return;
+      }
+
+      const theaterId = await fetchTheaterId(currentUser.id);
+      if (!theaterId) {
+        setError('No theater associated with this account.');
+        setLoading(false);
+        return;
+      }
+
+      setTheaterId(theaterId);
+
+      // Fetch halls first
+      const halls = await fetchHalls(theaterId);
+      const totalHalls = halls.length;
+      const activeHalls = halls.filter(h => h.is_active !== false).length;
+
+      // Fetch all data in parallel
+      const [
+        totalRevenue,
+        totalTicketsSold,
+        ticketsToday,
+        activeShows,
+        transactionsList,
+        shows
+      ] = await Promise.all([
+        fetchTotalRevenue(theaterId),
+        fetchTotalTicketsSold(theaterId),
+        fetchTicketsToday(theaterId),
+        fetchActiveShows(theaterId),
+        fetchRecentTransactions(theaterId),
+        fetchActiveShows(theaterId)
+      ]);
+
+      // Calculate counts
+      const activeShowsCount = shows.filter(s => s.status === 'selling' || s.status === 'almost full').length;
+      const upcomingShowsCount = shows.filter(s => s.status === 'upcoming').length;
+      const completedShowsCount = shows.filter(s => s.status === 'completed').length;
+      const totalCustomers = 0; // Would need customers table
+
+      setStats({
+        totalRevenue,
+        ticketsSold: totalTicketsSold,
+        ticketsToday,
+        occupancyRate: 0, // Will be updated after hall occupancy calculation
+        activeShows: activeShowsCount,
+        totalHalls,
+        activeHalls,
+        totalCustomers,
+        upcomingShows: upcomingShowsCount,
+        completedShows: completedShowsCount,
+      });
+
+      setShowsData(shows.slice(0, 6));
+      setTransactions(transactionsList);
+
+      // Calculate hall occupancy
+      await calculateHallOccupancy(theaterId, halls);
+      
+      // Calculate seat distribution
+      await calculateSeatDistribution(theaterId, halls);
+      
+      // Fetch revenue data for charts
+      await fetchRevenueData(theaterId);
+
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+      setError('Failed to load dashboard data. Please refresh the page.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAllData();
+  }, []);
 
   const getRevenueData = () => (selectedPeriod === 'daily' ? dailyRevenueData : monthlyRevenueData);
   const currentData = getRevenueData();
   const totalRevenue = currentData.reduce((sum, item) => sum + item.revenue, 0);
   const totalTickets = currentData.reduce((sum, item) => sum + item.tickets, 0);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { staggerChildren: 0.05, delayChildren: 0.1 } }
+  };
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100, damping: 12 } }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+          <p className="text-gray-500">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center max-w-md">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-gray-700 mb-2">{error}</p>
+          <button
+            onClick={() => loadAllData()}
+            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div initial="hidden" animate="visible" variants={containerVariants} className="space-y-6 p-4 md:p-6 bg-gray-50 min-h-screen">
@@ -187,20 +678,24 @@ const ManagerOverview: React.FC = () => {
 
       {/* Primary Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard title="Tickets Sold Today" value={managerStats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/detail" />
-        <StatCard title="Active Event" value={managerStats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/createview" />
-        <StatCard title="Total Revenue" value={formatCurrency(managerStats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/Report" />
-      
-
-      {/* Secondary Stats */}
-        {/* Total Tickets Sold - clickable */}
-        <Link to="/manager/Report" className="block transition-transform hover:scale-[1.02]">
-          <MetricCard title="Total Tickets Sold" value={managerStats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
-        </Link>
-        {/* Total Customers - clickable */}
+        <StatCard title="Tickets Sold Today" value={stats.ticketsToday} icon={Ticket} color="from-blue-500 to-cyan-600" link="/manager/detail" />
+        <StatCard title="Active Events" value={stats.activeShows} icon={Film} color="from-orange-500 to-red-600" link="/manager/createview" />
+        <StatCard title="Total Revenue" value={formatCurrency(stats.totalRevenue)} icon={TrendingUp} color="from-green-500 to-emerald-600" link="/manager/Report" />
+        <StatCard title="Occupancy Rate" value={`${stats.occupancyRate}%`} icon={Activity} color="from-purple-500 to-pink-600" link="/manager/halls" />
       </motion.div>
 
-      {/* Hall Occupancy - using DonutChart from PieChart */}
+      {/* Secondary Stats */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Link to="/manager/Report" className="block transition-transform hover:scale-[1.02]">
+          <MetricCard title="Total Tickets Sold" value={stats.ticketsSold.toLocaleString()} icon={<Ticket className="h-5 w-5 text-white" />} />
+        </Link>
+        <Link to="/manager/halls" className="block transition-transform hover:scale-[1.02]">
+          <MetricCard title="Active Halls" value={`${stats.activeHalls}/${stats.totalHalls}`} icon={<Building className="h-5 w-5 text-white" />} />
+        </Link>
+        <MetricCard title="Total Customers" value={stats.totalCustomers.toLocaleString()} icon={<Users className="h-5 w-5 text-white" />} />
+      </motion.div>
+
+      {/* Hall Occupancy */}
       <motion.div variants={itemVariants}>
         <Card title="Hall Occupancy" subtitle="Current occupancy rates across all halls" showMoreLink="/manager/halls" showMoreText="Manage Halls">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -210,6 +705,7 @@ const ManagerOverview: React.FC = () => {
                 <div key={idx}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-700">{hall.name}</span>
+                    <span className="text-gray-500">{hall.occupancy}% filled</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${hall.occupancy}%`, backgroundColor: hall.color }} />
@@ -228,7 +724,7 @@ const ManagerOverview: React.FC = () => {
           title="Revenue & Tickets Overview"
           subtitle={`${selectedPeriod.charAt(0).toUpperCase() + selectedPeriod.slice(1)} performance - Total: ${formatCurrency(totalRevenue)} | Tickets: ${totalTickets.toLocaleString()}`}
           headerAction={
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <div className="flex bg-gray-100 rounded-lg p-1">
                 {['Daily', 'Monthly'].map(period => (
                   <button key={period} onClick={() => setSelectedPeriod(period.toLowerCase() as any)} className={`px-3 py-1 rounded-md text-sm font-medium transition-all duration-200 ${selectedPeriod === period.toLowerCase() ? 'bg-teal-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-200'}`}>
@@ -272,7 +768,7 @@ const ManagerOverview: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* Seat Distribution - DonutChart */}
+      {/* Seat Distribution */}
       <motion.div variants={itemVariants}>
         <Card title="Seat Distribution" subtitle="Distribution of seats across categories">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -286,14 +782,14 @@ const ManagerOverview: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-semibold text-gray-900">{seat.value.toLocaleString()} seats</p>
-                    <p className="text-xs text-gray-500">{((seat.value / 9330) * 100).toFixed(1)}% of total</p>
+                    <p className="text-xs text-gray-500">{((seat.value / seatDistributionData.reduce((sum, s) => sum + s.value, 0)) * 100).toFixed(1)}% of total</p>
                   </div>
                 </div>
               ))}
               <div className="mt-4 p-3 bg-teal-50 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-teal-700">Total Seats</span>
-                  <span className="text-lg font-bold text-teal-800">9,330</span>
+                  <span className="text-lg font-bold text-teal-800">{seatDistributionData.reduce((sum, s) => sum + s.value, 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -301,7 +797,7 @@ const ManagerOverview: React.FC = () => {
         </Card>
       </motion.div>
 
-      {/* Shows Table - Status column removed */}
+      {/* Shows Table */}
       <motion.div variants={itemVariants}>
         <Card title="Current Shows Performance" subtitle="Real-time performance metrics for active shows" showMoreLink="/manager/shows" showMoreText="View All Shows">
           <div className="overflow-x-auto">
@@ -333,12 +829,23 @@ const ManagerOverview: React.FC = () => {
                     <td className="py-3 px-4 text-sm font-semibold text-emerald-600">{formatCurrency(show.revenue)}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
-                        <button className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"><Eye className="h-4 w-4 text-blue-600" /></button>
-                        <button className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition"><Edit className="h-4 w-4 text-teal-600" /></button>
+                        <Link to={`/manager/shows/${show.id}`} className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition">
+                          <Eye className="h-4 w-4 text-blue-600" />
+                        </Link>
+                        <Link to={`/manager/shows/edit/${show.id}`} className="p-1.5 rounded-lg bg-teal-50 hover:bg-teal-100 transition">
+                          <Edit className="h-4 w-4 text-teal-600" />
+                        </Link>
                       </div>
                     </td>
                   </tr>
                 ))}
+                {showsData.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      No shows found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -357,7 +864,7 @@ const ManagerOverview: React.FC = () => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-900">{tx.customer}</p>
-                    <p className="text-xs text-gray-500">{tx.id} • {tx.tickets} tickets</p>
+                    <p className="text-xs text-gray-500">{tx.id} • {tx.tickets} ticket{tx.tickets !== 1 ? 's' : ''}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -366,13 +873,18 @@ const ManagerOverview: React.FC = () => {
                 </div>
               </motion.div>
             ))}
+            {transactions.length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                No recent transactions found
+              </div>
+            )}
           </div>
         </Card>
       </motion.div>
 
       {/* Upcoming Schedule */}
       <motion.div variants={itemVariants}>
-        <Card title="Upcoming Schedule" subtitle={`${managerStats.upcomingShows} shows scheduled in the next 30 days`} showMoreLink="/manager/schedule" showMoreText="View Full Schedule">
+        <Card title="Upcoming Schedule" subtitle={`${stats.upcomingShows} shows scheduled in the next 30 days`} showMoreLink="/manager/schedule" showMoreText="View Full Schedule">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {showsData.filter(s => s.status === 'upcoming' || s.status === 'selling').slice(0, 3).map(show => (
               <div key={show.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -388,6 +900,11 @@ const ManagerOverview: React.FC = () => {
                 </div>
               </div>
             ))}
+            {showsData.filter(s => s.status === 'upcoming' || s.status === 'selling').length === 0 && (
+              <div className="col-span-3 text-center py-8 text-gray-500">
+                No upcoming shows scheduled
+              </div>
+            )}
           </div>
         </Card>
       </motion.div>
