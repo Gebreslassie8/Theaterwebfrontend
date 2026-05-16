@@ -215,18 +215,20 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Coins,
             color: "text-emerald-500",
           },
+
+           {
+            name: "Manage Halls",
+            to: "/owner/halls/manage",
+            icon: Building,
+            color: "text-pink-500",
+          },
           {
             name: "Events Management",
             to: "/owner/events/manage_event",
             icon: Calendar,
             color: "text-orange-500",
           },
-          {
-            name: "Manage Halls",
-            to: "/owner/halls/manage",
-            icon: Building,
-            color: "text-pink-500",
-          },
+         
           {
             name: "Bookings Information",
             to: "/owner/bookings",
