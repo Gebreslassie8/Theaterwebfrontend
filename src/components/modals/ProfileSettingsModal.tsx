@@ -22,7 +22,11 @@ import {
     Moon,
     Sun,
     Loader2,
-    AlertCircle
+    Building,
+    Briefcase,
+    QrCode,
+    ShoppingBag,
+    Users as UsersIcon
 } from "lucide-react";
 import supabase from "@/config/supabaseClient";
 import SuccessPopup from "../Reusable/SuccessPopup";
@@ -33,6 +37,16 @@ interface ProfileSettingsModalProps {
     user: any;
     onUserUpdate: (updatedUser: any) => void;
 }
+
+// Role configuration
+const ROLE_CONFIG: Record<string, { label: string; icon: any; color: string; bgColor: string }> = {
+    super_admin: { label: "Super Admin", icon: Shield, color: "text-red-600", bgColor: "bg-red-100" },
+    theater_owner: { label: "Theater Owner", icon: Building, color: "text-amber-600", bgColor: "bg-amber-100" },
+    theater_manager: { label: "Theater Manager", icon: Briefcase, color: "text-blue-600", bgColor: "bg-blue-100" },
+    sales_person: { label: "Sales Person", icon: ShoppingBag, color: "text-green-600", bgColor: "bg-green-100" },
+    qr_scanner: { label: "QR Scanner", icon: QrCode, color: "text-purple-600", bgColor: "bg-purple-100" },
+    customer: { label: "Customer", icon: UsersIcon, color: "text-teal-600", bgColor: "bg-teal-100" }
+};
 
 const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onClose, user, onUserUpdate }) => {
     const [activeTab, setActiveTab] = useState("profile");
@@ -48,6 +62,8 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteConfirmText, setDeleteConfirmText] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
+    const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
     // Form Data
     const [formData, setFormData] = useState({
@@ -56,10 +72,13 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         phone: "",
         bio: "",
         location: "",
-        profileImage: null as string | null,
+        username: "",
+        profile_image_url: null as string | null,
         notifications: {
             email: true,
-            bookingConfirmations: true,
+            sms: true,
+            push: true,
+            reminder: true,
         },
         privacy: {
             profileVisibility: "public",
@@ -79,107 +98,78 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [originalTwoFactor, setOriginalTwoFactor] = useState(false);
 
-    // Load user data when modal opens
+    // Load user data when modal opens - DIRECTLY from user prop (no auth session needed)
     useEffect(() => {
-        if (user && isOpen && user.id) {
-            fetchUserData(user.id);
+        if (user && isOpen) {
+            populateFormFromUser(user);
+            
+            // Also try to fetch latest data from database
+            if (user.id) {
+                fetchUserDataFromDB(user.id);
+            }
         }
     }, [user, isOpen]);
 
-    const fetchUserData = async (id: string) => {
+    const fetchUserDataFromDB = async (id: string) => {
         try {
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-            let query;
-            
-            if (uuidRegex.test(id)) {
-                query = supabase.from('users').select('*').eq('id', id);
-            } else {
-                console.log('Invalid UUID format, trying by email:', id);
-                query = supabase.from('users').select('*').eq('email', user?.email);
-            }
-            
-            const { data: userData, error: userError } = await query.single();
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', id)
+                .single();
             
             if (userError) {
                 console.error('User fetch error:', userError);
-                setUserRole(user?.role);
-                const userFormData = {
-                    fullName: user?.full_name || user?.name || "",
-                    email: user?.email || "",
-                    phone: user?.phone || "",
-                    bio: user?.bio || "",
-                    location: user?.location || "",
-                    profileImage: user?.profile_image_url || null,
-                    notifications: {
-                        email: user?.email_notifications ?? true,
-                        bookingConfirmations: user?.reminder_notifications ?? true,
-                    },
-                    privacy: {
-                        profileVisibility: user?.profile_visibility || "public",
-                        showEmail: user?.show_email ?? false,
-                        showPhone: user?.show_phone ?? false,
-                    },
-                    preferences: {
-                        currencey: user?.currencey || "ETB",
-                        theme: user?.theme || "system",
-                    },
-                    currentPassword: "",
-                    newPassword: "",
-                    confirmPassword: "",
-                };
-                setFormData(userFormData);
-                setOriginalFormData(userFormData);
-                setTwoFactorEnabled(user?.two_factor_enabled || false);
-                setOriginalTwoFactor(user?.two_factor_enabled || false);
-                
-                if (userData) {
-                    setUserId(userData.id);
-                    setUserRole(userData.role);
-                } else {
-                    setUserId(id);
-                }
-                setIsEditing(false);
                 return;
             }
             
             if (userData) {
                 setUserId(userData.id);
                 setUserRole(userData.role);
-                
-                const userFormData = {
-                    fullName: userData.full_name || "",
-                    email: userData.email || "",
-                    phone: userData.phone || "",
-                    bio: userData.bio || "",
-                    location: userData.location || "",
-                    profileImage: userData.profile_image_url || null,
-                    notifications: {
-                        email: userData.email_notifications ?? true,
-                        bookingConfirmations: userData.reminder_notifications ?? true,
-                    },
-                    privacy: {
-                        profileVisibility: userData.profile_visibility || "public",
-                        showEmail: userData.show_email ?? false,
-                        showPhone: userData.show_phone ?? false,
-                    },
-                    preferences: {
-                        currencey: userData.currencey || "ETB",
-                        theme: userData.theme || "system",
-                    },
-                    currentPassword: "",
-                    newPassword: "",
-                    confirmPassword: "",
-                };
-                
-                setFormData(userFormData);
-                setOriginalFormData(userFormData);
-                setTwoFactorEnabled(userData.two_factor_enabled || false);
-                setOriginalTwoFactor(userData.two_factor_enabled || false);
-                setIsEditing(false);
+                populateFormFromUser(userData);
             }
         } catch (error) {
             console.error('Error fetching user data:', error);
         }
+    };
+
+    const populateFormFromUser = (userData: any) => {
+        const userFormData = {
+            fullName: userData.full_name || userData.name || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            bio: userData.bio || "",
+            location: userData.location || "",
+            username: userData.username || "",
+            profile_image_url: userData.profile_image_url || null,
+            notifications: {
+                email: userData.email_notifications ?? true,
+                sms: userData.sms_notifications ?? true,
+                push: userData.push_notifications ?? true,
+                reminder: userData.reminder_notifications ?? true,
+            },
+            privacy: {
+                profileVisibility: userData.profile_visibility || "public",
+                showEmail: userData.show_email ?? false,
+                showPhone: userData.show_phone ?? false,
+            },
+            preferences: {
+                currency: userData.currency || userData.currencey || "ETB",
+                theme: userData.theme || "system",
+            },
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+        };
+        
+        setFormData(userFormData);
+        setOriginalFormData(JSON.parse(JSON.stringify(userFormData)));
+        setProfileImagePreview(userData.profile_image_url || null);
+        setTwoFactorEnabled(userData.two_factor_enabled || false);
+        setOriginalTwoFactor(userData.two_factor_enabled || false);
+        setUserId(userData.id);
+        setUserRole(userData.role);
+        setIsEditing(false);
     };
 
     const tabs = [
@@ -218,24 +208,58 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                setPopupMessage({
-                    title: 'Error',
-                    message: 'Image must be less than 2MB',
-                    type: 'error'
-                });
-                setShowSuccessPopup(true);
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                setFormData(prev => ({ ...prev, profileImage: base64String }));
-            };
-            reader.readAsDataURL(file);
+        if (!file) return;
+
+        if (file.size > 2 * 1024 * 1024) {
+            setPopupMessage({
+                title: 'Error',
+                message: 'Image must be less than 2MB',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+            return;
         }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+        if (!validTypes.includes(file.type)) {
+            setPopupMessage({
+                title: 'Error',
+                message: 'Only JPEG, PNG, WEBP images are allowed',
+                type: 'error'
+            });
+            setShowSuccessPopup(true);
+            return;
+        }
+
+        setProfileImageFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setProfileImagePreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const uploadProfileImage = async (userId: string): Promise<string | null> => {
+        if (!profileImageFile) return formData.profile_image_url;
+
+        const fileExt = profileImageFile.name.split('.').pop();
+        const fileName = `${userId}_profile_${Date.now()}.${fileExt}`;
+        const filePath = `profiles/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(filePath, profileImageFile);
+
+        if (uploadError) {
+            console.error('Upload error:', uploadError);
+            return null;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(filePath);
+
+        return publicUrl;
     };
 
     const handleSave = async () => {
@@ -252,6 +276,13 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setIsSaving(true);
         
         try {
+            // Upload profile image if changed
+            let profileImageUrl = formData.profile_image_url;
+            if (profileImageFile) {
+                const uploadedUrl = await uploadProfileImage(userId);
+                if (uploadedUrl) profileImageUrl = uploadedUrl;
+            }
+
             // Verify current password if changing password
             if (formData.newPassword) {
                 const { data: userData, error: verifyError } = await supabase
@@ -276,26 +307,27 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 }
             }
             
-            // Update users table - using correct column names from your database
+            // Prepare update data
             const updateData: any = {
                 full_name: formData.fullName,
                 email: formData.email,
                 phone: formData.phone,
                 bio: formData.bio,
                 location: formData.location,
-                profile_image_url: formData.profileImage,
+                username: formData.username || null,
+                profile_image_url: profileImageUrl,
                 email_notifications: formData.notifications.email,
-                reminder_notifications: formData.notifications.bookingConfirmations,
+                reminder_notifications: formData.notifications.reminder,
                 profile_visibility: formData.privacy.profileVisibility,
                 show_email: formData.privacy.showEmail,
                 show_phone: formData.privacy.showPhone,
-                currency: formData.preferences.currency,  // ← Correct column name
+                currency: formData.preferences.currency,
                 theme: formData.preferences.theme,
                 two_factor_enabled: twoFactorEnabled,
                 updated_at: new Date().toISOString()
             };
             
-            // Update password if provided
+            // Add password if changing
             if (formData.newPassword && formData.newPassword === formData.confirmPassword) {
                 updateData.password = formData.newPassword;
             }
@@ -306,60 +338,34 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 .eq('id', userId);
             
             if (updateError) {
-                console.error('Update error:', updateError);
                 throw new Error(updateError.message);
             }
             
-            // Update localStorage/sessionStorage
-            const storedUser = JSON.parse(
-                localStorage.getItem('user') || sessionStorage.getItem('user') || 'null'
-            );
-            
-            if (storedUser) {
-                const updatedStoredUser = {
-                    ...storedUser,
-                    id: userId,
-                    name: formData.fullName,
-                    full_name: formData.fullName,
-                    email: formData.email,
-                    phone: formData.phone,
-                    bio: formData.bio,
-                    location: formData.location,
-                    profileImage: formData.profileImage,
-                    profile_image_url: formData.profileImage,
-                };
-                
-                if (localStorage.getItem('user')) {
-                    localStorage.setItem('user', JSON.stringify(updatedStoredUser));
-                }
-                if (sessionStorage.getItem('user')) {
-                    sessionStorage.setItem('user', JSON.stringify(updatedStoredUser));
-                }
-            }
-            
-            // Update parent component
+            // Update the user object in parent component
             const updatedUser = {
                 ...user,
                 id: userId,
-                name: formData.fullName,
                 full_name: formData.fullName,
+                name: formData.fullName,
                 email: formData.email,
                 phone: formData.phone,
                 bio: formData.bio,
                 location: formData.location,
-                profileImage: formData.profileImage,
-                profile_image_url: formData.profileImage,
-                notifications: formData.notifications,
-                privacy: formData.privacy,
-                preferences: formData.preferences,
-                twoFactorEnabled: twoFactorEnabled,
+                username: formData.username,
+                profile_image_url: profileImageUrl,
+                role: userRole,
+                two_factor_enabled: twoFactorEnabled,
             };
             
             onUserUpdate(updatedUser);
             
-            // Update original data
-            setOriginalFormData(formData);
-            setOriginalTwoFactor(twoFactorEnabled);
+            // Update local storage
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+                const parsedUser = JSON.parse(storedUser);
+                const updatedStoredUser = { ...parsedUser, ...updatedUser };
+                localStorage.setItem('user', JSON.stringify(updatedStoredUser));
+            }
             
             // Clear password fields
             setFormData(prev => ({
@@ -369,6 +375,8 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                 confirmPassword: ""
             }));
             
+            setProfileImageFile(null);
+            
             setPopupMessage({
                 title: 'Success!',
                 message: 'Profile updated successfully',
@@ -376,6 +384,7 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
             });
             setShowSuccessPopup(true);
             setIsEditing(false);
+            
         } catch (error: any) {
             console.error('Error saving profile:', error);
             setPopupMessage({
@@ -403,13 +412,22 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
         setIsDeleting(true);
         
         try {
-            await supabase.from('customers').delete().eq('user_id', userId);
-            await supabase.from('employees').delete().eq('user_id', userId);
-            await supabase.from('owners').delete().eq('user_id', userId);
+            // Delete related records based on role
+            if (userRole === 'theater_owner') {
+                await supabase.from('owners').delete().eq('user_id', userId);
+            }
+            if (userRole === 'customer') {
+                await supabase.from('customers').delete().eq('user_id', userId);
+            }
+            if (['theater_manager', 'sales_person', 'qr_scanner'].includes(userRole || '')) {
+                await supabase.from('employees').delete().eq('user_id', userId);
+            }
+            
+            // Delete user
             await supabase.from('users').delete().eq('id', userId);
             
+            // Clear local storage
             localStorage.removeItem('user');
-            sessionStorage.removeItem('user');
             localStorage.removeItem('token');
             
             setPopupMessage({
@@ -438,15 +456,21 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
     };
 
     const handleCancel = () => {
-        setFormData(originalFormData);
+        setFormData(JSON.parse(JSON.stringify(originalFormData)));
         setTwoFactorEnabled(originalTwoFactor);
+        setProfileImagePreview(originalFormData.profile_image_url);
+        setProfileImageFile(null);
         setIsEditing(false);
     };
 
     const hasChanges = () => {
         return JSON.stringify(formData) !== JSON.stringify(originalFormData) ||
-            twoFactorEnabled !== originalTwoFactor;
+            twoFactorEnabled !== originalTwoFactor ||
+            profileImageFile !== null;
     };
+
+    const roleConfig = ROLE_CONFIG[userRole || 'customer'] || ROLE_CONFIG.customer;
+    const RoleIcon = roleConfig.icon;
 
     const currencies = [
         { code: "ETB", symbol: "Br", name: "Ethiopian Birr" },
@@ -491,8 +515,9 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                         <ul className="text-xs text-red-700 dark:text-red-400 mt-3 list-disc pl-5 space-y-1">
                             <li>Your profile information and settings</li>
                             <li>All your booking history and tickets</li>
-                            <li>Theater data if you're a theater owner</li>
-                            <li>Associated contracts and agreements</li>
+                            {userRole === 'theater_owner' && <li>Theater data and contracts</li>}
+                            {userRole === 'theater_manager' && <li>Management records</li>}
+                            <li>Associated data across the platform</li>
                         </ul>
                     </div>
                     
@@ -576,6 +601,14 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                 </button>
                             </div>
 
+                            {/* Role Badge */}
+                            <div className="px-5 pt-4 pb-2">
+                                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium ${roleConfig.bgColor} ${roleConfig.color}`}>
+                                    <RoleIcon className="h-3.5 w-3.5" />
+                                    {roleConfig.label}
+                                </div>
+                            </div>
+
                             {/* Tabs */}
                             <div className="flex overflow-x-auto border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 px-2">
                                 {tabs.map((tab) => {
@@ -605,8 +638,10 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                         <div className="flex items-center gap-5">
                                             <div className="relative">
                                                 <div className="h-20 w-20 rounded-full bg-gradient-to-r from-teal-600 to-teal-500 flex items-center justify-center overflow-hidden ring-4 ring-teal-100">
-                                                    {formData.profileImage ? (
-                                                        <img src={formData.profileImage} alt="Profile" className="h-full w-full object-cover" />
+                                                    {profileImagePreview ? (
+                                                        <img src={profileImagePreview} alt="Profile" className="h-full w-full object-cover" />
+                                                    ) : formData.profile_image_url ? (
+                                                        <img src={formData.profile_image_url} alt="Profile" className="h-full w-full object-cover" />
                                                     ) : (
                                                         <span className="text-2xl font-bold text-white">
                                                             {formData.fullName?.charAt(0) || "U"}
@@ -625,11 +660,6 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                                     {formData.fullName || "Your Name"}
                                                 </h3>
                                                 <p className="text-sm text-gray-500">{formData.email}</p>
-                                                {userRole && (
-                                                    <span className="inline-block mt-1 px-2 py-0.5 bg-purple-100 text-purple-700 text-xs rounded-full capitalize">
-                                                        {userRole.replace('_', ' ')}
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
 
@@ -647,12 +677,19 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                                 <input type="tel" name="phone" value={formData.phone} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500" />
                                             </div>
                                             <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                                <input type="text" name="username" value={formData.username} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500" placeholder="Choose a username" />
+                                            </div>
+                                            <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                                                <input type="text" name="location" value={formData.location} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500" />
+                                                <div className="relative">
+                                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                                    <input type="text" name="location" value={formData.location} onChange={handleInputChange} disabled={!isEditing} className="w-full pl-10 pr-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500" placeholder="Your location" />
+                                                </div>
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-                                                <textarea name="bio" rows={3} value={formData.bio} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500 resize-none" />
+                                                <textarea name="bio" rows={3} value={formData.bio} onChange={handleInputChange} disabled={!isEditing} className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 disabled:opacity-50 focus:ring-2 focus:ring-teal-500 resize-none" placeholder="Tell us about yourself" />
                                             </div>
                                         </div>
                                     </div>
@@ -667,11 +704,11 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                                 {isEditing && <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>}
                                             </div>
                                             <div className="relative">
-                                                <input type={showNewPassword ? 'text' : 'password'} name="newPassword" value={formData.newPassword} onChange={handleInputChange} disabled={!isEditing} placeholder="New Password" className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 pr-10" />
+                                                <input type={showNewPassword ? 'text' : 'password'} name="newPassword" value={formData.newPassword} onChange={handleInputChange} disabled={!isEditing} placeholder="New Password (min 6 characters)" className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 pr-10" />
                                                 {isEditing && <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>}
                                             </div>
                                             <div className="relative">
-                                                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} disabled={!isEditing} placeholder="Confirm Password" className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 pr-10" />
+                                                <input type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleInputChange} disabled={!isEditing} placeholder="Confirm New Password" className="w-full px-4 py-2.5 text-sm border rounded-xl bg-gray-50 pr-10" />
                                                 {isEditing && <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">{showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>}
                                             </div>
                                         </div>
@@ -709,10 +746,18 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                         <h3 className="text-base font-semibold mb-4">Notification Preferences</h3>
                                         <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
                                             <input type="checkbox" checked={formData.notifications.email} onChange={() => handleNotificationChange('email')} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
-                                            <span className="text-sm">Email Updates</span>
+                                            <span className="text-sm">Email Notifications</span>
                                         </label>
                                         <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
-                                            <input type="checkbox" checked={formData.notifications.bookingConfirmations} onChange={() => handleNotificationChange('bookingConfirmations')} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
+                                            <input type="checkbox" checked={formData.notifications.sms} onChange={() => handleNotificationChange('sms')} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
+                                            <span className="text-sm">SMS Notifications</span>
+                                        </label>
+                                        <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                            <input type="checkbox" checked={formData.notifications.push} onChange={() => handleNotificationChange('push')} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
+                                            <span className="text-sm">Push Notifications</span>
+                                        </label>
+                                        <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                            <input type="checkbox" checked={formData.notifications.reminder} onChange={() => handleNotificationChange('reminder')} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
                                             <span className="text-sm">Booking Reminders</span>
                                         </label>
                                     </div>
@@ -722,22 +767,24 @@ const ProfileSettingsModal: React.FC<ProfileSettingsModalProps> = ({ isOpen, onC
                                     <div className="space-y-5">
                                         <div>
                                             <h4 className="text-sm font-semibold mb-3">Profile Visibility</h4>
-                                            {['public', 'private'].map((option) => (
-                                                <label key={option} className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
-                                                    <input type="radio" name="profileVisibility" value={option} checked={formData.privacy.profileVisibility === option} onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)} disabled={!isEditing} className="h-4 w-4 text-teal-600" />
-                                                    <span className="text-sm capitalize">{option} - {option === 'public' ? 'Anyone can see your profile' : 'Only you can see your profile'}</span>
-                                                </label>
-                                            ))}
+                                            <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                                <input type="radio" name="profileVisibility" value="public" checked={formData.privacy.profileVisibility === 'public'} onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)} disabled={!isEditing} className="h-4 w-4 text-teal-600" />
+                                                <span className="text-sm">Public - Anyone can see your profile</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                                                <input type="radio" name="profileVisibility" value="private" checked={formData.privacy.profileVisibility === 'private'} onChange={(e) => handlePrivacyChange('profileVisibility', e.target.value)} disabled={!isEditing} className="h-4 w-4 text-teal-600" />
+                                                <span className="text-sm">Private - Only you can see your profile</span>
+                                            </label>
                                         </div>
                                         <div>
-                                            <h4 className="text-sm font-semibold mb-3">Personal Information</h4>
+                                            <h4 className="text-sm font-semibold mb-3">Contact Information Visibility</h4>
                                             <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
                                                 <input type="checkbox" checked={formData.privacy.showEmail} onChange={() => handlePrivacyChange('showEmail', !formData.privacy.showEmail)} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
-                                                <span className="text-sm">Show my email address</span>
+                                                <span className="text-sm">Show my email address on profile</span>
                                             </label>
                                             <label className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
                                                 <input type="checkbox" checked={formData.privacy.showPhone} onChange={() => handlePrivacyChange('showPhone', !formData.privacy.showPhone)} disabled={!isEditing} className="h-4 w-4 text-teal-600 rounded" />
-                                                <span className="text-sm">Show my phone number</span>
+                                                <span className="text-sm">Show my phone number on profile</span>
                                             </label>
                                         </div>
                                     </div>

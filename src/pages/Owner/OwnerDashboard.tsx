@@ -1,5 +1,5 @@
 // src/pages/Owner/OwnerDashboard.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -8,20 +8,23 @@ import {
     Activity,
     TrendingUp,
     Users,
-    Star,
     Eye,
     Edit,
     CheckCircle,
     RotateCcw,
     Film,
     Calendar,
-    Clock
+    Clock,
+    Loader2,
+    FileText,
+    Percent
 } from 'lucide-react';
 
 // Direct imports from Overview components
 import { AreaChart } from '../../components/Overview/AreaChart';
 import { Card, MetricCard, StatCard } from '../../components/Overview/Card';
 import { DonutChart } from '../../components/Overview/PieChart';
+import supabase from '@/config/supabaseClient';
 
 // Types
 interface HallDataPoint {
@@ -54,14 +57,14 @@ interface Transaction {
 
 interface Stats {
     totalRevenue: number;
-    ticketsSold: number;
     ticketsToday: number;
     occupancyRate: number;
     activeEvents: number;
     totalEmployees: number;
     activeEmployees: number;
     totalHalls: number;
-    customerSatisfaction: number;
+    commissionRate: number;
+    contractType: string;
 }
 
 interface RevenueData {
@@ -69,88 +72,6 @@ interface RevenueData {
     revenue: number;
     tickets: number;
 }
-
-// Mock Data
-const stats: Stats = {
-    totalRevenue: 158750,
-    ticketsSold: 12580,
-    ticketsToday: 156,
-    occupancyRate: 78,
-    activeEvents: 8,
-    totalEmployees: 15,
-    activeEmployees: 12,
-    totalHalls: 5,
-    customerSatisfaction: 4.6
-};
-
-const hallData: HallDataPoint[] = [
-    { name: 'Hall A', occupancy: 85, capacity: 200, color: '#14b8a6' },
-    { name: 'Hall B', occupancy: 92, capacity: 150, color: '#f59e0b' },
-    { name: 'Hall C', occupancy: 68, capacity: 180, color: '#3b82f6' },
-    { name: 'Hall D', occupancy: 45, capacity: 120, color: '#ef4444' },
-    { name: 'Hall E', occupancy: 78, capacity: 160, color: '#8b5cf6' },
-];
-
-const showsData: Show[] = [
-    { id: '1', name: 'The Lion King', hallName: 'Hall A', sales: 89, capacity: 120, revenue: 4005, status: 'selling', time: '7:00 PM', date: '2024-04-20' },
-    { id: '2', name: 'Hamilton', hallName: 'Hall B', sales: 95, capacity: 120, revenue: 6175, status: 'almost full', time: '8:30 PM', date: '2024-04-21' },
-    { id: '3', name: 'Wicked', hallName: 'Hall C', sales: 110, capacity: 120, revenue: 6050, status: 'sold out', time: '6:00 PM', date: '2024-04-19' },
-    { id: '4', name: 'Phantom of Opera', hallName: 'Hall A', sales: 67, capacity: 120, revenue: 4020, status: 'selling', time: '9:00 PM', date: '2024-04-22' },
-    { id: '5', name: 'Chicago', hallName: 'Hall D', sales: 78, capacity: 120, revenue: 3900, status: 'selling', time: '7:30 PM', date: '2024-04-23' },
-];
-
-const transactions: Transaction[] = [
-    { id: '#TR-2024-001', customer: 'John Doe', amount: 90, tickets: 2, time: '5 min ago', status: 'completed' },
-    { id: '#TR-2024-002', customer: 'Jane Smith', amount: 135, tickets: 3, time: '15 min ago', status: 'completed' },
-    { id: '#TR-2024-003', customer: 'Bob Johnson', amount: 45, tickets: 1, time: '25 min ago', status: 'completed' },
-    { id: '#TR-2024-004', customer: 'Alice Brown', amount: 180, tickets: 4, time: '35 min ago', status: 'completed' },
-    { id: '#TR-2024-005', customer: 'Charlie Wilson', amount: 90, tickets: 2, time: '45 min ago', status: 'refunded' },
-];
-
-// Daily Revenue Data (7 days)
-const dailyRevenueData: RevenueData[] = [
-    { period: 'Mon', revenue: 32450, tickets: 156 },
-    { period: 'Tue', revenue: 28900, tickets: 142 },
-    { period: 'Wed', revenue: 35600, tickets: 178 },
-    { period: 'Thu', revenue: 41200, tickets: 195 },
-    { period: 'Fri', revenue: 52300, tickets: 245 },
-    { period: 'Sat', revenue: 67800, tickets: 312 },
-    { period: 'Sun', revenue: 58900, tickets: 278 },
-];
-
-// Monthly Revenue Data (12 months)
-const monthlyRevenueData: RevenueData[] = [
-    { period: 'Jan', revenue: 125000, tickets: 5850 },
-    { period: 'Feb', revenue: 118000, tickets: 5420 },
-    { period: 'Mar', revenue: 142000, tickets: 6780 },
-    { period: 'Apr', revenue: 158000, tickets: 7450 },
-    { period: 'May', revenue: 172000, tickets: 8150 },
-    { period: 'Jun', revenue: 189000, tickets: 8920 },
-    { period: 'Jul', revenue: 195000, tickets: 9250 },
-    { period: 'Aug', revenue: 182000, tickets: 8680 },
-    { period: 'Sep', revenue: 201000, tickets: 9560 },
-    { period: 'Oct', revenue: 215000, tickets: 10200 },
-    { period: 'Nov', revenue: 235000, tickets: 11150 },
-    { period: 'Dec', revenue: 268000, tickets: 12800 },
-];
-
-// Yearly Revenue Data (5 years) - Made more readable
-const yearlyRevenueData: RevenueData[] = [
-    { period: '2020', revenue: 1850000, tickets: 88500 },
-    { period: '2021', revenue: 2120000, tickets: 99800 },
-    { period: '2022', revenue: 1980000, tickets: 94100 },
-    { period: '2023', revenue: 2350000, tickets: 111500 },
-    { period: '2024', revenue: 2680000, tickets: 128200 },
-];
-
-// Event Occupancy Data (for donut chart - renamed from Hall Occupancy)
-const eventOccupancyData: HallDataPoint[] = [
-    { name: 'The Lion King', occupancy: 89, capacity: 120, color: '#14b8a6' },
-    { name: 'Hamilton', occupancy: 95, capacity: 120, color: '#f59e0b' },
-    { name: 'Wicked', occupancy: 110, capacity: 120, color: '#3b82f6' },
-    { name: 'Phantom', occupancy: 67, capacity: 120, color: '#ef4444' },
-    { name: 'Chicago', occupancy: 78, capacity: 120, color: '#8b5cf6' },
-];
 
 // Animation variants
 const containerVariants = {
@@ -178,7 +99,496 @@ const itemVariants = {
 };
 
 const OwnerDashboard: React.FC = () => {
+    const [loading, setLoading] = useState(true);
+    const [theaterId, setTheaterId] = useState<string | null>(null);
+    const [theaterName, setTheaterName] = useState<string>('');
+    const [stats, setStats] = useState<Stats>({
+        totalRevenue: 0,
+        ticketsToday: 0,
+        occupancyRate: 0,
+        activeEvents: 0,
+        totalEmployees: 0,
+        activeEmployees: 0,
+        totalHalls: 0,
+        commissionRate: 0,
+        contractType: ''
+    });
+    const [hallData, setHallData] = useState<HallDataPoint[]>([]);
+    const [showsData, setShowsData] = useState<Show[]>([]);
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [selectedPeriod, setSelectedPeriod] = useState<'daily' | 'monthly' | 'yearly'>('monthly');
+    const [dailyRevenueData, setDailyRevenueData] = useState<RevenueData[]>([]);
+    const [monthlyRevenueData, setMonthlyRevenueData] = useState<RevenueData[]>([]);
+    const [yearlyRevenueData, setYearlyRevenueData] = useState<RevenueData[]>([]);
+
+    // Get current user from localStorage (no Supabase Auth needed)
+    const getCurrentUser = () => {
+        const userStr = localStorage.getItem('user') || sessionStorage.getItem('user');
+        if (userStr) {
+            try {
+                return JSON.parse(userStr);
+            } catch {
+                return null;
+            }
+        }
+        return null;
+    };
+
+    useEffect(() => {
+        fetchTheaterAndData();
+    }, []);
+
+    const fetchTheaterAndData = async () => {
+        setLoading(true);
+        try {
+            // Get current user from localStorage
+            const currentUser = getCurrentUser();
+            
+            if (!currentUser) {
+                console.log('No user found in localStorage');
+                setLoading(false);
+                return;
+            }
+            
+            console.log('Logged in user:', currentUser.id, currentUser.email);
+            
+            // Get theater owned by this user
+            const { data: theater, error: theaterError } = await supabase
+                .from('theaters')
+                .select('id, legal_business_name, total_halls, status')
+                .eq('owner_user_id', currentUser.id)
+                .maybeSingle();
+
+            if (theaterError) {
+                console.error('Theater error:', theaterError);
+            }
+            
+            if (theater) {
+                console.log('Theater found:', theater.legal_business_name, theater.id);
+                setTheaterId(theater.id);
+                setTheaterName(theater.legal_business_name);
+                
+                // Update stats with total halls from theater
+                setStats(prev => ({
+                    ...prev,
+                    totalHalls: theater.total_halls || 0
+                }));
+                
+                await Promise.all([
+                    fetchContractInfo(theater.id),
+                    fetchDashboardStats(theater.id),
+                    fetchHallOccupancy(theater.id),
+                    fetchActiveEvents(theater.id),
+                    fetchRecentTransactions(theater.id),
+                    fetchRevenueData(theater.id)
+                ]);
+            } else {
+                console.log('No theater found for user:', currentUser.id);
+            }
+        } catch (error) {
+            console.error('Error fetching theater data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch contract info from owners_contracts table
+    const fetchContractInfo = async (theaterId: string) => {
+        try {
+            const { data: contract, error: contractError } = await supabase
+                .from('owners_contracts')
+                .select('contract_type, commission_rate, status')
+                .eq('theater_id', theaterId)
+                .eq('status', 'active')
+                .maybeSingle();
+
+            if (contractError) {
+                console.error('Contract error:', contractError);
+            }
+
+            if (contract) {
+                console.log('Contract found:', contract);
+                setStats(prev => ({
+                    ...prev,
+                    commissionRate: contract.commission_rate || 0,
+                    contractType: contract.contract_type || 'N/A'
+                }));
+            } else {
+                console.log('No active contract found for theater:', theaterId);
+            }
+        } catch (error) {
+            console.error('Error fetching contract:', error);
+        }
+    };
+
+    // Fetch dashboard stats
+    const fetchDashboardStats = async (theaterId: string) => {
+        try {
+            // Get total revenue from earnings
+            const { data: earnings, error: earningsError } = await supabase
+                .from('earnings')
+                .select('net_amount, created_at')
+                .eq('theater_id', theaterId)
+                .eq('is_subscription_payment', false);
+
+            if (earningsError) {
+                console.error('Earnings error:', earningsError);
+            }
+
+            const totalRevenue = earnings?.reduce((sum, e) => sum + (e.net_amount || 0), 0) || 0;
+            console.log('Total revenue:', totalRevenue);
+
+            // Get tickets sold today - count all confirmed reservations for this theater's events
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            // First get events for this theater
+            const { data: events, error: eventsError } = await supabase
+                .from('events')
+                .select('id')
+                .eq('theater_id', theaterId);
+
+            if (eventsError) {
+                console.error('Events error:', eventsError);
+            }
+
+            const eventIds = events?.map(e => e.id) || [];
+            let ticketsToday = 0;
+
+            if (eventIds.length > 0) {
+                const { data: reservations, error: reservationsError } = await supabase
+                    .from('reservations')
+                    .select('id, created_at')
+                    .in('event_id', eventIds)
+                    .eq('status', 'confirmed')
+                    .gte('created_at', today.toISOString())
+                    .lt('created_at', tomorrow.toISOString());
+
+                if (reservationsError) {
+                    console.error('Reservations error:', reservationsError);
+                } else {
+                    ticketsToday = reservations?.length || 0;
+                }
+            }
+
+            console.log('Tickets today:', ticketsToday);
+
+            // Get active events count
+            const activeEvents = events?.length || 0;
+            console.log('Active events:', activeEvents);
+
+            // Get employees count
+            const { data: employees, error: employeesError } = await supabase
+                .from('employees')
+                .select('id, is_active')
+                .eq('theater_id', theaterId);
+
+            if (employeesError) {
+                console.error('Employees error:', employeesError);
+            }
+
+            const totalEmployees = employees?.length || 0;
+            const activeEmployees = employees?.filter(e => e.is_active === true).length || 0;
+
+            setStats(prev => ({
+                ...prev,
+                totalRevenue,
+                ticketsToday,
+                activeEvents,
+                totalEmployees,
+                activeEmployees
+            }));
+
+        } catch (error) {
+            console.error('Error fetching stats:', error);
+        }
+    };
+
+    // Fetch hall occupancy
+    const fetchHallOccupancy = async (theaterId: string) => {
+        try {
+            const { data: halls, error: hallsError } = await supabase
+                .from('halls')
+                .select('id, name, capacity')
+                .eq('theater_id', theaterId)
+                .eq('is_active', true);
+
+            if (hallsError) {
+                console.error('Halls error:', hallsError);
+            }
+
+            const colors = ['#14b8a6', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+            
+            // For now, occupancy is 0 until we have seat reservation data
+            const hallOccupancy = (halls || []).map((hall, index) => ({
+                name: hall.name,
+                occupancy: 0,
+                capacity: hall.capacity,
+                color: colors[index % colors.length]
+            }));
+
+            // Calculate average occupancy rate
+            const totalCapacity = hallOccupancy.reduce((sum, h) => sum + h.capacity, 0);
+            const totalOccupancy = hallOccupancy.reduce((sum, h) => sum + h.occupancy, 0);
+            const occupancyRate = totalCapacity > 0 ? Math.round((totalOccupancy / totalCapacity) * 100) : 0;
+
+            setStats(prev => ({
+                ...prev,
+                occupancyRate
+            }));
+
+            setHallData(hallOccupancy);
+            console.log('Halls loaded:', hallOccupancy.length);
+        } catch (error) {
+            console.error('Error fetching hall occupancy:', error);
+        }
+    };
+
+    // Fetch active events with schedules
+    const fetchActiveEvents = async (theaterId: string) => {
+        try {
+            const { data: events, error: eventsError } = await supabase
+                .from('events')
+                .select('id, title, theater_id')
+                .eq('theater_id', theaterId);
+
+            if (eventsError) {
+                console.error('Events error:', eventsError);
+            }
+
+            // Get schedules for these events
+            const eventIds = events?.map(e => e.id) || [];
+            let allSchedules: any[] = [];
+            
+            if (eventIds.length > 0) {
+                const { data: schedules, error: schedulesError } = await supabase
+                    .from('event_schedules')
+                    .select(`
+                        id,
+                        event_id,
+                        hall_id,
+                        show_date,
+                        start_time,
+                        total_seats,
+                        available_seats,
+                        halls (
+                            id,
+                            name
+                        )
+                    `)
+                    .in('event_id', eventIds)
+                    .gte('show_date', new Date().toISOString().split('T')[0]);
+
+                if (schedulesError) {
+                    console.error('Schedules error:', schedulesError);
+                } else {
+                    allSchedules = schedules || [];
+                }
+            }
+
+            const shows: Show[] = [];
+
+            allSchedules.forEach(schedule => {
+                const event = events?.find(e => e.id === schedule.event_id);
+                const soldSeats = (schedule.total_seats || 0) - (schedule.available_seats || 0);
+                // Estimate revenue (this would be more accurate with actual seat prices)
+                const estimatedRevenue = soldSeats * 100;
+                
+                let status: 'selling' | 'almost full' | 'sold out' = 'selling';
+                if (schedule.available_seats === 0) {
+                    status = 'sold out';
+                } else if ((schedule.available_seats || 0) < (schedule.total_seats || 0) * 0.2) {
+                    status = 'almost full';
+                }
+
+                shows.push({
+                    id: schedule.id,
+                    name: event?.title || 'Unknown Event',
+                    hallName: schedule.halls?.name || 'Unknown Hall',
+                    sales: soldSeats,
+                    capacity: schedule.total_seats || 0,
+                    revenue: estimatedRevenue,
+                    status: status,
+                    time: schedule.start_time || 'TBD',
+                    date: schedule.show_date || new Date().toISOString().split('T')[0]
+                });
+            });
+
+            setShowsData(shows.slice(0, 5));
+            console.log('Shows loaded:', shows.length);
+        } catch (error) {
+            console.error('Error fetching active events:', error);
+        }
+    };
+
+    // Fetch recent transactions
+    const fetchRecentTransactions = async (theaterId: string) => {
+        try {
+            // First get events for this theater
+            const { data: events, error: eventsError } = await supabase
+                .from('events')
+                .select('id')
+                .eq('theater_id', theaterId);
+
+            if (eventsError) {
+                console.error('Events error:', eventsError);
+            }
+
+            const eventIds = events?.map(e => e.id) || [];
+            
+            if (eventIds.length === 0) {
+                setTransactions([]);
+                return;
+            }
+
+            const { data: reservations, error: reservationsError } = await supabase
+                .from('reservations')
+                .select('id, customer_name, total_amount, created_at, status')
+                .in('event_id', eventIds)
+                .eq('status', 'confirmed')
+                .order('created_at', { ascending: false })
+                .limit(5);
+
+            if (reservationsError) {
+                console.error('Reservations error:', reservationsError);
+            }
+
+            const transactionsList: Transaction[] = (reservations || []).map(res => ({
+                id: `#TR-${res.id.slice(-8)}`,
+                customer: res.customer_name || 'Guest',
+                amount: res.total_amount || 0,
+                tickets: 1,
+                time: formatRelativeTime(res.created_at),
+                status: 'completed'
+            }));
+
+            setTransactions(transactionsList);
+            console.log('Transactions loaded:', transactionsList.length);
+        } catch (error) {
+            console.error('Error fetching transactions:', error);
+        }
+    };
+
+    // Fetch revenue data
+    const fetchRevenueData = async (theaterId: string) => {
+        try {
+            // Get earnings for last 7 days
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const { data: earnings, error: earningsError } = await supabase
+                .from('earnings')
+                .select('net_amount, created_at')
+                .eq('theater_id', theaterId)
+                .eq('is_subscription_payment', false)
+                .gte('created_at', sevenDaysAgo.toISOString());
+
+            if (earningsError) {
+                console.error('Earnings error:', earningsError);
+            }
+
+            // Group by day for daily data
+            const dailyMap = new Map<string, { revenue: number; tickets: number }>();
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() - (6 - i));
+                const dayName = days[date.getDay()];
+                dailyMap.set(dayName, { revenue: 0, tickets: 0 });
+            }
+
+            (earnings || []).forEach(earning => {
+                const date = new Date(earning.created_at);
+                const dayName = days[date.getDay()];
+                const existing = dailyMap.get(dayName);
+                if (existing) {
+                    existing.revenue += earning.net_amount || 0;
+                    existing.tickets += 1;
+                }
+            });
+
+            const dailyData: RevenueData[] = Array.from(dailyMap.entries()).map(([period, data]) => ({
+                period,
+                revenue: data.revenue,
+                tickets: data.tickets
+            }));
+
+            setDailyRevenueData(dailyData);
+
+            // Monthly data - aggregate earnings by month
+            const monthlyMap = new Map<string, { revenue: number; tickets: number }>();
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Initialize months for current year
+            for (let i = 0; i < 12; i++) {
+                const monthName = monthNames[i];
+                monthlyMap.set(monthName, { revenue: 0, tickets: 0 });
+            }
+
+            (earnings || []).forEach(earning => {
+                const date = new Date(earning.created_at);
+                const monthName = monthNames[date.getMonth()];
+                const existing = monthlyMap.get(monthName);
+                if (existing) {
+                    existing.revenue += earning.net_amount || 0;
+                    existing.tickets += 1;
+                }
+            });
+
+            const monthlyData: RevenueData[] = Array.from(monthlyMap.entries()).map(([period, data]) => ({
+                period,
+                revenue: data.revenue,
+                tickets: data.tickets
+            }));
+
+            setMonthlyRevenueData(monthlyData);
+
+            // Yearly data - aggregate by year
+            const yearlyMap = new Map<string, { revenue: number; tickets: number }>();
+            const currentYear = new Date().getFullYear();
+            
+            for (let i = 4; i >= 0; i--) {
+                const year = (currentYear - i).toString();
+                yearlyMap.set(year, { revenue: 0, tickets: 0 });
+            }
+
+            (earnings || []).forEach(earning => {
+                const year = new Date(earning.created_at).getFullYear().toString();
+                const existing = yearlyMap.get(year);
+                if (existing) {
+                    existing.revenue += earning.net_amount || 0;
+                    existing.tickets += 1;
+                }
+            });
+
+            const yearlyData: RevenueData[] = Array.from(yearlyMap.entries()).map(([period, data]) => ({
+                period,
+                revenue: data.revenue,
+                tickets: data.tickets
+            }));
+
+            setYearlyRevenueData(yearlyData);
+            
+            console.log('Revenue data loaded');
+        } catch (error) {
+            console.error('Error fetching revenue data:', error);
+        }
+    };
+
+    const formatRelativeTime = (dateString: string): string => {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins} min ago`;
+        if (diffMins < 1440) return `${Math.floor(diffMins / 60)} hours ago`;
+        return `${Math.floor(diffMins / 1440)} days ago`;
+    };
 
     const formatCurrency = (amount: number) => {
         if (amount >= 1000000) {
@@ -225,7 +635,6 @@ const OwnerDashboard: React.FC = () => {
         return 'period';
     };
 
-    // Format Y-axis ticks for better readability
     const formatYAxisTick = (value: number): string => {
         if (value >= 1000000) {
             return `${(value / 1000000).toFixed(1)}M`;
@@ -236,17 +645,19 @@ const OwnerDashboard: React.FC = () => {
         return value.toString();
     };
 
-    // Prepare donut chart data for event occupancy
-    const eventDonutData = eventOccupancyData.map(event => ({
-        name: event.name,
-        value: event.occupancy,
-        color: event.color
-    }));
-
-    // Calculate total revenue for selected period
     const currentData = getRevenueData();
     const totalRevenue = currentData.reduce((sum, item) => sum + item.revenue, 0);
-    const totalTickets = currentData.reduce((sum, item) => sum + item.tickets, 0);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <Loader2 className="h-12 w-12 animate-spin text-teal-600 mx-auto mb-4" />
+                    <p className="text-gray-500">Loading dashboard data...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <motion.div
@@ -259,7 +670,9 @@ const OwnerDashboard: React.FC = () => {
             <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">Dashboard Overview</h1>
-                    <p className="text-sm text-gray-500 mt-1">Welcome back! Here's what's happening with your business today.</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                        Welcome back! Here's what's happening with {theaterName || 'your business'} today.
+                    </p>
                 </div>
             </motion.div>
 
@@ -287,71 +700,74 @@ const OwnerDashboard: React.FC = () => {
                     link="/owner/financial" 
                 />
                 <StatCard
-                    title="Customer Satisfaction"
-                    value={`${stats.customerSatisfaction}/5 ⭐`}
-                    icon={Star}
-                    color="from-yellow-500 to-amber-600"
-                    link="/owner/reviews"
+                    title="Active Employees"
+                    value={`${stats.activeEmployees}/${stats.totalEmployees}`}
+                    icon={Users}
+                    color="from-purple-500 to-pink-600"
+                    link="/owner/employees"
                 />
             </motion.div>
 
             {/* Secondary Stats */}
-            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                <MetricCard
-                    title="Total Tickets Sold"
-                    value={stats.ticketsSold.toLocaleString()}
-                    icon={<Ticket className="h-5 w-5 text-white" />}
-                />
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                     title="Total Halls"
                     value={stats.totalHalls}
                     icon={<Building className="h-5 w-5 text-white" />}
                 />
                 <MetricCard
-                    title="Active Employees"
-                    value={`${stats.activeEmployees}/${stats.totalEmployees}`}
-                    icon={<Users className="h-5 w-5 text-white" />}
+                    title="Occupancy Rate"
+                    value={`${stats.occupancyRate}%`}
+                    icon={<Activity className="h-5 w-5 text-white" />}
+                />
+                <MetricCard
+                    title="Commission Rate"
+                    value={`${stats.commissionRate}%`}
+                    icon={<Percent className="h-5 w-5 text-white" />}
+                />
+                <MetricCard
+                    title="Contract Type"
+                    value={stats.contractType === 'per_ticket' ? 'Per Ticket' : stats.contractType === 'subscription' ? 'Subscription' : 'N/A'}
+                    icon={<FileText className="h-5 w-5 text-white" />}
                 />
             </motion.div>
 
-            {/* Event Occupancy - Changed from Hall Occupancy */}
+            {/* Hall Occupancy */}
             <motion.div variants={itemVariants}>
                 <Card
-                    title="Event Occupancy"
-                    subtitle="Current occupancy rates across active events"
-                    showMoreLink="/owner/events"
-                    showMoreText="Manage Events"
+                    title="Hall Occupancy"
+                    subtitle="Current occupancy rates across your halls"
+                    showMoreLink="/owner/halls"
+                    showMoreText="Manage Halls"
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <DonutChart
-                            data={eventDonutData}
-                            height={280}
-                            showLabels={true}
-                        />
-                        <div className="space-y-3">
-                            {eventOccupancyData.map((event, index) => (
-                                <div key={index}>
-                                    <div className="flex justify-between text-sm mb-1">
-                                        <span className="text-gray-700 font-medium">{event.name}</span>
-                                        <span className="text-gray-500">{event.occupancy} / {event.capacity} seats</span>
-                                    </div>
-                                    <div className="w-full bg-gray-200 rounded-full h-2">
-                                        <div 
-                                            className="h-2 rounded-full transition-all duration-500"
-                                            style={{ width: `${(event.occupancy / event.capacity) * 100}%`, backgroundColor: event.color }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        {((event.occupancy / event.capacity) * 100).toFixed(0)}% filled
-                                    </p>
+                    <div className="space-y-3">
+                        {hallData.map((hall, index) => (
+                            <div key={index}>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="text-gray-700 font-medium">{hall.name}</span>
+                                    <span className="text-gray-500">{hall.occupancy} / {hall.capacity} seats</span>
                                 </div>
-                            ))}
-                        </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div 
+                                        className="h-2 rounded-full transition-all duration-500"
+                                        style={{ width: `${hall.capacity > 0 ? (hall.occupancy / hall.capacity) * 100 : 0}%`, backgroundColor: hall.color }}
+                                    />
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    {hall.capacity > 0 ? ((hall.occupancy / hall.capacity) * 100).toFixed(0) : 0}% filled
+                                </p>
+                            </div>
+                        ))}
+                        {hallData.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                No halls found. Please add halls to your theater.
+                            </div>
+                        )}
                     </div>
                 </Card>
             </motion.div>
 
-            {/* Revenue Trends Chart - Made readable with proper formatting */}
+            {/* Revenue Trends Chart */}
             <motion.div variants={itemVariants}>
                 <Card
                     title="Revenue Trends"
@@ -386,10 +802,15 @@ const OwnerDashboard: React.FC = () => {
                         showLegend={true}
                         yAxisTickFormatter={formatYAxisTick}
                     />
+                    {currentData.length === 0 && (
+                        <div className="text-center py-8 text-gray-500">
+                            No revenue data available
+                        </div>
+                    )}
                 </Card>
             </motion.div>
 
-            {/* Current Events Performance Table - Changed from Current Shows Performance, removed action buttons, added Event Name and Hall Name */}
+            {/* Current Events Performance Table */}
             <motion.div variants={itemVariants}>
                 <Card
                     title="Current Events Performance"
@@ -436,7 +857,7 @@ const OwnerDashboard: React.FC = () => {
                                                     <div className="w-16 bg-gray-200 rounded-full h-1.5">
                                                         <div 
                                                             className="h-1.5 rounded-full bg-teal-500" 
-                                                            style={{ width: `${(show.sales / show.capacity) * 100}%` }}
+                                                            style={{ width: `${show.capacity > 0 ? (show.sales / show.capacity) * 100 : 0}%` }}
                                                         />
                                                     </div>
                                                 </div>
@@ -446,10 +867,17 @@ const OwnerDashboard: React.FC = () => {
                                                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs ${statusBadge.bg} ${statusBadge.text}`}>
                                                     {statusBadge.label}
                                                 </span>
-                                             </td>
-                                         </tr>
+                                            </td>
+                                        </tr>
                                     );
                                 })}
+                                {showsData.length === 0 && (
+                                    <tr>
+                                        <td colSpan={6} className="py-8 text-center text-gray-500">
+                                            No active events found
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -474,15 +902,12 @@ const OwnerDashboard: React.FC = () => {
                                 className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className={`p-2 rounded-lg ${transaction.status === 'completed' ? 'bg-green-100' : 'bg-red-100'}`}>
-                                        {transaction.status === 'completed' 
-                                            ? <CheckCircle className="h-5 w-5 text-green-600" />
-                                            : <RotateCcw className="h-5 w-5 text-red-600" />
-                                        }
+                                    <div className={`p-2 rounded-lg bg-green-100`}>
+                                        <CheckCircle className="h-5 w-5 text-green-600" />
                                     </div>
                                     <div>
                                         <p className="text-sm font-medium text-gray-900">{transaction.customer}</p>
-                                        <p className="text-xs text-gray-500">{transaction.id} • {transaction.tickets} tickets</p>
+                                        <p className="text-xs text-gray-500">{transaction.id} • {transaction.tickets} ticket{transaction.tickets !== 1 ? 's' : ''}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -491,10 +916,14 @@ const OwnerDashboard: React.FC = () => {
                                 </div>
                             </motion.div>
                         ))}
+                        {transactions.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                No recent transactions found
+                            </div>
+                        )}
                     </div>
                 </Card>
             </motion.div>
-
         </motion.div>
     );
 };
