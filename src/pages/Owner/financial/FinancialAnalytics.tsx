@@ -820,7 +820,7 @@ const FinancialAnalytics: React.FC = () => {
             ? `Filtered: ${selectedEventName}`
             : "Best performing events by revenue"
         }
-        showMoreLink="/owner/events"
+        showMoreLink="/owner/events/manage_event"
         showMoreText="View All Events"
       >
         <div className="overflow-x-auto">
