@@ -3,10 +3,10 @@ import React from "react";
 import { Route, Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout/DashboardLayout";
 import EmployeeManagement from "./employee/EmployeeManagement";
+
 // Import all manager components
 import ManagerOverview from "./ManagerOverview";
-import EventSchedule from "./events/EventSchedule";
-import CreateEvent from "./events/CreateEvent";
+import ManageEvent from "./events/ManageEvent";
 import HallsManagement from "./halls/HallsManagement";
 import BookingTicketControl from "./Tickets/BookingTicketControl";
 import Reports from "./Report/Reports";
@@ -16,8 +16,7 @@ import TicketSalesDetails from "./Report/TicketSalesDetails";
 import OwnerContactManagement from "../../components/content/OwnerContactManagement";
 import GalleryManagement from "../../components/content/GalleryManagement";
 import BlogManagement from "../../components/content/BlogManagement";
-// Protected Route Component
-import CreateEventOverVIew from "./events/CreateEventOverVIew";
+
 const ProtectedRoute: React.FC<{
   children: React.ReactNode;
   allowedRoles?: string[];
@@ -53,19 +52,16 @@ export const getManagerRoutes = () => {
     >
       <Route index element={<Navigate to="/manager/dashboard" replace />} />
       <Route path="dashboard" element={<ManagerOverview />} />
-      <Route path="events/EventSchedule" element={<EventSchedule />} />
-      <Route path="events/create" element={<CreateEvent />} />
+      {/* ✅ Fixed: relative path instead of absolute */}
+      <Route path="events/Manage" element={<ManageEvent />} />
       <Route path="halls" element={<HallsManagement />} />
       <Route path="detail" element={<TicketSalesDetails />} />
-      <Route path="createview" element={<CreateEventOverVIew />} />
-
       <Route
         path="Tickets/BookingTicketControl"
         element={<BookingTicketControl />}
       />
       <Route path="Report" element={<Reports />} />
       <Route path="employee" element={<EmployeeManagement />} />
-
       <Route path="content/contacts" element={<OwnerContactManagement />} />
       <Route path="content/blogs" element={<BlogManagement />} />
       <Route path="content/gallery" element={<GalleryManagement />} />
