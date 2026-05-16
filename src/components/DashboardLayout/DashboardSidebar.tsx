@@ -216,7 +216,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             color: "text-emerald-500",
           },
 
-           {
+          {
             name: "Manage Halls",
             to: "/owner/halls/manage",
             icon: Building,
@@ -228,7 +228,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
             icon: Calendar,
             color: "text-orange-500",
           },
-         
+
           {
             name: "Bookings Information",
             to: "/owner/bookings",
@@ -275,7 +275,7 @@ const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           },
           {
             name: "Event Management",
-            to: "/manager/events/create",
+            to: "/manager/events/Manage",
             icon: PlusCircle,
           },
           {
